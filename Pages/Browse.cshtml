@@ -1,0 +1,177 @@
+@page
+@model BrowseModel
+@using CardCollector.Data.Models
+@{
+    ViewData["Title"] = "Browse";
+    var returnUrl = Uri.EscapeDataString(Request.Path + Request.QueryString);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Browse Cards</h1>
+    <span class="text-muted">@Model.Results.TotalCount.ToString("N0") cards</span>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="col">
+        <input type="search"
+               name="query"
+               value="@Model.Query"
+               list="card-suggestions"
+               autocomplete="off"
+               class="form-control"
+               placeholder="Search by name&hellip;" />
+        <datalist id="card-suggestions"></datalist>
+    </div>
+    <div class="col-auto">
+        <select name="pageSize" class="form-select">
+            @foreach (var size in new[] { 10, 25, 50, 100 })
+            {
+                if (Model.PageSize == size)
+                {
+                    <option value="@size" selected>@size per page</option>
+                }
+                else
+                {
+                    <option value="@size">@size per page</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info">
+        @if (string.IsNullOrEmpty(Model.Query))
+        {
+            <span>No cards found.</span>
+        }
+        else
+        {
+            <span>No cards found matching &ldquo;@Model.Query&rdquo;.</span>
+        }
+    </div>
+}
+else
+{
+    <div class="list-group mb-4">
+        @foreach (var item in Model.Results.Items)
+        {
+            <div class="list-group-item d-flex align-items-center gap-3 py-2">
+                @if (!string.IsNullOrEmpty(item.ImageURLSmall))
+                {
+                    <img src="@item.ImageURLSmall"
+                         alt="@item.Name"
+                         style="width: 44px; height: 64px; object-fit: cover;"
+                         class="rounded flex-shrink-0" />
+                }
+                else
+                {
+                    <div style="width: 44px; height: 64px;"
+                         class="rounded bg-secondary flex-shrink-0"></div>
+                }
+                <div class="flex-grow-1 min-width-0">
+                    <a href="/Card?id=@item.CardID&returnUrl=@returnUrl"
+                       class="fw-semibold text-decoration-none stretched-link">@item.Name</a>
+                    <div class="text-muted small">
+                        @item.CardType
+                        @if (!string.IsNullOrEmpty(item.Type))
+                        {
+                            <span>/ @item.Type</span>
+                        }
+                        @if (!string.IsNullOrEmpty(item.Attribute))
+                        {
+                            <span> &mdash; @item.Attribute</span>
+                        }
+                    </div>
+                </div>
+                @if (item.Status == CollectionStatus.Owned && !item.IsPlaceholder)
+                {
+                    <span class="badge bg-success flex-shrink-0">Owned</span>
+                }
+                else if (item.Status == CollectionStatus.Owned && item.IsPlaceholder)
+                {
+                    <span class="badge bg-secondary flex-shrink-0">Incomplete</span>
+                }
+                else if (item.Status == CollectionStatus.Ordered)
+                {
+                    <span class="badge bg-warning text-dark flex-shrink-0">Ordered</span>
+                }
+            </div>
+        }
+    </div>
+
+    @if (Model.Results.TotalPages > 1)
+    {
+        <nav aria-label="Card list pagination">
+            <ul class="pagination justify-content-center flex-wrap">
+                <li class="page-item @(!Model.Results.HasPreviousPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Browse", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
+                       aria-label="Previous">
+                        &laquo;
+                    </a>
+                </li>
+
+                @{
+                    int windowStart = Math.Max(1, Model.PageNumber - 2);
+                    int windowEnd = Math.Min(Model.Results.TotalPages, windowStart + 4);
+                    windowStart = Math.Max(1, windowEnd - 4);
+                }
+
+                @for (int p = windowStart; p <= windowEnd; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
+                        <a class="page-link"
+                           href="@Url.Page("Browse", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
+                            @p
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(!Model.Results.HasNextPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Browse", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
+                       aria-label="Next">
+                        &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <p class="text-center text-muted small">
+            Page @Model.PageNumber of @Model.Results.TotalPages
+        </p>
+    }
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const input = document.querySelector('input[list="card-suggestions"]');
+            const datalist = document.getElementById('card-suggestions');
+            let debounceTimer;
+
+            input.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                const q = this.value.trim();
+                if (q.length < 2) {
+                    datalist.innerHTML = '';
+                    return;
+                }
+                debounceTimer = setTimeout(function () {
+                    fetch('/Browse?handler=Autocomplete&q=' + encodeURIComponent(q))
+                        .then(function (r) { return r.json(); })
+                        .then(function (names) {
+                            datalist.innerHTML = names
+                                .map(function (n) { return '<option value="' + n.replace(/"/g, '&quot;') + '">'; })
+                                .join('');
+                        });
+                }, 300);
+            });
+        })();
+    </script>
+}

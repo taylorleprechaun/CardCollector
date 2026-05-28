@@ -1,0 +1,79 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Collection Progress</h5>
+        <div class="d-flex justify-content-between mb-2 text-muted small">
+            <span>@Model.Stats.OwnedCount.ToString("N0") owned of @Model.Stats.TotalArtworks.ToString("N0")</span>
+            <span>@Model.Stats.PercentOwned.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+        </div>
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar bg-success"
+                 role="progressbar"
+                 style="width: @Model.Stats.PercentOwned.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"
+                 aria-valuenow="@Model.Stats.PercentOwned"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-success h-100">
+            <div class="card-body">
+                <h6 class="card-title text-success text-uppercase">Owned</h6>
+                <p class="card-text display-6 fw-bold text-success">@Model.Stats.OwnedCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-warning h-100">
+            <div class="card-body">
+                <h6 class="card-title text-warning text-uppercase">Ordered</h6>
+                <p class="card-text display-6 fw-bold text-warning">@Model.Stats.OrderedCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-secondary h-100">
+            <div class="card-body">
+                <h6 class="card-title text-secondary text-uppercase">Remaining</h6>
+                <p class="card-text display-6 fw-bold text-secondary">@Model.Stats.RemainingCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h6 class="card-title text-muted text-uppercase">Total Artworks</h6>
+                <p class="card-text display-6 fw-bold">@Model.Stats.TotalArtworks.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-danger h-100">
+            <div class="card-body">
+                <h6 class="card-title text-danger text-uppercase">Placeholder Sets</h6>
+                <p class="card-text display-6 fw-bold text-danger">@Model.Stats.PlaceholderSetCount.ToString("N0")</p>
+                <p class="card-text text-muted small">Sets with unreplaced placeholders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-info h-100">
+            <div class="card-body">
+                <h6 class="card-title text-info text-uppercase">Incomplete Sets</h6>
+                <p class="card-text display-6 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
+                <p class="card-text text-muted small">Sets with fewer than 3 real cards</p>
+            </div>
+        </div>
+    </div>
+</div>

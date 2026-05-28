@@ -1,0 +1,22 @@
+## Build output
+bin/
+obj/
+
+## Visual Studio
+.vs/
+*.user
+
+## SQLite database (local data, not committed)
+*.db
+*.db-shm
+*.db-wal
+
+## .NET secrets
+appsettings.Development.json
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Claude Code project context (local only)
+.claude/

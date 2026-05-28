@@ -1,0 +1,113 @@
+@model CardCollector.ViewModels.CollectionEntryModalViewModel
+@using CardCollector.Data.Models
+
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="orderForm" method="post" data-page-url="@Model.PageUrl">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="CardID" value="@Model.CardID" />
+                    <input type="hidden" name="ImageID" value="@Model.ImageID" />
+                    <input type="hidden" name="SetCode" id="setCodeInput" />
+                    @if (Model.PageID.HasValue)
+                    {
+                        <input type="hidden" name="Id" value="@Model.PageID.Value" />
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ReturnUrl))
+                    {
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                    }
+
+                    <p class="text-muted mb-3">
+                        Set: <strong id="setNameLabel"></strong>
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="SelectedCondition" class="form-label">Condition</label>
+                        <select name="SelectedCondition" id="SelectedCondition"
+                                asp-items="Html.GetEnumSelectList<CardCondition>()"
+                                class="form-select">
+                            <option value="">-- Select condition --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="SelectedEdition" class="form-label">Edition</label>
+                        <select name="SelectedEdition" id="SelectedEdition"
+                                asp-items="Html.GetEnumSelectList<CardEdition>()"
+                                class="form-select">
+                            <option value="">-- Select edition --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="acquisitionGroup" style="display:none;">
+                        <label for="SelectedAcquisitionMethod" class="form-label">How did you get it?</label>
+                        <select name="SelectedAcquisitionMethod" id="SelectedAcquisitionMethod"
+                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
+                                class="form-select">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="placeholderGroup" style="display:none;">
+                        <div class="form-check">
+                            <input type="checkbox" name="IsPlaceholder" id="IsPlaceholder"
+                                   class="form-check-input" value="true" />
+                            <label for="IsPlaceholder" class="form-check-label">
+                                This is a placeholder &mdash; I want to upgrade to a different printing
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantityInput" class="form-label">Quantity</label>
+                        <input type="number" name="Quantity" id="quantityInput"
+                               min="1" value="1" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="PurchaseDate" class="form-label">Purchase Date</label>
+                        <input type="date" name="PurchaseDate" id="PurchaseDate" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="PurchasePrice" class="form-label">Purchase Price ($)</label>
+                        <input type="number" name="PurchasePrice" id="PurchasePrice"
+                               step="0.01" min="0" class="form-control" placeholder="0.00" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="modalSubmitBtn" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal(setCode, setName, action) {
+        const isOrder = action === 'Order';
+        const form = document.getElementById('orderForm');
+
+        document.getElementById('setCodeInput').value = setCode;
+        document.getElementById('setNameLabel').textContent = setName;
+        document.getElementById('orderModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
+
+        const submitBtn = document.getElementById('modalSubmitBtn');
+        submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
+        submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
+
+        document.getElementById('acquisitionGroup').style.display = isOrder ? 'none' : 'block';
+        document.getElementById('placeholderGroup').style.display = isOrder ? 'none' : 'block';
+        document.getElementById('IsPlaceholder').checked = false;
+        document.getElementById('SelectedCondition').value = '';
+        document.getElementById('SelectedEdition').value = '';
+        document.getElementById('SelectedAcquisitionMethod').value = '';
+        document.getElementById('quantityInput').value = 1;
+        document.getElementById('PurchaseDate').value = '';
+        document.getElementById('PurchasePrice').value = '';
+
+        form.action = form.dataset.pageUrl + '?handler=' + action;
+
+        new bootstrap.Modal(document.getElementById('orderModal')).show();
+    }
+</script>

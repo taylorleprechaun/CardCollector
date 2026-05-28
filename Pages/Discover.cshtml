@@ -1,0 +1,126 @@
+@page
+@model DiscoverModel
+@using CardCollector.Data.Models
+@{
+    ViewData["Title"] = "Discover";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Discover</h1>
+    @if (!Model.IsComplete)
+    {
+        <a href="/Discover" class="btn btn-outline-secondary">Skip &rarr;</a>
+    }
+</div>
+
+@if (Model.IsComplete)
+{
+    <div class="alert alert-success text-center py-5">
+        <h3>Collection Complete!</h3>
+        <p class="mb-0">You have ordered or owned every artwork in the database.</p>
+    </div>
+}
+else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
+{
+    <div class="row g-4">
+        <div class="col-md-4 col-lg-3 text-center">
+            <img src="@Model.CurrentImage.ImageURL"
+                 alt="@Model.CurrentCard.Name"
+                 class="img-fluid rounded shadow"
+                 style="max-width: 280px;" />
+        </div>
+        <div class="col-md-8 col-lg-9">
+            <h2>@Model.CurrentCard.Name</h2>
+            <p class="text-muted mb-1">
+                @Model.CurrentCard.CardType
+                @if (!string.IsNullOrEmpty(Model.CurrentCard.Type))
+                {
+                    <span>/ @Model.CurrentCard.Type</span>
+                }
+                @if (!string.IsNullOrEmpty(Model.CurrentCard.Attribute))
+                {
+                    <span> &mdash; @Model.CurrentCard.Attribute</span>
+                }
+            </p>
+            @if (Model.CurrentCard.ATK.HasValue || Model.CurrentCard.DEF.HasValue)
+            {
+                <p class="text-muted mb-1">
+                    @if (Model.CurrentCard.ATK.HasValue)
+                    {
+                        <span>ATK&nbsp;@Model.CurrentCard.ATK</span>
+                    }
+                    @if (Model.CurrentCard.DEF.HasValue)
+                    {
+                        <span class="ms-3">DEF&nbsp;@Model.CurrentCard.DEF</span>
+                    }
+                    @if (Model.CurrentCard.Level.HasValue)
+                    {
+                        <span class="ms-3">Level&nbsp;@Model.CurrentCard.Level</span>
+                    }
+                </p>
+            }
+            <p class="mt-2">@Model.CurrentCard.Description</p>
+
+            @if (Model.CurrentCard.CardSets?.Any() == true)
+            {
+                <h5 class="mt-4">Available Printings</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Set</th>
+                                <th>Code</th>
+                                <th>Rarity</th>
+                                <th>Price</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var set in Model.CurrentCard.CardSets)
+                            {
+                                <tr>
+                                    <td>@set.Name</td>
+                                    <td><code>@set.Code</code></td>
+                                    <td>@set.RarityName</td>
+                                    <td>
+                                        @if (set.Price > 0)
+                                        {
+                                            <span>$@set.Price.ToString("F2")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">&mdash;</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary me-1"
+                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Order')">
+                                            Order
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-success"
+                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Own')">
+                                            Already Own
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mt-4"><em>No set data available for this card.</em></p>
+            }
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_CollectionEntryModal", new CardCollector.ViewModels.CollectionEntryModalViewModel
+    {
+        CardID = Model.CurrentCard.ID,
+        ImageID = Model.CurrentImage.ID,
+        PageUrl = Url.Page("Discover") ?? "/Discover"
+    })
+}

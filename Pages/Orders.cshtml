@@ -1,0 +1,169 @@
+@page
+@model OrdersModel
+@using CardCollector.Data.Models
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Orders</h1>
+    <span class="badge bg-warning text-dark fs-6">@Model.Orders.Count() pending</span>
+</div>
+
+@if (!Model.Orders.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        <h4>No orders yet</h4>
+        <p class="mb-3">Head to <a href="/Discover">Discover</a> to find cards to order.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Rarity</th>
+                    <th>Condition</th>
+                    <th>Edition</th>
+                    <th>Acquisition</th>
+                    <th>Purchase Date</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Ordered</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.Orders)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(order.ImageURLSmall))
+                            {
+                                <img src="@order.ImageURLSmall"
+                                     alt="@order.CardName"
+                                     style="width: 44px; height: auto; border-radius: 3px;" />
+                            }
+                        </td>
+                        <td class="fw-semibold">
+                            @order.CardName
+                            @if (order.IsPlaceholder)
+                            {
+                                <span class="badge bg-secondary ms-1">Placeholder</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="d-block">@order.SetName</span>
+                            <code class="text-muted small">@order.SetCode</code>
+                        </td>
+                        <td>@order.RarityCode</td>
+                        <td>
+                            @if (order.Condition.HasValue)
+                            {
+                                @order.Condition.GetDisplayName()
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td>
+                            @if (order.Edition.HasValue)
+                            {
+                                @order.Edition.GetDisplayName()
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td>
+                            @if (order.AcquisitionMethod.HasValue)
+                            {
+                                @order.AcquisitionMethod.GetDisplayName()
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td>
+                            @if (order.PurchaseDate.HasValue)
+                            {
+                                @order.PurchaseDate.Value.ToString("MMM d, yyyy")
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td>×@order.Quantity</td>
+                        <td>
+                            @if (order.PurchasePrice.HasValue)
+                            {
+                                <span>$@order.PurchasePrice.Value.ToString("F2")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td class="text-muted small">@order.DateCreated.ToString("MMM d, yyyy")</td>
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-sm btn-success"
+                                    data-entry-id="@order.EntryID"
+                                    data-quantity="@order.Quantity"
+                                    onclick="openMarkOwnedModal(this)">
+                                Mark Owned
+                            </button>
+                            <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
+                                  onsubmit="return confirm('Remove this card from your collection?')">
+                                <input type="hidden" name="entryID" value="@order.EntryID" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Mark Owned Modal -->
+<div class="modal fade" id="markOwnedModal" tabindex="-1" aria-labelledby="markOwnedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="MarkOwned">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="markOwnedModalLabel">Mark as Owned</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="entryID" id="markOwnedEntryID" />
+                    <div class="mb-3">
+                        <label class="form-label">Quantity received</label>
+                        <input type="number" name="quantity" id="markOwnedQuantity" min="1" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openMarkOwnedModal(btn) {
+            document.getElementById('markOwnedEntryID').value = btn.dataset.entryId;
+            document.getElementById('markOwnedQuantity').value = btn.dataset.quantity;
+            new bootstrap.Modal(document.getElementById('markOwnedModal')).show();
+        }
+    </script>
+}
