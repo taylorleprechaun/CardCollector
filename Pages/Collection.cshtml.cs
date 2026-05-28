@@ -33,24 +33,11 @@ namespace CardCollector.Pages
             bool isPlaceholder,
             DateTime? purchaseDate, decimal? purchasePrice)
         {
-            var entry = new CollectionEntry
-            {
-                AcquisitionMethod = acquisitionMethod,
-                CardID = cardID,
-                Condition = condition,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
-                Edition = edition,
-                ImageID = imageID,
-                IsPlaceholder = isPlaceholder,
-                PurchaseDate = purchaseDate,
-                PurchasePrice = purchasePrice,
-                Quantity = quantity < 1 ? 1 : quantity,
-                SetCode = setCode,
-                Status = CollectionStatus.Owned
-            };
-
-            await _collectionRepository.AddAsync(entry);
+            await _cardService.AddEntryAsync(
+                cardID, imageID, setCode, CollectionStatus.Owned,
+                quantity, condition, edition,
+                acquisitionMethod, isPlaceholder,
+                purchaseDate, purchasePrice);
             return RedirectToPage();
         }
 

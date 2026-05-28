@@ -17,11 +17,11 @@ namespace CardCollector.DTO
         [JsonIgnore]
         public Rarity Rarity => RarityExtensions.ParseRarity(RarityName);
 
+        [JsonProperty("set_rarity_code")]
+        public string RarityCode { get; set; }
+
         // Raw string from JSON — used for display and as the source for Rarity parsing.
         [JsonProperty("set_rarity")]
         public string RarityName { get; set; }
-
-        [JsonProperty("set_rarity_code")]
-        public string RarityCode { get; set; }
     }
 }

@@ -4,8 +4,11 @@ namespace CardCollector.Data.Models
 {
     public enum CardCondition
     {
-        [Display(Name = "Near Mint")]
-        NearMint,
+        [Display(Name = "Damaged")]
+        Damaged,
+
+        [Display(Name = "Heavily Played")]
+        HeavilyPlayed,
 
         [Display(Name = "Lightly Played")]
         LightlyPlayed,
@@ -13,10 +16,7 @@ namespace CardCollector.Data.Models
         [Display(Name = "Moderately Played")]
         ModeratelyPlayed,
 
-        [Display(Name = "Heavily Played")]
-        HeavilyPlayed,
-
-        [Display(Name = "Damaged")]
-        Damaged
+        [Display(Name = "Near Mint")]
+        NearMint
     }
 }

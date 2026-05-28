@@ -8,9 +8,6 @@ namespace CardCollector.DTO
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Rarity
     {
-        //This is used for setting some default values and error checking
-        Error,
-
         [Description("Collector's Rare")]
         [EnumMember(Value = "Collector's Rare")]
         CollectorsRare,
@@ -43,6 +40,9 @@ namespace CardCollector.DTO
         [EnumMember(Value = "Duel Terminal Ultra Parallel Rare")]
         DuelTerminalUltraParallelRare,
 
+        //This is used for setting some default values and error checking
+        Error,
+
         [Description("European & Oceanian debut")]
         [EnumMember(Value = "European & Oceanian debut")]
         EuropeanAndOceanianDebut,
@@ -63,13 +63,13 @@ namespace CardCollector.DTO
         [EnumMember(Value = "force-SMW")]
         ForceSMW,
 
-        [Description("Ghost Rare")]
-        [EnumMember(Value = "Ghost Rare")]
-        GhostRare,
-
         [Description("Ghost Gold Rare")]
         [EnumMember(Value = "Ghost/Gold Rare")]
         GhostGoldRare,
+
+        [Description("Ghost Rare")]
+        [EnumMember(Value = "Ghost Rare")]
+        GhostRare,
 
         [Description("Gold Rare")]
         [EnumMember(Value = "Gold Rare")]

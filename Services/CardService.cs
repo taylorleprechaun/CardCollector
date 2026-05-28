@@ -16,7 +16,44 @@ namespace CardCollector.Services
             _collectionRepository = collectionRepository;
         }
 
+        public async Task<bool> AddEntryAsync(
+            int cardID, int imageID, string setCode, CollectionStatus status,
+            int quantity, CardCondition? condition, CardEdition? edition,
+            AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
+            DateTime? purchaseDate, decimal? purchasePrice)
+        {
+            if (await _collectionRepository.ExistsAsync(imageID, setCode))
+                return false;
+
+            var entry = new CollectionEntry
+            {
+                AcquisitionMethod = acquisitionMethod,
+                CardID = cardID,
+                Condition = condition,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Edition = edition,
+                ImageID = imageID,
+                IsPlaceholder = status == CollectionStatus.Owned && isPlaceholder,
+                PurchaseDate = purchaseDate,
+                PurchasePrice = purchasePrice,
+                Quantity = quantity < 1 ? 1 : quantity,
+                SetCode = setCode,
+                Status = status
+            };
+
+            await _collectionRepository.AddAsync(entry);
+            return true;
+        }
+
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
+
+        public IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10) =>
+            _cardDataRepository.GetAllCards()
+                .Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(c => c.Name)
+                .Take(maxResults)
+                .Select(c => c.Name);
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
@@ -73,6 +110,57 @@ namespace CardCollector.Services
                 .ToList();
         }
 
+        public async Task<(Card Card, Image Image)?> GetRandomUncollectedAsync()
+        {
+            var collectedImageIDs = (await _collectionRepository.GetCollectedImageIDsAsync()).ToHashSet();
+
+            var uncollected = _cardDataRepository.GetAllArtworks()
+                .Where(a => !collectedImageIDs.Contains(a.Image.ID))
+                .ToList();
+
+            if (uncollected.Count == 0)
+                return null;
+
+            var index = Random.Shared.Next(uncollected.Count);
+            return uncollected[index];
+        }
+
+        public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(string? query, int page, int pageSize)
+        {
+            var filtered = _cardDataRepository.GetAllCards()
+                .Where(c => string.IsNullOrWhiteSpace(query) ||
+                            c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(c => c.Name)
+                .ToList();
+
+            var totalCount = filtered.Count;
+            var slice = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var cardIDs = slice.Select(c => c.ID).ToList();
+            var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs);
+            var placeholderIDs = await _collectionRepository.GetPlaceholderCardIDsAsync(cardIDs);
+
+            var items = slice.Select(c => new CardListItemViewModel
+            {
+                Attribute = c.Attribute ?? string.Empty,
+                CardID = c.ID,
+                CardType = c.CardType ?? string.Empty,
+                ImageURLSmall = c.CardImages?.FirstOrDefault()?.ImageURLSmall ?? string.Empty,
+                IsPlaceholder = placeholderIDs.Contains(c.ID),
+                Name = c.Name ?? string.Empty,
+                Status = statusMap.TryGetValue(c.ID, out var s) ? s : null,
+                Type = c.Type ?? string.Empty
+            }).ToList();
+
+            return new PagedResult<CardListItemViewModel>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+        }
+
         private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)
         {
             var entries = await _collectionRepository.GetByStatusAsync(status);
@@ -106,56 +194,6 @@ namespace CardCollector.Services
             }
 
             return viewModels;
-        }
-
-        public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(string? query, int page, int pageSize)
-        {
-            var all = _cardDataRepository.GetAllCards().OrderBy(c => c.Name).AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(query))
-                all = all.Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
-
-            var totalCount = all.Count();
-            var slice = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var cardIDs = slice.Select(c => c.ID).ToList();
-            var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs);
-            var placeholderIDs = await _collectionRepository.GetPlaceholderCardIDsAsync(cardIDs);
-
-            var items = slice.Select(c => new CardListItemViewModel
-            {
-                Attribute = c.Attribute ?? string.Empty,
-                CardID = c.ID,
-                CardType = c.CardType ?? string.Empty,
-                ImageURLSmall = c.CardImages?.FirstOrDefault()?.ImageURLSmall ?? string.Empty,
-                IsPlaceholder = placeholderIDs.Contains(c.ID),
-                Name = c.Name ?? string.Empty,
-                Status = statusMap.TryGetValue(c.ID, out var s) ? s : null,
-                Type = c.Type ?? string.Empty
-            }).ToList();
-
-            return new PagedResult<CardListItemViewModel>
-            {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount
-            };
-        }
-
-        public async Task<(Card Card, Image Image)?> GetRandomUncollectedAsync()
-        {
-            var collectedImageIDs = (await _collectionRepository.GetCollectedImageIDsAsync()).ToHashSet();
-
-            var uncollected = _cardDataRepository.GetAllArtworks()
-                .Where(a => !collectedImageIDs.Contains(a.Image.ID))
-                .ToList();
-
-            if (uncollected.Count == 0)
-                return null;
-
-            var index = Random.Shared.Next(uncollected.Count);
-            return uncollected[index];
         }
     }
 }

@@ -8,9 +8,9 @@ namespace CardCollector.ViewModels
 
         public int OwnedCount { get; set; }
 
-        public int PlaceholderSetCount { get; set; }
-
         public double PercentOwned => TotalArtworks == 0 ? 0 : (double)OwnedCount / TotalArtworks * 100;
+
+        public int PlaceholderSetCount { get; set; }
 
         public int RemainingCount => TotalArtworks - OwnedCount - OrderedCount;
 

@@ -1,19 +1,23 @@
 using CardCollector.DTO;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace CardCollector.Repository
 {
     public class CardDataRepository : ICardDataRepository
     {
-        private const string CARD_INFO_PATH = "cardinfo.php.json";
-
         private readonly IReadOnlyList<(Card Card, Image Image)> _artworks;
+        private readonly Dictionary<int, Card> _cardIndex;
+        private const string CARD_INFO_PATH = "cardinfo.php.json";
         private readonly IReadOnlyList<Card> _cards;
+        private readonly ILogger<CardDataRepository> _logger;
 
-        public CardDataRepository()
+        public CardDataRepository(ILogger<CardDataRepository> logger)
         {
+            _logger = logger;
             _cards = LoadCards();
             _artworks = BuildArtworkList(_cards);
+            _cardIndex = _cards.ToDictionary(c => c.ID);
         }
 
         public IEnumerable<(Card Card, Image Image)> GetAllArtworks() => _artworks;
@@ -21,7 +25,7 @@ namespace CardCollector.Repository
         public IEnumerable<Card> GetAllCards() => _cards;
 
         public Card? GetCardByID(int cardID) =>
-            _cards.FirstOrDefault(c => c.ID == cardID);
+            _cardIndex.GetValueOrDefault(cardID);
 
         private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
         {
@@ -36,7 +40,7 @@ namespace CardCollector.Repository
             return artworks;
         }
 
-        private static IReadOnlyList<Card> LoadCards()
+        private IReadOnlyList<Card> LoadCards()
         {
             var path = Path.Combine(Directory.GetCurrentDirectory(), CARD_INFO_PATH);
             if (!File.Exists(path))
@@ -51,8 +55,9 @@ namespace CardCollector.Repository
                 var cardArray = JsonConvert.DeserializeObject<CardArray>(jsonData);
                 return (cardArray?.Cards ?? []).ToList();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to load card data from {Path}", path);
                 return [];
             }
         }

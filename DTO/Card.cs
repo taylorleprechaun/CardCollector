@@ -13,9 +13,6 @@ namespace CardCollector.DTO
         [JsonProperty("attribute")]
         public string Attribute { get; set; }
 
-        [JsonProperty("type")]
-        public string CardType { get; set; }
-
         [JsonProperty("card_images")]
         public IEnumerable<Image> CardImages { get; set; }
 
@@ -24,6 +21,9 @@ namespace CardCollector.DTO
 
         [JsonProperty("card_sets")]
         public IEnumerable<Set> CardSets { get; set; }
+
+        [JsonProperty("type")]
+        public string CardType { get; set; }
 
         [JsonProperty("def")]
         public int? DEF { get; set; }

@@ -1,6 +1,5 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,17 +9,16 @@ namespace CardCollector.Pages
     public class CardModel : PageModel
     {
         private readonly ICardService _cardService;
-        private readonly ICollectionRepository _collectionRepository;
+
+        [BindProperty]
+        public int CardID { get; set; }
+
+        public bool CardNotFound { get; private set; }
 
         public Card? CurrentCard { get; private set; }
 
         [BindProperty(SupportsGet = true)]
         public int ID { get; set; }
-
-        public bool CardNotFound { get; private set; }
-
-        [BindProperty]
-        public int CardID { get; set; }
 
         [BindProperty]
         public int ImageID { get; set; }
@@ -52,10 +50,9 @@ namespace CardCollector.Pages
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
 
-        public CardModel(ICardService cardService, ICollectionRepository collectionRepository)
+        public CardModel(ICardService cardService)
         {
             _cardService = cardService;
-            _collectionRepository = collectionRepository;
         }
 
         public Task OnGetAsync()
@@ -73,35 +70,23 @@ namespace CardCollector.Pages
             return Task.CompletedTask;
         }
 
-        public async Task<IActionResult> OnPostOrderAsync() =>
-            await SaveEntryAsync(CollectionStatus.Ordered);
-
-        public async Task<IActionResult> OnPostOwnAsync() =>
-            await SaveEntryAsync(CollectionStatus.Owned);
-
-        private async Task<IActionResult> SaveEntryAsync(CollectionStatus status)
+        public async Task<IActionResult> OnPostOrderAsync()
         {
-            if (await _collectionRepository.ExistsAsync(ImageID, SetCode))
-                return RedirectToPage(new { ID, ReturnUrl });
+            await _cardService.AddEntryAsync(
+                CardID, ImageID, SetCode, CollectionStatus.Ordered,
+                Quantity, SelectedCondition, SelectedEdition,
+                SelectedAcquisitionMethod, IsPlaceholder,
+                PurchaseDate, PurchasePrice);
+            return RedirectToPage(new { ID, ReturnUrl });
+        }
 
-            var entry = new CollectionEntry
-            {
-                AcquisitionMethod = SelectedAcquisitionMethod,
-                CardID = CardID,
-                Condition = SelectedCondition,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
-                Edition = SelectedEdition,
-                ImageID = ImageID,
-                IsPlaceholder = status == CollectionStatus.Owned && IsPlaceholder,
-                PurchaseDate = PurchaseDate,
-                PurchasePrice = PurchasePrice,
-                Quantity = Quantity < 1 ? 1 : Quantity,
-                SetCode = SetCode,
-                Status = status
-            };
-
-            await _collectionRepository.AddAsync(entry);
+        public async Task<IActionResult> OnPostOwnAsync()
+        {
+            await _cardService.AddEntryAsync(
+                CardID, ImageID, SetCode, CollectionStatus.Owned,
+                Quantity, SelectedCondition, SelectedEdition,
+                SelectedAcquisitionMethod, IsPlaceholder,
+                PurchaseDate, PurchasePrice);
             return RedirectToPage(new { ID, ReturnUrl });
         }
     }

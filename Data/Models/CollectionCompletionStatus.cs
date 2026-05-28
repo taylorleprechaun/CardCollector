@@ -2,8 +2,8 @@ namespace CardCollector.Data.Models
 {
     public enum CollectionCompletionStatus
     {
-        Placeholder,
+        Complete,
         Incomplete,
-        Complete
+        Placeholder
     }
 }

@@ -1,4 +1,3 @@
-using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -8,10 +7,9 @@ namespace CardCollector.Pages
 {
     public class BrowseModel : PageModel
     {
-        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
-        private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardService _cardService;
+
+        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
 
         [BindProperty(SupportsGet = true)]
         public int PageNumber { get; set; } = 1;
@@ -24,9 +22,8 @@ namespace CardCollector.Pages
 
         public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
 
-        public BrowseModel(ICardDataRepository cardDataRepository, ICardService cardService)
+        public BrowseModel(ICardService cardService)
         {
-            _cardDataRepository = cardDataRepository;
             _cardService = cardService;
         }
 
@@ -46,14 +43,7 @@ namespace CardCollector.Pages
             if (string.IsNullOrWhiteSpace(q))
                 return new JsonResult(Array.Empty<string>());
 
-            var matches = _cardDataRepository.GetAllCards()
-                .Where(c => c.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.Name)
-                .Take(10)
-                .Select(c => c.Name)
-                .ToArray();
-
-            return new JsonResult(matches);
+            return new JsonResult(_cardService.GetCardNameSuggestions(q));
         }
     }
 }
