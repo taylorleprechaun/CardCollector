@@ -10,12 +10,12 @@ namespace CardCollector.ViewModels
 
         public string CardName { get; set; } = string.Empty;
 
-        public CollectionCompletionStatus CompletionStatus => NonPlaceholderQuantity switch
-        {
-            0 => CollectionCompletionStatus.Placeholder,
-            >= COMPLETE_THRESHOLD => CollectionCompletionStatus.Complete,
-            _ => CollectionCompletionStatus.Incomplete
-        };
+        public CollectionCompletionStatus CompletionStatus =>
+            !IsPreferredVersion
+                ? CollectionCompletionStatus.Placeholder
+                : TotalQuantity >= COMPLETE_THRESHOLD
+                    ? CollectionCompletionStatus.Complete
+                    : CollectionCompletionStatus.Incomplete;
 
         public IList<OrderEntryViewModel> Entries { get; set; } = [];
 
@@ -23,7 +23,7 @@ namespace CardCollector.ViewModels
 
         public string ImageURLSmall { get; set; } = string.Empty;
 
-        public int NonPlaceholderQuantity => Entries.Where(e => !e.IsPlaceholder).Sum(e => e.Quantity);
+        public bool IsPreferredVersion { get; set; }
 
         public string RarityCode { get; set; } = string.Empty;
 

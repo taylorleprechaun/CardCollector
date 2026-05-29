@@ -4,45 +4,68 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
-    var totalOwned = Model.GroupedCards.Sum(g => g.TotalQuantity);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Collection</h1>
-    <span class="badge bg-success fs-6">@totalOwned owned</span>
+    <span class="badge bg-success fs-6">@Model.GroupedCards.TotalCount owned</span>
 </div>
 
-@if (!Model.GroupedCards.Any())
+<form method="get" class="row g-2 mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="col">
+        <input type="search"
+               name="query"
+               value="@Model.Query"
+               autocomplete="off"
+               class="form-control"
+               placeholder="Search by name, set, or rarity&hellip;" />
+    </div>
+    <div class="col-auto">
+        <select name="pageSize" class="form-select">
+            @foreach (var size in new[] { 10, 25, 50, 100 })
+            {
+                if (Model.PageSize == size)
+                {
+                    <option value="@size" selected>@size per page</option>
+                }
+                else
+                {
+                    <option value="@size">@size per page</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+@if (!Model.GroupedCards.Items.Any())
 {
     <div class="alert alert-info text-center py-5">
-        <h4>Nothing owned yet</h4>
-        <p class="mb-3">Head to <a href="/Orders">Orders</a> to mark cards as owned.</p>
+        @if (string.IsNullOrEmpty(Model.Query))
+        {
+            <h4>Nothing owned yet</h4>
+            <p class="mb-3">Head to <a href="/Orders">Orders</a> to mark cards as owned.</p>
+        }
+        else
+        {
+            <span>No cards match &ldquo;@Model.Query&rdquo;.</span>
+        }
     </div>
 }
 else
 {
-    <div class="row g-2 mb-4">
-        <div class="col">
-            <input type="search" id="collectionSearch" class="form-control"
-                   placeholder="Search by name, set, or rarity&hellip;" autocomplete="off" />
-        </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-outline-secondary" id="clearSearch">Clear</button>
-        </div>
-    </div>
-
-    <div class="alert alert-info d-none" id="noResults">No cards match your search.</div>
-
     <div class="list-group mb-4" id="collectionList">
         @{int groupIDx = 0;}
-        @foreach (var group in Model.GroupedCards)
+        @foreach (var group in Model.GroupedCards.Items)
         {
             var collapseId = "group-" + groupIDx;
             groupIDx++;
             var status = group.CompletionStatus;
 
-            <div class="list-group-item p-0"
-                 data-search="@($"{group.CardName} {group.SetName} {group.SetCode} {group.RarityCode}".ToLower())">
+            <div class="list-group-item p-0">
                 <!-- Toggle row -->
                 <div class="list-group-item-action d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
                      role="button"
@@ -165,7 +188,6 @@ else
                                                         '@(entry.Condition.HasValue ? entry.Condition.Value.ToString() : "")',
                                                         '@(entry.Edition.HasValue ? entry.Edition.Value.ToString() : "")',
                                                         '@(entry.AcquisitionMethod.HasValue ? entry.AcquisitionMethod.Value.ToString() : "")',
-                                                        @(entry.IsPlaceholder ? "true" : "false"),
                                                         '@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")',
                                                         '@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")')">
                                                 Edit
@@ -192,6 +214,48 @@ else
             </div>
         }
     </div>
+
+    @if (Model.GroupedCards.TotalPages > 1)
+    {
+        <nav aria-label="Collection pagination">
+            <ul class="pagination justify-content-center flex-wrap">
+                <li class="page-item @(!Model.GroupedCards.HasPreviousPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Collection", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
+                       aria-label="Previous">
+                        &laquo;
+                    </a>
+                </li>
+
+                @{
+                    int windowStart = Math.Max(1, Model.PageNumber - 2);
+                    int windowEnd = Math.Min(Model.GroupedCards.TotalPages, windowStart + 4);
+                    windowStart = Math.Max(1, windowEnd - 4);
+                }
+
+                @for (int p = windowStart; p <= windowEnd; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
+                        <a class="page-link"
+                           href="@Url.Page("Collection", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
+                            @p
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(!Model.GroupedCards.HasNextPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Collection", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
+                       aria-label="Next">
+                        &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <p class="text-center text-muted small">
+            Page @Model.PageNumber of @Model.GroupedCards.TotalPages
+        </p>
+    }
 }
 
 <!-- Edit Modal -->
@@ -233,15 +297,6 @@ else
                                 class="form-select">
                             <option value="">-- Select --</option>
                         </select>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" name="isPlaceholder" id="editIsPlaceholder"
-                                   class="form-check-input" value="true" />
-                            <label class="form-check-label" for="editIsPlaceholder">
-                                This is a placeholder &mdash; I want to upgrade to a different printing
-                            </label>
-                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Purchase Date</label>
@@ -305,15 +360,6 @@ else
                         </select>
                     </div>
                     <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" name="isPlaceholder" id="addIsPlaceholder"
-                                   class="form-check-input" value="true" />
-                            <label class="form-check-label" for="addIsPlaceholder">
-                                This is a placeholder &mdash; I want to upgrade to a different printing
-                            </label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Purchase Date</label>
                         <input type="date" name="purchaseDate" id="addPurchaseDate" class="form-control" />
                     </div>
@@ -338,13 +384,12 @@ else
         .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
     </style>
     <script>
-        function openEditModal(entryID, qty, condition, edition, acquisition, isPlaceholder, purchaseDate, purchasePrice) {
+        function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDate, purchasePrice) {
             document.getElementById('editEntryID').value = entryID;
             document.getElementById('editQuantity').value = qty;
             setSelect('editCondition', condition);
             setSelect('editEdition', edition);
             setSelect('editAcquisition', acquisition);
-            document.getElementById('editIsPlaceholder').checked = isPlaceholder;
             document.getElementById('editPurchaseDate').value = purchaseDate;
             document.getElementById('editPurchasePrice').value = purchasePrice;
             new bootstrap.Modal(document.getElementById('editModal')).show();
@@ -358,7 +403,6 @@ else
             setSelect('addCondition', '');
             setSelect('addEdition', '');
             setSelect('addAcquisition', '');
-            document.getElementById('addIsPlaceholder').checked = false;
             document.getElementById('addPurchaseDate').value = '';
             document.getElementById('addPurchasePrice').value = '';
             new bootstrap.Modal(document.getElementById('addModal')).show();
@@ -368,30 +412,5 @@ else
             const sel = document.getElementById(id);
             sel.value = value;
         }
-
-        (function () {
-            const searchInput = document.getElementById('collectionSearch');
-            const clearBtn = document.getElementById('clearSearch');
-            const noResults = document.getElementById('noResults');
-            if (!searchInput) return;
-
-            function applyFilter() {
-                const query = searchInput.value.trim().toLowerCase();
-                const items = document.querySelectorAll('#collectionList .list-group-item');
-                let visible = 0;
-                items.forEach(function (item) {
-                    const match = !query || (item.dataset.search || '').includes(query);
-                    item.style.display = match ? '' : 'none';
-                    if (match) visible++;
-                });
-                noResults.classList.toggle('d-none', visible > 0);
-            }
-
-            searchInput.addEventListener('input', applyFilter);
-            clearBtn.addEventListener('click', function () {
-                searchInput.value = '';
-                applyFilter();
-            });
-        })();
     </script>
 }

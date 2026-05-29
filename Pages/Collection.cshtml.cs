@@ -12,7 +12,18 @@ namespace CardCollector.Pages
         private readonly ICardService _cardService;
         private readonly ICollectionRepository _collectionRepository;
 
-        public IEnumerable<CollectionGroupViewModel> GroupedCards { get; private set; } = [];
+        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
+
+        public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
+
+        [BindProperty(SupportsGet = true)]
+        public int PageNumber { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int PageSize { get; set; } = 25;
+
+        [BindProperty(SupportsGet = true)]
+        public string? Query { get; set; }
 
         public CollectionModel(ICardService cardService, ICollectionRepository collectionRepository)
         {
@@ -22,7 +33,13 @@ namespace CardCollector.Pages
 
         public async Task OnGetAsync()
         {
-            GroupedCards = await _cardService.GetGroupedOwnedAsync();
+            if (PageNumber < 1)
+                PageNumber = 1;
+
+            if (!ValidPageSizes.Contains(PageSize))
+                PageSize = 25;
+
+            GroupedCards = await _cardService.SearchGroupedOwnedAsync(Query, PageNumber, PageSize);
         }
 
         public async Task<IActionResult> OnPostAddPurchaseAsync(
@@ -30,13 +47,12 @@ namespace CardCollector.Pages
             int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            bool isPlaceholder,
             DateTime? purchaseDate, decimal? purchasePrice)
         {
             await _cardService.AddEntryAsync(
                 cardID, imageID, setCode, CollectionStatus.Owned,
                 quantity, condition, edition,
-                acquisitionMethod, isPlaceholder,
+                acquisitionMethod, false,
                 purchaseDate, purchasePrice);
             return RedirectToPage();
         }
@@ -51,7 +67,6 @@ namespace CardCollector.Pages
             int entryID, int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            bool isPlaceholder,
             DateTime? purchaseDate, decimal? purchasePrice)
         {
             var entry = new CollectionEntry
@@ -60,7 +75,6 @@ namespace CardCollector.Pages
                 AcquisitionMethod = acquisitionMethod,
                 Condition = condition,
                 Edition = edition,
-                IsPlaceholder = isPlaceholder,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
                 Quantity = quantity < 1 ? 1 : quantity

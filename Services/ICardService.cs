@@ -21,6 +21,11 @@ namespace CardCollector.Services
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync();
         Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync();
         Task<(Card Card, Image Image)?> GetRandomUncollectedAsync();
+        Task RemoveFromWishlistAsync(int imageID);
+        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode);
         Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(string? query, int page, int pageSize);
+        Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize);
+        Task<PagedResult<WishlistItemViewModel>> SearchWishlistAsync(string? query, int page, int pageSize);
+        Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync();
     }
 }

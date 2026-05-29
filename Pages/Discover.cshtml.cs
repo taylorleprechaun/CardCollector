@@ -1,4 +1,3 @@
-using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -23,27 +22,6 @@ namespace CardCollector.Pages
         public bool IsComplete { get; private set; }
 
         [BindProperty]
-        public bool IsPlaceholder { get; set; }
-
-        [BindProperty]
-        public DateTime? PurchaseDate { get; set; }
-
-        [BindProperty]
-        public decimal? PurchasePrice { get; set; }
-
-        [BindProperty]
-        public int Quantity { get; set; } = 1;
-
-        [BindProperty]
-        public AcquisitionMethod? SelectedAcquisitionMethod { get; set; }
-
-        [BindProperty]
-        public CardCondition? SelectedCondition { get; set; }
-
-        [BindProperty]
-        public CardEdition? SelectedEdition { get; set; }
-
-        [BindProperty]
         public string SetCode { get; set; } = string.Empty;
 
         public DiscoverModel(ICardService cardService)
@@ -64,23 +42,9 @@ namespace CardCollector.Pages
             CurrentImage = result.Value.Image;
         }
 
-        public async Task<IActionResult> OnPostOrderAsync()
+        public async Task<IActionResult> OnPostSetPreferredAsync()
         {
-            await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Ordered,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice);
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostOwnAsync()
-        {
-            await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Owned,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice);
+            await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
             return RedirectToPage();
         }
     }

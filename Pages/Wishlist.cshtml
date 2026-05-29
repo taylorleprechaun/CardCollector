@@ -1,0 +1,261 @@
+@page
+@model WishlistModel
+@using CardCollector.Data.Models
+@{
+    ViewData["Title"] = "Wishlist";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Wishlist</h1>
+    <span class="badge bg-primary fs-6">@Model.Results.TotalCount to acquire</span>
+</div>
+
+<p class="text-muted mb-4">Preferred versions you haven&rsquo;t ordered or owned yet. Use <a href="/Discover">Discover</a> to add more.</p>
+
+<form method="get" class="row g-2 mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="col">
+        <input type="search"
+               name="query"
+               value="@Model.Query"
+               autocomplete="off"
+               class="form-control"
+               placeholder="Search by name, set, or rarity&hellip;" />
+    </div>
+    <div class="col-auto">
+        <select name="pageSize" class="form-select">
+            @foreach (var size in new[] { 10, 25, 50, 100 })
+            {
+                if (Model.PageSize == size)
+                {
+                    <option value="@size" selected>@size per page</option>
+                }
+                else
+                {
+                    <option value="@size">@size per page</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        @if (string.IsNullOrEmpty(Model.Query))
+        {
+            <h4>Wishlist is empty</h4>
+            <p class="mb-3">Head to <a href="/Discover">Discover</a> to pick your preferred version for each card.</p>
+        }
+        else
+        {
+            <span>No wishlist items match &ldquo;@Model.Query&rdquo;.</span>
+        }
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Rarity</th>
+                    <th>Price</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Results.Items)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.ImageURLSmall))
+                            {
+                                <img src="@item.ImageURLSmall"
+                                     alt="@item.CardName"
+                                     style="width: 44px; height: auto; border-radius: 3px;" />
+                            }
+                        </td>
+                        <td class="fw-semibold">@item.CardName</td>
+                        <td>
+                            <span class="d-block">@item.SetName</span>
+                            <code class="text-muted small">@item.SetCode</code>
+                        </td>
+                        <td>@item.RarityName</td>
+                        <td>
+                            @if (item.Price.HasValue && item.Price > 0)
+                            {
+                                <span>$@item.Price.Value.ToString("F2")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            <button type="button"
+                                    class="btn btn-sm btn-primary me-1"
+                                    onclick="openModal('@item.SetCode', '@item.SetName.Replace("'", "\\'")', 'Order', @item.CardID, @item.ImageID)">
+                                Order
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-success me-1"
+                                    onclick="openModal('@item.SetCode', '@item.SetName.Replace("'", "\\'")', 'Own', @item.CardID, @item.ImageID)">
+                                Already Own
+                            </button>
+                            <form method="post" asp-page-handler="Remove" class="d-inline"
+                                  onsubmit="return confirm('Remove this card from your wishlist?')">
+                                <input type="hidden" name="imageID" value="@item.ImageID" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Results.TotalPages > 1)
+    {
+        <nav aria-label="Wishlist pagination">
+            <ul class="pagination justify-content-center flex-wrap">
+                <li class="page-item @(!Model.Results.HasPreviousPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
+                       aria-label="Previous">
+                        &laquo;
+                    </a>
+                </li>
+
+                @{
+                    int windowStart = Math.Max(1, Model.PageNumber - 2);
+                    int windowEnd = Math.Min(Model.Results.TotalPages, windowStart + 4);
+                    windowStart = Math.Max(1, windowEnd - 4);
+                }
+
+                @for (int p = windowStart; p <= windowEnd; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
+                        <a class="page-link"
+                           href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
+                            @p
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(!Model.Results.HasNextPage ? "disabled" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
+                       aria-label="Next">
+                        &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <p class="text-center text-muted small">
+            Page @Model.PageNumber of @Model.Results.TotalPages
+        </p>
+    }
+}
+
+<!-- Order / Own Modal -->
+<div class="modal fade" id="wishlistModal" tabindex="-1" aria-labelledby="wishlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="wishlistForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="wishlistModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="CardID" id="wlCardID" />
+                    <input type="hidden" name="ImageID" id="wlImageID" />
+                    <input type="hidden" name="SetCode" id="wlSetCode" />
+
+                    <p class="text-muted mb-3">
+                        Set: <strong id="wlSetName"></strong>
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="wlCondition" class="form-label">Condition</label>
+                        <select name="SelectedCondition" id="wlCondition"
+                                asp-items="Html.GetEnumSelectList<CardCondition>()"
+                                class="form-select">
+                            <option value="">-- Select condition --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="wlEdition" class="form-label">Edition</label>
+                        <select name="SelectedEdition" id="wlEdition"
+                                asp-items="Html.GetEnumSelectList<CardEdition>()"
+                                class="form-select">
+                            <option value="">-- Select edition --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="wlAcquisitionGroup" style="display:none;">
+                        <label for="wlAcquisition" class="form-label">How did you get it?</label>
+                        <select name="SelectedAcquisitionMethod" id="wlAcquisition"
+                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
+                                class="form-select">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="wlQuantity" class="form-label">Quantity</label>
+                        <input type="number" name="Quantity" id="wlQuantity" min="1" value="1" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="wlPurchaseDate" class="form-label">Purchase Date</label>
+                        <input type="date" name="PurchaseDate" id="wlPurchaseDate" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="wlPurchasePrice" class="form-label">Purchase Price ($)</label>
+                        <input type="number" name="PurchasePrice" id="wlPurchasePrice"
+                               step="0.01" min="0" class="form-control" placeholder="0.00" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="wlSubmitBtn" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openModal(setCode, setName, action, cardID, imageID) {
+            const isOrder = action === 'Order';
+            const form = document.getElementById('wishlistForm');
+
+            document.getElementById('wlCardID').value = cardID;
+            document.getElementById('wlImageID').value = imageID;
+            document.getElementById('wlSetCode').value = setCode;
+            document.getElementById('wlSetName').textContent = setName;
+            document.getElementById('wishlistModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
+
+            const submitBtn = document.getElementById('wlSubmitBtn');
+            submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
+            submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
+
+            document.getElementById('wlAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
+            document.getElementById('wlCondition').value = '';
+            document.getElementById('wlEdition').value = '';
+            document.getElementById('wlAcquisition').value = '';
+            document.getElementById('wlQuantity').value = 1;
+            document.getElementById('wlPurchaseDate').value = '';
+            document.getElementById('wlPurchasePrice').value = '';
+
+            form.action = '?handler=' + action;
+
+            new bootstrap.Modal(document.getElementById('wishlistModal')).show();
+        }
+    </script>
+}

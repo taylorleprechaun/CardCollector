@@ -50,15 +50,6 @@
                             <option value="">-- Select --</option>
                         </select>
                     </div>
-                    <div class="mb-3" id="placeholderGroup" style="display:none;">
-                        <div class="form-check">
-                            <input type="checkbox" name="IsPlaceholder" id="IsPlaceholder"
-                                   class="form-check-input" value="true" />
-                            <label for="IsPlaceholder" class="form-check-label">
-                                This is a placeholder &mdash; I want to upgrade to a different printing
-                            </label>
-                        </div>
-                    </div>
                     <div class="mb-3">
                         <label for="quantityInput" class="form-label">Quantity</label>
                         <input type="number" name="Quantity" id="quantityInput"
@@ -97,8 +88,6 @@
         submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
         document.getElementById('acquisitionGroup').style.display = isOrder ? 'none' : 'block';
-        document.getElementById('placeholderGroup').style.display = isOrder ? 'none' : 'block';
-        document.getElementById('IsPlaceholder').checked = false;
         document.getElementById('SelectedCondition').value = '';
         document.getElementById('SelectedEdition').value = '';
         document.getElementById('SelectedAcquisitionMethod').value = '';

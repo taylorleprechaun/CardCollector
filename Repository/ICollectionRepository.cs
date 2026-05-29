@@ -12,6 +12,7 @@ namespace CardCollector.Repository
         Task<bool> ExistsAsync(int imageID, string setCode);
         Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status);
         Task<IEnumerable<int>> GetCollectedImageIDsAsync();
+        Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
         Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
         Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);
         Task<bool> UpdateAsync(CollectionEntry entry);

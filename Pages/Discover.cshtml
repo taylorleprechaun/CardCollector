@@ -1,6 +1,5 @@
 @page
 @model DiscoverModel
-@using CardCollector.Data.Models
 @{
     ViewData["Title"] = "Discover";
 }
@@ -16,8 +15,8 @@
 @if (Model.IsComplete)
 {
     <div class="alert alert-success text-center py-5">
-        <h3>Collection Complete!</h3>
-        <p class="mb-0">You have ordered or owned every artwork in the database.</p>
+        <h3>All done!</h3>
+        <p class="mb-0">You have set a preferred version for every artwork in the database.</p>
     </div>
 }
 else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
@@ -61,9 +60,10 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
             }
             <p class="mt-2">@Model.CurrentCard.Description</p>
 
+            <p class="text-muted mt-3 mb-2 small">Pick the printing you want to collect:</p>
+
             @if (Model.CurrentCard.CardSets?.Any() == true)
             {
-                <h5 class="mt-4">Available Printings</h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle">
                         <thead class="table-light">
@@ -92,17 +92,15 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                             <span class="text-muted">&mdash;</span>
                                         }
                                     </td>
-                                    <td class="text-nowrap">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary me-1"
-                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Order')">
-                                            Order
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success"
-                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Own')">
-                                            Already Own
-                                        </button>
+                                    <td>
+                                        <form method="post" asp-page-handler="SetPreferred">
+                                            <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
+                                            <input type="hidden" name="ImageID" value="@Model.CurrentImage.ID" />
+                                            <input type="hidden" name="SetCode" value="@set.Code" />
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                Set as Preferred
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             }
@@ -116,11 +114,4 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
             }
         </div>
     </div>
-
-    @await Html.PartialAsync("_CollectionEntryModal", new CardCollector.ViewModels.CollectionEntryModalViewModel
-    {
-        CardID = Model.CurrentCard.ID,
-        ImageID = Model.CurrentImage.ID,
-        PageUrl = Url.Page("Discover") ?? "/Discover"
-    })
 }

@@ -45,20 +45,43 @@ namespace CardCollector.Repository
                 .Distinct()
                 .ToListAsync();
 
+        public async Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
+        {
+            var pairs = await _context.CollectionEntries
+                .Select(e => new { e.ImageID, e.SetCode })
+                .Distinct()
+                .ToListAsync();
+
+            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
+
         public async Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
             if (ids.Count == 0)
                 return [];
 
-            var result = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
-                .GroupBy(e => e.CardID)
-                .Where(g => !g.Any(e => !e.IsPlaceholder))
-                .Select(g => g.Key)
+            // Load preferred versions for matching
+            var preferredPairs = await _context.PreferredVersions
+                .Select(pv => new { pv.ImageID, pv.SetCode })
                 .ToListAsync();
 
-            return result.ToHashSet();
+            var preferredLookup = preferredPairs
+                .Select(pv => $"{pv.ImageID}:{pv.SetCode}")
+                .ToHashSet();
+
+            var ownedEntries = await _context.CollectionEntries
+                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.CardID, e.ImageID, e.SetCode })
+                .ToListAsync();
+
+            var nonPlaceholderCardIDs = ownedEntries
+                .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
+                .Select(e => e.CardID)
+                .ToHashSet();
+
+            var allOwnedCardIDs = ownedEntries.Select(e => e.CardID).ToHashSet();
+            return allOwnedCardIDs.Except(nonPlaceholderCardIDs).ToHashSet();
         }
 
         public async Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
@@ -91,7 +114,6 @@ namespace CardCollector.Repository
             existing.AcquisitionMethod = entry.AcquisitionMethod;
             existing.Condition = entry.Condition;
             existing.Edition = entry.Edition;
-            existing.IsPlaceholder = entry.IsPlaceholder;
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;
