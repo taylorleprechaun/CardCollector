@@ -7,23 +7,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class CollectionModel : PageModel
+    public class CollectionModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
         private readonly ICollectionRepository _collectionRepository;
 
-        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
         public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
-
-        [BindProperty(SupportsGet = true)]
-        public int PageNumber { get; set; } = 1;
-
-        [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = 25;
-
-        [BindProperty(SupportsGet = true)]
-        public string? Query { get; set; }
 
         public CollectionModel(ICardService cardService, ICollectionRepository collectionRepository)
         {
@@ -33,13 +22,16 @@ namespace CardCollector.Pages
 
         public async Task OnGetAsync()
         {
-            if (PageNumber < 1)
-                PageNumber = 1;
-
-            if (!ValidPageSizes.Contains(PageSize))
-                PageSize = 25;
-
+            NormalizeSearchParameters();
             GroupedCards = await _cardService.SearchGroupedOwnedAsync(Query, PageNumber, PageSize);
+        }
+
+        public IActionResult OnGetAutocomplete(string? q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return new JsonResult(Array.Empty<string>());
+
+            return new JsonResult(_cardService.GetCardNameSuggestions(q));
         }
 
         public async Task<IActionResult> OnPostAddPurchaseAsync(

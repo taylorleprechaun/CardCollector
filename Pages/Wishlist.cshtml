@@ -12,35 +12,7 @@
 
 <p class="text-muted mb-4">Preferred versions you haven&rsquo;t ordered or owned yet. Use <a href="/Discover">Discover</a> to add more.</p>
 
-<form method="get" class="row g-2 mb-4">
-    <input type="hidden" name="pageNumber" value="1" />
-    <div class="col">
-        <input type="search"
-               name="query"
-               value="@Model.Query"
-               autocomplete="off"
-               class="form-control"
-               placeholder="Search by name, set, or rarity&hellip;" />
-    </div>
-    <div class="col-auto">
-        <select name="pageSize" class="form-select">
-            @foreach (var size in new[] { 10, 25, 50, 100 })
-            {
-                if (Model.PageSize == size)
-                {
-                    <option value="@size" selected>@size per page</option>
-                }
-                else
-                {
-                    <option value="@size">@size per page</option>
-                }
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-</form>
+<partial name="_SearchBar" model='new SearchBarViewModel("Search by name, set, or rarity…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
 
 @if (!Model.Results.Items.Any())
 {
@@ -75,12 +47,7 @@ else
                 {
                     <tr>
                         <td>
-                            @if (!string.IsNullOrEmpty(item.ImageURLSmall))
-                            {
-                                <img src="@item.ImageURLSmall"
-                                     alt="@item.CardName"
-                                     style="width: 44px; height: auto; border-radius: 3px;" />
-                            }
+                            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
                         </td>
                         <td class="fw-semibold">@item.CardName</td>
                         <td>
@@ -121,47 +88,7 @@ else
         </table>
     </div>
 
-    @if (Model.Results.TotalPages > 1)
-    {
-        <nav aria-label="Wishlist pagination">
-            <ul class="pagination justify-content-center flex-wrap">
-                <li class="page-item @(!Model.Results.HasPreviousPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
-                       aria-label="Previous">
-                        &laquo;
-                    </a>
-                </li>
-
-                @{
-                    int windowStart = Math.Max(1, Model.PageNumber - 2);
-                    int windowEnd = Math.Min(Model.Results.TotalPages, windowStart + 4);
-                    windowStart = Math.Max(1, windowEnd - 4);
-                }
-
-                @for (int p = windowStart; p <= windowEnd; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
-                        <a class="page-link"
-                           href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
-                            @p
-                        </a>
-                    </li>
-                }
-
-                <li class="page-item @(!Model.Results.HasNextPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Wishlist", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
-                       aria-label="Next">
-                        &raquo;
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        <p class="text-center text-muted small">
-            Page @Model.PageNumber of @Model.Results.TotalPages
-        </p>
-    }
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Wishlist pagination", PageName = "Wishlist", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage }' />
 }
 
 <!-- Order / Own Modal -->

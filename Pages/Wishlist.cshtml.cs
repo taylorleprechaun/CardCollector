@@ -6,20 +6,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class WishlistModel : PageModel
+    public class WishlistModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
-
-        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
-        [BindProperty(SupportsGet = true)]
-        public int PageNumber { get; set; } = 1;
-
-        [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = 25;
-
-        [BindProperty(SupportsGet = true)]
-        public string? Query { get; set; }
 
         [BindProperty]
         public AcquisitionMethod? SelectedAcquisitionMethod { get; set; }
@@ -57,13 +46,16 @@ namespace CardCollector.Pages
 
         public async Task OnGetAsync()
         {
-            if (PageNumber < 1)
-                PageNumber = 1;
-
-            if (!ValidPageSizes.Contains(PageSize))
-                PageSize = 25;
-
+            NormalizeSearchParameters();
             Results = await _cardService.SearchWishlistAsync(Query, PageNumber, PageSize);
+        }
+
+        public IActionResult OnGetAutocomplete(string? q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return new JsonResult(Array.Empty<string>());
+
+            return new JsonResult(_cardService.GetCardNameSuggestions(q));
         }
 
         public async Task<IActionResult> OnPostOrderAsync()

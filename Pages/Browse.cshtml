@@ -11,37 +11,7 @@
     <span class="text-muted">@Model.Results.TotalCount.ToString("N0") cards</span>
 </div>
 
-<form method="get" class="row g-2 mb-4">
-    <input type="hidden" name="pageNumber" value="1" />
-    <div class="col">
-        <input type="search"
-               name="query"
-               value="@Model.Query"
-               list="card-suggestions"
-               autocomplete="off"
-               class="form-control"
-               placeholder="Search by name&hellip;" />
-        <datalist id="card-suggestions"></datalist>
-    </div>
-    <div class="col-auto">
-        <select name="pageSize" class="form-select">
-            @foreach (var size in new[] { 10, 25, 50, 100 })
-            {
-                if (Model.PageSize == size)
-                {
-                    <option value="@size" selected>@size per page</option>
-                }
-                else
-                {
-                    <option value="@size">@size per page</option>
-                }
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-</form>
+<partial name="_SearchBar" model='new SearchBarViewModel("Search by name…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
 
 @if (!Model.Results.Items.Any())
 {
@@ -62,18 +32,7 @@ else
         @foreach (var item in Model.Results.Items)
         {
             <div class="list-group-item d-flex align-items-center gap-3 py-2">
-                @if (!string.IsNullOrEmpty(item.ImageURLSmall))
-                {
-                    <img src="@item.ImageURLSmall"
-                         alt="@item.Name"
-                         style="width: 44px; height: 64px; object-fit: cover;"
-                         class="rounded flex-shrink-0" />
-                }
-                else
-                {
-                    <div style="width: 44px; height: 64px;"
-                         class="rounded bg-secondary flex-shrink-0"></div>
-                }
+                <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.Name)' />
                 <div class="flex-grow-1 min-width-0">
                     <a href="/Card?id=@item.CardID&returnUrl=@returnUrl"
                        class="fw-semibold text-decoration-none stretched-link">@item.Name</a>
@@ -105,73 +64,5 @@ else
         }
     </div>
 
-    @if (Model.Results.TotalPages > 1)
-    {
-        <nav aria-label="Card list pagination">
-            <ul class="pagination justify-content-center flex-wrap">
-                <li class="page-item @(!Model.Results.HasPreviousPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Browse", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
-                       aria-label="Previous">
-                        &laquo;
-                    </a>
-                </li>
-
-                @{
-                    int windowStart = Math.Max(1, Model.PageNumber - 2);
-                    int windowEnd = Math.Min(Model.Results.TotalPages, windowStart + 4);
-                    windowStart = Math.Max(1, windowEnd - 4);
-                }
-
-                @for (int p = windowStart; p <= windowEnd; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
-                        <a class="page-link"
-                           href="@Url.Page("Browse", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
-                            @p
-                        </a>
-                    </li>
-                }
-
-                <li class="page-item @(!Model.Results.HasNextPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Browse", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
-                       aria-label="Next">
-                        &raquo;
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        <p class="text-center text-muted small">
-            Page @Model.PageNumber of @Model.Results.TotalPages
-        </p>
-    }
-}
-
-@section Scripts {
-    <script>
-        (function () {
-            const input = document.querySelector('input[list="card-suggestions"]');
-            const datalist = document.getElementById('card-suggestions');
-            let debounceTimer;
-
-            input.addEventListener('input', function () {
-                clearTimeout(debounceTimer);
-                const q = this.value.trim();
-                if (q.length < 2) {
-                    datalist.innerHTML = '';
-                    return;
-                }
-                debounceTimer = setTimeout(function () {
-                    fetch('/Browse?handler=Autocomplete&q=' + encodeURIComponent(q))
-                        .then(function (r) { return r.json(); })
-                        .then(function (names) {
-                            datalist.innerHTML = names
-                                .map(function (n) { return '<option value="' + n.replace(/"/g, '&quot;') + '">'; })
-                                .join('');
-                        });
-                }, 300);
-            });
-        })();
-    </script>
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Card list pagination", PageName = "Browse", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage }' />
 }

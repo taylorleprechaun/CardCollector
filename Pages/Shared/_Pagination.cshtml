@@ -1,0 +1,34 @@
+@model CardCollector.ViewModels.PaginationViewModel
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="@Model.AriaLabel">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item @(!Model.HasPreviousPage ? "disabled" : string.Empty)">
+                <a class="page-link"
+                   href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
+                   aria-label="Previous">&laquo;</a>
+            </li>
+
+            @{
+                int windowStart = Math.Max(1, Model.PageNumber - 2);
+                int windowEnd = Math.Min(Model.TotalPages, windowStart + 4);
+                windowStart = Math.Max(1, windowEnd - 4);
+            }
+
+            @for (int p = windowStart; p <= windowEnd; p++)
+            {
+                <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
+                    <a class="page-link"
+                       href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">@p</a>
+                </li>
+            }
+
+            <li class="page-item @(!Model.HasNextPage ? "disabled" : string.Empty)">
+                <a class="page-link"
+                   href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
+                   aria-label="Next">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+    <p class="text-center text-muted small">Page @Model.PageNumber of @Model.TotalPages</p>
+}

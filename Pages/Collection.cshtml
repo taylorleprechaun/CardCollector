@@ -1,7 +1,6 @@
 @page
 @model CollectionModel
 @using CardCollector.Data.Models
-@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
 }
@@ -11,35 +10,7 @@
     <span class="badge bg-success fs-6">@Model.GroupedCards.TotalCount owned</span>
 </div>
 
-<form method="get" class="row g-2 mb-4">
-    <input type="hidden" name="pageNumber" value="1" />
-    <div class="col">
-        <input type="search"
-               name="query"
-               value="@Model.Query"
-               autocomplete="off"
-               class="form-control"
-               placeholder="Search by name, set, or rarity&hellip;" />
-    </div>
-    <div class="col-auto">
-        <select name="pageSize" class="form-select">
-            @foreach (var size in new[] { 10, 25, 50, 100 })
-            {
-                if (Model.PageSize == size)
-                {
-                    <option value="@size" selected>@size per page</option>
-                }
-                else
-                {
-                    <option value="@size">@size per page</option>
-                }
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-</form>
+<partial name="_SearchBar" model='new SearchBarViewModel("Search by name, set, or rarity…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
 
 @if (!Model.GroupedCards.Items.Any())
 {
@@ -73,17 +44,7 @@ else
                      data-bs-target="#@collapseId"
                      aria-expanded="false"
                      aria-controls="@collapseId">
-                    @if (!string.IsNullOrEmpty(group.ImageURLSmall))
-                    {
-                        <img src="@group.ImageURLSmall"
-                             alt="@group.CardName"
-                             style="width: 44px; height: 64px; object-fit: cover;"
-                             class="rounded flex-shrink-0" />
-                    }
-                    else
-                    {
-                        <div style="width: 44px; height: 64px;" class="rounded bg-secondary flex-shrink-0"></div>
-                    }
+                    <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
                     <div class="flex-grow-1 min-width-0">
                         <div class="fw-semibold">@group.CardName</div>
                         <div class="text-muted small">
@@ -215,47 +176,7 @@ else
         }
     </div>
 
-    @if (Model.GroupedCards.TotalPages > 1)
-    {
-        <nav aria-label="Collection pagination">
-            <ul class="pagination justify-content-center flex-wrap">
-                <li class="page-item @(!Model.GroupedCards.HasPreviousPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Collection", new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
-                       aria-label="Previous">
-                        &laquo;
-                    </a>
-                </li>
-
-                @{
-                    int windowStart = Math.Max(1, Model.PageNumber - 2);
-                    int windowEnd = Math.Min(Model.GroupedCards.TotalPages, windowStart + 4);
-                    windowStart = Math.Max(1, windowEnd - 4);
-                }
-
-                @for (int p = windowStart; p <= windowEnd; p++)
-                {
-                    <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
-                        <a class="page-link"
-                           href="@Url.Page("Collection", new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">
-                            @p
-                        </a>
-                    </li>
-                }
-
-                <li class="page-item @(!Model.GroupedCards.HasNextPage ? "disabled" : string.Empty)">
-                    <a class="page-link"
-                       href="@Url.Page("Collection", new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
-                       aria-label="Next">
-                        &raquo;
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        <p class="text-center text-muted small">
-            Page @Model.PageNumber of @Model.GroupedCards.TotalPages
-        </p>
-    }
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Collection pagination", PageName = "Collection", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.GroupedCards.TotalPages, HasPreviousPage = Model.GroupedCards.HasPreviousPage, HasNextPage = Model.GroupedCards.HasNextPage }' />
 }
 
 <!-- Edit Modal -->
