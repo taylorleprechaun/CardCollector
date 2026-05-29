@@ -25,7 +25,7 @@ namespace CardCollector.Services
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
-            DateTime? purchaseDate, decimal? purchasePrice)
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null)
         {
             if (await _collectionRepository.ExistsAsync(imageID, setCode))
                 return false;
@@ -40,6 +40,7 @@ namespace CardCollector.Services
                 Edition = edition,
                 ImageID = imageID,
                 IsPlaceholder = false,
+                MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
                 Quantity = quantity < 1 ? 1 : quantity,
@@ -286,6 +287,7 @@ namespace CardCollector.Services
                     ImageID = entry.ImageID,
                     ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
                     IsPlaceholder = false,
+                    MarketPriceAtEntry = entry.MarketPriceAtEntry,
                     PurchaseDate = entry.PurchaseDate,
                     PurchasePrice = entry.PurchasePrice,
                     Quantity = entry.Quantity,

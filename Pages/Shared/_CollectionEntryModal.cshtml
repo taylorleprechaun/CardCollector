@@ -64,6 +64,17 @@
                         <input type="number" name="PurchasePrice" id="PurchasePrice"
                                step="0.01" min="0" class="form-control" placeholder="0.00" />
                     </div>
+                    <div class="mb-3">
+                        <label for="MarketPriceAtEntry" class="form-label">
+                            Market Price ($)
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                                    onclick="copyPurchaseToMarket()" title="Copy from purchase price">
+                                Same as purchase
+                            </button>
+                        </label>
+                        <input type="number" name="MarketPriceAtEntry" id="MarketPriceAtEntry"
+                               step="0.01" min="0" class="form-control" placeholder="0.00" />
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -94,9 +105,15 @@
         document.getElementById('quantityInput').value = 1;
         document.getElementById('PurchaseDate').value = '';
         document.getElementById('PurchasePrice').value = '';
+        document.getElementById('MarketPriceAtEntry').value = '';
 
         form.action = form.dataset.pageUrl + '?handler=' + action;
 
         new bootstrap.Modal(document.getElementById('orderModal')).show();
+    }
+
+    function copyPurchaseToMarket() {
+        document.getElementById('MarketPriceAtEntry').value =
+            document.getElementById('PurchasePrice').value;
     }
 </script>

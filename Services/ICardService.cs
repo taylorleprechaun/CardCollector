@@ -13,7 +13,7 @@ namespace CardCollector.Services
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
-            DateTime? purchaseDate, decimal? purchasePrice);
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null);
         Card? GetCardByID(int cardID);
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
         Task<DashboardStats> GetDashboardStatsAsync();

@@ -146,6 +146,18 @@ else
                         <input type="number" name="PurchasePrice" id="wlPurchasePrice"
                                step="0.01" min="0" class="form-control" placeholder="0.00" />
                     </div>
+                    <div class="mb-3">
+                        <label for="wlMarketPriceAtEntry" class="form-label">
+                            Market Price ($)
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                                    onclick="document.getElementById('wlMarketPriceAtEntry').value = document.getElementById('wlPurchasePrice').value"
+                                    title="Copy from purchase price">
+                                Same as purchase
+                            </button>
+                        </label>
+                        <input type="number" name="MarketPriceAtEntry" id="wlMarketPriceAtEntry"
+                               step="0.01" min="0" class="form-control" placeholder="0.00" />
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -179,6 +191,7 @@ else
             document.getElementById('wlQuantity').value = 1;
             document.getElementById('wlPurchaseDate').value = '';
             document.getElementById('wlPurchasePrice').value = '';
+            document.getElementById('wlMarketPriceAtEntry').value = '';
 
             form.action = '?handler=' + action;
 

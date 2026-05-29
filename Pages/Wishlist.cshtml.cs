@@ -26,6 +26,9 @@ namespace CardCollector.Pages
         public int ImageID { get; set; }
 
         [BindProperty]
+        public decimal? MarketPriceAtEntry { get; set; }
+
+        [BindProperty]
         public DateTime? PurchaseDate { get; set; }
 
         [BindProperty]
@@ -64,7 +67,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, false,
-                PurchaseDate, PurchasePrice);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
             return RedirectToPage();
         }
 
@@ -74,7 +77,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, false,
-                PurchaseDate, PurchasePrice);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
             return RedirectToPage();
         }
 

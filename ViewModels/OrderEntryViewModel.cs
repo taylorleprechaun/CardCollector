@@ -24,6 +24,8 @@ namespace CardCollector.ViewModels
 
         public bool IsPlaceholder { get; set; }
 
+        public decimal? MarketPriceAtEntry { get; set; }
+
         public DateTime? PurchaseDate { get; set; }
 
         public decimal? PurchasePrice { get; set; }
