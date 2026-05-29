@@ -7,6 +7,8 @@ namespace CardCollector.Repository
     /// </summary>
     public interface ICardDataRepository
     {
+        IReadOnlyList<string> DistinctAttributes { get; }
+        IReadOnlyList<string> DistinctRarityNames { get; }
         IEnumerable<(Card Card, Image Image)> GetAllArtworks();
         IEnumerable<Card> GetAllCards();
         Card? GetCardByID(int cardID);

@@ -2,11 +2,10 @@ using CardCollector.Data.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class WishlistModel : SearchablePageModel
+    public sealed class WishlistModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
 
@@ -42,6 +41,14 @@ namespace CardCollector.Pages
 
         public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
 
+        [BindProperty(SupportsGet = true)]
+        public WishlistSortBy SortBy { get; set; } = WishlistSortBy.Name;
+
+        [BindProperty(SupportsGet = true)]
+        public bool SortDescending { get; set; } = false;
+
+        public decimal WishlistTotal { get; private set; }
+
         public WishlistModel(ICardService cardService)
         {
             _cardService = cardService;
@@ -50,7 +57,9 @@ namespace CardCollector.Pages
         public async Task OnGetAsync()
         {
             NormalizeSearchParameters();
-            Results = await _cardService.SearchWishlistAsync(Query, PageNumber, PageSize);
+            var result = await _cardService.SearchWishlistAsync(Query, PageNumber, PageSize, SortBy, SortDescending);
+            Results = result.PagedItems;
+            WishlistTotal = result.WishlistTotal;
         }
 
         public IActionResult OnGetAutocomplete(string? q)
@@ -86,5 +95,11 @@ namespace CardCollector.Pages
             await _cardService.RemoveFromWishlistAsync(imageID);
             return RedirectToPage();
         }
+
+        public Dictionary<string, string?> GetPaginationParams() => new()
+        {
+            ["sortBy"] = SortBy.ToString(),
+            ["sortDescending"] = SortDescending.ToString()
+        };
     }
 }

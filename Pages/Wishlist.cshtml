@@ -1,14 +1,33 @@
 @page
 @model WishlistModel
 @using CardCollector.Data.Models
+@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Wishlist";
+
+    string SortIcon(WishlistSortBy col)
+    {
+        if (Model.SortBy != col) return "↕";
+        return Model.SortDescending ? "↓" : "↑";
+    }
+
+    string SortUrl(WishlistSortBy col)
+    {
+        bool desc = Model.SortBy == col && !Model.SortDescending;
+        var q = string.IsNullOrWhiteSpace(Model.Query) ? "" : $"&query={Uri.EscapeDataString(Model.Query)}";
+        return $"/Wishlist?sortBy={col}&sortDescending={desc}&pageSize={Model.PageSize}&pageNumber=1{q}";
+    }
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-1">
     <h1>Wishlist</h1>
     <span class="badge bg-primary fs-6">@Model.Results.TotalCount to acquire</span>
 </div>
+
+@if (Model.WishlistTotal > 0)
+{
+    <p class="text-muted mb-3">Estimated total: <strong>$@Model.WishlistTotal.ToString("F2")</strong></p>
+}
 
 <p class="text-muted mb-4">Preferred versions you haven&rsquo;t ordered or owned yet. Use <a href="/Discover">Discover</a> to add more.</p>
 
@@ -35,10 +54,20 @@ else
             <thead class="table-dark">
                 <tr>
                     <th style="width: 60px;"></th>
-                    <th>Card</th>
+                    <th>
+                        <a href="@SortUrl(WishlistSortBy.Name)"
+                           class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
+                            Card @SortIcon(WishlistSortBy.Name)
+                        </a>
+                    </th>
                     <th>Set</th>
                     <th>Rarity</th>
-                    <th>Price</th>
+                    <th>
+                        <a href="@SortUrl(WishlistSortBy.Price)"
+                           class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Price ? "fw-bold" : "fw-normal")">
+                            Price @SortIcon(WishlistSortBy.Price)
+                        </a>
+                    </th>
                     <th></th>
                 </tr>
             </thead>
@@ -88,7 +117,7 @@ else
         </table>
     </div>
 
-    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Wishlist pagination", PageName = "Wishlist", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage }' />
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Wishlist pagination", PageName = "Wishlist", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
 }
 
 <!-- Order / Own Modal -->

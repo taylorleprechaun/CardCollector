@@ -10,5 +10,6 @@ namespace CardCollector.ViewModels
         public int PageSize { get; init; }
         public string? Query { get; init; }
         public int TotalPages { get; init; }
+        public Dictionary<string, string?>? AdditionalParams { get; init; }
     }
 }

@@ -168,16 +168,35 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(string? query, int page, int pageSize)
+        public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria)
         {
+            var query = criteria.Query;
+            var page = criteria.Page;
+            var pageSize = criteria.PageSize;
+
             var filtered = _cardDataRepository.GetAllCards()
                 .Where(c => string.IsNullOrWhiteSpace(query) ||
-                            c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.Name)
-                .ToList();
+                            c.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
 
-            var totalCount = filtered.Count;
-            var slice = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            if (!string.IsNullOrWhiteSpace(criteria.CardType))
+                filtered = filtered.Where(c => c.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!string.IsNullOrWhiteSpace(criteria.Attribute))
+                filtered = filtered.Where(c => c.Attribute == criteria.Attribute);
+
+            if (!string.IsNullOrWhiteSpace(criteria.RarityName))
+                filtered = filtered.Where(c => c.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
+
+            if (criteria.LevelMin.HasValue)
+                filtered = filtered.Where(c => c.Level >= criteria.LevelMin);
+
+            if (criteria.LevelMax.HasValue)
+                filtered = filtered.Where(c => c.Level <= criteria.LevelMax);
+
+            var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
+
+            var totalCount = orderedFiltered.Count;
+            var slice = orderedFiltered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             var cardIDs = slice.Select(c => c.ID).ToList();
             var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs);
@@ -204,7 +223,7 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<PagedResult<WishlistItemViewModel>> SearchWishlistAsync(string? query, int page, int pageSize)
+        public async Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false)
         {
             var allItems = (await GetWishlistAsync()).ToList();
 
@@ -216,15 +235,30 @@ namespace CardCollector.Services
                                item.RarityName.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var totalCount = filtered.Count;
-            var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var wishlistTotal = filtered.Sum(i => i.Price ?? 0m);
 
-            return new PagedResult<WishlistItemViewModel>
+            IEnumerable<WishlistItemViewModel> sorted = (sortBy, sortDescending) switch
             {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount
+                (WishlistSortBy.Price, false) => filtered.OrderBy(i => i.Price ?? 0).ThenBy(i => i.CardName),
+                (WishlistSortBy.Price, true)  => filtered.OrderByDescending(i => i.Price ?? 0).ThenBy(i => i.CardName),
+                (_, true)                     => filtered.OrderByDescending(i => i.CardName).ThenBy(i => i.SetCode),
+                _                             => filtered.OrderBy(i => i.CardName).ThenBy(i => i.SetCode)
+            };
+
+            var sortedList = sorted.ToList();
+            var totalCount = sortedList.Count;
+            var items = sortedList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            return new WishlistSearchResult
+            {
+                PagedItems = new PagedResult<WishlistItemViewModel>
+                {
+                    Items = items,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = totalCount
+                },
+                WishlistTotal = wishlistTotal
             };
         }
 

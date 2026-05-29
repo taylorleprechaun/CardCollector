@@ -12,12 +12,28 @@ namespace CardCollector.Repository
         private readonly IReadOnlyList<Card> _cards;
         private readonly ILogger<CardDataRepository> _logger;
 
+        public IReadOnlyList<string> DistinctAttributes { get; }
+        public IReadOnlyList<string> DistinctRarityNames { get; }
+
         public CardDataRepository(ILogger<CardDataRepository> logger)
         {
             _logger = logger;
             _cards = LoadCards();
             _artworks = BuildArtworkList(_cards);
             _cardIndex = _cards.ToDictionary(c => c.ID);
+            DistinctAttributes = _cards
+                .Where(c => !string.IsNullOrEmpty(c.Attribute))
+                .Select(c => c.Attribute!)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToList();
+            DistinctRarityNames = _cards
+                .SelectMany(c => c.CardSets ?? [])
+                .Select(s => s.RarityName)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList();
         }
 
         public IEnumerable<(Card Card, Image Image)> GetAllArtworks() => _artworks;

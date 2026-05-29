@@ -1,11 +1,23 @@
 @model CardCollector.ViewModels.PaginationViewModel
+@{
+    Microsoft.AspNetCore.Routing.RouteValueDictionary BuildRoute(int targetPage)
+    {
+        var rvd = new Microsoft.AspNetCore.Routing.RouteValueDictionary();
+        rvd["query"] = Model.Query;
+        rvd["pageNumber"] = targetPage;
+        rvd["pageSize"] = Model.PageSize;
+        if (Model.AdditionalParams != null)
+            foreach (var kv in Model.AdditionalParams) rvd[kv.Key] = kv.Value;
+        return rvd;
+    }
+}
 @if (Model.TotalPages > 1)
 {
     <nav aria-label="@Model.AriaLabel">
         <ul class="pagination justify-content-center flex-wrap">
             <li class="page-item @(!Model.HasPreviousPage ? "disabled" : string.Empty)">
                 <a class="page-link"
-                   href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = Model.PageNumber - 1, pageSize = Model.PageSize })"
+                   href="@Url.Page(Model.PageName, null, BuildRoute(Model.PageNumber - 1))"
                    aria-label="Previous">&laquo;</a>
             </li>
 
@@ -19,13 +31,13 @@
             {
                 <li class="page-item @(p == Model.PageNumber ? "active" : string.Empty)">
                     <a class="page-link"
-                       href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = p, pageSize = Model.PageSize })">@p</a>
+                       href="@Url.Page(Model.PageName, null, BuildRoute(p))">@p</a>
                 </li>
             }
 
             <li class="page-item @(!Model.HasNextPage ? "disabled" : string.Empty)">
                 <a class="page-link"
-                   href="@Url.Page(Model.PageName, new { query = Model.Query, pageNumber = Model.PageNumber + 1, pageSize = Model.PageSize })"
+                   href="@Url.Page(Model.PageName, null, BuildRoute(Model.PageNumber + 1))"
                    aria-label="Next">&raquo;</a>
             </li>
         </ul>

@@ -4,6 +4,11 @@
 @{
     ViewData["Title"] = "Browse";
     var returnUrl = Uri.EscapeDataString(Request.Path + Request.QueryString);
+    int activeFilterCount = (string.IsNullOrWhiteSpace(Model.CardType) ? 0 : 1)
+        + (string.IsNullOrWhiteSpace(Model.Attribute) ? 0 : 1)
+        + (string.IsNullOrWhiteSpace(Model.RarityName) ? 0 : 1)
+        + (Model.LevelMin.HasValue ? 1 : 0)
+        + (Model.LevelMax.HasValue ? 1 : 0);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -11,18 +16,113 @@
     <span class="text-muted">@Model.Results.TotalCount.ToString("N0") cards</span>
 </div>
 
-<partial name="_SearchBar" model='new SearchBarViewModel("Search by name…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
+<form method="get" class="row g-2 mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="col">
+        <input type="search"
+               name="query"
+               value="@Model.Query"
+               autocomplete="off"
+               class="form-control"
+               placeholder="Search by name…"
+               list="card-suggestions"
+               data-autocomplete-url="?handler=Autocomplete" />
+        <datalist id="card-suggestions"></datalist>
+    </div>
+    <div class="col-auto">
+        <select name="pageSize" class="form-select">
+            @foreach (var size in new[] { 10, 25, 50, 100 })
+            {
+                <option value="@size" selected="@(Model.PageSize == size)">@size per page</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-outline-secondary"
+                data-bs-toggle="collapse" data-bs-target="#filterPanel"
+                aria-expanded="@(Model.HasActiveFilters ? "true" : "false")" aria-controls="filterPanel">
+            Filters
+            @if (activeFilterCount > 0)
+            {
+                <span class="badge bg-primary ms-1">@activeFilterCount</span>
+            }
+        </button>
+    </div>
+</form>
+
+<div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
+    <div class="card card-body mb-3">
+        <form method="get">
+            <input type="hidden" name="pageNumber" value="1" />
+            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            @if (!string.IsNullOrWhiteSpace(Model.Query))
+            {
+                <input type="hidden" name="query" value="@Model.Query" />
+            }
+            <div class="row g-3">
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Type</label>
+                    <select name="cardType" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        @foreach (var ct in Model.AvailableCardTypes)
+                        {
+                            <option value="@ct" selected="@(Model.CardType == ct)">@ct</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Attribute</label>
+                    <select name="attribute" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        @foreach (var attr in Model.AvailableAttributes)
+                        {
+                            <option value="@attr" selected="@(Model.Attribute == attr)">@attr</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Rarity</label>
+                    <select name="rarityName" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        @foreach (var rarity in Model.AvailableRarityNames)
+                        {
+                            <option value="@rarity" selected="@(Model.RarityName == rarity)">@rarity</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label">Level</label>
+                    <div class="d-flex gap-1 align-items-center">
+                        <input type="number" name="levelMin" min="1" max="12" class="form-control form-control-sm"
+                               placeholder="Min" value="@Model.LevelMin" />
+                        <span class="text-muted">–</span>
+                        <input type="number" name="levelMax" min="1" max="12" class="form-control form-control-sm"
+                               placeholder="Max" value="@Model.LevelMax" />
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+                <a href="/Browse@(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")"
+                   class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+</div>
 
 @if (!Model.Results.Items.Any())
 {
     <div class="alert alert-info">
-        @if (string.IsNullOrEmpty(Model.Query))
+        @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
         {
             <span>No cards found.</span>
         }
         else
         {
-            <span>No cards found matching &ldquo;@Model.Query&rdquo;.</span>
+            <span>No cards match your search or filters.</span>
         }
     </div>
 }
@@ -64,5 +164,5 @@ else
         }
     </div>
 
-    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Card list pagination", PageName = "Browse", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage }' />
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Card list pagination", PageName = "Browse", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
 }

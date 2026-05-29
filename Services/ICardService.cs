@@ -23,9 +23,9 @@ namespace CardCollector.Services
         Task<(Card Card, Image Image)?> GetRandomUncollectedAsync();
         Task RemoveFromWishlistAsync(int imageID);
         Task SavePreferredVersionAsync(int cardID, int imageID, string setCode);
-        Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(string? query, int page, int pageSize);
+        Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria);
         Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize);
-        Task<PagedResult<WishlistItemViewModel>> SearchWishlistAsync(string? query, int page, int pageSize);
+        Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false);
         Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync();
     }
 }
