@@ -2,42 +2,50 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public class OrderEntryViewModel
+    public class OrderEntryViewModel : CardPrinting
     {
-        public AcquisitionMethod? AcquisitionMethod { get; set; }
+        public AcquisitionMethod? AcquisitionMethod { get; init; }
 
-        public int CardID { get; set; }
+        public CardCondition? Condition { get; init; }
 
-        public string CardName { get; set; } = string.Empty;
+        public DateTime DateCreated { get; init; }
 
-        public CardCondition? Condition { get; set; }
+        public CardEdition? Edition { get; init; }
 
-        public DateTime DateCreated { get; set; }
+        public int EntryID { get; init; }
 
-        public CardEdition? Edition { get; set; }
+        public bool IsPlaceholder { get; init; }
 
-        public int EntryID { get; set; }
+        public decimal? MarketPriceAtEntry { get; init; }
 
-        public int ImageID { get; set; }
+        public DateTime? PurchaseDate { get; init; }
 
-        public string ImageURLSmall { get; set; } = string.Empty;
+        public decimal? PurchasePrice { get; init; }
 
-        public bool IsPlaceholder { get; set; }
+        public int Quantity { get; init; } = 1;
 
-        public decimal? MarketPriceAtEntry { get; set; }
-
-        public DateTime? PurchaseDate { get; set; }
-
-        public decimal? PurchasePrice { get; set; }
-
-        public int Quantity { get; set; } = 1;
-
-        public string RarityCode { get; set; } = string.Empty;
-
-        public string RarityName { get; set; } = string.Empty;
-
-        public string SetCode { get; set; } = string.Empty;
-
-        public string SetName { get; set; } = string.Empty;
+        public static OrderEntryViewModel From(CardPrinting printing, CollectionEntry entry) => new()
+        {
+            AvailableRarities = printing.AvailableRarities,
+            CardID = printing.CardID,
+            CardName = printing.CardName,
+            ImageID = printing.ImageID,
+            ImageURLSmall = printing.ImageURLSmall,
+            Price = printing.Price,
+            RarityCode = printing.RarityCode,
+            RarityName = printing.RarityName,
+            SetCode = printing.SetCode,
+            SetName = printing.SetName,
+            AcquisitionMethod = entry.AcquisitionMethod,
+            Condition = entry.Condition,
+            DateCreated = entry.DateCreated,
+            Edition = entry.Edition,
+            EntryID = entry.ID,
+            IsPlaceholder = entry.IsPlaceholder,
+            MarketPriceAtEntry = entry.MarketPriceAtEntry,
+            PurchaseDate = entry.PurchaseDate,
+            PurchasePrice = entry.PurchasePrice,
+            Quantity = entry.Quantity
+        };
     }
 }

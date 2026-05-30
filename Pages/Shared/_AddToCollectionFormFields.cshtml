@@ -1,0 +1,61 @@
+@using CardCollector.Data.Models
+
+<div class="mb-3">
+    <label class="form-label">Rarity</label>
+    <select name="rarityName" id="atcRarityName" class="form-select"></select>
+</div>
+<div class="mb-3">
+    <label class="form-label">Quantity</label>
+    <input type="number" name="quantity" id="atcQuantity" min="1" value="1" class="form-control" />
+</div>
+<div class="mb-3">
+    <label class="form-label">Condition</label>
+    <select name="condition" id="atcCondition"
+            asp-items="Html.GetEnumSelectList<CardCondition>()"
+            class="form-select">
+        <option value="">-- Select condition --</option>
+    </select>
+</div>
+<div class="mb-3">
+    <label class="form-label">Edition</label>
+    <select name="edition" id="atcEdition"
+            asp-items="Html.GetEnumSelectList<CardEdition>()"
+            class="form-select">
+        <option value="">-- Select edition --</option>
+    </select>
+</div>
+<div class="mb-3" id="atcAcquisitionGroup" style="display:none;">
+    <label class="form-label">How did you get it?</label>
+    <select name="acquisitionMethod" id="atcAcquisition"
+            asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
+            class="form-select">
+        <option value="">-- Select --</option>
+    </select>
+</div>
+<div class="mb-3">
+    <label class="form-label">Purchase Date</label>
+    <input type="date" name="purchaseDate" id="atcPurchaseDate" class="form-control" />
+</div>
+<div class="mb-3">
+    <label class="form-label">Purchase Price ($)</label>
+    <input type="number" step="0.01" min="0" name="purchasePrice" id="atcPurchasePrice"
+           class="form-control" placeholder="0.00" />
+</div>
+<div class="mb-3">
+    <label class="form-label">
+        Market Price ($)
+        <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                onclick="document.getElementById('atcMarketPrice').value = document.getElementById('atcPurchasePrice').value"
+                title="Copy from purchase price">
+            Same as purchase
+        </button>
+    </label>
+    <input type="number" step="0.01" min="0" name="marketPriceAtEntry" id="atcMarketPrice"
+           class="form-control" placeholder="0.00" />
+</div>
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" name="setAsPreferred" id="atcSetAsPreferred" value="true" checked />
+    <label class="form-check-label" for="atcSetAsPreferred">
+        Set as preferred version
+    </label>
+</div>

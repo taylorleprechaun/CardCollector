@@ -105,30 +105,12 @@ namespace CardCollector.Services
                     var isPreferred = preferredVersions.TryGetValue(first.ImageID, out var pv)
                                       && pv.SetCode == first.SetCode;
 
-                    var card = _cardDataRepository.GetCardByID(first.CardID);
-                    var availableRarities = card?.CardSets?
-                        .Where(s => s.Code == first.SetCode && !string.IsNullOrEmpty(s.RarityName))
-                        .Select(s => s.RarityName)
-                        .Distinct()
-                        .OrderBy(r => r)
-                        .ToList() ?? [];
-
-                    return new CollectionGroupViewModel
-                    {
-                        AvailableRarities = availableRarities,
-                        CardID = first.CardID,
-                        CardName = first.CardName,
-                        Entries = g.ToList(),
-                        ImageID = first.ImageID,
-                        ImageURLSmall = first.ImageURLSmall,
-                        IsPreferredVersion = isPreferred,
-                        RarityCode = first.RarityCode,
-                        RarityName = first.RarityName,
-                        SetCode = first.SetCode,
-                        SetName = first.SetName,
-                        TotalCost = totalCost,
-                        TotalQuantity = g.Sum(e => e.Quantity)
-                    };
+                    return CollectionGroupViewModel.From(
+                        printing: first,
+                        entries: g.ToList(),
+                        isPreferredVersion: isPreferred,
+                        totalCost: totalCost,
+                        totalQuantity: g.Sum(e => e.Quantity));
                 })
                 .OrderBy(g => g.CardName)
                 .ThenBy(g => g.SetCode)
@@ -289,32 +271,41 @@ namespace CardCollector.Services
             var results = new List<WishlistItemViewModel>();
             foreach (var pv in wishlistItems)
             {
-                var card = _cardDataRepository.GetCardByID(pv.CardID);
-                var image = card?.CardImages?.FirstOrDefault(i => i.ID == pv.ImageID);
-                var set = card?.CardSets?.FirstOrDefault(s => s.Code == pv.SetCode);
-                var availableRarities = card?.CardSets?
-                    .Where(s => s.Code == pv.SetCode && !string.IsNullOrEmpty(s.RarityName))
-                    .Select(s => s.RarityName)
-                    .Distinct()
-                    .OrderBy(r => r)
-                    .ToList() ?? [];
-
-                results.Add(new WishlistItemViewModel
-                {
-                    AvailableRarities = availableRarities,
-                    CardID = pv.CardID,
-                    CardName = card?.Name ?? "Unknown",
-                    ImageID = pv.ImageID,
-                    ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
-                    Price = set?.Price,
-                    RarityCode = set?.RarityCode ?? string.Empty,
-                    RarityName = set?.RarityName ?? string.Empty,
-                    SetCode = pv.SetCode,
-                    SetName = set?.Name ?? pv.SetCode
-                });
+                var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, null);
+                results.Add(WishlistItemViewModel.From(printing));
             }
 
             return results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode);
+        }
+
+        private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
+        {
+            var card = _cardDataRepository.GetCardByID(cardID);
+            var image = card?.CardImages?.FirstOrDefault(i => i.ID == imageID);
+            var set = rarityNameHint != null
+                ? (card?.CardSets?.FirstOrDefault(s => s.Code == setCode && s.RarityName == rarityNameHint)
+                   ?? card?.CardSets?.FirstOrDefault(s => s.Code == setCode))
+                : card?.CardSets?.FirstOrDefault(s => s.Code == setCode);
+            var availableRarities = card?.CardSets?
+                .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
+                .Select(s => s.RarityName)
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList() ?? [];
+
+            return new CardPrinting
+            {
+                AvailableRarities = availableRarities,
+                CardID = cardID,
+                CardName = card?.Name ?? "Unknown",
+                ImageID = imageID,
+                ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
+                Price = set?.Price,
+                RarityCode = set?.RarityCode ?? string.Empty,
+                RarityName = rarityNameHint ?? set?.RarityName ?? string.Empty,
+                SetCode = setCode,
+                SetName = set?.Name ?? setCode
+            };
         }
 
         private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)
@@ -324,34 +315,8 @@ namespace CardCollector.Services
 
             foreach (var entry in entries)
             {
-                var card = _cardDataRepository.GetCardByID(entry.CardID);
-                var image = card?.CardImages?.FirstOrDefault(i => i.ID == entry.ImageID);
-                var set = entry.RarityName != null
-                    ? (card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode && s.RarityName == entry.RarityName)
-                       ?? card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode))
-                    : card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode);
-
-                viewModels.Add(new OrderEntryViewModel
-                {
-                    AcquisitionMethod = entry.AcquisitionMethod,
-                    CardID = entry.CardID,
-                    CardName = card?.Name ?? "Unknown",
-                    Condition = entry.Condition,
-                    DateCreated = entry.DateCreated,
-                    Edition = entry.Edition,
-                    EntryID = entry.ID,
-                    ImageID = entry.ImageID,
-                    ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
-                    IsPlaceholder = false,
-                    MarketPriceAtEntry = entry.MarketPriceAtEntry,
-                    PurchaseDate = entry.PurchaseDate,
-                    PurchasePrice = entry.PurchasePrice,
-                    Quantity = entry.Quantity,
-                    RarityCode = set?.RarityCode ?? string.Empty,
-                    RarityName = entry.RarityName ?? set?.RarityName ?? string.Empty,
-                    SetCode = entry.SetCode,
-                    SetName = set?.Name ?? entry.SetCode
-                });
+                var printing = BuildCardPrinting(entry.CardID, entry.ImageID, entry.SetCode, entry.RarityName);
+                viewModels.Add(OrderEntryViewModel.From(printing, entry));
             }
 
             return viewModels;

@@ -1,5 +1,4 @@
 @model CardCollector.ViewModels.CollectionEntryModalViewModel
-@using CardCollector.Data.Models
 
 <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -12,8 +11,7 @@
                 <div class="modal-body">
                     <input type="hidden" name="CardID" value="@Model.CardID" />
                     <input type="hidden" name="ImageID" value="@Model.ImageID" />
-                    <input type="hidden" name="SetCode" id="setCodeInput" />
-                    <input type="hidden" name="RarityName" id="rarityNameInput" />
+                    <input type="hidden" name="SetCode" id="atcSetCode" />
                     @if (Model.PageID.HasValue)
                     {
                         <input type="hidden" name="Id" value="@Model.PageID.Value" />
@@ -24,58 +22,10 @@
                     }
 
                     <p class="text-muted mb-3">
-                        Set: <strong id="setNameLabel"></strong>
+                        Set: <strong id="atcSetNameLabel"></strong>
                     </p>
 
-                    <div class="mb-3">
-                        <label for="SelectedCondition" class="form-label">Condition</label>
-                        <select name="SelectedCondition" id="SelectedCondition"
-                                asp-items="Html.GetEnumSelectList<CardCondition>()"
-                                class="form-select">
-                            <option value="">-- Select condition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="SelectedEdition" class="form-label">Edition</label>
-                        <select name="SelectedEdition" id="SelectedEdition"
-                                asp-items="Html.GetEnumSelectList<CardEdition>()"
-                                class="form-select">
-                            <option value="">-- Select edition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="acquisitionGroup" style="display:none;">
-                        <label for="SelectedAcquisitionMethod" class="form-label">How did you get it?</label>
-                        <select name="SelectedAcquisitionMethod" id="SelectedAcquisitionMethod"
-                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
-                                class="form-select">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="quantityInput" class="form-label">Quantity</label>
-                        <input type="number" name="Quantity" id="quantityInput"
-                               min="1" value="1" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="PurchaseDate" class="form-label">Purchase Date</label>
-                        <input type="date" name="PurchaseDate" id="PurchaseDate" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="PurchasePrice" class="form-label">Purchase Price ($)</label>
-                        <input type="number" name="PurchasePrice" id="PurchasePrice"
-                               step="0.01" min="0" class="form-control" placeholder="0.00" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="MarketPriceAtEntry" class="form-label">
-                            Market Price ($)
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                                    onclick="copyPurchaseToMarket()" title="Copy from purchase price">
-                                Same as purchase
-                            </button>
-                        </label>
-                        <input type="number" name="MarketPriceAtEntry" id="MarketPriceAtEntry"
-                               step="0.01" min="0" class="form-control" placeholder="0.00" />
-                    </div>
+                    <partial name="_AddToCollectionFormFields" />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -91,31 +41,35 @@
         const isOrder = action === 'Order';
         const form = document.getElementById('orderForm');
 
-        document.getElementById('setCodeInput').value = setCode;
-        document.getElementById('rarityNameInput').value = rarityName || '';
-        document.getElementById('setNameLabel').textContent = setName;
+        document.getElementById('atcSetCode').value = setCode;
+        document.getElementById('atcSetNameLabel').textContent = setName;
         document.getElementById('orderModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
 
         const submitBtn = document.getElementById('modalSubmitBtn');
         submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
         submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
-        document.getElementById('acquisitionGroup').style.display = isOrder ? 'none' : 'block';
-        document.getElementById('SelectedCondition').value = '';
-        document.getElementById('SelectedEdition').value = '';
-        document.getElementById('SelectedAcquisitionMethod').value = '';
-        document.getElementById('quantityInput').value = 1;
-        document.getElementById('PurchaseDate').value = '';
-        document.getElementById('PurchasePrice').value = '';
-        document.getElementById('MarketPriceAtEntry').value = '';
+        const raritySelect = document.getElementById('atcRarityName');
+        raritySelect.innerHTML = '';
+        if (rarityName) {
+            const opt = document.createElement('option');
+            opt.value = rarityName;
+            opt.textContent = rarityName;
+            raritySelect.appendChild(opt);
+        }
+
+        document.getElementById('atcAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
+        document.getElementById('atcCondition').value = '';
+        document.getElementById('atcEdition').value = '';
+        document.getElementById('atcAcquisition').value = '';
+        document.getElementById('atcQuantity').value = 1;
+        document.getElementById('atcPurchaseDate').value = '';
+        document.getElementById('atcPurchasePrice').value = '';
+        document.getElementById('atcMarketPrice').value = '';
+        document.getElementById('atcSetAsPreferred').checked = true;
 
         form.action = form.dataset.pageUrl + '?handler=' + action;
 
         new bootstrap.Modal(document.getElementById('orderModal')).show();
-    }
-
-    function copyPurchaseToMarket() {
-        document.getElementById('MarketPriceAtEntry').value =
-            document.getElementById('PurchasePrice').value;
     }
 </script>

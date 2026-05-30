@@ -26,32 +26,8 @@ namespace CardCollector.Pages
         [BindProperty]
         public bool IsPlaceholder { get; set; }
 
-        [BindProperty]
-        public decimal? MarketPriceAtEntry { get; set; }
-
-        [BindProperty]
-        public DateTime? PurchaseDate { get; set; }
-
-        [BindProperty]
-        public decimal? PurchasePrice { get; set; }
-
-        [BindProperty]
-        public int Quantity { get; set; } = 1;
-
         [BindProperty(SupportsGet = true)]
         public string? ReturnUrl { get; set; }
-
-        [BindProperty]
-        public AcquisitionMethod? SelectedAcquisitionMethod { get; set; }
-
-        [BindProperty]
-        public CardCondition? SelectedCondition { get; set; }
-
-        [BindProperty]
-        public CardEdition? SelectedEdition { get; set; }
-
-        [BindProperty]
-        public string? RarityName { get; set; }
 
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
@@ -76,23 +52,39 @@ namespace CardCollector.Pages
             return Task.CompletedTask;
         }
 
-        public async Task<IActionResult> OnPostOrderAsync()
+        public async Task<IActionResult> OnPostOrderAsync(
+            int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
+            AcquisitionMethod? acquisitionMethod = null,
+            DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
+            bool setAsPreferred = false, string? rarityName = null)
         {
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+                quantity, condition, edition,
+                acquisitionMethod, IsPlaceholder,
+                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
+
+            if (setAsPreferred)
+                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
+
             return RedirectToPage(new { ID, ReturnUrl });
         }
 
-        public async Task<IActionResult> OnPostOwnAsync()
+        public async Task<IActionResult> OnPostOwnAsync(
+            int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
+            AcquisitionMethod? acquisitionMethod = null,
+            DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
+            bool setAsPreferred = false, string? rarityName = null)
         {
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+                quantity, condition, edition,
+                acquisitionMethod, IsPlaceholder,
+                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
+
+            if (setAsPreferred)
+                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
+
             return RedirectToPage(new { ID, ReturnUrl });
         }
     }

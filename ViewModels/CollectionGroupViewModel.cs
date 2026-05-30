@@ -2,13 +2,9 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public class CollectionGroupViewModel
+    public class CollectionGroupViewModel : CardPrinting
     {
         private const int COMPLETE_THRESHOLD = 3;
-
-        public int CardID { get; set; }
-
-        public string CardName { get; set; } = string.Empty;
 
         public CollectionCompletionStatus CompletionStatus =>
             !IsPreferredVersion
@@ -17,26 +13,35 @@ namespace CardCollector.ViewModels
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
 
-        public IReadOnlyList<string> AvailableRarities { get; init; } = [];
+        public IList<OrderEntryViewModel> Entries { get; init; } = [];
 
-        public IList<OrderEntryViewModel> Entries { get; set; } = [];
+        public bool IsPreferredVersion { get; init; }
 
-        public int ImageID { get; set; }
+        public decimal? TotalCost { get; init; }
 
-        public string ImageURLSmall { get; set; } = string.Empty;
+        public int TotalQuantity { get; init; }
 
-        public bool IsPreferredVersion { get; set; }
-
-        public string RarityCode { get; set; } = string.Empty;
-
-        public string RarityName { get; set; } = string.Empty;
-
-        public string SetCode { get; set; } = string.Empty;
-
-        public string SetName { get; set; } = string.Empty;
-
-        public decimal? TotalCost { get; set; }
-
-        public int TotalQuantity { get; set; }
+        public static CollectionGroupViewModel From(
+            CardPrinting printing,
+            IList<OrderEntryViewModel> entries,
+            bool isPreferredVersion,
+            decimal? totalCost,
+            int totalQuantity) => new()
+        {
+            AvailableRarities = printing.AvailableRarities,
+            CardID = printing.CardID,
+            CardName = printing.CardName,
+            ImageID = printing.ImageID,
+            ImageURLSmall = printing.ImageURLSmall,
+            Price = printing.Price,
+            RarityCode = printing.RarityCode,
+            RarityName = printing.RarityName,
+            SetCode = printing.SetCode,
+            SetName = printing.SetName,
+            Entries = entries,
+            IsPreferredVersion = isPreferredVersion,
+            TotalCost = totalCost,
+            TotalQuantity = totalQuantity
+        };
     }
 }

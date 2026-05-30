@@ -166,7 +166,7 @@ else
                                                         '@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")',
                                                         '@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")',
                                                         '@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")',
-                                                        '@entry.RarityName.Replace("'", "\\'")'" >
+                                                        '@entry.RarityName.Replace("'", "\\'")')" >
                                                 Edit
                                             </button>
                                             <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
@@ -286,59 +286,7 @@ else
                     <input type="hidden" name="imageID" id="addImageID" />
                     <input type="hidden" name="setCode" id="addSetCode" />
 
-                    <div class="mb-3">
-                        <label class="form-label">Rarity</label>
-                        <select name="rarityName" id="addRarityName" class="form-select"></select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" name="quantity" id="addQuantity" min="1" value="1" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Condition</label>
-                        <select name="condition" id="addCondition"
-                                asp-items="Html.GetEnumSelectList<CardCondition>()"
-                                class="form-select">
-                            <option value="">-- Select condition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Edition</label>
-                        <select name="edition" id="addEdition"
-                                asp-items="Html.GetEnumSelectList<CardEdition>()"
-                                class="form-select">
-                            <option value="">-- Select edition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">How did you get it?</label>
-                        <select name="acquisitionMethod" id="addAcquisition"
-                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
-                                class="form-select">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Purchase Date</label>
-                        <input type="date" name="purchaseDate" id="addPurchaseDate" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Purchase Price ($)</label>
-                        <input type="number" step="0.01" min="0" name="purchasePrice" id="addPurchasePrice"
-                               class="form-control" placeholder="0.00" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Market Price ($)
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                                    onclick="document.getElementById('addMarketPriceAtEntry').value = document.getElementById('addPurchasePrice').value"
-                                    title="Copy from purchase price">
-                                Same as purchase
-                            </button>
-                        </label>
-                        <input type="number" step="0.01" min="0" name="marketPriceAtEntry" id="addMarketPriceAtEntry"
-                               class="form-control" placeholder="0.00" />
-                    </div>
+                    <partial name="_AddToCollectionFormFields" />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -373,7 +321,7 @@ else
             document.getElementById('addImageID').value = btn.dataset.imageId;
             document.getElementById('addSetCode').value = btn.dataset.setCode;
 
-            const raritySelect = document.getElementById('addRarityName');
+            const raritySelect = document.getElementById('atcRarityName');
             const rarities = btn.dataset.rarities ? btn.dataset.rarities.split(',').filter(r => r) : [];
             raritySelect.innerHTML = '';
             rarities.forEach(r => {
@@ -383,13 +331,15 @@ else
                 if (r === btn.dataset.rarityName) opt.selected = true;
                 raritySelect.appendChild(opt);
             });
-            document.getElementById('addQuantity').value = 1;
-            setSelect('addCondition', '');
-            setSelect('addEdition', '');
-            setSelect('addAcquisition', '');
-            document.getElementById('addPurchaseDate').value = '';
-            document.getElementById('addPurchasePrice').value = '';
-            document.getElementById('addMarketPriceAtEntry').value = '';
+            document.getElementById('atcAcquisitionGroup').style.display = 'block';
+            document.getElementById('atcQuantity').value = 1;
+            setSelect('atcCondition', '');
+            setSelect('atcEdition', '');
+            setSelect('atcAcquisition', '');
+            document.getElementById('atcPurchaseDate').value = '';
+            document.getElementById('atcPurchasePrice').value = '';
+            document.getElementById('atcMarketPrice').value = '';
+            document.getElementById('atcSetAsPreferred').checked = true;
             new bootstrap.Modal(document.getElementById('addModal')).show();
         }
 

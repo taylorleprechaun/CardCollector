@@ -40,6 +40,7 @@ namespace CardCollector.Pages
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry,
+            bool setAsPreferred = false,
             string? rarityName = null)
         {
             await _cardService.AddEntryAsync(
@@ -47,6 +48,10 @@ namespace CardCollector.Pages
                 quantity, condition, edition,
                 acquisitionMethod, false,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
+
+            if (setAsPreferred)
+                await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode);
+
             return RedirectToPage();
         }
 
