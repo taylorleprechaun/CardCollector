@@ -106,11 +106,13 @@
     <div class="col-6 col-md-4">
         <div class="card text-center border-info h-100">
             <div class="card-body">
-                <h6 class="card-title text-info text-uppercase">Market Value at Entry</h6>
+                <h6 class="card-title text-info text-uppercase">Current Market Value</h6>
                 <p class="card-text display-6 fw-bold text-info">
-                    @(Model.Stats.MarketValueAtEntry.HasValue ? Model.Stats.MarketValueAtEntry.Value.ToString("C") : "—")
+                    @(Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—")
                 </p>
-                <p class="card-text text-muted small">TCGPlayer price snapshots at time of entry</p>
+                <p class="card-text text-muted small">
+                    @(Model.Stats.CurrentMarketValueDate is not null ? $"As of {Model.Stats.CurrentMarketValueDate}" : "Calculate on the Stats page")
+                </p>
             </div>
         </div>
     </div>

@@ -4,7 +4,9 @@ namespace CardCollector.ViewModels
     {
         public int IncompleteSetCount { get; set; }
 
-        public decimal? MarketValueAtEntry { get; set; }
+        public decimal? CurrentMarketValue { get; set; }
+
+        public string? CurrentMarketValueDate { get; set; }
 
         public int OrderedCount { get; set; }
 

@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.ViewModels;
 
@@ -9,16 +11,25 @@ namespace CardCollector.Services
     {
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICollectionRepository _collectionRepository;
+        private readonly ICollectionEntryValueRepository _collectionEntryValueRepository;
+        private readonly ICollectionValueRepository _collectionValueRepository;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
+        private readonly IPricingService _pricingService;
 
         public CardService(
             ICardDataRepository cardDataRepository,
             ICollectionRepository collectionRepository,
-            IPreferredVersionRepository preferredVersionRepository)
+            ICollectionEntryValueRepository collectionEntryValueRepository,
+            ICollectionValueRepository collectionValueRepository,
+            IPreferredVersionRepository preferredVersionRepository,
+            IPricingService pricingService)
         {
             _cardDataRepository = cardDataRepository;
             _collectionRepository = collectionRepository;
+            _collectionEntryValueRepository = collectionEntryValueRepository;
+            _collectionValueRepository = collectionValueRepository;
             _preferredVersionRepository = preferredVersionRepository;
+            _pricingService = pricingService;
         }
 
         public async Task<bool> AddEntryAsync(
@@ -69,12 +80,134 @@ namespace CardCollector.Services
                 .Take(maxResults)
                 .Select(c => c.Name);
 
+        public async Task<(decimal TotalValue, int CardCount, List<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
+        {
+            var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
+
+            var uniquePrintingKeys = entries
+                .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
+                .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName!))
+                .Select(g => g.Key)
+                .ToList();
+
+            var priceCache = new ConcurrentDictionary<(int CardID, string SetCode, string RarityName), decimal?>();
+            var semaphore = new SemaphoreSlim(5);
+
+            var tasks = uniquePrintingKeys.Select(async key =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName);
+                    priceCache[key] = price;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+            var entrySnapshots = new List<CollectionEntryValueSnapshot>();
+            decimal totalValue = 0m;
+
+            foreach (var entry in entries.Where(e => !string.IsNullOrWhiteSpace(e.RarityName)))
+            {
+                var key = (entry.CardID, entry.SetCode, entry.RarityName!);
+                if (!priceCache.TryGetValue(key, out var price) || !price.HasValue)
+                    continue;
+
+                var entryValue = price.Value * entry.Quantity;
+                totalValue += entryValue;
+
+                entrySnapshots.Add(new CollectionEntryValueSnapshot
+                {
+                    CardName = _cardDataRepository.GetCardByID(entry.CardID)?.Name ?? string.Empty,
+                    CollectionEntryID = entry.ID,
+                    DateCreated = DateTime.UtcNow,
+                    MarketValue = entryValue,
+                    RarityName = entry.RarityName!,
+                    SetCode = entry.SetCode,
+                    SetName = setNamesByCode.TryGetValue(entry.SetCode, out var n) ? n : entry.SetCode,
+                    SnapshotDate = today
+                });
+            }
+
+            await _collectionEntryValueRepository.UpsertSnapshotsAsync(entrySnapshots, today);
+
+            await _collectionValueRepository.UpsertSnapshotAsync(new CollectionValueSnapshot
+            {
+                CardCount = entries.Count,
+                DateCreated = DateTime.UtcNow,
+                SnapshotDate = today,
+                TotalValue = totalValue
+            });
+
+            var setValueBreakdown = entrySnapshots
+                .GroupBy(s => s.SetName)
+                .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
+                .OrderByDescending(x => x.Item2)
+                .Take(20)
+                .ToList();
+
+            return (totalValue, entries.Count, setValueBreakdown);
+        }
+
+        public async Task<CollectionStatsViewModel> GetCollectionStatsAsync()
+        {
+            var ownedEntries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+
+            var rarityBreakdown = ownedEntries
+                .GroupBy(e => string.IsNullOrWhiteSpace(e.RarityName) ? "Unknown" : e.RarityName)
+                .Select(g => (g.Key, g.Count()))
+                .OrderByDescending(x => x.Item2)
+                .ToList();
+
+            var setBreakdown = ownedEntries
+                .GroupBy(e => setNamesByCode.TryGetValue(e.SetCode, out var name) ? name : e.SetCode)
+                .Select(g => (g.Key, g.Count()))
+                .OrderByDescending(x => x.Item2)
+                .ToList();
+
+            var acquisitionBreakdown = ownedEntries
+                .GroupBy(e => e.AcquisitionMethod.HasValue
+                    ? e.AcquisitionMethod.Value.GetDisplayName()
+                    : "Unknown")
+                .Select(g => (g.Key, g.Count()))
+                .OrderByDescending(x => x.Item2)
+                .ToList();
+
+            var latestEntrySnapshots = await _collectionEntryValueRepository.GetLatestSnapshotsAsync();
+            var setValueBreakdown = latestEntrySnapshots
+                .GroupBy(s => s.SetName)
+                .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
+                .OrderByDescending(x => x.Item2)
+                .Take(20)
+                .ToList();
+
+            var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync();
+
+            return new CollectionStatsViewModel
+            {
+                AcquisitionBreakdown = acquisitionBreakdown,
+                RarityBreakdown = rarityBreakdown,
+                SetBreakdown = setBreakdown,
+                SetValueBreakdown = setValueBreakdown,
+                ValueHistory = valueHistory.ToList()
+            };
+        }
+
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
             var totalArtworks = _cardDataRepository.GetBrowseableArtworks().Count();
             var groups = await GetGroupedOwnedAsync();
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered);
             var ownedStats = await _collectionRepository.GetOwnedStatsAsync();
+            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync();
 
             var collectedPairs = await _collectionRepository.GetCollectedPairsAsync();
             var allPreferred = await _preferredVersionRepository.GetAllAsync();
@@ -82,8 +215,9 @@ namespace CardCollector.Services
 
             return new DashboardStats
             {
+                CurrentMarketValue = latestSnapshot?.TotalValue,
+                CurrentMarketValueDate = latestSnapshot?.SnapshotDate,
                 IncompleteSetCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Incomplete),
-                MarketValueAtEntry = ownedStats.MarketValueAtEntry,
                 OwnedCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Complete),
                 OrderedCount = ordered.Count(),
                 PlaceholderSetCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Placeholder),

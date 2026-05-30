@@ -18,6 +18,8 @@ namespace CardCollector.Services
         Card? GetCardByID(int cardID);
         Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID);
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
+        Task<(decimal TotalValue, int CardCount, List<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync();
+        Task<CollectionStatsViewModel> GetCollectionStatsAsync();
         Task<DashboardStats> GetDashboardStatsAsync();
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOrdersAsync();
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync();

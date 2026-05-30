@@ -1,0 +1,130 @@
+@page
+@model CardCollector.Pages.StatsModel
+@{
+    ViewData["Title"] = "Collection Stats";
+
+    var rarityLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.RarityBreakdown.Select(x => x.Label));
+    var rarityCounts = System.Text.Json.JsonSerializer.Serialize(Model.Stats.RarityBreakdown.Select(x => x.Count));
+
+    var setBreakdown = Model.Stats.SetBreakdown.Take(20).ToList();
+    var setLabels = System.Text.Json.JsonSerializer.Serialize(setBreakdown.Select(x => x.Label));
+    var setCounts = System.Text.Json.JsonSerializer.Serialize(setBreakdown.Select(x => x.Count));
+
+    var acqLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.AcquisitionBreakdown.Select(x => x.Label));
+    var acqCounts = System.Text.Json.JsonSerializer.Serialize(Model.Stats.AcquisitionBreakdown.Select(x => x.Count));
+
+    var setValueLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.SetValueBreakdown.Select(x => x.Label));
+    var setValueData = System.Text.Json.JsonSerializer.Serialize(Model.Stats.SetValueBreakdown.Select(x => x.Value));
+
+    var historyDates = System.Text.Json.JsonSerializer.Serialize(Model.Stats.ValueHistory.Select(x => x.SnapshotDate));
+    var historyValues = System.Text.Json.JsonSerializer.Serialize(Model.Stats.ValueHistory.Select(x => x.TotalValue));
+}
+
+<h2 class="mb-4">Collection Stats</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Top 20 Sets by Count</div>
+            <div class="card-body">
+                @if (Model.Stats.SetBreakdown.Count == 0)
+                {
+                    <p class="text-muted">No owned cards yet.</p>
+                }
+                else
+                {
+                    <canvas id="setChart"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Top 20 Sets by Market Value</div>
+            <div class="card-body">
+                @if (Model.Stats.SetValueBreakdown.Count == 0)
+                {
+                    <p class="text-muted" id="noSetValueMsg">No market value data yet. Click &ldquo;Calculate Current Market Value&rdquo; below to populate this chart.</p>
+                }
+                <canvas id="setValueChart" @(Model.Stats.SetValueBreakdown.Count == 0 ? "style=\"display:none\"" : "")></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Rarity Breakdown</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                @if (Model.Stats.RarityBreakdown.Count == 0)
+                {
+                    <p class="text-muted">No owned cards yet.</p>
+                }
+                else
+                {
+                    <div style="max-width:400px; width:100%">
+                        <canvas id="rarityChart"></canvas>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Acquisition Method</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                @if (Model.Stats.AcquisitionBreakdown.Count == 0)
+                {
+                    <p class="text-muted">No owned cards yet.</p>
+                }
+                else
+                {
+                    <div style="max-width:400px; width:100%">
+                        <canvas id="acquisitionChart"></canvas>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Collection Value Over Time</span>
+        <button id="calcValueBtn" class="btn btn-sm btn-primary" onclick="calculateValue()">
+            Calculate Current Market Value
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="calcStatus" class="mb-3" style="display:none">
+            <div id="calcSpinner" style="display:none; align-items:center; gap:0.5rem">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span>Fetching prices&hellip; this may take a minute for large collections.</span>
+            </div>
+            <div id="calcResult" class="alert alert-success mb-0" style="display:none"></div>
+            <div id="calcError" class="alert alert-danger mb-0" style="display:none"></div>
+        </div>
+        @if (Model.Stats.ValueHistory.Count == 0)
+        {
+            <p class="text-muted" id="noHistoryMsg">No value snapshots yet. Click the button above to calculate your collection&rsquo;s current market value.</p>
+        }
+        <canvas id="valueChart" @(Model.Stats.ValueHistory.Count == 0 ? "style=\"display:none\"" : "")></canvas>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const rarityLabels = @Html.Raw(rarityLabels);
+        const rarityCounts = @Html.Raw(rarityCounts);
+        const setLabels = @Html.Raw(setLabels);
+        const setCounts = @Html.Raw(setCounts);
+        const acqLabels = @Html.Raw(acqLabels);
+        const acqCounts = @Html.Raw(acqCounts);
+        const setValueLabels = @Html.Raw(setValueLabels);
+        const setValueData = @Html.Raw(setValueData);
+        const historyDates = @Html.Raw(historyDates);
+        const historyValues = @Html.Raw(historyValues);
+    </script>
+    <script src="~/js/stats.js"></script>
+}

@@ -16,6 +16,8 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
+builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();
@@ -39,6 +41,18 @@ app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, I
 {
     var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName);
     return Results.Json(new { price });
+});
+
+app.MapPost("/api/stats/calculate-value", async (ICardService cardService) =>
+{
+    var (totalValue, cardCount, setValueBreakdown) = await cardService.CalculateCurrentMarketValueAsync();
+    return Results.Json(new
+    {
+        totalValue,
+        cardCount,
+        setValueLabels = setValueBreakdown.Select(x => x.Label).ToArray(),
+        setValueData = setValueBreakdown.Select(x => x.Value).ToArray()
+    });
 });
 
 app.Run();

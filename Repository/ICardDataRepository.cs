@@ -14,5 +14,6 @@ namespace CardCollector.Repository
         IEnumerable<Card> GetAllCards();
         IEnumerable<Card> GetBrowseableCards();
         Card? GetCardByID(int cardID);
+        IReadOnlyDictionary<string, string> GetSetNamesByCode();
     }
 }

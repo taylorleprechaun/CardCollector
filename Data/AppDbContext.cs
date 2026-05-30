@@ -9,6 +9,10 @@ namespace CardCollector.Data
 
         public DbSet<CollectionEntry> CollectionEntries { get; set; }
 
+        public DbSet<CollectionEntryValueSnapshot> CollectionEntryValueSnapshots { get; set; }
+
+        public DbSet<CollectionValueSnapshot> CollectionValueSnapshots { get; set; }
+
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

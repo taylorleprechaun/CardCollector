@@ -12,6 +12,7 @@ namespace CardCollector.Repository
         private readonly IReadOnlyList<Card> _browseableCards;
         private readonly Dictionary<int, Card> _cardIndex;
         private readonly IReadOnlyList<Card> _cards;
+        private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CardDataRepository> _logger;
         private readonly int _cacheTtlDays;
@@ -30,6 +31,7 @@ namespace CardCollector.Repository
             _artworks = BuildArtworkList(_cards);
             _browseableArtworks = BuildArtworkList(_browseableCards);
             _cardIndex = _cards.ToDictionary(c => c.ID);
+            _setNamesByCode = BuildSetNameIndex(_cards);
             DistinctAttributes = _browseableCards
                 .Where(c => !string.IsNullOrEmpty(c.Attribute))
                 .Select(c => c.Attribute!)
@@ -55,6 +57,22 @@ namespace CardCollector.Repository
 
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
+
+        public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
+
+        private static IReadOnlyDictionary<string, string> BuildSetNameIndex(IReadOnlyList<Card> cards)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var card in cards)
+            {
+                foreach (var set in card.CardSets ?? [])
+                {
+                    if (!string.IsNullOrEmpty(set.Code) && !dict.ContainsKey(set.Code))
+                        dict[set.Code] = set.Name;
+                }
+            }
+            return dict;
+        }
 
         private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
         {
