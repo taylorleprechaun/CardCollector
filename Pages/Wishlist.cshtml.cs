@@ -10,16 +10,16 @@ namespace CardCollector.Pages
         private readonly ICardService _cardService;
 
         [BindProperty]
-        public AcquisitionMethod? SelectedAcquisitionMethod { get; set; }
+        public AcquisitionMethod? AcquisitionMethod { get; set; }
 
         [BindProperty]
         public int CardID { get; set; }
 
         [BindProperty]
-        public CardCondition? SelectedCondition { get; set; }
+        public CardCondition? Condition { get; set; }
 
         [BindProperty]
-        public CardEdition? SelectedEdition { get; set; }
+        public CardEdition? Edition { get; set; }
 
         [BindProperty]
         public int ImageID { get; set; }
@@ -77,8 +77,8 @@ namespace CardCollector.Pages
         {
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, false,
+                Quantity, Condition, Edition,
+                AcquisitionMethod, false,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage();
         }
@@ -87,8 +87,8 @@ namespace CardCollector.Pages
         {
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
-                Quantity, SelectedCondition, SelectedEdition,
-                SelectedAcquisitionMethod, false,
+                Quantity, Condition, Edition,
+                AcquisitionMethod, false,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage();
         }

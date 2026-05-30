@@ -106,7 +106,7 @@ else
                                     data-image-id="@item.ImageID"
                                     data-rarity-name="@item.RarityName"
                                     data-rarities="@string.Join(",", item.AvailableRarities)"
-                                    onclick="openModal(this, 'Order')">
+                                    onclick="openWishlistModal(this, 'Order')">
                                 Order
                             </button>
                             <button type="button"
@@ -117,7 +117,7 @@ else
                                     data-image-id="@item.ImageID"
                                     data-rarity-name="@item.RarityName"
                                     data-rarities="@string.Join(",", item.AvailableRarities)"
-                                    onclick="openModal(this, 'Own')">
+                                    onclick="openWishlistModal(this, 'Own')">
                                 Already Own
                             </button>
                             <form method="post" asp-page-handler="Remove" class="d-inline"
@@ -153,59 +153,7 @@ else
                         Set: <strong id="wlSetName"></strong>
                     </p>
 
-                    <div class="mb-3">
-                        <label for="wlRarityName" class="form-label">Rarity</label>
-                        <select name="RarityName" id="wlRarityName" class="form-select"></select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlCondition" class="form-label">Condition</label>
-                        <select name="SelectedCondition" id="wlCondition"
-                                asp-items="Html.GetEnumSelectList<CardCondition>()"
-                                class="form-select">
-                            <option value="">-- Select condition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlEdition" class="form-label">Edition</label>
-                        <select name="SelectedEdition" id="wlEdition"
-                                asp-items="Html.GetEnumSelectList<CardEdition>()"
-                                class="form-select">
-                            <option value="">-- Select edition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="wlAcquisitionGroup" style="display:none;">
-                        <label for="wlAcquisition" class="form-label">How did you get it?</label>
-                        <select name="SelectedAcquisitionMethod" id="wlAcquisition"
-                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
-                                class="form-select">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlQuantity" class="form-label">Quantity</label>
-                        <input type="number" name="Quantity" id="wlQuantity" min="1" value="1" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlPurchaseDate" class="form-label">Purchase Date</label>
-                        <input type="date" name="PurchaseDate" id="wlPurchaseDate" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlPurchasePrice" class="form-label">Purchase Price ($)</label>
-                        <input type="number" name="PurchasePrice" id="wlPurchasePrice"
-                               step="0.01" min="0" class="form-control" placeholder="0.00" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="wlMarketPriceAtEntry" class="form-label">
-                            Market Price ($)
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                                    onclick="document.getElementById('wlMarketPriceAtEntry').value = document.getElementById('wlPurchasePrice').value"
-                                    title="Copy from purchase price">
-                                Same as purchase
-                            </button>
-                        </label>
-                        <input type="number" name="MarketPriceAtEntry" id="wlMarketPriceAtEntry"
-                               step="0.01" min="0" class="form-control" placeholder="0.00" />
-                    </div>
+                    <partial name="_CollectionFormFields" model='new CollectionFormFieldsViewModel { Prefix = "wl" }' />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -217,44 +165,5 @@ else
 </div>
 
 @section Scripts {
-    <script>
-        function openModal(btn, action) {
-            const isOrder = action === 'Order';
-            const form = document.getElementById('wishlistForm');
-
-            document.getElementById('wlCardID').value = btn.dataset.cardId;
-            document.getElementById('wlImageID').value = btn.dataset.imageId;
-            document.getElementById('wlSetCode').value = btn.dataset.setCode;
-            document.getElementById('wlSetName').textContent = btn.dataset.setName;
-
-            const raritySelect = document.getElementById('wlRarityName');
-            const rarities = btn.dataset.rarities ? btn.dataset.rarities.split(',').filter(r => r) : [];
-            raritySelect.innerHTML = '';
-            rarities.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r;
-                opt.textContent = r;
-                if (r === btn.dataset.rarityName) opt.selected = true;
-                raritySelect.appendChild(opt);
-            });
-            document.getElementById('wishlistModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
-
-            const submitBtn = document.getElementById('wlSubmitBtn');
-            submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
-            submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
-
-            document.getElementById('wlAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
-            document.getElementById('wlCondition').value = '';
-            document.getElementById('wlEdition').value = '';
-            document.getElementById('wlAcquisition').value = '';
-            document.getElementById('wlQuantity').value = 1;
-            document.getElementById('wlPurchaseDate').value = '';
-            document.getElementById('wlPurchasePrice').value = '';
-            document.getElementById('wlMarketPriceAtEntry').value = '';
-
-            form.action = '?handler=' + action;
-
-            new bootstrap.Modal(document.getElementById('wishlistModal')).show();
-        }
-    </script>
+    <script src="~/js/wishlist.js"></script>
 }

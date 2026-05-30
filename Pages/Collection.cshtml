@@ -1,6 +1,7 @@
 @page
 @model CollectionModel
 @using CardCollector.Data.Models
+@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
 }
@@ -160,9 +161,9 @@ else
                                                     onclick="openEditModal(
                                                         @entry.EntryID,
                                                         @entry.Quantity,
-                                                        '@(entry.Condition.HasValue ? entry.Condition.Value.ToString() : "")',
-                                                        '@(entry.Edition.HasValue ? entry.Edition.Value.ToString() : "")',
-                                                        '@(entry.AcquisitionMethod.HasValue ? entry.AcquisitionMethod.Value.ToString() : "")',
+                                                        '@(entry.Condition.HasValue ? ((int)entry.Condition.Value).ToString() : "")',
+                                                        '@(entry.Edition.HasValue ? ((int)entry.Edition.Value).ToString() : "")',
+                                                        '@(entry.AcquisitionMethod.HasValue ? ((int)entry.AcquisitionMethod.Value).ToString() : "")',
                                                         '@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")',
                                                         '@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")',
                                                         '@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")',
@@ -208,60 +209,7 @@ else
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="entryID" id="editEntryID" />
-
-                    <div class="mb-3">
-                        <label class="form-label">Rarity</label>
-                        <input type="text" name="rarityName" id="editRarityName" class="form-control" placeholder="e.g. Ultra Rare" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" name="quantity" id="editQuantity" min="1" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Condition</label>
-                        <select name="condition" id="editCondition"
-                                asp-items="Html.GetEnumSelectList<CardCondition>()"
-                                class="form-select">
-                            <option value="">-- Select condition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Edition</label>
-                        <select name="edition" id="editEdition"
-                                asp-items="Html.GetEnumSelectList<CardEdition>()"
-                                class="form-select">
-                            <option value="">-- Select edition --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">How did you get it?</label>
-                        <select name="acquisitionMethod" id="editAcquisition"
-                                asp-items="Html.GetEnumSelectList<AcquisitionMethod>()"
-                                class="form-select">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Purchase Date</label>
-                        <input type="date" name="purchaseDate" id="editPurchaseDate" class="form-control" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Purchase Price ($)</label>
-                        <input type="number" step="0.01" min="0" name="purchasePrice" id="editPurchasePrice"
-                               class="form-control" placeholder="0.00" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Market Price ($)
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                                    onclick="document.getElementById('editMarketPriceAtEntry').value = document.getElementById('editPurchasePrice').value"
-                                    title="Copy from purchase price">
-                                Same as purchase
-                            </button>
-                        </label>
-                        <input type="number" step="0.01" min="0" name="marketPriceAtEntry" id="editMarketPriceAtEntry"
-                               class="form-control" placeholder="0.00" />
-                    </div>
+                    <partial name="_CollectionFormFields" model='new CollectionFormFieldsViewModel { Prefix = "edit", AcquisitionVisible = true }' />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -297,55 +245,11 @@ else
     </div>
 </div>
 
+<style>
+    .chevron { transition: transform 0.2s ease; display: inline-block; font-size: 0.75rem; }
+    .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
+</style>
+
 @section Scripts {
-    <style>
-        .chevron { transition: transform 0.2s ease; display: inline-block; font-size: 0.75rem; }
-        .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
-    </style>
-    <script>
-        function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDate, purchasePrice, marketPriceAtEntry, rarityName) {
-            document.getElementById('editEntryID').value = entryID;
-            document.getElementById('editRarityName').value = rarityName || '';
-            document.getElementById('editQuantity').value = qty;
-            setSelect('editCondition', condition);
-            setSelect('editEdition', edition);
-            setSelect('editAcquisition', acquisition);
-            document.getElementById('editPurchaseDate').value = purchaseDate;
-            document.getElementById('editPurchasePrice').value = purchasePrice;
-            document.getElementById('editMarketPriceAtEntry').value = marketPriceAtEntry;
-            new bootstrap.Modal(document.getElementById('editModal')).show();
-        }
-
-        function openAddModal(btn) {
-            document.getElementById('addCardID').value = btn.dataset.cardId;
-            document.getElementById('addImageID').value = btn.dataset.imageId;
-            document.getElementById('addSetCode').value = btn.dataset.setCode;
-
-            const raritySelect = document.getElementById('atcRarityName');
-            const rarities = btn.dataset.rarities ? btn.dataset.rarities.split(',').filter(r => r) : [];
-            raritySelect.innerHTML = '';
-            rarities.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r;
-                opt.textContent = r;
-                if (r === btn.dataset.rarityName) opt.selected = true;
-                raritySelect.appendChild(opt);
-            });
-            document.getElementById('atcAcquisitionGroup').style.display = 'block';
-            document.getElementById('atcQuantity').value = 1;
-            setSelect('atcCondition', '');
-            setSelect('atcEdition', '');
-            setSelect('atcAcquisition', '');
-            document.getElementById('atcPurchaseDate').value = '';
-            document.getElementById('atcPurchasePrice').value = '';
-            document.getElementById('atcMarketPrice').value = '';
-            document.getElementById('atcSetAsPreferred').checked = true;
-            new bootstrap.Modal(document.getElementById('addModal')).show();
-        }
-
-        function setSelect(id, value) {
-            const sel = document.getElementById(id);
-            sel.value = value;
-        }
-    </script>
+    <script src="~/js/collection.js"></script>
 }
