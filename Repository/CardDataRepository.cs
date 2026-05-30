@@ -26,7 +26,7 @@ namespace CardCollector.Repository
             _cacheTtlDays = config.GetValue<int>("CardDataSettings:CacheTtlDays", 7);
 
             _cards = LoadCards();
-            _browseableCards = _cards.Where(HasNonSpeedDuelPrinting).ToList();
+            _browseableCards = _cards.Where(c => c.CardSets?.Any() == true).ToList();
             _artworks = BuildArtworkList(_cards);
             _browseableArtworks = BuildArtworkList(_browseableCards);
             _cardIndex = _cards.ToDictionary(c => c.ID);
@@ -55,9 +55,6 @@ namespace CardCollector.Repository
 
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
-
-        private static bool HasNonSpeedDuelPrinting(Card card) =>
-            card.CardSets?.Any(s => !s.Name.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase)) == true;
 
         private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
         {
@@ -143,7 +140,15 @@ namespace CardCollector.Repository
             try
             {
                 var cardArray = JsonConvert.DeserializeObject<CardArray>(json);
-                return (cardArray?.Cards ?? []).ToList();
+                var cards = (cardArray?.Cards ?? []).ToList();
+                foreach (var card in cards)
+                {
+                    if (card.CardSets is not null)
+                        card.CardSets = card.CardSets
+                            .Where(s => !s.Name.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                }
+                return cards;
             }
             catch (Exception ex)
             {

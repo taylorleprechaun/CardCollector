@@ -71,7 +71,6 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                 <th>Set</th>
                                 <th>Code</th>
                                 <th>Rarity</th>
-                                <th>Price</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -82,16 +81,6 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                     <td>@set.Name</td>
                                     <td><code>@set.Code</code></td>
                                     <td>@set.RarityName</td>
-                                    <td>
-                                        @if (set.Price > 0)
-                                        {
-                                            <span>$@set.Price.ToString("F2")</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">&mdash;</span>
-                                        }
-                                    </td>
                                     <td>
                                         <form method="post" asp-page-handler="SetPreferred">
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />

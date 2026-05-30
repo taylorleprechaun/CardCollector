@@ -4,13 +4,16 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 ## Features
 
-- **Dashboard** — collection progress overview with stats
-- **Browse** — search and filter all ~12,000+ cards from the YGO Pro Deck dataset
-- **Collection** — view owned cards grouped by status, condition, and edition
-- **Discover** — surface a random uncollected artwork and add it to your order list or mark it as owned
-- **Orders** — manage cards you've ordered and mark them as received
+- **Dashboard** &mdash; collection progress overview with stats
+- **Browse** &mdash; search and filter all ~12,000+ cards from the YGO Pro Deck dataset; link through to individual card detail
+- **Card detail** &mdash; view printings for a specific card and add them to your collection
+- **Collection** &mdash; owned cards grouped by card, searchable and paginated
+- **Discover** &mdash; surface a random uncollected artwork and pick a preferred printing
+- **Wishlist** &mdash; preferred versions you haven&rsquo;t ordered or owned yet, with search and sort
+- **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
+- **Export** &mdash; download your collection or wishlist as a CSV
 
-Collection is tracked at the artwork level — a card with multiple artworks counts as separate collectibles.
+Collection is tracked at the artwork level &mdash; a card with multiple artworks counts as separate collectibles.
 
 ## Tech Stack
 
@@ -29,23 +32,15 @@ Collection is tracked at the artwork level — a card with multiple artworks cou
 
 1. Clone the repository.
 
-2. Download card data from the YGO Pro Deck API and place it at the project root:
-
-   ```
-   https://db.ygoprodeck.com/api/v7/cardinfo.php
-   ```
-
-   Save the response as `cardinfo.php.json` in the `CardCollector/` project folder.
-
-3. Run the app:
+2. Run the app:
 
    ```bash
    dotnet run --project CardCollector
    ```
 
-   The SQLite database (`Data/collection.db`) is created automatically on first run.
+   On first run the app fetches card data from the YGO Pro Deck API and caches it locally. The SQLite database (`Data/collection.db`) is created automatically.
 
-4. Open `https://localhost:5001` in your browser.
+3. Open `https://localhost:5001` in your browser.
 
 ## Project Structure
 
@@ -54,17 +49,18 @@ CardCollector/
 ├── Data/
 │   ├── AppDBContext.cs
 │   └── Models/              # EF entities and enums
-├── DTO/                     # Deserialized card data from JSON
+├── DTO/                     # Card data deserialized from the YGOProDeck API
 ├── Extensions/              # EnumExtensions (.GetDisplayName())
-├── Pages/                   # Razor Pages (Dashboard, Browse, Collection, Discover, Orders, Card)
-├── Repository/              # Data access (CardDataRepository, CollectionRepository)
-├── Services/                # CardService — joins JSON data with SQLite state
+├── Pages/                   # Razor Pages (Dashboard, Browse, Card, Collection, Discover, Wishlist, Orders, Export)
+├── Repository/              # Data access (CardDataRepository, CollectionRepository, PreferredVersionRepository)
+├── Services/                # CardService (joins JSON + SQLite), PricingService (live TCGPlayer prices)
 ├── ViewModels/              # Page-specific view models
-└── cardinfo.php.json        # Source card data (copied to output directory)
+└── wwwroot/js/              # Page-specific JavaScript
 ```
 
 ## Data Notes
 
-- `cardinfo.php.json` is read-only reference data and is never written to by the app.
+- Card data is fetched from the YGO Pro Deck API on startup and cached locally for 7 days (configurable via `CardDataSettings:CacheTtlDays`). The app falls back to the stale cache if the API is unreachable.
+- Speed Duel sets are excluded from all card data at load time.
 - Card images are loaded from CDN URLs embedded in the JSON; no images are stored locally.
-- The `cardinfo.php.json` file is not committed to the repository due to its size (~50MB). Download a fresh copy from the YGO Pro Deck API when setting up.
+- Live pricing data is fetched from the YGO Pro Deck pricing endpoint per card when needed.

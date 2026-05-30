@@ -65,12 +65,6 @@ else
                     </th>
                     <th>Set</th>
                     <th>Rarity</th>
-                    <th>
-                        <a href="@SortURL(WishlistSortBy.Price)"
-                           class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Price ? "fw-bold" : "fw-normal")">
-                            Price @SortIcon(WishlistSortBy.Price)
-                        </a>
-                    </th>
                     <th></th>
                 </tr>
             </thead>
@@ -87,16 +81,6 @@ else
                             <code class="text-muted small">@item.SetCode</code>
                         </td>
                         <td>@item.RarityName</td>
-                        <td>
-                            @if (item.Price.HasValue && item.Price > 0)
-                            {
-                                <span>$@item.Price.Value.ToString("F2")</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
                         <td class="text-nowrap">
                             <button type="button"
                                     class="btn btn-sm btn-primary me-1"
