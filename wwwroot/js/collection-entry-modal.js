@@ -1,4 +1,4 @@
-async function openModal(setCode, setName, action, rarityName) {
+async function openModal(setCode, setName, action, rarityName, tcgDate) {
     const isOrder = action === 'Order';
     const form = document.getElementById('orderForm');
 
@@ -18,7 +18,9 @@ async function openModal(setCode, setName, action, rarityName) {
     document.getElementById('atcEdition').value = '0';
     document.getElementById('atcAcquisition').value = '1';
     document.getElementById('atcQuantity').value = 1;
-    document.getElementById('atcPurchaseDate').value = '';
+    document.getElementById('atcPurchaseDate').value = isOrder
+        ? new Date().toISOString().split('T')[0]
+        : (tcgDate || '');
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
 

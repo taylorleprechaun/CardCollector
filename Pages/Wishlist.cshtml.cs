@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ namespace CardCollector.Pages
     public sealed class WishlistModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
+        private readonly ICardSetRepository _cardSetRepository;
 
         [BindProperty]
         public AcquisitionMethod? AcquisitionMethod { get; set; }
@@ -50,10 +52,14 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public bool SortDescending { get; set; } = false;
 
-        public WishlistModel(ICardService cardService)
+        public WishlistModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
             _cardService = cardService;
+            _cardSetRepository = cardSetRepository;
         }
+
+        public string GetTCGDate(string setCode) =>
+            _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
 
         public async Task OnGetAsync()
         {

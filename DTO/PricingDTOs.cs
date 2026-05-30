@@ -2,19 +2,19 @@ using Newtonsoft.Json;
 
 namespace CardCollector.DTO
 {
-    internal class TcgPriceCardArray
+    internal class TCGPriceCardArray
     {
         [JsonProperty("data")]
-        public IEnumerable<TcgPriceCard> Cards { get; set; } = [];
+        public IEnumerable<TCGPriceCard> Cards { get; set; } = [];
     }
 
-    internal class TcgPriceCard
+    internal class TCGPriceCard
     {
         [JsonProperty("card_sets")]
-        public IEnumerable<TcgPriceSet> CardSets { get; set; } = [];
+        public IEnumerable<TCGPriceSet> CardSets { get; set; } = [];
     }
 
-    internal class TcgPriceSet
+    internal class TCGPriceSet
     {
         [JsonProperty("set_code")]
         public string Code { get; set; } = string.Empty;

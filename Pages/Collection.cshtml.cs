@@ -10,15 +10,20 @@ namespace CardCollector.Pages
     public class CollectionModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
+        private readonly ICardSetRepository _cardSetRepository;
         private readonly ICollectionRepository _collectionRepository;
 
         public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
 
-        public CollectionModel(ICardService cardService, ICollectionRepository collectionRepository)
+        public CollectionModel(ICardService cardService, ICardSetRepository cardSetRepository, ICollectionRepository collectionRepository)
         {
             _cardService = cardService;
+            _cardSetRepository = cardSetRepository;
             _collectionRepository = collectionRepository;
         }
+
+        public string GetTCGDate(string setCode) =>
+            _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
 
         public async Task OnGetAsync()
         {

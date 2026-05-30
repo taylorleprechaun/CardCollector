@@ -22,7 +22,9 @@ async function openWishlistModal(btn, action) {
     document.getElementById('wlEdition').value = '0';
     document.getElementById('wlAcquisition').value = '1';
     document.getElementById('wlQuantity').value = 1;
-    document.getElementById('wlPurchaseDate').value = '';
+    document.getElementById('wlPurchaseDate').value = isOrder
+        ? new Date().toISOString().split('T')[0]
+        : (btn.dataset.tcgDate || '');
     document.getElementById('wlPurchasePrice').value = '';
 
     const marketPriceEl = document.getElementById('wlMarketPrice');

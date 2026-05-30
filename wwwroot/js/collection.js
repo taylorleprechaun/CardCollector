@@ -29,7 +29,7 @@ async function openAddModal(btn) {
     setSelect('atcCondition', '4');
     setSelect('atcEdition', '0');
     setSelect('atcAcquisition', '1');
-    document.getElementById('atcPurchaseDate').value = '';
+    document.getElementById('atcPurchaseDate').value = btn.dataset.tcgDate || '';
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
 

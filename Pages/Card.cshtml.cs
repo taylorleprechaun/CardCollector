@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,6 +10,7 @@ namespace CardCollector.Pages
     public class CardModel : PageModel
     {
         private readonly ICardService _cardService;
+        private readonly ICardSetRepository _cardSetRepository;
 
         [BindProperty]
         public int CardID { get; set; }
@@ -37,10 +39,14 @@ namespace CardCollector.Pages
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
 
-        public CardModel(ICardService cardService)
+        public CardModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
             _cardService = cardService;
+            _cardSetRepository = cardSetRepository;
         }
+
+        public string GetTCGDate(string setCode) =>
+            _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
 
         public async Task OnGetAsync()
         {

@@ -86,6 +86,7 @@ else
                                     data-image-id="@item.ImageID"
                                     data-rarity-name="@item.RarityName"
                                     data-rarities="@string.Join(",", item.AvailableRarities)"
+                                    data-tcg-date="@Model.GetTCGDate(item.SetCode)"
                                     onclick="openWishlistModal(this, 'Order')">
                                 Order
                             </button>
@@ -97,6 +98,7 @@ else
                                     data-image-id="@item.ImageID"
                                     data-rarity-name="@item.RarityName"
                                     data-rarities="@string.Join(",", item.AvailableRarities)"
+                                    data-tcg-date="@Model.GetTCGDate(item.SetCode)"
                                     onclick="openWishlistModal(this, 'Own')">
                                 Already Own
                             </button>

@@ -186,6 +186,7 @@ else
                                 data-rarity-name="@group.RarityName"
                                 data-rarities="@string.Join(",", group.AvailableRarities)"
                                 data-set-code="@group.SetCode"
+                                data-tcg-date="@Model.GetTCGDate(group.SetCode)"
                                 onclick="openAddModal(this)">
                             + Purchase
                         </button>

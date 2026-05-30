@@ -21,7 +21,7 @@ namespace CardCollector.Services
                 var client = _httpClientFactory.CreateClient("YGOProDeck");
                 var json = await client.GetStringAsync($"api/v7/cardinfo.php?id={cardID}&tcgplayer_data=true");
 
-                var result = JsonConvert.DeserializeObject<TcgPriceCardArray>(json);
+                var result = JsonConvert.DeserializeObject<TCGPriceCardArray>(json);
                 var cardSets = result?.Cards?.FirstOrDefault()?.CardSets;
                 if (cardSets is null)
                     return null;

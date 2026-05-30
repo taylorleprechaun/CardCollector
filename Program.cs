@@ -15,6 +15,7 @@ builder.Services.AddHttpClient("YGOProDeck", client =>
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
+builder.Services.AddSingleton<ICardSetRepository, CardSetRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
 builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
