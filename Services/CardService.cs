@@ -1,9 +1,9 @@
-using System.Collections.Concurrent;
 using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.ViewModels;
+using Microsoft.Extensions.Configuration;
 
 namespace CardCollector.Services
 {
@@ -14,6 +14,7 @@ namespace CardCollector.Services
         private readonly ICollectionEntryValueRepository _collectionEntryValueRepository;
         private readonly ICollectionValueRepository _collectionValueRepository;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
+        private readonly int _pricingDelayMs;
         private readonly IPricingService _pricingService;
 
         public CardService(
@@ -22,7 +23,8 @@ namespace CardCollector.Services
             ICollectionEntryValueRepository collectionEntryValueRepository,
             ICollectionValueRepository collectionValueRepository,
             IPreferredVersionRepository preferredVersionRepository,
-            IPricingService pricingService)
+            IPricingService pricingService,
+            IConfiguration config)
         {
             _cardDataRepository = cardDataRepository;
             _collectionRepository = collectionRepository;
@@ -30,6 +32,7 @@ namespace CardCollector.Services
             _collectionValueRepository = collectionValueRepository;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingService = pricingService;
+            _pricingDelayMs = config.GetValue<int>("CardDataSettings:PricingDelayMs", 100);
         }
 
         public async Task<bool> AddEntryAsync(
@@ -82,6 +85,22 @@ namespace CardCollector.Services
 
         public async Task<(decimal TotalValue, int CardCount, List<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
         {
+            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+
+            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync();
+            if (latestSnapshot is not null && latestSnapshot.SnapshotDate == today)
+            {
+                var cachedEntrySnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync()).ToList();
+                var cachedSetBreakdown = cachedEntrySnapshots
+                    .GroupBy(s => s.SetName)
+                    .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
+                    .OrderByDescending(x => x.Item2)
+                    .Take(20)
+                    .ToList();
+
+                return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown);
+            }
+
             var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
 
             var uniquePrintingKeys = entries
@@ -90,26 +109,14 @@ namespace CardCollector.Services
                 .Select(g => g.Key)
                 .ToList();
 
-            var priceCache = new ConcurrentDictionary<(int CardID, string SetCode, string RarityName), decimal?>();
-            var semaphore = new SemaphoreSlim(5);
-
-            var tasks = uniquePrintingKeys.Select(async key =>
+            var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName), decimal?>();
+            foreach (var key in uniquePrintingKeys)
             {
-                await semaphore.WaitAsync();
-                try
-                {
-                    var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName);
-                    priceCache[key] = price;
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
+                var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName);
+                priceCache[key] = price;
+                await Task.Delay(_pricingDelayMs);
+            }
 
-            await Task.WhenAll(tasks);
-
-            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             var entrySnapshots = new List<CollectionEntryValueSnapshot>();
             decimal totalValue = 0m;
