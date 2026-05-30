@@ -86,6 +86,7 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
                                             <input type="hidden" name="ImageID" value="@Model.CurrentImage.ID" />
                                             <input type="hidden" name="SetCode" value="@set.Code" />
+                                            <input type="hidden" name="RarityName" value="@set.RarityName" />
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 Set as Preferred
                                             </button>

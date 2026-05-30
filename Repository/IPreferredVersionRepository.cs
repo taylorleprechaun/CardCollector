@@ -7,7 +7,7 @@ namespace CardCollector.Repository
     /// </summary>
     public interface IPreferredVersionRepository
     {
-        Task AddOrUpdateAsync(int cardID, int imageID, string setCode);
+        Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null);
         Task DeleteAsync(int imageID);
         Task<IEnumerable<PreferredVersion>> GetAllAsync();
         Task<Dictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs);

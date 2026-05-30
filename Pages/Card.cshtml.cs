@@ -17,6 +17,8 @@ namespace CardCollector.Pages
 
         public Card? CurrentCard { get; private set; }
 
+        public PreferredVersion? PreferredVersion { get; private set; }
+
         [BindProperty(SupportsGet = true)]
         public int ID { get; set; }
 
@@ -25,6 +27,9 @@ namespace CardCollector.Pages
 
         [BindProperty]
         public bool IsPlaceholder { get; set; }
+
+        [BindProperty]
+        public string? RarityName { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? ReturnURL { get; set; }
@@ -37,19 +42,23 @@ namespace CardCollector.Pages
             _cardService = cardService;
         }
 
-        public Task OnGetAsync()
+        public async Task OnGetAsync()
         {
             if (ID == 0)
             {
                 CardNotFound = true;
-                return Task.CompletedTask;
+                return;
             }
 
             CurrentCard = _cardService.GetCardByID(ID);
             if (CurrentCard is null)
+            {
                 CardNotFound = true;
+                return;
+            }
 
-            return Task.CompletedTask;
+            if (ImageID != 0)
+                PreferredVersion = await _cardService.GetPreferredVersionByImageIDAsync(ImageID);
         }
 
         public async Task<IActionResult> OnPostOrderAsync(
@@ -86,6 +95,18 @@ namespace CardCollector.Pages
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
 
             return RedirectToPage(new { ID, ReturnURL });
+        }
+
+        public async Task<IActionResult> OnPostRemovePreferredAsync()
+        {
+            await _cardService.RemoveFromWishlistAsync(ImageID);
+            return RedirectToPage(new { ID, imageID = ImageID, ReturnURL });
+        }
+
+        public async Task<IActionResult> OnPostSetPreferredAsync()
+        {
+            await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);
+            return RedirectToPage(new { ID, imageID = ImageID, ReturnURL });
         }
     }
 }

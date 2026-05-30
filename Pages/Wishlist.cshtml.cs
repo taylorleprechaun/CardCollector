@@ -50,8 +50,6 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public bool SortDescending { get; set; } = false;
 
-        public decimal WishlistTotal { get; private set; }
-
         public WishlistModel(ICardService cardService)
         {
             _cardService = cardService;
@@ -62,7 +60,6 @@ namespace CardCollector.Pages
             NormalizeSearchParameters();
             var result = await _cardService.SearchWishlistAsync(Query, PageNumber, PageSize, SortBy, SortDescending);
             Results = result.PagedItems;
-            WishlistTotal = result.WishlistTotal;
         }
 
         public IActionResult OnGetAutocomplete(string? q)

@@ -50,11 +50,15 @@
             </div>
         </div>
     </div>
+</div>
+
+<div class="row g-4 mt-3">
     <div class="col-6 col-md-4">
-        <div class="card text-center h-100">
+        <div class="card text-center border-info h-100">
             <div class="card-body">
-                <h6 class="card-title text-muted text-uppercase">Total Artworks</h6>
-                <p class="card-text display-6 fw-bold">@Model.Stats.TotalArtworks.ToString("N0")</p>
+                <h6 class="card-title text-info text-uppercase">Incomplete Sets</h6>
+                <p class="card-text display-6 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
+                <p class="card-text text-muted small">Sets with fewer than 3 real cards</p>
             </div>
         </div>
     </div>
@@ -68,11 +72,45 @@
         </div>
     </div>
     <div class="col-6 col-md-4">
+        <div class="card text-center border-primary h-100">
+            <div class="card-body">
+                <h6 class="card-title text-primary text-uppercase">Wishlisted</h6>
+                <p class="card-text display-6 fw-bold text-primary">@Model.Stats.WishlistCount.ToString("N0")</p>
+                <p class="card-text text-muted small">Preferred versions not yet owned</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-3">
+    <div class="col-6 col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h6 class="card-title text-muted text-uppercase">Total Cards</h6>
+                <p class="card-text display-6 fw-bold">@Model.Stats.TotalCardQuantity.ToString("N0")</p>
+                <p class="card-text text-muted small">Physical cards owned</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card text-center border-success h-100">
+            <div class="card-body">
+                <h6 class="card-title text-success text-uppercase">Total Spent</h6>
+                <p class="card-text display-6 fw-bold text-success">
+                    @(Model.Stats.TotalSpent.HasValue ? Model.Stats.TotalSpent.Value.ToString("C") : "—")
+                </p>
+                <p class="card-text text-muted small">Sum of recorded purchase prices</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
         <div class="card text-center border-info h-100">
             <div class="card-body">
-                <h6 class="card-title text-info text-uppercase">Incomplete Sets</h6>
-                <p class="card-text display-6 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
-                <p class="card-text text-muted small">Sets with fewer than 3 real cards</p>
+                <h6 class="card-title text-info text-uppercase">Market Value at Entry</h6>
+                <p class="card-text display-6 fw-bold text-info">
+                    @(Model.Stats.MarketValueAtEntry.HasValue ? Model.Stats.MarketValueAtEntry.Value.ToString("C") : "—")
+                </p>
+                <p class="card-text text-muted small">TCGPlayer price snapshots at time of entry</p>
             </div>
         </div>
     </div>

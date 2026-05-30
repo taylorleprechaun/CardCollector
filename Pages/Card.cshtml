@@ -69,6 +69,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                 <th>Set</th>
                                 <th>Code</th>
                                 <th>Rarity</th>
+                                <th>Preferred</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -79,6 +80,40 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     <td>@set.Name</td>
                                     <td><code>@set.Code</code></td>
                                     <td>@set.RarityName</td>
+                                    <td class="text-nowrap">
+                                        @{
+                                            var isPreferred = Model.PreferredVersion?.SetCode == set.Code &&
+                                                (Model.PreferredVersion.RarityName == null || Model.PreferredVersion.RarityName == set.RarityName);
+                                        }
+                                        @if (isPreferred)
+                                        {
+                                            <span class="badge bg-warning text-dark me-1">&#9733; Preferred</span>
+                                            <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
+                                                <input type="hidden" name="ImageID" value="@Model.ImageID" />
+                                                <input type="hidden" name="ID" value="@Model.ID" />
+                                                @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                                                {
+                                                    <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                                                }
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Unset</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="SetPreferred" class="d-inline">
+                                                <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
+                                                <input type="hidden" name="ImageID" value="@Model.ImageID" />
+                                                <input type="hidden" name="SetCode" value="@set.Code" />
+                                                <input type="hidden" name="RarityName" value="@set.RarityName" />
+                                                <input type="hidden" name="ID" value="@Model.ID" />
+                                                @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                                                {
+                                                    <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                                                }
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">Wishlist</button>
+                                            </form>
+                                        }
+                                    </td>
                                     <td class="text-nowrap">
                                         <button type="button"
                                                 class="btn btn-sm btn-primary me-1"

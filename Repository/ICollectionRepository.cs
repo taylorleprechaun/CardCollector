@@ -13,6 +13,7 @@ namespace CardCollector.Repository
         Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status);
         Task<IEnumerable<int>> GetCollectedImageIDsAsync();
         Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
+        Task<OwnedCollectionStats> GetOwnedStatsAsync();
         Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
         Task<HashSet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs);
         Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);

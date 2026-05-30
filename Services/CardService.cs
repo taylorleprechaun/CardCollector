@@ -56,6 +56,12 @@ namespace CardCollector.Services
 
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
 
+        public async Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID)
+        {
+            var dict = await _preferredVersionRepository.GetByImageIDsAsync(new[] { imageID });
+            return dict.TryGetValue(imageID, out var pv) ? pv : null;
+        }
+
         public IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10) =>
             _cardDataRepository.GetBrowseableCards()
                 .Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -68,14 +74,23 @@ namespace CardCollector.Services
             var totalArtworks = _cardDataRepository.GetBrowseableArtworks().Count();
             var groups = await GetGroupedOwnedAsync();
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered);
+            var ownedStats = await _collectionRepository.GetOwnedStatsAsync();
+
+            var collectedPairs = await _collectionRepository.GetCollectedPairsAsync();
+            var allPreferred = await _preferredVersionRepository.GetAllAsync();
+            var wishlistCount = allPreferred.Count(pv => !collectedPairs.Contains((pv.ImageID, pv.SetCode)));
 
             return new DashboardStats
             {
                 IncompleteSetCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Incomplete),
+                MarketValueAtEntry = ownedStats.MarketValueAtEntry,
                 OwnedCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Complete),
                 OrderedCount = ordered.Count(),
                 PlaceholderSetCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Placeholder),
-                TotalArtworks = totalArtworks
+                TotalArtworks = totalArtworks,
+                TotalCardQuantity = ownedStats.TotalQuantity,
+                TotalSpent = ownedStats.TotalSpent,
+                WishlistCount = wishlistCount
             };
         }
 
@@ -135,8 +150,8 @@ namespace CardCollector.Services
         public async Task RemoveFromWishlistAsync(int imageID) =>
             await _preferredVersionRepository.DeleteAsync(imageID);
 
-        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode) =>
-            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode);
+        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null) =>
+            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName);
 
         public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize)
         {
@@ -230,8 +245,6 @@ namespace CardCollector.Services
                                item.RarityName.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var wishlistTotal = filtered.Sum(i => i.Price ?? 0m);
-
             IEnumerable<WishlistItemViewModel> sorted = (sortBy, sortDescending) switch
             {
                 (WishlistSortBy.Price, false) => filtered.OrderBy(i => i.Price ?? 0).ThenBy(i => i.CardName),
@@ -252,8 +265,7 @@ namespace CardCollector.Services
                     Page = page,
                     PageSize = pageSize,
                     TotalCount = totalCount
-                },
-                WishlistTotal = wishlistTotal
+                }
             };
         }
 
@@ -272,7 +284,7 @@ namespace CardCollector.Services
             var results = new List<WishlistItemViewModel>();
             foreach (var pv in wishlistItems)
             {
-                var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, null);
+                var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
                 results.Add(WishlistItemViewModel.From(printing));
             }
 

@@ -26,7 +26,7 @@ async function openModal(setCode, setName, action, rarityName) {
     marketPriceEl.value = '';
     marketPriceEl.placeholder = 'Loading…';
 
-    form.action = form.dataset.pageURL + '?handler=' + action;
+    form.action = form.dataset.pageUrl + '?handler=' + action;
 
     new bootstrap.Modal(document.getElementById('orderModal')).show();
 

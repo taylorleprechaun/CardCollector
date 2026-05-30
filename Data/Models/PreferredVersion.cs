@@ -16,6 +16,8 @@ namespace CardCollector.Data.Models
         [Required]
         public int ImageID { get; set; }
 
+        public string? RarityName { get; set; }
+
         [Required]
         public string SetCode { get; set; } = string.Empty;
     }

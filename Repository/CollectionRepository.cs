@@ -45,6 +45,28 @@ namespace CardCollector.Repository
                 .Distinct()
                 .ToListAsync();
 
+        public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
+        {
+            var entries = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.CardID, e.AcquisitionMethod, e.Quantity, e.MarketPriceAtEntry, e.PurchasePrice })
+                .ToListAsync();
+
+            var totalQuantity = entries.Sum(e => e.Quantity);
+
+            var marketEntries = entries.Where(e => e.MarketPriceAtEntry.HasValue).ToList();
+            decimal? marketValueAtEntry = marketEntries.Count > 0
+                ? marketEntries.Sum(e => e.MarketPriceAtEntry!.Value * e.Quantity)
+                : null;
+
+            var spentEntries = entries.Where(e => e.PurchasePrice.HasValue).ToList();
+            decimal? totalSpent = spentEntries.Count > 0
+                ? spentEntries.Sum(e => e.PurchasePrice!.Value * e.Quantity)
+                : null;
+
+            return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
+        }
+
         public async Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
         {
             var pairs = await _context.CollectionEntries

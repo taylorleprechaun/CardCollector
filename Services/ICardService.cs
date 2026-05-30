@@ -16,6 +16,7 @@ namespace CardCollector.Services
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
             string? rarityName = null);
         Card? GetCardByID(int cardID);
+        Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID);
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
         Task<DashboardStats> GetDashboardStatsAsync();
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOrdersAsync();
@@ -23,7 +24,7 @@ namespace CardCollector.Services
         Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync();
         Task<(Card Card, Image Image)?> GetRandomUncollectedAsync();
         Task RemoveFromWishlistAsync(int imageID);
-        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode);
+        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null);
         Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria);
         Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize);
         Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false);

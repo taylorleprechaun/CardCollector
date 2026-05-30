@@ -4,6 +4,8 @@ namespace CardCollector.ViewModels
     {
         public int IncompleteSetCount { get; set; }
 
+        public decimal? MarketValueAtEntry { get; set; }
+
         public int OrderedCount { get; set; }
 
         public int OwnedCount { get; set; }
@@ -15,5 +17,11 @@ namespace CardCollector.ViewModels
         public int RemainingCount => TotalArtworks - OwnedCount - OrderedCount;
 
         public int TotalArtworks { get; set; }
+
+        public int TotalCardQuantity { get; set; }
+
+        public decimal? TotalSpent { get; set; }
+
+        public int WishlistCount { get; set; }
     }
 }

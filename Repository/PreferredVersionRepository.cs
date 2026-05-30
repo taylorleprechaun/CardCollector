@@ -23,7 +23,7 @@ namespace CardCollector.Repository
             }
         }
 
-        public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode)
+        public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null)
         {
             var existing = await _context.PreferredVersions
                 .FirstOrDefaultAsync(pv => pv.ImageID == imageID);
@@ -34,6 +34,7 @@ namespace CardCollector.Repository
                 {
                     CardID = cardID,
                     ImageID = imageID,
+                    RarityName = rarityName,
                     SetCode = setCode,
                     DateCreated = DateTime.UtcNow,
                     DateModified = DateTime.UtcNow
@@ -42,6 +43,7 @@ namespace CardCollector.Repository
             else
             {
                 existing.CardID = cardID;
+                existing.RarityName = rarityName;
                 existing.SetCode = setCode;
                 existing.DateModified = DateTime.UtcNow;
             }
