@@ -6,18 +6,25 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddHttpClient("YGOProDeck", client =>
+{
+    client.BaseAddress = new Uri("https://db.ygoprodeck.com/");
+    client.Timeout = TimeSpan.FromSeconds(120);
+    client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0");
+});
+builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
+builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.EnsureCreated();
 }
 
@@ -27,5 +34,11 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.MapRazorPages();
+
+app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, IPricingService pricingService) =>
+{
+    var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName);
+    return Results.Json(new { price });
+});
 
 app.Run();

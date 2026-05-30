@@ -11,6 +11,10 @@ obj/
 *.db-shm
 *.db-wal
 
+## Card data cache (fetched from YGOProDeck API at runtime)
+Data/cardcache.json
+Data/cardcache.json.timestamp
+
 ## .NET secrets
 appsettings.Development.json
 

@@ -65,7 +65,7 @@ namespace CardCollector.Pages
             int entryID, int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry,
+            DateTime? purchaseDate, decimal? purchasePrice,
             string? rarityName = null)
         {
             var entry = new CollectionEntry
@@ -74,7 +74,6 @@ namespace CardCollector.Pages
                 AcquisitionMethod = acquisitionMethod,
                 Condition = condition,
                 Edition = edition,
-                MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
                 Quantity = quantity < 1 ? 1 : quantity,

@@ -8,9 +8,9 @@
                autocomplete="off"
                class="form-control"
                placeholder="@Model.Placeholder"
-               list="@(Model.AutocompleteUrl != null ? "card-suggestions" : null)"
-               data-autocomplete-url="@Model.AutocompleteUrl" />
-        @if (Model.AutocompleteUrl != null)
+               list="@(Model.AutocompleteURL != null ? "card-suggestions" : null)"
+               data-autocomplete-url="@Model.AutocompleteURL" />
+        @if (Model.AutocompleteURL != null)
         {
             <datalist id="card-suggestions"></datalist>
         }

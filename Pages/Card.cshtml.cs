@@ -27,7 +27,7 @@ namespace CardCollector.Pages
         public bool IsPlaceholder { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string? ReturnUrl { get; set; }
+        public string? ReturnURL { get; set; }
 
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
@@ -67,7 +67,7 @@ namespace CardCollector.Pages
             if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
 
-            return RedirectToPage(new { ID, ReturnUrl });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostOwnAsync(
@@ -85,7 +85,7 @@ namespace CardCollector.Pages
             if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
 
-            return RedirectToPage(new { ID, ReturnUrl });
+            return RedirectToPage(new { ID, ReturnURL });
         }
     }
 }

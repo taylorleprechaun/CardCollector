@@ -9,9 +9,9 @@
         ?? Model.CurrentCard?.CardImages?.FirstOrDefault();
 }
 
-@if (!string.IsNullOrEmpty(Model.ReturnUrl))
+@if (!string.IsNullOrEmpty(Model.ReturnURL))
 {
-    <a href="@Model.ReturnUrl" class="btn btn-outline-secondary btn-sm mb-3">&larr; Back to Browse</a>
+    <a href="@Model.ReturnURL" class="btn btn-outline-secondary btn-sm mb-3">&larr; Back to Browse</a>
 }
 
 @if (Model.CardNotFound)
@@ -120,8 +120,8 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
         CardID = Model.CurrentCard.ID,
         ImageID = primaryImage.ID,
         PageID = Model.ID,
-        PageUrl = Url.Page("Card") ?? "/Card",
-        ReturnUrl = Model.ReturnUrl
+        PageURL = Url.Page("Card") ?? "/Card",
+        ReturnURL = Model.ReturnURL
     })
 }
 

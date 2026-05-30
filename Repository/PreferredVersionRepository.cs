@@ -6,9 +6,9 @@ namespace CardCollector.Repository
 {
     public class PreferredVersionRepository : IPreferredVersionRepository
     {
-        private readonly AppDbContext _context;
+        private readonly AppDBContext _context;
 
-        public PreferredVersionRepository(AppDbContext context)
+        public PreferredVersionRepository(AppDBContext context)
         {
             _context = context;
         }

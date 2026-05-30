@@ -11,7 +11,7 @@
         return Model.SortDescending ? "↓" : "↑";
     }
 
-    string SortUrl(WishlistSortBy col)
+    string SortURL(WishlistSortBy col)
     {
         bool desc = Model.SortBy == col && !Model.SortDescending;
         var q = string.IsNullOrWhiteSpace(Model.Query) ? "" : $"&query={Uri.EscapeDataString(Model.Query)}";
@@ -58,7 +58,7 @@ else
                 <tr>
                     <th style="width: 60px;"></th>
                     <th>
-                        <a href="@SortUrl(WishlistSortBy.Name)"
+                        <a href="@SortURL(WishlistSortBy.Name)"
                            class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
                             Card @SortIcon(WishlistSortBy.Name)
                         </a>
@@ -66,7 +66,7 @@ else
                     <th>Set</th>
                     <th>Rarity</th>
                     <th>
-                        <a href="@SortUrl(WishlistSortBy.Price)"
+                        <a href="@SortURL(WishlistSortBy.Price)"
                            class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Price ? "fw-bold" : "fw-normal")">
                             Price @SortIcon(WishlistSortBy.Price)
                         </a>

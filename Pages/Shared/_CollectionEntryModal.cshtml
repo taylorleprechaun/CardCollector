@@ -3,7 +3,7 @@
 <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="orderForm" method="post" data-page-url="@Model.PageUrl">
+            <form id="orderForm" method="post" data-page-url="@Model.PageURL">
                 <div class="modal-header">
                     <h5 class="modal-title" id="orderModalLabel"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -14,11 +14,11 @@
                     <input type="hidden" name="SetCode" id="atcSetCode" />
                     @if (Model.PageID.HasValue)
                     {
-                        <input type="hidden" name="Id" value="@Model.PageID.Value" />
+                        <input type="hidden" name="ID" value="@Model.PageID.Value" />
                     }
-                    @if (!string.IsNullOrEmpty(Model.ReturnUrl))
+                    @if (!string.IsNullOrEmpty(Model.ReturnURL))
                     {
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
                     }
 
                     <p class="text-muted mb-3">

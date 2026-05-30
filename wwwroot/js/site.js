@@ -3,7 +3,7 @@
     var input = document.querySelector('input[data-autocomplete-url]');
     if (!input) return;
 
-    var url = input.dataset.autocompleteUrl;
+    var url = input.dataset.autocompleteURL;
     var datalist = document.getElementById('card-suggestions');
     if (!datalist) return;
 

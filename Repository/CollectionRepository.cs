@@ -6,9 +6,9 @@ namespace CardCollector.Repository
 {
     public class CollectionRepository : ICollectionRepository
     {
-        private readonly AppDbContext _context;
+        private readonly AppDBContext _context;
 
-        public CollectionRepository(AppDbContext context)
+        public CollectionRepository(AppDBContext context)
         {
             _context = context;
         }
@@ -163,7 +163,6 @@ namespace CardCollector.Repository
             existing.AcquisitionMethod = entry.AcquisitionMethod;
             existing.Condition = entry.Condition;
             existing.Edition = entry.Edition;
-            existing.MarketPriceAtEntry = entry.MarketPriceAtEntry;
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;

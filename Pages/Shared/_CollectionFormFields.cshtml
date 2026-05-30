@@ -1,7 +1,7 @@
 @model CardCollector.ViewModels.CollectionFormFieldsViewModel
 @using CardCollector.Data.Models
 
-<div class="row g-2 mb-2">
+<div class="row g-2 mb-3">
     <div class="col-4">
         <label class="form-label">Rarity</label>
         <input type="hidden" name="rarityName" id="@(Model.Prefix)RarityName" />
@@ -24,7 +24,7 @@
         </select>
     </div>
 </div>
-<div class="row g-2 mb-2 align-items-end">
+<div class="row g-2 mb-3 align-items-end">
     <div class="col-4">
         <label class="form-label">Quantity</label>
         <input type="number" name="quantity" id="@(Model.Prefix)Quantity" min="1" value="1" class="form-control form-control-sm" />
@@ -58,13 +58,22 @@
                class="form-control form-control-sm" placeholder="0.00" />
     </div>
     <div class="col-4">
-        <label class="form-label d-flex align-items-center gap-1">
-            Market Price ($)
-            <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
-                    onclick="document.getElementById('@(Model.Prefix)MarketPrice').value = document.getElementById('@(Model.Prefix)PurchasePrice').value"
-                    title="Copy from purchase price">&#x2194;</button>
-        </label>
-        <input type="number" step="0.01" min="0" name="marketPriceAtEntry" id="@(Model.Prefix)MarketPrice"
-               class="form-control form-control-sm" placeholder="0.00" />
+        @if (Model.MarketPriceEditable)
+        {
+            <label class="form-label d-flex align-items-center gap-1">
+                Market Price ($)
+                <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
+                        onclick="document.getElementById('@(Model.Prefix)MarketPrice').value = document.getElementById('@(Model.Prefix)PurchasePrice').value"
+                        title="Copy from purchase price">&#x2194;</button>
+            </label>
+            <input type="number" step="0.01" min="0" name="marketPriceAtEntry" id="@(Model.Prefix)MarketPrice"
+                   class="form-control form-control-sm" placeholder="0.00" />
+        }
+        else
+        {
+            <label class="form-label">Market Price ($)</label>
+            <input type="number" step="0.01" name="marketPriceAtEntry" id="@(Model.Prefix)MarketPrice"
+                   class="form-control form-control-sm" readonly />
+        }
     </div>
 </div>

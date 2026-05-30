@@ -1,4 +1,4 @@
-function openWishlistModal(btn, action) {
+async function openWishlistModal(btn, action) {
     const isOrder = action === 'Order';
     const form = document.getElementById('wishlistForm');
 
@@ -24,9 +24,25 @@ function openWishlistModal(btn, action) {
     document.getElementById('wlQuantity').value = 1;
     document.getElementById('wlPurchaseDate').value = '';
     document.getElementById('wlPurchasePrice').value = '';
-    document.getElementById('wlMarketPrice').value = '';
+
+    const marketPriceEl = document.getElementById('wlMarketPrice');
+    marketPriceEl.value = '';
+    marketPriceEl.placeholder = 'Loading…';
 
     form.action = '?handler=' + action;
 
     new bootstrap.Modal(document.getElementById('wishlistModal')).show();
+
+    const cardID = btn.dataset.cardId;
+    const setCode = btn.dataset.setCode;
+    if (cardID && setCode && rarity) {
+        try {
+            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarity)}`);
+            if (resp.ok) {
+                const { price } = await resp.json();
+                if (price) marketPriceEl.value = price.toFixed(2);
+            }
+        } catch { }
+    }
+    marketPriceEl.placeholder = '0.00';
 }

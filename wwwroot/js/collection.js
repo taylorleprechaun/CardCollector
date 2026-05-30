@@ -16,7 +16,7 @@ function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDa
     new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
-function openAddModal(btn) {
+async function openAddModal(btn) {
     document.getElementById('addCardID').value = btn.dataset.cardId;
     document.getElementById('addImageID').value = btn.dataset.imageId;
     document.getElementById('addSetCode').value = btn.dataset.setCode;
@@ -31,7 +31,24 @@ function openAddModal(btn) {
     setSelect('atcAcquisition', '1');
     document.getElementById('atcPurchaseDate').value = '';
     document.getElementById('atcPurchasePrice').value = '';
-    document.getElementById('atcMarketPrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
+
+    const marketPriceEl = document.getElementById('atcMarketPrice');
+    marketPriceEl.value = '';
+    marketPriceEl.placeholder = 'Loading…';
+
     new bootstrap.Modal(document.getElementById('addModal')).show();
+
+    const cardID = btn.dataset.cardId;
+    const setCode = btn.dataset.setCode;
+    if (cardID && setCode && rarity) {
+        try {
+            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarity)}`);
+            if (resp.ok) {
+                const { price } = await resp.json();
+                if (price) marketPriceEl.value = price.toFixed(2);
+            }
+        } catch { }
+    }
+    marketPriceEl.placeholder = '0.00';
 }

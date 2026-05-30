@@ -3,7 +3,7 @@
 @using CardCollector.Data.Models
 @{
     ViewData["Title"] = "Browse";
-    var returnUrl = Uri.EscapeDataString(Request.Path + Request.QueryString);
+    var returnURL = Uri.EscapeDataString(Request.Path + Request.QueryString);
     int activeFilterCount = (string.IsNullOrWhiteSpace(Model.CardType) ? 0 : 1)
         + (string.IsNullOrWhiteSpace(Model.Attribute) ? 0 : 1)
         + (string.IsNullOrWhiteSpace(Model.RarityName) ? 0 : 1)
@@ -134,7 +134,7 @@ else
             <div class="list-group-item d-flex align-items-center gap-3 py-2">
                 <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.Name)' />
                 <div class="flex-grow-1 min-width-0">
-                    <a href="/Card?id=@item.CardID&imageId=@item.ImageID&returnUrl=@returnUrl"
+                    <a href="/Card?id=@item.CardID&imageID=@item.ImageID&returnURL=@returnURL"
                        class="fw-semibold text-decoration-none stretched-link">@item.Name</a>
                     <div class="text-muted small">
                         @item.CardType

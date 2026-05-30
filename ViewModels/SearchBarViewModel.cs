@@ -1,4 +1,4 @@
 namespace CardCollector.ViewModels
 {
-    public record SearchBarViewModel(string Placeholder, string? AutocompleteUrl, int PageSize, string? Query);
+    public record SearchBarViewModel(string Placeholder, string? AutocompleteURL, int PageSize, string? Query);
 }

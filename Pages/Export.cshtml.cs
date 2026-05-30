@@ -21,13 +21,13 @@ public class ExportModel(ICardService cardService) : PageModel
         foreach (var e in entries)
         {
             sb.AppendLine(string.Join(",",
-                Csv(e.CardName),
-                Csv(e.SetCode),
-                Csv(e.SetName),
-                Csv(!string.IsNullOrEmpty(e.RarityName) ? e.RarityName : e.RarityCode),
-                Csv(e.Condition?.GetDisplayName()),
-                Csv(e.Edition?.GetDisplayName()),
-                Csv(e.AcquisitionMethod?.GetDisplayName()),
+                CSV(e.CardName),
+                CSV(e.SetCode),
+                CSV(e.SetName),
+                CSV(!string.IsNullOrEmpty(e.RarityName) ? e.RarityName : e.RarityCode),
+                CSV(e.Condition?.GetDisplayName()),
+                CSV(e.Edition?.GetDisplayName()),
+                CSV(e.AcquisitionMethod?.GetDisplayName()),
                 e.Quantity.ToString(),
                 e.PurchasePrice?.ToString("F2") ?? string.Empty,
                 e.MarketPriceAtEntry?.ToString("F2") ?? string.Empty,
@@ -36,7 +36,7 @@ public class ExportModel(ICardService cardService) : PageModel
                 e.DateCreated.ToString("yyyy-MM-dd")));
         }
 
-        return CsvFile(sb, $"collection-{DateTime.Today:yyyy-MM-dd}.csv");
+        return CSVFile(sb, $"collection-{DateTime.Today:yyyy-MM-dd}.csv");
     }
 
     public async Task<IActionResult> OnGetWishlistAsync()
@@ -48,23 +48,23 @@ public class ExportModel(ICardService cardService) : PageModel
         foreach (var item in items)
         {
             sb.AppendLine(string.Join(",",
-                Csv(item.CardName),
-                Csv(item.SetCode),
-                Csv(item.SetName),
-                Csv(item.RarityName),
+                CSV(item.CardName),
+                CSV(item.SetCode),
+                CSV(item.SetName),
+                CSV(item.RarityName),
                 item.Price?.ToString("F2") ?? string.Empty));
         }
 
-        return CsvFile(sb, $"wishlist-{DateTime.Today:yyyy-MM-dd}.csv");
+        return CSVFile(sb, $"wishlist-{DateTime.Today:yyyy-MM-dd}.csv");
     }
 
-    private FileContentResult CsvFile(StringBuilder sb, string filename)
+    private FileContentResult CSVFile(StringBuilder sb, string filename)
     {
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
         return File(bytes, "text/csv", filename);
     }
 
-    private static string Csv(string? value)
+    private static string CSV(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))

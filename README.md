@@ -52,7 +52,7 @@ Collection is tracked at the artwork level — a card with multiple artworks cou
 ```
 CardCollector/
 ├── Data/
-│   ├── AppDbContext.cs
+│   ├── AppDBContext.cs
 │   └── Models/              # EF entities and enums
 ├── DTO/                     # Deserialized card data from JSON
 ├── Extensions/              # EnumExtensions (.GetDisplayName())

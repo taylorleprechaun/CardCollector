@@ -1,7 +1,7 @@
 @model CardCollector.ViewModels.CardThumbnailViewModel
-@if (!string.IsNullOrEmpty(Model.ImageUrl))
+@if (!string.IsNullOrEmpty(Model.ImageURL))
 {
-    <img src="@Model.ImageUrl"
+    <img src="@Model.ImageURL"
          alt="@Model.AltText"
          style="width: 44px; height: 64px; object-fit: cover;"
          class="rounded flex-shrink-0" />
