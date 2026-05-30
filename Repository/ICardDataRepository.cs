@@ -10,7 +10,9 @@ namespace CardCollector.Repository
         IReadOnlyList<string> DistinctAttributes { get; }
         IReadOnlyList<string> DistinctRarityNames { get; }
         IEnumerable<(Card Card, Image Image)> GetAllArtworks();
+        IEnumerable<(Card Card, Image Image)> GetBrowseableArtworks();
         IEnumerable<Card> GetAllCards();
+        IEnumerable<Card> GetBrowseableCards();
         Card? GetCardByID(int cardID);
     }
 }

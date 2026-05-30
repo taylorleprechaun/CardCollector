@@ -57,7 +57,7 @@ namespace CardCollector.Services
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
 
         public IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10) =>
-            _cardDataRepository.GetAllCards()
+            _cardDataRepository.GetBrowseableCards()
                 .Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(c => c.Name)
                 .Take(maxResults)
@@ -65,7 +65,7 @@ namespace CardCollector.Services
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
-            var totalArtworks = _cardDataRepository.GetAllArtworks().Count();
+            var totalArtworks = _cardDataRepository.GetBrowseableArtworks().Count();
             var groups = await GetGroupedOwnedAsync();
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered);
 
@@ -121,7 +121,7 @@ namespace CardCollector.Services
         {
             var preferredImageIDs = await _preferredVersionRepository.GetPreferredImageIDsAsync();
 
-            var uncollected = _cardDataRepository.GetAllArtworks()
+            var uncollected = _cardDataRepository.GetBrowseableArtworks()
                 .Where(a => !preferredImageIDs.Contains(a.Image.ID))
                 .ToList();
 
@@ -168,44 +168,45 @@ namespace CardCollector.Services
             var page = criteria.Page;
             var pageSize = criteria.PageSize;
 
-            var filtered = _cardDataRepository.GetAllCards()
-                .Where(c => string.IsNullOrWhiteSpace(query) ||
-                            c.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+            var filtered = _cardDataRepository.GetBrowseableArtworks()
+                .Where(a => string.IsNullOrWhiteSpace(query) ||
+                            a.Card.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
 
             if (!string.IsNullOrWhiteSpace(criteria.CardType))
-                filtered = filtered.Where(c => c.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
+                filtered = filtered.Where(a => a.Card.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
 
             if (!string.IsNullOrWhiteSpace(criteria.Attribute))
-                filtered = filtered.Where(c => c.Attribute == criteria.Attribute);
+                filtered = filtered.Where(a => a.Card.Attribute == criteria.Attribute);
 
             if (!string.IsNullOrWhiteSpace(criteria.RarityName))
-                filtered = filtered.Where(c => c.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
+                filtered = filtered.Where(a => a.Card.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
 
             if (criteria.LevelMin.HasValue)
-                filtered = filtered.Where(c => c.Level >= criteria.LevelMin);
+                filtered = filtered.Where(a => a.Card.Level >= criteria.LevelMin);
 
             if (criteria.LevelMax.HasValue)
-                filtered = filtered.Where(c => c.Level <= criteria.LevelMax);
+                filtered = filtered.Where(a => a.Card.Level <= criteria.LevelMax);
 
-            var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
+            var orderedFiltered = filtered.OrderBy(a => a.Card.Name).ThenBy(a => a.Image.ID).ToList();
 
             var totalCount = orderedFiltered.Count;
             var slice = orderedFiltered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var cardIDs = slice.Select(c => c.ID).ToList();
-            var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs);
-            var placeholderIDs = await _collectionRepository.GetPlaceholderCardIDsAsync(cardIDs);
+            var imageIDs = slice.Select(a => a.Image.ID).ToList();
+            var statusMap = await _collectionRepository.GetStatusByImageIDsAsync(imageIDs);
+            var placeholderIDs = await _collectionRepository.GetPlaceholderImageIDsAsync(imageIDs);
 
-            var items = slice.Select(c => new CardListItemViewModel
+            var items = slice.Select(a => new CardListItemViewModel
             {
-                Attribute = c.Attribute ?? string.Empty,
-                CardID = c.ID,
-                CardType = c.CardType ?? string.Empty,
-                ImageURLSmall = c.CardImages?.FirstOrDefault()?.ImageURLSmall ?? string.Empty,
-                IsPlaceholder = placeholderIDs.Contains(c.ID),
-                Name = c.Name ?? string.Empty,
-                Status = statusMap.TryGetValue(c.ID, out var s) ? s : null,
-                Type = c.Type ?? string.Empty
+                Attribute = a.Card.Attribute ?? string.Empty,
+                CardID = a.Card.ID,
+                CardType = a.Card.CardType ?? string.Empty,
+                ImageID = a.Image.ID,
+                ImageURLSmall = a.Image.ImageURLSmall ?? string.Empty,
+                IsPlaceholder = placeholderIDs.Contains(a.Image.ID),
+                Name = a.Card.Name ?? string.Empty,
+                Status = statusMap.TryGetValue(a.Image.ID, out var s) ? s : null,
+                Type = a.Card.Type ?? string.Empty
             }).ToList();
 
             return new PagedResult<CardListItemViewModel>

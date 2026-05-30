@@ -7,6 +7,8 @@ namespace CardCollector.Repository
     public class CardDataRepository : ICardDataRepository
     {
         private readonly IReadOnlyList<(Card Card, Image Image)> _artworks;
+        private readonly IReadOnlyList<(Card Card, Image Image)> _browseableArtworks;
+        private readonly IReadOnlyList<Card> _browseableCards;
         private readonly Dictionary<int, Card> _cardIndex;
         private const string CARD_INFO_PATH = "cardinfo.php.json";
         private readonly IReadOnlyList<Card> _cards;
@@ -19,15 +21,17 @@ namespace CardCollector.Repository
         {
             _logger = logger;
             _cards = LoadCards();
+            _browseableCards = _cards.Where(HasNonSpeedDuelPrinting).ToList();
             _artworks = BuildArtworkList(_cards);
+            _browseableArtworks = BuildArtworkList(_browseableCards);
             _cardIndex = _cards.ToDictionary(c => c.ID);
-            DistinctAttributes = _cards
+            DistinctAttributes = _browseableCards
                 .Where(c => !string.IsNullOrEmpty(c.Attribute))
                 .Select(c => c.Attribute!)
                 .Distinct()
                 .OrderBy(a => a)
                 .ToList();
-            DistinctRarityNames = _cards
+            DistinctRarityNames = _browseableCards
                 .SelectMany(c => c.CardSets ?? [])
                 .Select(s => s.RarityName)
                 .Where(r => !string.IsNullOrEmpty(r))
@@ -38,10 +42,17 @@ namespace CardCollector.Repository
 
         public IEnumerable<(Card Card, Image Image)> GetAllArtworks() => _artworks;
 
+        public IEnumerable<(Card Card, Image Image)> GetBrowseableArtworks() => _browseableArtworks;
+
         public IEnumerable<Card> GetAllCards() => _cards;
+
+        public IEnumerable<Card> GetBrowseableCards() => _browseableCards;
 
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
+
+        private static bool HasNonSpeedDuelPrinting(Card card) =>
+            card.CardSets?.Any(s => !s.Name.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase)) == true;
 
         private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
         {

@@ -3,7 +3,10 @@
 @using CardCollector.Data.Models
 @{
     ViewData["Title"] = Model.CurrentCard?.Name ?? "Card";
-    var primaryImage = Model.CurrentCard?.CardImages?.FirstOrDefault();
+    var primaryImage = (Model.ImageID != 0
+        ? Model.CurrentCard?.CardImages?.FirstOrDefault(img => img.ID == Model.ImageID)
+        : null)
+        ?? Model.CurrentCard?.CardImages?.FirstOrDefault();
 }
 
 @if (!string.IsNullOrEmpty(Model.ReturnUrl))

@@ -14,7 +14,9 @@ namespace CardCollector.Repository
         Task<IEnumerable<int>> GetCollectedImageIDsAsync();
         Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
         Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
+        Task<HashSet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs);
         Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);
+        Task<Dictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs);
         Task<bool> UpdateAsync(CollectionEntry entry);
         Task<bool> UpdateStatusAsync(int id, CollectionStatus status, int? quantity = null);
     }

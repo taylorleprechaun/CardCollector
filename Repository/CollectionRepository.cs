@@ -84,6 +84,34 @@ namespace CardCollector.Repository
             return allOwnedCardIDs.Except(nonPlaceholderCardIDs).ToHashSet();
         }
 
+        public async Task<HashSet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs)
+        {
+            var ids = imageIDs.ToHashSet();
+            if (ids.Count == 0)
+                return [];
+
+            var preferredPairs = await _context.PreferredVersions
+                .Select(pv => new { pv.ImageID, pv.SetCode })
+                .ToListAsync();
+
+            var preferredLookup = preferredPairs
+                .Select(pv => $"{pv.ImageID}:{pv.SetCode}")
+                .ToHashSet();
+
+            var ownedEntries = await _context.CollectionEntries
+                .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode })
+                .ToListAsync();
+
+            var nonPlaceholderImageIDs = ownedEntries
+                .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
+                .Select(e => e.ImageID)
+                .ToHashSet();
+
+            var allOwnedImageIDs = ownedEntries.Select(e => e.ImageID).ToHashSet();
+            return allOwnedImageIDs.Except(nonPlaceholderImageIDs).ToHashSet();
+        }
+
         public async Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
@@ -103,6 +131,27 @@ namespace CardCollector.Repository
                 .ToListAsync();
 
             return rows.ToDictionary(r => r.CardID, r => r.Status);
+        }
+
+        public async Task<Dictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs)
+        {
+            var ids = imageIDs.ToHashSet();
+            if (ids.Count == 0)
+                return [];
+
+            var rows = await _context.CollectionEntries
+                .Where(e => ids.Contains(e.ImageID))
+                .GroupBy(e => e.ImageID)
+                .Select(g => new
+                {
+                    ImageID = g.Key,
+                    Status = g.Any(e => e.Status == CollectionStatus.Owned)
+                               ? CollectionStatus.Owned
+                               : CollectionStatus.Ordered
+                })
+                .ToListAsync();
+
+            return rows.ToDictionary(r => r.ImageID, r => r.Status);
         }
 
         public async Task<bool> UpdateAsync(CollectionEntry entry)

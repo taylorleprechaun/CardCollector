@@ -20,7 +20,7 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public int ID { get; set; }
 
-        [BindProperty]
+        [BindProperty(SupportsGet = true)]
         public int ImageID { get; set; }
 
         [BindProperty]
