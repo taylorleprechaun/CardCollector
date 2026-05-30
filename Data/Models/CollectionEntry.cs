@@ -32,6 +32,8 @@ namespace CardCollector.Data.Models
 
         public int Quantity { get; set; } = 1;
 
+        public string? RarityName { get; set; }
+
         [Required]
         public string SetCode { get; set; } = string.Empty;
 

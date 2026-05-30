@@ -34,6 +34,8 @@ namespace CardCollector.ViewModels
 
         public string RarityCode { get; set; } = string.Empty;
 
+        public string RarityName { get; set; } = string.Empty;
+
         public string SetCode { get; set; } = string.Empty;
 
         public string SetName { get; set; } = string.Empty;

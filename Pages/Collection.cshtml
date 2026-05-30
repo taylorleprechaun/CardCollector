@@ -7,7 +7,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Collection</h1>
-    <span class="badge bg-success fs-6">@Model.GroupedCards.TotalCount owned</span>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-success fs-6">@Model.GroupedCards.TotalCount owned</span>
+        <a href="/Export?handler=Collection" class="btn btn-outline-secondary btn-sm">Export CSV</a>
+    </div>
 </div>
 
 <partial name="_SearchBar" model='new SearchBarViewModel("Search by name, set, or rarity…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
@@ -162,7 +165,8 @@ else
                                                         '@(entry.AcquisitionMethod.HasValue ? entry.AcquisitionMethod.Value.ToString() : "")',
                                                         '@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")',
                                                         '@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")',
-                                                        '@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")')">
+                                                        '@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")',
+                                                        '@entry.RarityName.Replace("'", "\\'")'" >
                                                 Edit
                                             </button>
                                             <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
@@ -178,6 +182,8 @@ else
                         <button type="button" class="btn btn-sm btn-outline-primary"
                                 data-card-id="@group.CardID"
                                 data-image-id="@group.ImageID"
+                                data-rarity-name="@group.RarityName"
+                                data-rarities="@string.Join(",", group.AvailableRarities)"
                                 data-set-code="@group.SetCode"
                                 onclick="openAddModal(this)">
                             + Purchase
@@ -203,6 +209,10 @@ else
                 <div class="modal-body">
                     <input type="hidden" name="entryID" id="editEntryID" />
 
+                    <div class="mb-3">
+                        <label class="form-label">Rarity</label>
+                        <input type="text" name="rarityName" id="editRarityName" class="form-control" placeholder="e.g. Ultra Rare" />
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Quantity</label>
                         <input type="number" name="quantity" id="editQuantity" min="1" class="form-control" />
@@ -277,6 +287,10 @@ else
                     <input type="hidden" name="setCode" id="addSetCode" />
 
                     <div class="mb-3">
+                        <label class="form-label">Rarity</label>
+                        <select name="rarityName" id="addRarityName" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Quantity</label>
                         <input type="number" name="quantity" id="addQuantity" min="1" value="1" class="form-control" />
                     </div>
@@ -341,8 +355,9 @@ else
         .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
     </style>
     <script>
-        function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDate, purchasePrice, marketPriceAtEntry) {
+        function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDate, purchasePrice, marketPriceAtEntry, rarityName) {
             document.getElementById('editEntryID').value = entryID;
+            document.getElementById('editRarityName').value = rarityName || '';
             document.getElementById('editQuantity').value = qty;
             setSelect('editCondition', condition);
             setSelect('editEdition', edition);
@@ -357,6 +372,17 @@ else
             document.getElementById('addCardID').value = btn.dataset.cardId;
             document.getElementById('addImageID').value = btn.dataset.imageId;
             document.getElementById('addSetCode').value = btn.dataset.setCode;
+
+            const raritySelect = document.getElementById('addRarityName');
+            const rarities = btn.dataset.rarities ? btn.dataset.rarities.split(',').filter(r => r) : [];
+            raritySelect.innerHTML = '';
+            rarities.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = r;
+                if (r === btn.dataset.rarityName) opt.selected = true;
+                raritySelect.appendChild(opt);
+            });
             document.getElementById('addQuantity').value = 1;
             setSelect('addCondition', '');
             setSelect('addEdition', '');

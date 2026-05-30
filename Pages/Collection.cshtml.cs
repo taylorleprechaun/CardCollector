@@ -39,13 +39,14 @@ namespace CardCollector.Pages
             int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry)
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry,
+            string? rarityName = null)
         {
             await _cardService.AddEntryAsync(
                 cardID, imageID, setCode, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod, false,
-                purchaseDate, purchasePrice, marketPriceAtEntry);
+                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
             return RedirectToPage();
         }
 
@@ -59,7 +60,8 @@ namespace CardCollector.Pages
             int entryID, int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry)
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry,
+            string? rarityName = null)
         {
             var entry = new CollectionEntry
             {
@@ -70,7 +72,8 @@ namespace CardCollector.Pages
                 MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
-                Quantity = quantity < 1 ? 1 : quantity
+                Quantity = quantity < 1 ? 1 : quantity,
+                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName
             };
 
             await _collectionRepository.UpdateAsync(entry);

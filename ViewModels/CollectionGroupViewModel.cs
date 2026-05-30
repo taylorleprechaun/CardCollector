@@ -17,6 +17,8 @@ namespace CardCollector.ViewModels
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
 
+        public IReadOnlyList<string> AvailableRarities { get; init; } = [];
+
         public IList<OrderEntryViewModel> Entries { get; set; } = [];
 
         public int ImageID { get; set; }
@@ -26,6 +28,8 @@ namespace CardCollector.ViewModels
         public bool IsPreferredVersion { get; set; }
 
         public string RarityCode { get; set; } = string.Empty;
+
+        public string RarityName { get; set; } = string.Empty;
 
         public string SetCode { get; set; } = string.Empty;
 

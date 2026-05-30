@@ -13,6 +13,7 @@
                     <input type="hidden" name="CardID" value="@Model.CardID" />
                     <input type="hidden" name="ImageID" value="@Model.ImageID" />
                     <input type="hidden" name="SetCode" id="setCodeInput" />
+                    <input type="hidden" name="RarityName" id="rarityNameInput" />
                     @if (Model.PageID.HasValue)
                     {
                         <input type="hidden" name="Id" value="@Model.PageID.Value" />
@@ -86,11 +87,12 @@
 </div>
 
 <script>
-    function openModal(setCode, setName, action) {
+    function openModal(setCode, setName, action, rarityName) {
         const isOrder = action === 'Order';
         const form = document.getElementById('orderForm');
 
         document.getElementById('setCodeInput').value = setCode;
+        document.getElementById('rarityNameInput').value = rarityName || '';
         document.getElementById('setNameLabel').textContent = setName;
         document.getElementById('orderModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
 

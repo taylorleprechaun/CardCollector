@@ -25,7 +25,8 @@ namespace CardCollector.Services
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null)
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
+            string? rarityName = null)
         {
             if (await _collectionRepository.ExistsAsync(imageID, setCode))
                 return false;
@@ -44,6 +45,7 @@ namespace CardCollector.Services
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
                 Quantity = quantity < 1 ? 1 : quantity,
+                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName,
                 SetCode = setCode,
                 Status = status
             };
@@ -103,8 +105,17 @@ namespace CardCollector.Services
                     var isPreferred = preferredVersions.TryGetValue(first.ImageID, out var pv)
                                       && pv.SetCode == first.SetCode;
 
+                    var card = _cardDataRepository.GetCardByID(first.CardID);
+                    var availableRarities = card?.CardSets?
+                        .Where(s => s.Code == first.SetCode && !string.IsNullOrEmpty(s.RarityName))
+                        .Select(s => s.RarityName)
+                        .Distinct()
+                        .OrderBy(r => r)
+                        .ToList() ?? [];
+
                     return new CollectionGroupViewModel
                     {
+                        AvailableRarities = availableRarities,
                         CardID = first.CardID,
                         CardName = first.CardName,
                         Entries = g.ToList(),
@@ -112,6 +123,7 @@ namespace CardCollector.Services
                         ImageURLSmall = first.ImageURLSmall,
                         IsPreferredVersion = isPreferred,
                         RarityCode = first.RarityCode,
+                        RarityName = first.RarityName,
                         SetCode = first.SetCode,
                         SetName = first.SetName,
                         TotalCost = totalCost,
@@ -280,9 +292,16 @@ namespace CardCollector.Services
                 var card = _cardDataRepository.GetCardByID(pv.CardID);
                 var image = card?.CardImages?.FirstOrDefault(i => i.ID == pv.ImageID);
                 var set = card?.CardSets?.FirstOrDefault(s => s.Code == pv.SetCode);
+                var availableRarities = card?.CardSets?
+                    .Where(s => s.Code == pv.SetCode && !string.IsNullOrEmpty(s.RarityName))
+                    .Select(s => s.RarityName)
+                    .Distinct()
+                    .OrderBy(r => r)
+                    .ToList() ?? [];
 
                 results.Add(new WishlistItemViewModel
                 {
+                    AvailableRarities = availableRarities,
                     CardID = pv.CardID,
                     CardName = card?.Name ?? "Unknown",
                     ImageID = pv.ImageID,
@@ -307,7 +326,10 @@ namespace CardCollector.Services
             {
                 var card = _cardDataRepository.GetCardByID(entry.CardID);
                 var image = card?.CardImages?.FirstOrDefault(i => i.ID == entry.ImageID);
-                var set = card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode);
+                var set = entry.RarityName != null
+                    ? (card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode && s.RarityName == entry.RarityName)
+                       ?? card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode))
+                    : card?.CardSets?.FirstOrDefault(s => s.Code == entry.SetCode);
 
                 viewModels.Add(new OrderEntryViewModel
                 {
@@ -326,6 +348,7 @@ namespace CardCollector.Services
                     PurchasePrice = entry.PurchasePrice,
                     Quantity = entry.Quantity,
                     RarityCode = set?.RarityCode ?? string.Empty,
+                    RarityName = entry.RarityName ?? set?.RarityName ?? string.Empty,
                     SetCode = entry.SetCode,
                     SetName = set?.Name ?? entry.SetCode
                 });

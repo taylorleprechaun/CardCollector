@@ -51,6 +51,9 @@ namespace CardCollector.Pages
         public CardEdition? SelectedEdition { get; set; }
 
         [BindProperty]
+        public string? RarityName { get; set; }
+
+        [BindProperty]
         public string SetCode { get; set; } = string.Empty;
 
         public CardModel(ICardService cardService)
@@ -79,7 +82,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage(new { ID, ReturnUrl });
         }
 
@@ -89,7 +92,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, IsPlaceholder,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage(new { ID, ReturnUrl });
         }
     }

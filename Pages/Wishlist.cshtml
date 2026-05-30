@@ -21,7 +21,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1>Wishlist</h1>
-    <span class="badge bg-primary fs-6">@Model.Results.TotalCount to acquire</span>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary fs-6">@Model.Results.TotalCount to acquire</span>
+        <a href="/Export?handler=Wishlist" class="btn btn-outline-secondary btn-sm">Export CSV</a>
+    </div>
 </div>
 
 @if (Model.WishlistTotal > 0)
@@ -97,12 +100,24 @@ else
                         <td class="text-nowrap">
                             <button type="button"
                                     class="btn btn-sm btn-primary me-1"
-                                    onclick="openModal('@item.SetCode', '@item.SetName.Replace("'", "\\'")', 'Order', @item.CardID, @item.ImageID)">
+                                    data-set-code="@item.SetCode"
+                                    data-set-name="@item.SetName"
+                                    data-card-id="@item.CardID"
+                                    data-image-id="@item.ImageID"
+                                    data-rarity-name="@item.RarityName"
+                                    data-rarities="@string.Join(",", item.AvailableRarities)"
+                                    onclick="openModal(this, 'Order')">
                                 Order
                             </button>
                             <button type="button"
                                     class="btn btn-sm btn-success me-1"
-                                    onclick="openModal('@item.SetCode', '@item.SetName.Replace("'", "\\'")', 'Own', @item.CardID, @item.ImageID)">
+                                    data-set-code="@item.SetCode"
+                                    data-set-name="@item.SetName"
+                                    data-card-id="@item.CardID"
+                                    data-image-id="@item.ImageID"
+                                    data-rarity-name="@item.RarityName"
+                                    data-rarities="@string.Join(",", item.AvailableRarities)"
+                                    onclick="openModal(this, 'Own')">
                                 Already Own
                             </button>
                             <form method="post" asp-page-handler="Remove" class="d-inline"
@@ -138,6 +153,10 @@ else
                         Set: <strong id="wlSetName"></strong>
                     </p>
 
+                    <div class="mb-3">
+                        <label for="wlRarityName" class="form-label">Rarity</label>
+                        <select name="RarityName" id="wlRarityName" class="form-select"></select>
+                    </div>
                     <div class="mb-3">
                         <label for="wlCondition" class="form-label">Condition</label>
                         <select name="SelectedCondition" id="wlCondition"
@@ -199,14 +218,25 @@ else
 
 @section Scripts {
     <script>
-        function openModal(setCode, setName, action, cardID, imageID) {
+        function openModal(btn, action) {
             const isOrder = action === 'Order';
             const form = document.getElementById('wishlistForm');
 
-            document.getElementById('wlCardID').value = cardID;
-            document.getElementById('wlImageID').value = imageID;
-            document.getElementById('wlSetCode').value = setCode;
-            document.getElementById('wlSetName').textContent = setName;
+            document.getElementById('wlCardID').value = btn.dataset.cardId;
+            document.getElementById('wlImageID').value = btn.dataset.imageId;
+            document.getElementById('wlSetCode').value = btn.dataset.setCode;
+            document.getElementById('wlSetName').textContent = btn.dataset.setName;
+
+            const raritySelect = document.getElementById('wlRarityName');
+            const rarities = btn.dataset.rarities ? btn.dataset.rarities.split(',').filter(r => r) : [];
+            raritySelect.innerHTML = '';
+            rarities.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = r;
+                if (r === btn.dataset.rarityName) opt.selected = true;
+                raritySelect.appendChild(opt);
+            });
             document.getElementById('wishlistModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
 
             const submitBtn = document.getElementById('wlSubmitBtn');

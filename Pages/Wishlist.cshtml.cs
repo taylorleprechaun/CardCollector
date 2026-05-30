@@ -37,6 +37,9 @@ namespace CardCollector.Pages
         public int Quantity { get; set; } = 1;
 
         [BindProperty]
+        public string? RarityName { get; set; }
+
+        [BindProperty]
         public string SetCode { get; set; } = string.Empty;
 
         public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
@@ -76,7 +79,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, false,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage();
         }
 
@@ -86,7 +89,7 @@ namespace CardCollector.Pages
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, SelectedCondition, SelectedEdition,
                 SelectedAcquisitionMethod, false,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
             return RedirectToPage();
         }
 

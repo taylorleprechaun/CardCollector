@@ -10,6 +10,8 @@ namespace CardCollector.ViewModels
 
         public string ImageURLSmall { get; set; } = string.Empty;
 
+        public IReadOnlyList<string> AvailableRarities { get; init; } = [];
+
         public decimal? Price { get; set; }
 
         public string RarityCode { get; set; } = string.Empty;

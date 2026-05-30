@@ -118,6 +118,7 @@ namespace CardCollector.Repository
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;
+            existing.RarityName = entry.RarityName;
             existing.DateModified = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
