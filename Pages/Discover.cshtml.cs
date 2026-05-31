@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class DiscoverModel : PageModel
+    public sealed class DiscoverModel : PageModel
     {
         private readonly ICardService _cardService;
 

@@ -7,8 +7,19 @@ namespace CardCollector.Repository
     /// </summary>
     public interface ICollectionValueRepository
     {
+        /// <summary>
+        /// Returns all historical daily collection-value snapshots in ascending date order.
+        /// </summary>
         Task<IEnumerable<CollectionValueSnapshot>> GetAllSnapshotsAsync();
+
+        /// <summary>
+        /// Returns the most recent daily collection-value snapshot, or null if none exists.
+        /// </summary>
         Task<CollectionValueSnapshot?> GetLatestSnapshotAsync();
+
+        /// <summary>
+        /// Inserts or updates the daily collection-value snapshot.
+        /// </summary>
         Task UpsertSnapshotAsync(CollectionValueSnapshot snapshot);
     }
 }

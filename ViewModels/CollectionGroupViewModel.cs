@@ -2,7 +2,7 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public class CollectionGroupViewModel : CardPrinting
+    public sealed class CollectionGroupViewModel : CardPrinting
     {
         private const int COMPLETE_THRESHOLD = 3;
 

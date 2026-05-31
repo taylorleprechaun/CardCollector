@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class StatsModel : PageModel
+    public sealed class StatsModel : PageModel
     {
         private readonly ICardService _cardService;
 

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
 {
-    public class PreferredVersionRepository : IPreferredVersionRepository
+    public sealed class PreferredVersionRepository : IPreferredVersionRepository
     {
         private readonly AppDBContext _context;
 

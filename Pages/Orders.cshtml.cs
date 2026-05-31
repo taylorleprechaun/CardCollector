@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class OrdersModel : PageModel
+    public sealed class OrdersModel : PageModel
     {
         private readonly ICardService _cardService;
         private readonly ICollectionRepository _collectionRepository;
 
-        public IEnumerable<OrderEntryViewModel> Orders { get; private set; } = [];
+        public IReadOnlyList<OrderEntryViewModel> Orders { get; private set; } = [];
 
         public OrdersModel(ICardService cardService, ICollectionRepository collectionRepository)
         {
@@ -22,7 +22,7 @@ namespace CardCollector.Pages
 
         public async Task OnGetAsync()
         {
-            Orders = await _cardService.GetEnrichedOrdersAsync();
+            Orders = (await _cardService.GetEnrichedOrdersAsync()).ToList();
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int entryID)

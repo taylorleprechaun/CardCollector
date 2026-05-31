@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
 {
-    public class CollectionRepository : ICollectionRepository
+    public sealed class CollectionRepository : ICollectionRepository
     {
         private readonly AppDBContext _context;
 
@@ -37,12 +37,6 @@ namespace CardCollector.Repository
             await _context.CollectionEntries
                 .Where(e => e.Status == status)
                 .OrderByDescending(e => e.DateCreated)
-                .ToListAsync();
-
-        public async Task<IEnumerable<int>> GetCollectedImageIDsAsync() =>
-            await _context.CollectionEntries
-                .Select(e => e.ImageID)
-                .Distinct()
                 .ToListAsync();
 
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
@@ -83,14 +77,7 @@ namespace CardCollector.Repository
             if (ids.Count == 0)
                 return [];
 
-            // Load preferred versions for matching
-            var preferredPairs = await _context.PreferredVersions
-                .Select(pv => new { pv.ImageID, pv.SetCode })
-                .ToListAsync();
-
-            var preferredLookup = preferredPairs
-                .Select(pv => $"{pv.ImageID}:{pv.SetCode}")
-                .ToHashSet();
+            var preferredLookup = await GetPreferredPairLookupAsync();
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
@@ -112,13 +99,7 @@ namespace CardCollector.Repository
             if (ids.Count == 0)
                 return [];
 
-            var preferredPairs = await _context.PreferredVersions
-                .Select(pv => new { pv.ImageID, pv.SetCode })
-                .ToListAsync();
-
-            var preferredLookup = preferredPairs
-                .Select(pv => $"{pv.ImageID}:{pv.SetCode}")
-                .ToHashSet();
+            var preferredLookup = await GetPreferredPairLookupAsync();
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
@@ -206,6 +187,14 @@ namespace CardCollector.Repository
                 entry.Quantity = quantity.Value;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private async Task<HashSet<string>> GetPreferredPairLookupAsync()
+        {
+            var preferredPairs = await _context.PreferredVersions
+                .Select(pv => new { pv.ImageID, pv.SetCode })
+                .ToListAsync();
+            return preferredPairs.Select(pv => $"{pv.ImageID}:{pv.SetCode}").ToHashSet();
         }
     }
 }

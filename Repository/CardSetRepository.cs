@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace CardCollector.Repository
 {
-    public class CardSetRepository : ICardSetRepository
+    public sealed class CardSetRepository : ICardSetRepository
     {
         private readonly Dictionary<string, string> _dateByCode;
         private readonly IHttpClientFactory _httpClientFactory;

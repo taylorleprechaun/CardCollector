@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CardCollector.Pages;
 
-public class ExportModel(ICardService cardService) : PageModel
+public sealed class ExportModel(ICardService cardService) : PageModel
 {
     private readonly ICardService _cardService = cardService;
 

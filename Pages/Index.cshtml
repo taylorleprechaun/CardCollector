@@ -10,14 +10,14 @@
     <div class="card-body">
         <h5 class="card-title">Collection Progress</h5>
         <div class="d-flex justify-content-between mb-2 text-muted small">
-            <span>@Model.Stats.OwnedCount.ToString("N0") owned of @Model.Stats.TotalArtworks.ToString("N0")</span>
-            <span>@Model.Stats.PercentOwned.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+            <span>@Model.Stats.CompletedCount.ToString("N0") completed of @Model.Stats.TotalArtworks.ToString("N0")</span>
+            <span>@Model.Stats.PercentCompleted.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
         </div>
         <div class="progress" style="height: 20px;">
             <div class="progress-bar bg-success"
                  role="progressbar"
-                 style="width: @Model.Stats.PercentOwned.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"
-                 aria-valuenow="@Model.Stats.PercentOwned"
+                 style="width: @Model.Stats.PercentCompleted.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"
+                 aria-valuenow="@Model.Stats.PercentCompleted"
                  aria-valuemin="0"
                  aria-valuemax="100">
             </div>
@@ -29,8 +29,8 @@
     <div class="col-6 col-md-4">
         <div class="card text-center border-success h-100">
             <div class="card-body">
-                <h6 class="card-title text-success text-uppercase">Owned</h6>
-                <p class="card-text display-6 fw-bold text-success">@Model.Stats.OwnedCount.ToString("N0")</p>
+                <h6 class="card-title text-success text-uppercase">Completed</h6>
+                <p class="card-text display-6 fw-bold text-success">@Model.Stats.CompletedCount.ToString("N0")</p>
             </div>
         </div>
     </div>
@@ -58,7 +58,7 @@
             <div class="card-body">
                 <h6 class="card-title text-info text-uppercase">Incomplete Sets</h6>
                 <p class="card-text display-6 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
-                <p class="card-text text-muted small">Sets with fewer than 3 real cards</p>
+                <p class="card-text text-muted small">Preferred versions with fewer than 3 copies</p>
             </div>
         </div>
     </div>

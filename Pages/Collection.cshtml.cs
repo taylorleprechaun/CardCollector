@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class CollectionModel : SearchablePageModel
+    public sealed class CollectionModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
         private readonly ICardSetRepository _cardSetRepository;

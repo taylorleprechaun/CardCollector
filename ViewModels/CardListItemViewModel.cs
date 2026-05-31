@@ -2,7 +2,7 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public class CardListItemViewModel
+    public sealed class CardListItemViewModel
     {
         public string Attribute { get; set; } = string.Empty;
         public int CardID { get; set; }

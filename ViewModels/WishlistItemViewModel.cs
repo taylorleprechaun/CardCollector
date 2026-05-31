@@ -1,6 +1,6 @@
 namespace CardCollector.ViewModels
 {
-    public class WishlistItemViewModel : CardPrinting
+    public sealed class WishlistItemViewModel : CardPrinting
     {
         public static WishlistItemViewModel From(CardPrinting printing) => new()
         {

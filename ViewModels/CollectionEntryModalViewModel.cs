@@ -1,6 +1,6 @@
 namespace CardCollector.ViewModels
 {
-    public class CollectionEntryModalViewModel
+    public sealed class CollectionEntryModalViewModel
     {
         public int CardID { get; set; }
         public int ImageID { get; set; }

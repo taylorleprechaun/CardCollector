@@ -7,7 +7,14 @@ namespace CardCollector.Repository
     /// </summary>
     public interface ICollectionEntryValueRepository
     {
+        /// <summary>
+        /// Returns the most recent set of per-entry value snapshots.
+        /// </summary>
         Task<IEnumerable<CollectionEntryValueSnapshot>> GetLatestSnapshotsAsync();
+
+        /// <summary>
+        /// Inserts or updates entry-level value snapshots for the given snapshot date.
+        /// </summary>
         Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate);
     }
 }

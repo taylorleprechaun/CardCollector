@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
 {
-    public class CollectionValueRepository : ICollectionValueRepository
+    public sealed class CollectionValueRepository : ICollectionValueRepository
     {
         private readonly AppDBContext _context;
 

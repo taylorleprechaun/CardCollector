@@ -1,7 +1,8 @@
 namespace CardCollector.ViewModels
 {
-    public class PaginationViewModel
+    public sealed class PaginationViewModel
     {
+        public Dictionary<string, string?>? AdditionalParams { get; init; }
         public required string AriaLabel { get; init; }
         public bool HasNextPage { get; init; }
         public bool HasPreviousPage { get; init; }
@@ -10,6 +11,5 @@ namespace CardCollector.ViewModels
         public int PageSize { get; init; }
         public string? Query { get; init; }
         public int TotalPages { get; init; }
-        public Dictionary<string, string?>? AdditionalParams { get; init; }
     }
 }

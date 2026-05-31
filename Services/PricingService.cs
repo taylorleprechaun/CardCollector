@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace CardCollector.Services
 {
-    public class PricingService : IPricingService
+    public sealed class PricingService : IPricingService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<PricingService> _logger;

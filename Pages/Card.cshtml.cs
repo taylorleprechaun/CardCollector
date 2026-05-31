@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages
 {
-    public class CardModel : PageModel
+    public sealed class CardModel : PageModel
     {
         private readonly ICardService _cardService;
         private readonly ICardSetRepository _cardSetRepository;
@@ -19,8 +19,6 @@ namespace CardCollector.Pages
 
         public Card? CurrentCard { get; private set; }
 
-        public PreferredVersion? PreferredVersion { get; private set; }
-
         [BindProperty(SupportsGet = true)]
         public int ID { get; set; }
 
@@ -29,6 +27,8 @@ namespace CardCollector.Pages
 
         [BindProperty]
         public bool IsPlaceholder { get; set; }
+
+        public PreferredVersion? PreferredVersion { get; private set; }
 
         [BindProperty]
         public string? RarityName { get; set; }

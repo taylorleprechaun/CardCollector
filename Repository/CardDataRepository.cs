@@ -5,17 +5,17 @@ using Newtonsoft.Json;
 
 namespace CardCollector.Repository
 {
-    public class CardDataRepository : ICardDataRepository
+    public sealed class CardDataRepository : ICardDataRepository
     {
         private readonly IReadOnlyList<(Card Card, Image Image)> _artworks;
         private readonly IReadOnlyList<(Card Card, Image Image)> _browseableArtworks;
         private readonly IReadOnlyList<Card> _browseableCards;
+        private readonly int _cacheTtlDays;
         private readonly Dictionary<int, Card> _cardIndex;
         private readonly IReadOnlyList<Card> _cards;
-        private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CardDataRepository> _logger;
-        private readonly int _cacheTtlDays;
+        private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
 
         public IReadOnlyList<string> DistinctAttributes { get; }
         public IReadOnlyList<string> DistinctRarityNames { get; }

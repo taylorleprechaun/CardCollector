@@ -41,10 +41,10 @@ namespace CardCollector.Pages
         [BindProperty]
         public string? RarityName { get; set; }
 
+        public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
+
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
-
-        public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public WishlistSortBy SortBy { get; set; } = WishlistSortBy.Name;

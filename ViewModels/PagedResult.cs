@@ -1,6 +1,6 @@
 namespace CardCollector.ViewModels
 {
-    public class PagedResult<T>
+    public sealed class PagedResult<T>
     {
         public bool HasNextPage => Page < TotalPages;
         public bool HasPreviousPage => Page > 1;

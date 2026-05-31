@@ -2,22 +2,6 @@
 @model CardCollector.Pages.StatsModel
 @{
     ViewData["Title"] = "Collection Stats";
-
-    var rarityLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.RarityBreakdown.Select(x => x.Label));
-    var rarityCounts = System.Text.Json.JsonSerializer.Serialize(Model.Stats.RarityBreakdown.Select(x => x.Count));
-
-    var setBreakdown = Model.Stats.SetBreakdown.Take(20).ToList();
-    var setLabels = System.Text.Json.JsonSerializer.Serialize(setBreakdown.Select(x => x.Label));
-    var setCounts = System.Text.Json.JsonSerializer.Serialize(setBreakdown.Select(x => x.Count));
-
-    var acqLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.AcquisitionBreakdown.Select(x => x.Label));
-    var acqCounts = System.Text.Json.JsonSerializer.Serialize(Model.Stats.AcquisitionBreakdown.Select(x => x.Count));
-
-    var setValueLabels = System.Text.Json.JsonSerializer.Serialize(Model.Stats.SetValueBreakdown.Select(x => x.Label));
-    var setValueData = System.Text.Json.JsonSerializer.Serialize(Model.Stats.SetValueBreakdown.Select(x => x.Value));
-
-    var historyDates = System.Text.Json.JsonSerializer.Serialize(Model.Stats.ValueHistory.Select(x => x.SnapshotDate));
-    var historyValues = System.Text.Json.JsonSerializer.Serialize(Model.Stats.ValueHistory.Select(x => x.TotalValue));
 }
 
 <h2 class="mb-4">Collection Stats</h2>
@@ -115,16 +99,16 @@
 
 @section Scripts {
     <script>
-        const rarityLabels = @Html.Raw(rarityLabels);
-        const rarityCounts = @Html.Raw(rarityCounts);
-        const setLabels = @Html.Raw(setLabels);
-        const setCounts = @Html.Raw(setCounts);
-        const acqLabels = @Html.Raw(acqLabels);
-        const acqCounts = @Html.Raw(acqCounts);
-        const setValueLabels = @Html.Raw(setValueLabels);
-        const setValueData = @Html.Raw(setValueData);
-        const historyDates = @Html.Raw(historyDates);
-        const historyValues = @Html.Raw(historyValues);
+        const rarityLabels = @Html.Raw(Model.Stats.RarityLabelsJson);
+        const rarityCounts = @Html.Raw(Model.Stats.RarityCountsJson);
+        const setLabels = @Html.Raw(Model.Stats.SetLabelsJson);
+        const setCounts = @Html.Raw(Model.Stats.SetCountsJson);
+        const acqLabels = @Html.Raw(Model.Stats.AcquisitionLabelsJson);
+        const acqCounts = @Html.Raw(Model.Stats.AcquisitionCountsJson);
+        const setValueLabels = @Html.Raw(Model.Stats.SetValueLabelsJson);
+        const setValueData = @Html.Raw(Model.Stats.SetValueDataJson);
+        const historyDates = @Html.Raw(Model.Stats.ValueHistoryDatesJson);
+        const historyValues = @Html.Raw(Model.Stats.ValueHistoryValuesJson);
     </script>
     <script src="~/js/stats.js"></script>
 }
