@@ -5,7 +5,7 @@ namespace CardCollector.DTO
 {
     public static class RarityExtensions
     {
-        private static readonly Dictionary<string, Rarity> _map = BuildMap();
+        private static readonly IReadOnlyDictionary<string, Rarity> _map = BuildMap();
 
         public static Rarity ParseRarity(string? value)
         {
@@ -15,7 +15,7 @@ namespace CardCollector.DTO
             return _map.TryGetValue(value, out var rarity) ? rarity : Rarity.Error;
         }
 
-        private static Dictionary<string, Rarity> BuildMap()
+        private static IReadOnlyDictionary<string, Rarity> BuildMap()
         {
             var map = new Dictionary<string, Rarity>(StringComparer.OrdinalIgnoreCase);
 

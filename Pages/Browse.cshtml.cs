@@ -41,13 +41,15 @@ namespace CardCollector.Pages
 
         public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
 
+        protected override ICardService CardService => _cardService;
+
         public BrowseModel(ICardService cardService, ICardDataRepository cardDataRepository)
         {
             _cardService = cardService;
             _cardDataRepository = cardDataRepository;
         }
 
-        public Dictionary<string, string?> GetPaginationParams() => new()
+        public IDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
         {
             ["attribute"] = Attribute,
             ["cardType"] = CardType,
@@ -55,14 +57,6 @@ namespace CardCollector.Pages
             ["levelMin"] = LevelMin?.ToString(),
             ["rarityName"] = RarityName
         };
-
-        public IActionResult OnGetAutocomplete(string? q)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                return new JsonResult(Array.Empty<string>());
-
-            return new JsonResult(_cardService.GetCardNameSuggestions(q));
-        }
 
         public async Task OnGetAsync()
         {

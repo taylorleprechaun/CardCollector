@@ -1,3 +1,4 @@
+using CardCollector.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -15,6 +16,16 @@ namespace CardCollector.Pages
 
         [BindProperty(SupportsGet = true)]
         public string? Query { get; set; }
+
+        protected abstract ICardService CardService { get; }
+
+        public IActionResult OnGetAutocomplete(string? q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return new JsonResult(Array.Empty<string>());
+
+            return new JsonResult(CardService.GetCardNameSuggestions(q));
+        }
 
         protected void NormalizeSearchParameters()
         {

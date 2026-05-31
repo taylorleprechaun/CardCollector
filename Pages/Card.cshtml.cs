@@ -73,13 +73,15 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
-            await _cardService.AddEntryAsync(
+            var added = await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 quantity, condition, edition,
                 acquisitionMethod, IsPlaceholder,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
-            if (setAsPreferred)
+            if (!added)
+                TempData["Error"] = "That printing is already in your collection.";
+            else if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
 
             return RedirectToPage(new { ID, ReturnURL });
@@ -91,13 +93,15 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
-            await _cardService.AddEntryAsync(
+            var added = await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod, IsPlaceholder,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
-            if (setAsPreferred)
+            if (!added)
+                TempData["Error"] = "That printing is already in your collection.";
+            else if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
 
             return RedirectToPage(new { ID, ReturnURL });

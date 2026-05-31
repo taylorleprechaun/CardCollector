@@ -11,7 +11,7 @@ namespace CardCollector.Repository
         private readonly IReadOnlyList<(Card Card, Image Image)> _browseableArtworks;
         private readonly IReadOnlyList<Card> _browseableCards;
         private readonly int _cacheTtlDays;
-        private readonly Dictionary<int, Card> _cardIndex;
+        private readonly IReadOnlyDictionary<int, Card> _cardIndex;
         private readonly IReadOnlyList<Card> _cards;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CardDataRepository> _logger;
@@ -61,20 +61,6 @@ namespace CardCollector.Repository
 
         public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
 
-        private static IReadOnlyDictionary<string, string> BuildSetNameIndex(IReadOnlyList<Card> cards)
-        {
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var card in cards)
-            {
-                foreach (var set in card.CardSets ?? [])
-                {
-                    if (!string.IsNullOrEmpty(set.Code) && !string.IsNullOrEmpty(set.Name) && !dict.ContainsKey(set.Code))
-                        dict[set.Code] = set.Name;
-                }
-            }
-            return dict;
-        }
-
         private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
         {
             var artworks = new List<(Card, Image)>();
@@ -88,70 +74,18 @@ namespace CardCollector.Repository
             return artworks;
         }
 
-        private IReadOnlyList<Card> LoadCards()
+        private static IReadOnlyDictionary<string, string> BuildSetNameIndex(IReadOnlyList<Card> cards)
         {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cachePath = Path.Combine(cacheDir, "cardcache.json");
-            var timestampPath = cachePath + ".timestamp";
-
-            if (IsCacheFresh(cachePath, timestampPath))
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var card in cards)
             {
-                _logger.LogInformation("Loading card data from cache ({Path})", cachePath);
-                return DeserializeFromFile(cachePath);
+                foreach (var set in card.CardSets ?? [])
+                {
+                    if (!string.IsNullOrEmpty(set.Code) && !string.IsNullOrEmpty(set.Name) && !dict.ContainsKey(set.Code))
+                        dict[set.Code] = set.Name;
+                }
             }
-
-            _logger.LogInformation("Card cache is missing or stale — fetching from YGOProDeck API");
-            var json = Task.Run(FetchFromApiAsync).GetAwaiter().GetResult();
-
-            if (json is not null)
-            {
-                Directory.CreateDirectory(cacheDir);
-                File.WriteAllText(cachePath, json);
-                File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
-                _logger.LogInformation("Card data cached to {Path}", cachePath);
-                return Deserialize(json);
-            }
-
-            if (File.Exists(cachePath))
-            {
-                _logger.LogWarning("API fetch failed — falling back to stale card cache");
-                return DeserializeFromFile(cachePath);
-            }
-
-            _logger.LogError("No card data available — API fetch failed and no cache exists");
-            return [];
-        }
-
-        private bool IsCacheFresh(string cachePath, string timestampPath)
-        {
-            if (!File.Exists(cachePath) || !File.Exists(timestampPath))
-                return false;
-
-            var raw = File.ReadAllText(timestampPath);
-            if (!DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var cachedAt))
-                return false;
-
-            return DateTime.UtcNow - cachedAt < TimeSpan.FromDays(_cacheTtlDays);
-        }
-
-        private async Task<string?> FetchFromApiAsync()
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("YGOProDeck");
-                return await client.GetStringAsync("api/v7/cardinfo.php");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch card data from YGOProDeck API");
-                return null;
-            }
-        }
-
-        private IReadOnlyList<Card> DeserializeFromFile(string path)
-        {
-            var json = File.ReadAllText(path);
-            return Deserialize(json);
+            return dict;
         }
 
         private IReadOnlyList<Card> Deserialize(string json)
@@ -174,6 +108,72 @@ namespace CardCollector.Repository
                 _logger.LogError(ex, "Failed to deserialize card data");
                 return [];
             }
+        }
+
+        private IReadOnlyList<Card> DeserializeFromFile(string path)
+        {
+            var json = File.ReadAllText(path);
+            return Deserialize(json);
+        }
+
+        private async Task<string?> FetchFromAPIAsync()
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("YGOProDeck");
+                return await client.GetStringAsync("api/v7/cardinfo.php");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch card data from YGOProDeck API");
+                return null;
+            }
+        }
+
+        private bool IsCacheFresh(string cachePath, string timestampPath)
+        {
+            if (!File.Exists(cachePath) || !File.Exists(timestampPath))
+                return false;
+
+            var raw = File.ReadAllText(timestampPath);
+            if (!DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var cachedAt))
+                return false;
+
+            return DateTime.UtcNow - cachedAt < TimeSpan.FromDays(_cacheTtlDays);
+        }
+
+        private IReadOnlyList<Card> LoadCards()
+        {
+            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
+            var cachePath = Path.Combine(cacheDir, "cardcache.json");
+            var timestampPath = cachePath + ".timestamp";
+
+            if (IsCacheFresh(cachePath, timestampPath))
+            {
+                _logger.LogInformation("Loading card data from cache ({Path})", cachePath);
+                return DeserializeFromFile(cachePath);
+            }
+
+            _logger.LogInformation("Card cache is missing or stale — fetching from YGOProDeck API");
+            var json = Task.Run(FetchFromAPIAsync).GetAwaiter().GetResult();
+
+            if (json is not null)
+            {
+                Directory.CreateDirectory(cacheDir);
+                File.WriteAllText(cachePath, json);
+                File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
+                _logger.LogInformation("Card data cached to {Path}", cachePath);
+                return Deserialize(json);
+            }
+
+            if (File.Exists(cachePath))
+            {
+                _logger.LogWarning("API fetch failed — falling back to stale card cache");
+                return DeserializeFromFile(cachePath);
+            }
+
+            _logger.LogError("No card data available — API fetch failed and no cache exists");
+            return [];
         }
     }
 }

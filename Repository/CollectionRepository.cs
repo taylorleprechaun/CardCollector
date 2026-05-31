@@ -39,6 +39,16 @@ namespace CardCollector.Repository
                 .OrderByDescending(e => e.DateCreated)
                 .ToListAsync();
 
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
+        {
+            var pairs = await _context.CollectionEntries
+                .Select(e => new { e.ImageID, e.SetCode })
+                .Distinct()
+                .ToListAsync();
+
+            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
+
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
         {
             var entries = await _context.CollectionEntries
@@ -59,16 +69,6 @@ namespace CardCollector.Repository
                 : null;
 
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
-        }
-
-        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
-        {
-            var pairs = await _context.CollectionEntries
-                .Select(e => new { e.ImageID, e.SetCode })
-                .Distinct()
-                .ToListAsync();
-
-            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
 
         public async Task<IReadOnlySet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs)

@@ -48,7 +48,7 @@ async function openAddModal(btn) {
                 const { price } = await resp.json();
                 if (price) marketPriceEl.value = price.toFixed(2);
             }
-        } catch { }
+        } catch (err) { console.warn('Failed to fetch price:', err); }
     }
     marketPriceEl.placeholder = '0.00';
 }

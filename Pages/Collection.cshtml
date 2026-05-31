@@ -33,11 +33,11 @@
 else
 {
     <div class="list-group mb-4" id="collectionList">
-        @{int groupIDx = 0;}
+        @{int groupIdx = 0;}
         @foreach (var group in Model.GroupedCards.Items)
         {
-            var collapseID = "group-" + groupIDx;
-            groupIDx++;
+            var collapseID = "group-" + groupIdx;
+            groupIdx++;
             var status = group.CompletionStatus;
 
             <div class="list-group-item p-0">

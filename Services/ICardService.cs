@@ -22,7 +22,7 @@ namespace CardCollector.Services
         /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
         /// </summary>
-        Task<(decimal TotalValue, int CardCount, List<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync();
+        Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync();
 
         /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.

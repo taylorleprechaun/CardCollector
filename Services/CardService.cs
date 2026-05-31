@@ -68,7 +68,7 @@ namespace CardCollector.Services
             return true;
         }
 
-        public async Task<(decimal TotalValue, int CardCount, List<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
+        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
         {
             var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 

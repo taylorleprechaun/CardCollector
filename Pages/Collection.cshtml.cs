@@ -15,6 +15,8 @@ namespace CardCollector.Pages
 
         public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
 
+        protected override ICardService CardService => _cardService;
+
         public CollectionModel(ICardService cardService, ICardSetRepository cardSetRepository, ICollectionRepository collectionRepository)
         {
             _cardService = cardService;
@@ -31,14 +33,6 @@ namespace CardCollector.Pages
             GroupedCards = await _cardService.SearchGroupedOwnedAsync(Query, PageNumber, PageSize);
         }
 
-        public IActionResult OnGetAutocomplete(string? q)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                return new JsonResult(Array.Empty<string>());
-
-            return new JsonResult(_cardService.GetCardNameSuggestions(q));
-        }
-
         public async Task<IActionResult> OnPostAddPurchaseAsync(
             int cardID, int imageID, string setCode,
             int quantity,
@@ -48,13 +42,15 @@ namespace CardCollector.Pages
             bool setAsPreferred = false,
             string? rarityName = null)
         {
-            await _cardService.AddEntryAsync(
+            var added = await _cardService.AddEntryAsync(
                 cardID, imageID, setCode, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod, false,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
-            if (setAsPreferred)
+            if (!added)
+                TempData["Error"] = "That printing is already in your collection.";
+            else if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode);
 
             return RedirectToPage();

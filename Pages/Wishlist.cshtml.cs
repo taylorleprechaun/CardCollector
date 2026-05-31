@@ -52,11 +52,19 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public bool SortDescending { get; set; } = false;
 
+        protected override ICardService CardService => _cardService;
+
         public WishlistModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
             _cardService = cardService;
             _cardSetRepository = cardSetRepository;
         }
+
+        public IDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
+        {
+            ["sortBy"] = SortBy.ToString(),
+            ["sortDescending"] = SortDescending.ToString()
+        };
 
         public string GetTCGDate(string setCode) =>
             _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
@@ -68,31 +76,31 @@ namespace CardCollector.Pages
             Results = result.PagedItems;
         }
 
-        public IActionResult OnGetAutocomplete(string? q)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                return new JsonResult(Array.Empty<string>());
-
-            return new JsonResult(_cardService.GetCardNameSuggestions(q));
-        }
-
         public async Task<IActionResult> OnPostOrderAsync()
         {
-            await _cardService.AddEntryAsync(
+            var added = await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, Condition, Edition,
                 AcquisitionMethod, false,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+
+            if (!added)
+                TempData["Error"] = "That printing is already in your collection.";
+
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
         {
-            await _cardService.AddEntryAsync(
+            var added = await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, Condition, Edition,
                 AcquisitionMethod, false,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+
+            if (!added)
+                TempData["Error"] = "That printing is already in your collection.";
+
             return RedirectToPage();
         }
 
@@ -101,11 +109,5 @@ namespace CardCollector.Pages
             await _cardService.RemoveFromWishlistAsync(imageID);
             return RedirectToPage();
         }
-
-        public Dictionary<string, string?> GetPaginationParams() => new()
-        {
-            ["sortBy"] = SortBy.ToString(),
-            ["sortDescending"] = SortDescending.ToString()
-        };
     }
 }
