@@ -82,9 +82,9 @@ namespace CardCollector.Pages
             if (!added)
                 TempData["Error"] = "That printing is already in your collection.";
             else if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
+                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
 
-            return RedirectToPage(new { ID, ReturnURL });
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostOwnAsync(
@@ -102,9 +102,9 @@ namespace CardCollector.Pages
             if (!added)
                 TempData["Error"] = "That printing is already in your collection.";
             else if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode);
+                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
 
-            return RedirectToPage(new { ID, ReturnURL });
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostRemovePreferredAsync()
