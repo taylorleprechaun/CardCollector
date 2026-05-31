@@ -157,10 +157,10 @@ namespace CardCollector.Services
 
         public IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10) =>
             _cardDataRepository.GetBrowseableCards()
-                .Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Where(c => c.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
                 .OrderBy(c => c.Name)
                 .Take(maxResults)
-                .Select(c => c.Name);
+                .Select(c => c.Name!);
 
         public async Task<CollectionStatsViewModel> GetCollectionStatsAsync()
         {
@@ -329,7 +329,7 @@ namespace CardCollector.Services
 
             var filtered = _cardDataRepository.GetBrowseableArtworks()
                 .Where(a => string.IsNullOrWhiteSpace(query) ||
-                            a.Card.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+                            a.Card.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
 
             if (!string.IsNullOrWhiteSpace(criteria.CardType))
                 filtered = filtered.Where(a => a.Card.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
@@ -447,7 +447,7 @@ namespace CardCollector.Services
                 : card?.CardSets?.FirstOrDefault(s => s.Code == setCode);
             var availableRarities = card?.CardSets?
                 .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
-                .Select(s => s.RarityName)
+                .Select(s => s.RarityName!)
                 .Distinct()
                 .OrderBy(r => r)
                 .ToList() ?? [];

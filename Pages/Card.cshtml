@@ -82,8 +82,9 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     <td>@set.RarityName</td>
                                     <td class="text-nowrap">
                                         @{
-                                            var isPreferred = Model.PreferredVersion?.SetCode == set.Code &&
-                                                (Model.PreferredVersion.RarityName == null || Model.PreferredVersion.RarityName == set.RarityName);
+                                            var isPreferred = Model.PreferredVersion is not null
+                                                && Model.PreferredVersion.SetCode == set.Code
+                                                && (Model.PreferredVersion.RarityName == null || Model.PreferredVersion.RarityName == set.RarityName);
                                         }
                                         @if (isPreferred)
                                         {
@@ -117,12 +118,12 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     <td class="text-nowrap">
                                         <button type="button"
                                                 class="btn btn-sm btn-primary me-1"
-                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Order', '@set.RarityName.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code)')">
+                                                onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
                                             Order
                                         </button>
                                         <button type="button"
                                                 class="btn btn-sm btn-success"
-                                                onclick="openModal('@set.Code', '@set.Name.Replace("'", "\\'")', 'Own', '@set.RarityName.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code)')">
+                                                onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
                                             Mark as Owned
                                         </button>
                                     </td>

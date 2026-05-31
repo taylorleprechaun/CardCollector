@@ -61,7 +61,7 @@ namespace CardCollector.Repository
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
         }
 
-        public async Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
         {
             var pairs = await _context.CollectionEntries
                 .Select(e => new { e.ImageID, e.SetCode })
@@ -71,11 +71,11 @@ namespace CardCollector.Repository
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
 
-        public async Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs)
+        public async Task<IReadOnlySet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
             if (ids.Count == 0)
-                return [];
+                return new HashSet<int>();
 
             var preferredLookup = await GetPreferredPairLookupAsync();
 
@@ -93,11 +93,11 @@ namespace CardCollector.Repository
             return allOwnedCardIDs.Except(nonPlaceholderCardIDs).ToHashSet();
         }
 
-        public async Task<HashSet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs)
+        public async Task<IReadOnlySet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
             if (ids.Count == 0)
-                return [];
+                return new HashSet<int>();
 
             var preferredLookup = await GetPreferredPairLookupAsync();
 
@@ -115,11 +115,11 @@ namespace CardCollector.Repository
             return allOwnedImageIDs.Except(nonPlaceholderImageIDs).ToHashSet();
         }
 
-        public async Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
+        public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
             if (ids.Count == 0)
-                return [];
+                return new Dictionary<int, CollectionStatus>();
 
             var rows = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.CardID))
@@ -136,11 +136,11 @@ namespace CardCollector.Repository
             return rows.ToDictionary(r => r.CardID, r => r.Status);
         }
 
-        public async Task<Dictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs)
+        public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
             if (ids.Count == 0)
-                return [];
+                return new Dictionary<int, CollectionStatus>();
 
             var rows = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.ImageID))

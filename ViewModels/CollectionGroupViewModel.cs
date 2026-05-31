@@ -13,7 +13,7 @@ namespace CardCollector.ViewModels
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
 
-        public IList<OrderEntryViewModel> Entries { get; init; } = [];
+        public IReadOnlyList<OrderEntryViewModel> Entries { get; init; } = [];
 
         public bool IsPreferredVersion { get; init; }
 
@@ -23,7 +23,7 @@ namespace CardCollector.ViewModels
 
         public static CollectionGroupViewModel From(
             CardPrinting printing,
-            IList<OrderEntryViewModel> entries,
+            IReadOnlyList<OrderEntryViewModel> entries,
             bool isPreferredVersion,
             decimal? totalCost,
             int totalQuantity) => new()

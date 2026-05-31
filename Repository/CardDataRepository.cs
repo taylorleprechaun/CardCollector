@@ -42,6 +42,7 @@ namespace CardCollector.Repository
                 .SelectMany(c => c.CardSets ?? [])
                 .Select(s => s.RarityName)
                 .Where(r => !string.IsNullOrEmpty(r))
+                .Select(r => r!)
                 .Distinct()
                 .OrderBy(r => r)
                 .ToList();
@@ -67,7 +68,7 @@ namespace CardCollector.Repository
             {
                 foreach (var set in card.CardSets ?? [])
                 {
-                    if (!string.IsNullOrEmpty(set.Code) && !dict.ContainsKey(set.Code))
+                    if (!string.IsNullOrEmpty(set.Code) && !string.IsNullOrEmpty(set.Name) && !dict.ContainsKey(set.Code))
                         dict[set.Code] = set.Name;
                 }
             }
@@ -163,7 +164,7 @@ namespace CardCollector.Repository
                 {
                     if (card.CardSets is not null)
                         card.CardSets = card.CardSets
-                            .Where(s => !s.Name.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase))
+                            .Where(s => s.Name?.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase) != true)
                             .ToList();
                 }
                 return cards;

@@ -111,7 +111,14 @@
                     @(Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—")
                 </p>
                 <p class="card-text text-muted small">
-                    @(Model.Stats.CurrentMarketValueDate is not null ? $"As of {Model.Stats.CurrentMarketValueDate}" : "Calculate on the Stats page")
+                    @if (Model.Stats.CurrentMarketValueDate is not null)
+                    {
+                        <text>As of @Model.Stats.CurrentMarketValueDate</text>
+                    }
+                    else
+                    {
+                        <text>Calculate on the <a href="/Stats">Stats page</a></text>
+                    }
                 </p>
             </div>
         </div>

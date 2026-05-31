@@ -26,9 +26,9 @@ async function openAddModal(btn) {
     document.getElementById('atcRarityDisplay').textContent = rarity;
     document.getElementById('atcAcquisitionGroup').style.display = 'block';
     document.getElementById('atcQuantity').value = 1;
-    setSelect('atcCondition', '4');
-    setSelect('atcEdition', '0');
-    setSelect('atcAcquisition', '1');
+    setSelect('atcCondition', '4');   // CardCondition.NearMint
+    setSelect('atcEdition', '0');     // CardEdition.FirstEdition
+    setSelect('atcAcquisition', '1'); // AcquisitionMethod.Purchased
     document.getElementById('atcPurchaseDate').value = btn.dataset.tcgDate || '';
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;

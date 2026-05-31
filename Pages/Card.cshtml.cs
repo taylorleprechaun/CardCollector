@@ -106,13 +106,13 @@ namespace CardCollector.Pages
         public async Task<IActionResult> OnPostRemovePreferredAsync()
         {
             await _cardService.RemoveFromWishlistAsync(ImageID);
-            return RedirectToPage(new { ID, imageID = ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
             await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);
-            return RedirectToPage(new { ID, imageID = ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
     }
 }

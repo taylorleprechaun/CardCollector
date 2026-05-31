@@ -30,7 +30,7 @@ namespace CardCollector.Repository
         /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in the collection regardless of status.
         /// </summary>
-        Task<HashSet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
+        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.
@@ -40,22 +40,22 @@ namespace CardCollector.Repository
         /// <summary>
         /// Returns the card IDs from the given set that are owned but do not match any preferred version.
         /// </summary>
-        Task<HashSet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
+        Task<IReadOnlySet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
 
         /// <summary>
         /// Returns the image IDs from the given set that are owned but do not match any preferred version.
         /// </summary>
-        Task<HashSet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs);
+        Task<IReadOnlySet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per card ID for the given set of card IDs.
         /// </summary>
-        Task<Dictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);
+        Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);
 
         /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per image ID for the given set of image IDs.
         /// </summary>
-        Task<Dictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs);
+        Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
         /// Updates the mutable fields of an existing entry. Returns false if no such entry exists.

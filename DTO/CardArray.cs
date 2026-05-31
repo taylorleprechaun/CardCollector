@@ -5,6 +5,6 @@ namespace CardCollector.DTO
     public class CardArray
     {
         [JsonProperty("data")]
-        public IEnumerable<Card> Cards { get; set; }
+        public IEnumerable<Card>? Cards { get; set; }
     }
 }

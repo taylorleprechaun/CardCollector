@@ -8,9 +8,9 @@ namespace CardCollector.DTO
         public int ID { get; set; }
 
         [JsonProperty("image_url")]
-        public string ImageURL { get; set; }
+        public string? ImageURL { get; set; }
 
         [JsonProperty("image_url_small")]
-        public string ImageURLSmall { get; set; }
+        public string? ImageURLSmall { get; set; }
     }
 }

@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<partial name="_SearchBar" model='new SearchBarViewModel("Search by name, set, or rarity…", "?handler=Autocomplete", Model.PageSize, Model.Query)' />
+<partial name="_SearchBar" model='new SearchBarViewModel(AutocompleteURL: "?handler=Autocomplete", PageSize: Model.PageSize, Placeholder: "Search by name, set, or rarity…", Query: Model.Query)' />
 
 @if (!Model.GroupedCards.Items.Any())
 {

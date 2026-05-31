@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace CardCollector.DTO
 {
     public class Set
     {
         [JsonProperty("set_code")]
-        public string Code { get; set; }
+        public string? Code { get; set; }
 
         [JsonProperty("set_name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonProperty("set_price")]
         public decimal Price { get; set; }
@@ -18,10 +18,10 @@ namespace CardCollector.DTO
         public Rarity Rarity => RarityExtensions.ParseRarity(RarityName);
 
         [JsonProperty("set_rarity_code")]
-        public string RarityCode { get; set; }
+        public string? RarityCode { get; set; }
 
         // Raw string from JSON — used for display and as the source for Rarity parsing.
         [JsonProperty("set_rarity")]
-        public string RarityName { get; set; }
+        public string? RarityName { get; set; }
     }
 }

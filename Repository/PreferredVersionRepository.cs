@@ -13,16 +13,6 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task DeleteAsync(int imageID)
-        {
-            var entity = await _context.PreferredVersions.FirstOrDefaultAsync(pv => pv.ImageID == imageID);
-            if (entity is not null)
-            {
-                _context.PreferredVersions.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
-        }
-
         public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null)
         {
             var existing = await _context.PreferredVersions
@@ -51,14 +41,24 @@ namespace CardCollector.Repository
             await _context.SaveChangesAsync();
         }
 
+        public async Task DeleteAsync(int imageID)
+        {
+            var entity = await _context.PreferredVersions.FirstOrDefaultAsync(pv => pv.ImageID == imageID);
+            if (entity is not null)
+            {
+                _context.PreferredVersions.Remove(entity);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<IEnumerable<PreferredVersion>> GetAllAsync() =>
             await _context.PreferredVersions.ToListAsync();
 
-        public async Task<Dictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
+        public async Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
             if (ids.Count == 0)
-                return [];
+                return new Dictionary<int, PreferredVersion>();
 
             var results = await _context.PreferredVersions
                 .Where(pv => ids.Contains(pv.ImageID))
@@ -67,7 +67,7 @@ namespace CardCollector.Repository
             return results.ToDictionary(pv => pv.ImageID);
         }
 
-        public async Task<HashSet<int>> GetPreferredImageIDsAsync()
+        public async Task<IReadOnlySet<int>> GetPreferredImageIDsAsync()
         {
             var ids = await _context.PreferredVersions
                 .Select(pv => pv.ImageID)

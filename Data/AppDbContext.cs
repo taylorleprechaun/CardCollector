@@ -5,8 +5,6 @@ namespace CardCollector.Data
 {
     public class AppDBContext : DbContext
     {
-        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
-
         public DbSet<CollectionEntry> CollectionEntries { get; set; }
 
         public DbSet<CollectionEntryValueSnapshot> CollectionEntryValueSnapshots { get; set; }
@@ -14,6 +12,8 @@ namespace CardCollector.Data
         public DbSet<CollectionValueSnapshot> CollectionValueSnapshots { get; set; }
 
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
+
+        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

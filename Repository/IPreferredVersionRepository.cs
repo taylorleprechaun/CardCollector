@@ -25,11 +25,11 @@ namespace CardCollector.Repository
         /// <summary>
         /// Returns a dictionary of preferred versions keyed by image ID for the given set of image IDs.
         /// </summary>
-        Task<Dictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs);
+        Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
         /// Returns the set of image IDs that have a preferred version saved.
         /// </summary>
-        Task<HashSet<int>> GetPreferredImageIDsAsync();
+        Task<IReadOnlySet<int>> GetPreferredImageIDsAsync();
     }
 }
