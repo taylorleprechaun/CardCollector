@@ -16,7 +16,8 @@ namespace CardCollector.Repository
         public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null)
         {
             var existing = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.ImageID == imageID);
+                .FirstOrDefaultAsync(pv => pv.ImageID == imageID)
+                .ConfigureAwait(false);
 
             if (existing is null)
             {
@@ -38,21 +39,24 @@ namespace CardCollector.Repository
                 existing.DateModified = DateTime.UtcNow;
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public async Task DeleteAsync(int imageID)
         {
-            var entity = await _context.PreferredVersions.FirstOrDefaultAsync(pv => pv.ImageID == imageID);
+            var entity = await _context.PreferredVersions
+                .FirstOrDefaultAsync(pv => pv.ImageID == imageID)
+                .ConfigureAwait(false);
+
             if (entity is not null)
             {
                 _context.PreferredVersions.Remove(entity);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 
         public async Task<IEnumerable<PreferredVersion>> GetAllAsync() =>
-            await _context.PreferredVersions.ToListAsync();
+            await _context.PreferredVersions.ToListAsync().ConfigureAwait(false);
 
         public async Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
         {
@@ -62,7 +66,8 @@ namespace CardCollector.Repository
 
             var results = await _context.PreferredVersions
                 .Where(pv => ids.Contains(pv.ImageID))
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return results.ToDictionary(pv => pv.ImageID);
         }
@@ -71,7 +76,8 @@ namespace CardCollector.Repository
         {
             var ids = await _context.PreferredVersions
                 .Select(pv => pv.ImageID)
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return ids.ToHashSet();
         }

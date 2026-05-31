@@ -2,7 +2,7 @@ namespace CardCollector.ViewModels
 {
     public sealed class PaginationViewModel
     {
-        public IDictionary<string, string?>? AdditionalParams { get; init; }
+        public IReadOnlyDictionary<string, string?>? AdditionalParams { get; init; }
         public required string AriaLabel { get; init; }
         public bool HasNextPage { get; init; }
         public bool HasPreviousPage { get; init; }

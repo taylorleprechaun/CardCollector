@@ -16,17 +16,20 @@ namespace CardCollector.Repository
         public async Task<IEnumerable<CollectionValueSnapshot>> GetAllSnapshotsAsync() =>
             await _context.CollectionValueSnapshots
                 .OrderBy(s => s.SnapshotDate)
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
         public async Task<CollectionValueSnapshot?> GetLatestSnapshotAsync() =>
             await _context.CollectionValueSnapshots
                 .OrderByDescending(s => s.SnapshotDate)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
 
         public async Task UpsertSnapshotAsync(CollectionValueSnapshot snapshot)
         {
             var existing = await _context.CollectionValueSnapshots
-                .FirstOrDefaultAsync(s => s.SnapshotDate == snapshot.SnapshotDate);
+                .FirstOrDefaultAsync(s => s.SnapshotDate == snapshot.SnapshotDate)
+                .ConfigureAwait(false);
 
             if (existing is not null)
             {
@@ -38,7 +41,7 @@ namespace CardCollector.Repository
                 _context.CollectionValueSnapshots.Add(snapshot);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

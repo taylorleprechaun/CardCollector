@@ -58,17 +58,17 @@ public sealed class ExportModel(ICardService cardService) : PageModel
         return CSVFile(sb, $"wishlist-{DateTime.Today:yyyy-MM-dd}.csv");
     }
 
-    private FileContentResult CSVFile(StringBuilder sb, string filename)
-    {
-        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
-        return File(bytes, "text/csv", filename);
-    }
-
     private static string CSV(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
+    }
+
+    private FileContentResult CSVFile(StringBuilder sb, string filename)
+    {
+        var bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(sb.ToString());
+        return File(bytes, "text/csv", filename);
     }
 }

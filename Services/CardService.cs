@@ -42,7 +42,7 @@ namespace CardCollector.Services
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
             string? rarityName = null)
         {
-            if (await _collectionRepository.ExistsAsync(imageID, setCode))
+            if (await _collectionRepository.ExistsAsync(imageID, setCode).ConfigureAwait(false))
                 return false;
 
             var entry = new CollectionEntry
@@ -64,7 +64,7 @@ namespace CardCollector.Services
                 Status = status
             };
 
-            await _collectionRepository.AddAsync(entry);
+            await _collectionRepository.AddAsync(entry).ConfigureAwait(false);
             return true;
         }
 
@@ -72,10 +72,10 @@ namespace CardCollector.Services
         {
             var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
-            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync();
+            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
             if (latestSnapshot is not null && latestSnapshot.SnapshotDate == today)
             {
-                var cachedEntrySnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync()).ToList();
+                var cachedEntrySnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false)).ToList();
                 var cachedSetBreakdown = cachedEntrySnapshots
                     .GroupBy(s => s.SetName)
                     .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
@@ -86,7 +86,7 @@ namespace CardCollector.Services
                 return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown);
             }
 
-            var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
+            var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
 
             var uniquePrintingKeys = entries
                 .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
@@ -97,9 +97,9 @@ namespace CardCollector.Services
             var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName), decimal?>();
             foreach (var key in uniquePrintingKeys)
             {
-                var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName);
+                var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName).ConfigureAwait(false);
                 priceCache[key] = price;
-                await Task.Delay(_pricingDelayMs);
+                await Task.Delay(_pricingDelayMs).ConfigureAwait(false);
             }
 
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
@@ -133,7 +133,7 @@ namespace CardCollector.Services
                 });
             }
 
-            await _collectionEntryValueRepository.UpsertSnapshotsAsync(entrySnapshots, today);
+            await _collectionEntryValueRepository.UpsertSnapshotsAsync(entrySnapshots, today).ConfigureAwait(false);
 
             await _collectionValueRepository.UpsertSnapshotAsync(new CollectionValueSnapshot
             {
@@ -141,7 +141,7 @@ namespace CardCollector.Services
                 DateCreated = DateTime.UtcNow,
                 SnapshotDate = today,
                 TotalValue = totalValue
-            });
+            }).ConfigureAwait(false);
 
             var setValueBreakdown = entrySnapshots
                 .GroupBy(s => s.SetName)
@@ -164,7 +164,7 @@ namespace CardCollector.Services
 
         public async Task<CollectionStatsViewModel> GetCollectionStatsAsync()
         {
-            var ownedEntries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
+            var ownedEntries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
 
             var rarityBreakdown = ownedEntries
@@ -187,7 +187,7 @@ namespace CardCollector.Services
                 .OrderByDescending(x => x.Item2)
                 .ToList();
 
-            var latestEntrySnapshots = await _collectionEntryValueRepository.GetLatestSnapshotsAsync();
+            var latestEntrySnapshots = await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false);
             var setValueBreakdown = latestEntrySnapshots
                 .GroupBy(s => s.SetName)
                 .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
@@ -195,7 +195,7 @@ namespace CardCollector.Services
                 .Take(20)
                 .ToList();
 
-            var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync();
+            var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync().ConfigureAwait(false);
 
             return new CollectionStatsViewModel
             {
@@ -210,13 +210,13 @@ namespace CardCollector.Services
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
             var totalArtworks = _cardDataRepository.GetBrowseableArtworks().Count();
-            var groups = await GetGroupedOwnedAsync();
-            var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered);
-            var ownedStats = await _collectionRepository.GetOwnedStatsAsync();
-            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync();
+            var groups = await GetGroupedOwnedAsync().ConfigureAwait(false);
+            var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+            var ownedStats = await _collectionRepository.GetOwnedStatsAsync().ConfigureAwait(false);
+            var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
 
-            var collectedPairs = await _collectionRepository.GetCollectedPairsAsync();
-            var allPreferred = await _preferredVersionRepository.GetAllAsync();
+            var collectedPairs = await _collectionRepository.GetCollectedPairsAsync().ConfigureAwait(false);
+            var allPreferred = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
             var wishlistCount = allPreferred.Count(pv => !collectedPairs.Contains((pv.ImageID, pv.SetCode)));
 
             return new DashboardStats
@@ -242,10 +242,10 @@ namespace CardCollector.Services
 
         public async Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync()
         {
-            var entries = (await GetEnrichedByStatusAsync(CollectionStatus.Owned)).ToList();
+            var entries = (await GetEnrichedByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
 
             var imageIDs = entries.Select(e => e.ImageID).Distinct().ToHashSet();
-            var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs);
+            var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs).ConfigureAwait(false);
 
             return entries
                 .GroupBy(e => (e.CardName, e.ImageURLSmall, e.SetCode, e.SetName, e.RarityCode))
@@ -274,13 +274,13 @@ namespace CardCollector.Services
 
         public async Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID)
         {
-            var dict = await _preferredVersionRepository.GetByImageIDsAsync(new[] { imageID });
+            var dict = await _preferredVersionRepository.GetByImageIDsAsync(new[] { imageID }).ConfigureAwait(false);
             return dict.TryGetValue(imageID, out var pv) ? pv : null;
         }
 
         public async Task<(Card Card, Image Image)?> GetRandomUncollectedAsync()
         {
-            var preferredImageIDs = await _preferredVersionRepository.GetPreferredImageIDsAsync();
+            var preferredImageIDs = await _preferredVersionRepository.GetPreferredImageIDsAsync().ConfigureAwait(false);
 
             var uncollected = _cardDataRepository.GetBrowseableArtworks()
                 .Where(a => !preferredImageIDs.Contains(a.Image.ID))
@@ -295,11 +295,11 @@ namespace CardCollector.Services
 
         public async Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync()
         {
-            var allPreferred = (await _preferredVersionRepository.GetAllAsync()).ToList();
+            var allPreferred = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
             if (allPreferred.Count == 0)
                 return [];
 
-            var collectedPairs = await _collectionRepository.GetCollectedPairsAsync();
+            var collectedPairs = await _collectionRepository.GetCollectedPairsAsync().ConfigureAwait(false);
 
             var wishlistItems = allPreferred
                 .Where(pv => !collectedPairs.Contains((pv.ImageID, pv.SetCode)))
@@ -316,10 +316,10 @@ namespace CardCollector.Services
         }
 
         public async Task RemoveFromWishlistAsync(int imageID) =>
-            await _preferredVersionRepository.DeleteAsync(imageID);
+            await _preferredVersionRepository.DeleteAsync(imageID).ConfigureAwait(false);
 
         public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null) =>
-            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName);
+            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName).ConfigureAwait(false);
 
         public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria)
         {
@@ -352,8 +352,8 @@ namespace CardCollector.Services
             var slice = orderedFiltered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             var imageIDs = slice.Select(a => a.Image.ID).ToList();
-            var statusMap = await _collectionRepository.GetStatusByImageIDsAsync(imageIDs);
-            var placeholderIDs = await _collectionRepository.GetPlaceholderImageIDsAsync(imageIDs);
+            var statusMap = await _collectionRepository.GetStatusByImageIDsAsync(imageIDs).ConfigureAwait(false);
+            var placeholderIDs = await _collectionRepository.GetPlaceholderImageIDsAsync(imageIDs).ConfigureAwait(false);
 
             var items = slice.Select(a => new CardListItemViewModel
             {
@@ -379,7 +379,7 @@ namespace CardCollector.Services
 
         public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize)
         {
-            var allGroups = (await GetGroupedOwnedAsync()).ToList();
+            var allGroups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).ToList();
 
             var filtered = allGroups
                 .Where(g => string.IsNullOrWhiteSpace(query) ||
@@ -403,7 +403,7 @@ namespace CardCollector.Services
 
         public async Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false)
         {
-            var allItems = (await GetWishlistAsync()).ToList();
+            var allItems = (await GetWishlistAsync().ConfigureAwait(false)).ToList();
 
             var filtered = allItems
                 .Where(item => string.IsNullOrWhiteSpace(query) ||
@@ -469,7 +469,7 @@ namespace CardCollector.Services
 
         private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)
         {
-            var entries = await _collectionRepository.GetByStatusAsync(status);
+            var entries = await _collectionRepository.GetByStatusAsync(status).ConfigureAwait(false);
             var viewModels = new List<OrderEntryViewModel>();
 
             foreach (var entry in entries)

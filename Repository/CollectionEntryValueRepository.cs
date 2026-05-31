@@ -18,26 +18,29 @@ namespace CardCollector.Repository
             var latestDate = await _context.CollectionEntryValueSnapshots
                 .Select(s => s.SnapshotDate)
                 .OrderByDescending(d => d)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
 
             if (latestDate is null)
                 return [];
 
             return await _context.CollectionEntryValueSnapshots
                 .Where(s => s.SnapshotDate == latestDate)
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
         }
 
         public async Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate)
         {
             var existing = await _context.CollectionEntryValueSnapshots
                 .Where(s => s.SnapshotDate == snapshotDate)
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             _context.CollectionEntryValueSnapshots.RemoveRange(existing);
             _context.CollectionEntryValueSnapshots.AddRange(snapshots);
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

@@ -1,16 +1,16 @@
 (function () {
     'use strict';
-    var input = document.querySelector('input[data-autocomplete-url]');
+    const input = document.querySelector('input[data-autocomplete-url]');
     if (!input) return;
 
-    var url = input.dataset.autocompleteUrl;
-    var datalist = document.getElementById('card-suggestions');
+    const url = input.dataset.autocompleteUrl;
+    const datalist = document.getElementById('card-suggestions');
     if (!datalist) return;
 
-    var debounceTimer;
+    let debounceTimer;
     input.addEventListener('input', function () {
         clearTimeout(debounceTimer);
-        var q = this.value.trim();
+        const q = this.value.trim();
         if (q.length < 2) { datalist.innerHTML = ''; return; }
         debounceTimer = setTimeout(function () {
             fetch(url + '&q=' + encodeURIComponent(q))

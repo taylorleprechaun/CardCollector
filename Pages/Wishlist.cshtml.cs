@@ -17,6 +17,8 @@ namespace CardCollector.Pages
         [BindProperty]
         public int CardID { get; set; }
 
+        protected override ICardService CardService => _cardService;
+
         [BindProperty]
         public CardCondition? Condition { get; set; }
 
@@ -52,15 +54,13 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public bool SortDescending { get; set; } = false;
 
-        protected override ICardService CardService => _cardService;
-
         public WishlistModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
             _cardService = cardService;
             _cardSetRepository = cardSetRepository;
         }
 
-        public IDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
+        public IReadOnlyDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
         {
             ["sortBy"] = SortBy.ToString(),
             ["sortDescending"] = SortDescending.ToString()

@@ -14,9 +14,9 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     document.getElementById('atcRarityDisplay').textContent = rarityName || '';
 
     document.getElementById('atcAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
-    document.getElementById('atcCondition').value = '4';   // CardCondition.NearMint
-    document.getElementById('atcEdition').value = '0';     // CardEdition.FirstEdition
-    document.getElementById('atcAcquisition').value = '1'; // AcquisitionMethod.Purchased
+    document.getElementById('atcCondition').value = CardDefaults.Condition;
+    document.getElementById('atcEdition').value = CardDefaults.Edition;
+    document.getElementById('atcAcquisition').value = CardDefaults.Acquisition;
     document.getElementById('atcQuantity').value = 1;
     document.getElementById('atcPurchaseDate').value = isOrder
         ? new Date().toISOString().split('T')[0]

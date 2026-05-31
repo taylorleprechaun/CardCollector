@@ -13,9 +13,9 @@ namespace CardCollector.Pages
         private readonly ICardSetRepository _cardSetRepository;
         private readonly ICollectionRepository _collectionRepository;
 
-        public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
-
         protected override ICardService CardService => _cardService;
+
+        public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
 
         public CollectionModel(ICardService cardService, ICardSetRepository cardSetRepository, ICollectionRepository collectionRepository)
         {

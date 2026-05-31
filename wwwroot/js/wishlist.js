@@ -18,9 +18,9 @@ async function openWishlistModal(btn, action) {
     submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
     document.getElementById('wlAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
-    document.getElementById('wlCondition').value = '4';   // CardCondition.NearMint
-    document.getElementById('wlEdition').value = '0';     // CardEdition.FirstEdition
-    document.getElementById('wlAcquisition').value = '1'; // AcquisitionMethod.Purchased
+    document.getElementById('wlCondition').value = CardDefaults.Condition;
+    document.getElementById('wlEdition').value = CardDefaults.Edition;
+    document.getElementById('wlAcquisition').value = CardDefaults.Acquisition;
     document.getElementById('wlQuantity').value = 1;
     document.getElementById('wlPurchaseDate').value = isOrder
         ? new Date().toISOString().split('T')[0]

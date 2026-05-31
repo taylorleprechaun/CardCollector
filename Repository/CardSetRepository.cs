@@ -72,7 +72,7 @@ namespace CardCollector.Repository
             try
             {
                 var client = _httpClientFactory.CreateClient("YGOProDeck");
-                return await client.GetStringAsync("api/v7/cardsets.php");
+                return await client.GetStringAsync("api/v7/cardsets.php").ConfigureAwait(false);
             }
             catch (Exception ex)
             {

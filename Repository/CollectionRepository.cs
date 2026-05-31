@@ -16,35 +16,37 @@ namespace CardCollector.Repository
         public async Task AddAsync(CollectionEntry entry)
         {
             _context.CollectionEntries.Add(entry);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var entry = await _context.CollectionEntries.FindAsync(id);
+            var entry = await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);
             if (entry is null)
                 return false;
 
             _context.CollectionEntries.Remove(entry);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }
 
         public async Task<bool> ExistsAsync(int imageID, string setCode) =>
-            await _context.CollectionEntries.AnyAsync(e => e.ImageID == imageID && e.SetCode == setCode);
+            await _context.CollectionEntries.AnyAsync(e => e.ImageID == imageID && e.SetCode == setCode).ConfigureAwait(false);
 
         public async Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status) =>
             await _context.CollectionEntries
                 .Where(e => e.Status == status)
                 .OrderByDescending(e => e.DateCreated)
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
         public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
         {
             var pairs = await _context.CollectionEntries
                 .Select(e => new { e.ImageID, e.SetCode })
                 .Distinct()
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
@@ -54,7 +56,8 @@ namespace CardCollector.Repository
             var entries = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Owned)
                 .Select(e => new { e.CardID, e.AcquisitionMethod, e.Quantity, e.MarketPriceAtEntry, e.PurchasePrice })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             var totalQuantity = entries.Sum(e => e.Quantity);
 
@@ -77,12 +80,13 @@ namespace CardCollector.Repository
             if (ids.Count == 0)
                 return new HashSet<int>();
 
-            var preferredLookup = await GetPreferredPairLookupAsync();
+            var preferredLookup = await GetPreferredPairLookupAsync().ConfigureAwait(false);
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
                 .Select(e => new { e.CardID, e.ImageID, e.SetCode })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             var nonPlaceholderCardIDs = ownedEntries
                 .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
@@ -99,12 +103,13 @@ namespace CardCollector.Repository
             if (ids.Count == 0)
                 return new HashSet<int>();
 
-            var preferredLookup = await GetPreferredPairLookupAsync();
+            var preferredLookup = await GetPreferredPairLookupAsync().ConfigureAwait(false);
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
                 .Select(e => new { e.ImageID, e.SetCode })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             var nonPlaceholderImageIDs = ownedEntries
                 .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
@@ -131,7 +136,8 @@ namespace CardCollector.Repository
                                ? CollectionStatus.Owned
                                : CollectionStatus.Ordered
                 })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return rows.ToDictionary(r => r.CardID, r => r.Status);
         }
@@ -152,14 +158,15 @@ namespace CardCollector.Repository
                                ? CollectionStatus.Owned
                                : CollectionStatus.Ordered
                 })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return rows.ToDictionary(r => r.ImageID, r => r.Status);
         }
 
         public async Task<bool> UpdateAsync(CollectionEntry entry)
         {
-            var existing = await _context.CollectionEntries.FindAsync(entry.ID);
+            var existing = await _context.CollectionEntries.FindAsync(entry.ID).ConfigureAwait(false);
             if (existing is null)
                 return false;
 
@@ -171,13 +178,13 @@ namespace CardCollector.Repository
             existing.Quantity = entry.Quantity;
             existing.RarityName = entry.RarityName;
             existing.DateModified = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }
 
         public async Task<bool> UpdateStatusAsync(int id, CollectionStatus status, int? quantity = null)
         {
-            var entry = await _context.CollectionEntries.FindAsync(id);
+            var entry = await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);
             if (entry is null)
                 return false;
 
@@ -185,7 +192,7 @@ namespace CardCollector.Repository
             entry.DateModified = DateTime.UtcNow;
             if (quantity.HasValue)
                 entry.Quantity = quantity.Value;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }
 
@@ -193,7 +200,8 @@ namespace CardCollector.Repository
         {
             var preferredPairs = await _context.PreferredVersions
                 .Select(pv => new { pv.ImageID, pv.SetCode })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
             return preferredPairs.Select(pv => $"{pv.ImageID}:{pv.SetCode}").ToHashSet();
         }
     }

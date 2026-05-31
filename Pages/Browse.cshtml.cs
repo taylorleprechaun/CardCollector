@@ -21,6 +21,8 @@ namespace CardCollector.Pages
 
         public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
 
+        protected override ICardService CardService => _cardService;
+
         [BindProperty(SupportsGet = true)]
         public string? CardType { get; set; }
 
@@ -41,15 +43,13 @@ namespace CardCollector.Pages
 
         public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
 
-        protected override ICardService CardService => _cardService;
-
         public BrowseModel(ICardService cardService, ICardDataRepository cardDataRepository)
         {
             _cardService = cardService;
             _cardDataRepository = cardDataRepository;
         }
 
-        public IDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
+        public IReadOnlyDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
         {
             ["attribute"] = Attribute,
             ["cardType"] = CardType,
