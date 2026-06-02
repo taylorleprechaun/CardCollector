@@ -2,6 +2,7 @@ using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.Repository;
 using CardCollector.Services;
+using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -16,6 +17,9 @@ namespace CardCollector.Pages
         public int CardID { get; set; }
 
         public bool CardNotFound { get; private set; }
+
+        public IReadOnlyDictionary<(string SetCode, string RarityName), CollectionEntry> CollectionEntriesBySetCode { get; private set; }
+            = new Dictionary<(string, string), CollectionEntry>();
 
         public Card? CurrentCard { get; private set; }
 
@@ -45,6 +49,19 @@ namespace CardCollector.Pages
             _cardSetRepository = cardSetRepository;
         }
 
+        public CollectionCompletionStatus? GetCompletionStatus(CollectionEntry entry)
+        {
+            if (entry.Status != CollectionStatus.Owned) return null;
+            var isPreferred = PreferredVersion is not null
+                && PreferredVersion.SetCode.Equals(entry.SetCode, StringComparison.OrdinalIgnoreCase)
+                && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(entry.RarityName, StringComparison.OrdinalIgnoreCase));
+            return !isPreferred
+                ? CollectionCompletionStatus.Placeholder
+                : entry.Quantity >= CollectionGroupViewModel.CompleteThreshold
+                    ? CollectionCompletionStatus.Complete
+                    : CollectionCompletionStatus.Incomplete;
+        }
+
         public string GetTCGDate(string setCode) =>
             _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
 
@@ -61,6 +78,16 @@ namespace CardCollector.Pages
             {
                 CardNotFound = true;
                 return;
+            }
+
+            var effectiveImageID = ImageID != 0
+                ? ImageID
+                : CurrentCard.CardImages?.FirstOrDefault()?.ID ?? 0;
+
+            if (effectiveImageID != 0)
+            {
+                var entries = await _cardService.GetEntriesByImageIDAsync(effectiveImageID);
+                CollectionEntriesBySetCode = entries.ToDictionary(e => (e.SetCode, e.RarityName ?? string.Empty), e => e);
             }
 
             if (ImageID != 0)

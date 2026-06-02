@@ -1,6 +1,7 @@
 @page
 @model BrowseModel
 @using CardCollector.Data.Models
+@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Browse";
     var returnURL = Uri.EscapeDataString(Request.Path + Request.QueryString);
@@ -148,17 +149,24 @@ else
                         }
                     </div>
                 </div>
-                @if (item.Status == CollectionStatus.Owned && !item.IsPlaceholder)
+                @if (item.Status == CollectionStatus.Ordered)
                 {
-                    <span class="badge bg-success flex-shrink-0">Owned</span>
+                    <span class="badge bg-primary flex-shrink-0">Ordered</span>
                 }
-                else if (item.Status == CollectionStatus.Owned && item.IsPlaceholder)
+                else if (item.Status == CollectionStatus.Owned)
                 {
-                    <span class="badge bg-secondary flex-shrink-0">Incomplete</span>
-                }
-                else if (item.Status == CollectionStatus.Ordered)
-                {
-                    <span class="badge bg-warning text-dark flex-shrink-0">Ordered</span>
+                    @if (item.CompletionStatus == CollectionCompletionStatus.Complete)
+                    {
+                        <span class="badge bg-success flex-shrink-0">Complete</span>
+                    }
+                    else if (item.CompletionStatus == CollectionCompletionStatus.Incomplete)
+                    {
+                        <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
+                    }
                 }
             </div>
         }

@@ -69,6 +69,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                 <th>Set</th>
                                 <th>Code</th>
                                 <th>Rarity</th>
+                                <th>Collection</th>
                                 <th>Preferred</th>
                                 <th></th>
                             </tr>
@@ -80,11 +81,33 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     <td>@set.Name</td>
                                     <td><code>@set.Code</code></td>
                                     <td>@set.RarityName</td>
+                                    <td>
+                                        @if (Model.CollectionEntriesBySetCode.TryGetValue((set.Code ?? string.Empty, set.RarityName ?? string.Empty), out var collectionEntry))
+                                        {
+                                            var completionStatus = Model.GetCompletionStatus(collectionEntry);
+                                            if (collectionEntry.Status == CollectionStatus.Ordered)
+                                            {
+                                                <span class="badge bg-primary">Ordered &times; @collectionEntry.Quantity</span>
+                                            }
+                                            else if (completionStatus == CollectionCompletionStatus.Complete)
+                                            {
+                                                <span class="badge bg-success">Complete &times; @collectionEntry.Quantity</span>
+                                            }
+                                            else if (completionStatus == CollectionCompletionStatus.Incomplete)
+                                            {
+                                                <span class="badge bg-warning text-dark">Incomplete &times; @collectionEntry.Quantity</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Placeholder &times; @collectionEntry.Quantity</span>
+                                            }
+                                        }
+                                    </td>
                                     <td class="text-nowrap">
                                         @{
                                             var isPreferred = Model.PreferredVersion is not null
-                                                && Model.PreferredVersion.SetCode == set.Code
-                                                && (Model.PreferredVersion.RarityName == null || Model.PreferredVersion.RarityName == set.RarityName);
+                                                && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
+                                                && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, set.RarityName, StringComparison.OrdinalIgnoreCase));
                                         }
                                         @if (isPreferred)
                                         {

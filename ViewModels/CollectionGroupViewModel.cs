@@ -4,12 +4,12 @@ namespace CardCollector.ViewModels
 {
     public sealed class CollectionGroupViewModel : CardPrinting
     {
-        private const int COMPLETE_THRESHOLD = 3;
+        internal const int CompleteThreshold = 3;
 
         public CollectionCompletionStatus CompletionStatus =>
             !IsPreferredVersion
                 ? CollectionCompletionStatus.Placeholder
-                : TotalQuantity >= COMPLETE_THRESHOLD
+                : TotalQuantity >= CompleteThreshold
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
 

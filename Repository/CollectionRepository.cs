@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
+using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -33,6 +34,12 @@ namespace CardCollector.Repository
         public async Task<bool> ExistsAsync(int imageID, string setCode) =>
             await _context.CollectionEntries.AnyAsync(e => e.ImageID == imageID && e.SetCode == setCode).ConfigureAwait(false);
 
+        public async Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID) =>
+            await _context.CollectionEntries
+                .Where(e => e.ImageID == imageID)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
         public async Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status) =>
             await _context.CollectionEntries
                 .Where(e => e.Status == status)
@@ -49,6 +56,46 @@ namespace CardCollector.Repository
                 .ConfigureAwait(false);
 
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
+
+        public async Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs)
+        {
+            var ids = imageIDs.ToHashSet();
+            if (ids.Count == 0)
+                return new Dictionary<int, CollectionCompletionStatus>();
+
+            var ownedEntries = await _context.CollectionEntries
+                .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            if (ownedEntries.Count == 0)
+                return new Dictionary<int, CollectionCompletionStatus>();
+
+            var preferredVersions = await _context.PreferredVersions
+                .Where(pv => ids.Contains(pv.ImageID))
+                .Select(pv => new { pv.ImageID, pv.SetCode, pv.RarityName })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            var result = new Dictionary<int, CollectionCompletionStatus>();
+
+            foreach (var group in ownedEntries.GroupBy(e => e.ImageID))
+            {
+                var preferred = preferredVersions.FirstOrDefault(pv => pv.ImageID == group.Key);
+                var preferredEntry = preferred is null ? null : group.FirstOrDefault(e =>
+                    e.SetCode.Equals(preferred.SetCode, StringComparison.OrdinalIgnoreCase) &&
+                    (preferred.RarityName is null || preferred.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)));
+
+                result[group.Key] = preferredEntry is null
+                    ? CollectionCompletionStatus.Placeholder
+                    : preferredEntry.Quantity >= CollectionGroupViewModel.CompleteThreshold
+                        ? CollectionCompletionStatus.Complete
+                        : CollectionCompletionStatus.Incomplete;
+            }
+
+            return result;
         }
 
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
@@ -196,7 +243,7 @@ namespace CardCollector.Repository
             return true;
         }
 
-        private async Task<HashSet<string>> GetPreferredPairLookupAsync()
+        private async Task<IReadOnlySet<string>> GetPreferredPairLookupAsync()
         {
             var preferredPairs = await _context.PreferredVersions
                 .Select(pv => new { pv.ImageID, pv.SetCode })

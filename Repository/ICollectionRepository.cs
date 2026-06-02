@@ -23,6 +23,11 @@ namespace CardCollector.Repository
         Task<bool> ExistsAsync(int imageID, string setCode);
 
         /// <summary>
+        /// Returns all entries for the given image ID.
+        /// </summary>
+        Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID);
+
+        /// <summary>
         /// Returns all entries with the given collection status, ordered by date created descending.
         /// </summary>
         Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status);
@@ -31,6 +36,12 @@ namespace CardCollector.Repository
         /// Returns the set of (imageID, setCode) pairs present in the collection regardless of status.
         /// </summary>
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
+
+        /// <summary>
+        /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
+        /// Image IDs that are not owned are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.

@@ -55,6 +55,11 @@ namespace CardCollector.Services
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync();
 
         /// <summary>
+        /// Returns all collection entries for the given image ID.
+        /// </summary>
+        Task<IEnumerable<CollectionEntry>> GetEntriesByImageIDAsync(int imageID);
+
+        /// <summary>
         /// Returns owned entries grouped by printing, annotated with preferred-version and completion status.
         /// </summary>
         Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync();

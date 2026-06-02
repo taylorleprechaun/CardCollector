@@ -9,6 +9,9 @@ namespace CardCollector.Services
 {
     public sealed class CardService : ICardService
     {
+        private const string SnapshotDateFormat = "yyyy-MM-dd";
+        private const int SetBreakdownItemLimit = 20;
+
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICollectionEntryValueRepository _collectionEntryValueRepository;
         private readonly ICollectionRepository _collectionRepository;
@@ -70,7 +73,7 @@ namespace CardCollector.Services
 
         public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
         {
-            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
 
             var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
             if (latestSnapshot is not null && latestSnapshot.SnapshotDate == today)
@@ -80,7 +83,7 @@ namespace CardCollector.Services
                     .GroupBy(s => s.SetName)
                     .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
                     .OrderByDescending(x => x.Item2)
-                    .Take(20)
+                    .Take(SetBreakdownItemLimit)
                     .ToList();
 
                 return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown);
@@ -147,7 +150,7 @@ namespace CardCollector.Services
                 .GroupBy(s => s.SetName)
                 .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
                 .OrderByDescending(x => x.Item2)
-                .Take(20)
+                .Take(SetBreakdownItemLimit)
                 .ToList();
 
             return (totalValue, entries.Count, setValueBreakdown);
@@ -192,7 +195,7 @@ namespace CardCollector.Services
                 .GroupBy(s => s.SetName)
                 .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
                 .OrderByDescending(x => x.Item2)
-                .Take(20)
+                .Take(SetBreakdownItemLimit)
                 .ToList();
 
             var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync().ConfigureAwait(false);
@@ -240,6 +243,9 @@ namespace CardCollector.Services
         public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync()
             => GetEnrichedByStatusAsync(CollectionStatus.Owned);
 
+        public async Task<IEnumerable<CollectionEntry>> GetEntriesByImageIDAsync(int imageID) =>
+            await _collectionRepository.GetByImageIDAsync(imageID).ConfigureAwait(false);
+
         public async Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync()
         {
             var entries = (await GetEnrichedByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
@@ -258,7 +264,8 @@ namespace CardCollector.Services
                         : null;
 
                     var isPreferred = preferredVersions.TryGetValue(first.ImageID, out var pv)
-                                      && pv.SetCode == first.SetCode;
+                                      && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
+                                      && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase));
 
                     return CollectionGroupViewModel.From(
                         printing: first,
@@ -353,16 +360,18 @@ namespace CardCollector.Services
 
             var imageIDs = slice.Select(a => a.Image.ID).ToList();
             var statusMap = await _collectionRepository.GetStatusByImageIDsAsync(imageIDs).ConfigureAwait(false);
-            var placeholderIDs = await _collectionRepository.GetPlaceholderImageIDsAsync(imageIDs).ConfigureAwait(false);
+            var completionMap = await _collectionRepository.GetCompletionStatusByImageIDsAsync(imageIDs).ConfigureAwait(false);
 
             var items = slice.Select(a => new CardListItemViewModel
             {
                 Attribute = a.Card.Attribute ?? string.Empty,
                 CardID = a.Card.ID,
                 CardType = a.Card.CardType ?? string.Empty,
+                CompletionStatus = statusMap.TryGetValue(a.Image.ID, out var rawStatus) && rawStatus == CollectionStatus.Owned
+                    ? (completionMap.TryGetValue(a.Image.ID, out var cs) ? cs : (CollectionCompletionStatus?)null)
+                    : null,
                 ImageID = a.Image.ID,
                 ImageURLSmall = a.Image.ImageURLSmall ?? string.Empty,
-                IsPlaceholder = placeholderIDs.Contains(a.Image.ID),
                 Name = a.Card.Name ?? string.Empty,
                 Status = statusMap.TryGetValue(a.Image.ID, out var s) ? s : null,
                 Type = a.Card.Type ?? string.Empty
