@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace CardCollector.DTO
 {
-    public class Card
+    public sealed class Card
     {
         [JsonProperty("archetype")]
         public string? Archetype { get; set; }
@@ -14,13 +14,10 @@ namespace CardCollector.DTO
         public string? Attribute { get; set; }
 
         [JsonProperty("card_images")]
-        public IEnumerable<Image>? CardImages { get; set; }
-
-        [JsonProperty("card_prices")]
-        public IEnumerable<Price>? CardPrices { get; set; }
+        public IReadOnlyList<Image>? CardImages { get; set; }
 
         [JsonProperty("card_sets")]
-        public IEnumerable<Set>? CardSets { get; set; }
+        public IReadOnlyList<Set>? CardSets { get; set; }
 
         [JsonProperty("type")]
         public string? CardType { get; set; }
@@ -38,7 +35,7 @@ namespace CardCollector.DTO
         public int? Level { get; set; }
 
         [JsonProperty("linkmarkers")]
-        public IEnumerable<string>? LinkMarkers { get; set; }
+        public IReadOnlyList<string>? LinkMarkers { get; set; }
 
         [JsonProperty("linkval")]
         public int? LinkRating { get; set; }
@@ -50,6 +47,6 @@ namespace CardCollector.DTO
         public string? Type { get; set; }
 
         [JsonProperty("typeline")]
-        public IEnumerable<string>? TypeLine { get; set; }
+        public IReadOnlyList<string>? TypeLine { get; set; }
     }
 }
