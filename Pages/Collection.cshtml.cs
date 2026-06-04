@@ -51,7 +51,7 @@ namespace CardCollector.Pages
             if (!added)
                 TempData["Error"] = "That printing is already in your collection.";
             else if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode);
+                await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode, rarityName);
 
             return RedirectToPage();
         }

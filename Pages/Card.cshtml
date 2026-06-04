@@ -82,24 +82,28 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     <td><code>@set.Code</code></td>
                                     <td>@set.RarityName</td>
                                     <td>
-                                        @if (Model.CollectionEntriesBySetCode.TryGetValue((set.Code ?? string.Empty, set.RarityName ?? string.Empty), out var collectionEntry))
+                                        @{
+                                            var setCodeKey = set.Code ?? string.Empty;
+                                            var rarityKey = set.RarityName ?? string.Empty;
+                                        }
+                                        @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
                                         {
-                                            var completionStatus = Model.GetCompletionStatus(collectionEntry);
-                                            if (collectionEntry.Status == CollectionStatus.Ordered)
+                                            var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey);
+                                            if (collectionSummary.Status == CollectionStatus.Ordered)
                                             {
-                                                <span class="badge bg-primary">Ordered &times; @collectionEntry.Quantity</span>
+                                                <span class="badge bg-primary">Ordered &times; @collectionSummary.TotalQuantity</span>
                                             }
                                             else if (completionStatus == CollectionCompletionStatus.Complete)
                                             {
-                                                <span class="badge bg-success">Complete &times; @collectionEntry.Quantity</span>
+                                                <span class="badge bg-success">Complete &times; @collectionSummary.TotalQuantity</span>
                                             }
                                             else if (completionStatus == CollectionCompletionStatus.Incomplete)
                                             {
-                                                <span class="badge bg-warning text-dark">Incomplete &times; @collectionEntry.Quantity</span>
+                                                <span class="badge bg-warning text-dark">Incomplete &times; @collectionSummary.TotalQuantity</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary">Placeholder &times; @collectionEntry.Quantity</span>
+                                                <span class="badge bg-secondary">Placeholder &times; @collectionSummary.TotalQuantity</span>
                                             }
                                         }
                                     </td>

@@ -18,8 +18,8 @@ namespace CardCollector.Pages
 
         public bool CardNotFound { get; private set; }
 
-        public IReadOnlyDictionary<(string SetCode, string RarityName), CollectionEntry> CollectionEntriesBySetCode { get; private set; }
-            = new Dictionary<(string, string), CollectionEntry>();
+        public IReadOnlyDictionary<(string SetCode, string RarityName), (CollectionStatus Status, int TotalQuantity)> CollectionEntriesBySetCode { get; private set; }
+            = new Dictionary<(string, string), (CollectionStatus, int)>();
 
         public Card? CurrentCard { get; private set; }
 
@@ -49,15 +49,15 @@ namespace CardCollector.Pages
             _cardSetRepository = cardSetRepository;
         }
 
-        public CollectionCompletionStatus? GetCompletionStatus(CollectionEntry entry)
+        public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, string setCode, string rarityName)
         {
-            if (entry.Status != CollectionStatus.Owned) return null;
+            if (status != CollectionStatus.Owned) return null;
             var isPreferred = PreferredVersion is not null
-                && PreferredVersion.SetCode.Equals(entry.SetCode, StringComparison.OrdinalIgnoreCase)
-                && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(entry.RarityName, StringComparison.OrdinalIgnoreCase));
+                && PreferredVersion.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
+                && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
             return !isPreferred
                 ? CollectionCompletionStatus.Placeholder
-                : entry.Quantity >= CollectionGroupViewModel.CompleteThreshold
+                : totalQuantity >= CollectionGroupViewModel.CompleteThreshold
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
         }
@@ -87,7 +87,14 @@ namespace CardCollector.Pages
             if (effectiveImageID != 0)
             {
                 var entries = await _cardService.GetEntriesByImageIDAsync(effectiveImageID);
-                CollectionEntriesBySetCode = entries.ToDictionary(e => (e.SetCode, e.RarityName ?? string.Empty), e => e);
+                CollectionEntriesBySetCode = entries
+                    .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty))
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (
+                            Status: g.Any(e => e.Status == CollectionStatus.Owned) ? CollectionStatus.Owned : CollectionStatus.Ordered,
+                            TotalQuantity: g.Sum(e => e.Quantity)
+                        ));
             }
 
             if (ImageID != 0)

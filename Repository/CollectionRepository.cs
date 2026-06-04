@@ -31,9 +31,6 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task<bool> ExistsAsync(int imageID, string setCode) =>
-            await _context.CollectionEntries.AnyAsync(e => e.ImageID == imageID && e.SetCode == setCode).ConfigureAwait(false);
-
         public async Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID) =>
             await _context.CollectionEntries
                 .Where(e => e.ImageID == imageID)

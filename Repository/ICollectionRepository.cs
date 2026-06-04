@@ -18,11 +18,6 @@ namespace CardCollector.Repository
         Task<bool> DeleteAsync(int id);
 
         /// <summary>
-        /// Returns true if any entry with the given (imageID, setCode) combination already exists.
-        /// </summary>
-        Task<bool> ExistsAsync(int imageID, string setCode);
-
-        /// <summary>
         /// Returns all entries for the given image ID.
         /// </summary>
         Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID);

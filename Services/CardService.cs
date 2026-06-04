@@ -45,9 +45,6 @@ namespace CardCollector.Services
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
             string? rarityName = null)
         {
-            if (await _collectionRepository.ExistsAsync(imageID, setCode).ConfigureAwait(false))
-                return false;
-
             var entry = new CollectionEntry
             {
                 AcquisitionMethod = acquisitionMethod,
