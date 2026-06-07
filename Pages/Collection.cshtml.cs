@@ -53,13 +53,13 @@ namespace CardCollector.Pages
             else if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode, rarityName);
 
-            return RedirectToPage();
+            return RedirectToPage(new { query = Query, pageNumber = PageNumber, pageSize = PageSize });
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int entryID)
         {
             await _collectionRepository.DeleteAsync(entryID);
-            return RedirectToPage();
+            return RedirectToPage(new { query = Query, pageNumber = PageNumber, pageSize = PageSize });
         }
 
         public async Task<IActionResult> OnPostEditAsync(
@@ -82,7 +82,7 @@ namespace CardCollector.Pages
             };
 
             await _collectionRepository.UpdateAsync(entry);
-            return RedirectToPage();
+            return RedirectToPage(new { query = Query, pageNumber = PageNumber, pageSize = PageSize });
         }
     }
 }

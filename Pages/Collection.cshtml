@@ -173,6 +173,9 @@ else
                                             <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
                                                   onsubmit="return confirm('Remove this entry from your collection?')">
                                                 <input type="hidden" name="entryID" value="@entry.EntryID" />
+                                                <input type="hidden" name="query" value="@Model.Query" />
+                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
                                             </form>
                                         </td>
@@ -204,6 +207,9 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" asp-page-handler="Edit">
+                <input type="hidden" name="query" value="@Model.Query" />
+                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Entry</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -226,6 +232,9 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" asp-page-handler="AddPurchase">
+                <input type="hidden" name="query" value="@Model.Query" />
+                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
                 <div class="modal-header">
                     <h5 class="modal-title" id="addModalLabel">Add Purchase</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
