@@ -19,6 +19,7 @@ builder.Services.AddSingleton<ICardSetRepository, CardSetRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
 builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
+builder.Services.AddScoped<IDismissedNewPrintingRepository, DismissedNewPrintingRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();

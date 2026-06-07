@@ -11,6 +11,8 @@ namespace CardCollector.Data
 
         public DbSet<CollectionValueSnapshot> CollectionValueSnapshots { get; set; }
 
+        public DbSet<DismissedNewPrinting> DismissedNewPrintings { get; set; }
+
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
 
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
@@ -25,6 +27,12 @@ namespace CardCollector.Data
                 entity.Property(e => e.Condition).HasConversion<string>();
                 entity.Property(e => e.Edition).HasConversion<string>();
                 entity.Property(e => e.Status).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<DismissedNewPrinting>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName }).IsUnique();
             });
 
             modelBuilder.Entity<PreferredVersion>(entity =>

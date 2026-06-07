@@ -1,0 +1,119 @@
+@page
+@model NewPrintingsModel
+@{
+    ViewData["Title"] = "New Printings";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-1">
+    <h1>New Printings</h1>
+    <span class="badge bg-primary fs-6">@Model.Opportunities.TotalCount cards</span>
+</div>
+
+<p class="text-muted mb-4">
+    Cards in your preferred versions that have been printed in a newer set.
+    Choose a newer printing to move it to your wishlist, or dismiss it to stop seeing it here.
+</p>
+
+@if (!Model.Opportunities.Items.Any())
+{
+    <div class="alert alert-success text-center py-5">
+        <h4>All caught up!</h4>
+        <p class="mb-0">No newer printings found for your preferred versions.</p>
+    </div>
+}
+else
+{
+    foreach (var opportunity in Model.Opportunities.Items)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        @if (!string.IsNullOrEmpty(opportunity.ImageURLSmall))
+                        {
+                            <img src="@opportunity.ImageURLSmall" alt="@opportunity.CardName" style="height: 60px; object-fit: contain;" />
+                        }
+                        <div>
+                            <h5 class="mb-0">@opportunity.CardName</h5>
+                            <small class="text-muted">
+                                Currently preferred: @opportunity.CurrentSetName
+                                <span class="ms-1 text-muted">(@opportunity.CurrentSetCode)</span>
+                                &mdash; @opportunity.CurrentRarityName
+                                @if (!string.IsNullOrEmpty(opportunity.CurrentReleaseDate))
+                                {
+                                    <span class="ms-1">(@opportunity.CurrentReleaseDate)</span>
+                                }
+                            </small>
+                        </div>
+                    </div>
+                    <form method="post" asp-page-handler="DismissAll">
+                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
+                        @foreach (var printing in opportunity.NewerPrintings)
+                        {
+                            <input type="hidden" name="SetCodes" value="@printing.SetCode" />
+                            <input type="hidden" name="RarityNames" value="@printing.RarityName" />
+                        }
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss All</button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="table-layout: fixed; width: 100%;">
+                    <colgroup>
+                        <col style="width: auto;" />
+                        <col style="width: 220px;" />
+                        <col style="width: 120px;" />
+                        <col style="width: 220px;" />
+                    </colgroup>
+                    <thead class="table-light">
+                        <tr>
+                            <th>Set</th>
+                            <th>Rarity</th>
+                            <th>Released</th>
+                            <th class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var printing in opportunity.NewerPrintings)
+                        {
+                            <tr>
+                                <td>
+                                    <div>@printing.SetName</div>
+                                    <small class="text-muted">@printing.SetCode</small>
+                                </td>
+                                <td>@printing.RarityName</td>
+                                <td>@(printing.ReleaseDate ?? "—")</td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="Upgrade" class="d-inline">
+                                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
+                                        <input type="hidden" name="ImageID" value="@opportunity.ImageID" />
+                                        <input type="hidden" name="NewSetCode" value="@printing.SetCode" />
+                                        <input type="hidden" name="NewRarityName" value="@printing.RarityName" />
+                                        <button type="submit" class="btn btn-sm btn-success">Choose This</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Dismiss" class="d-inline ms-1">
+                                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
+                                        <input type="hidden" name="SetCode" value="@printing.SetCode" />
+                                        <input type="hidden" name="RarityName" value="@printing.RarityName" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <partial name="_Pagination" model='new PaginationViewModel
+    {
+        AriaLabel = "New printings navigation",
+        HasNextPage = Model.Opportunities.HasNextPage,
+        HasPreviousPage = Model.Opportunities.HasPreviousPage,
+        PageName = "/NewPrintings",
+        PageNumber = Model.Opportunities.Page,
+        PageSize = Model.Opportunities.PageSize,
+        TotalPages = Model.Opportunities.TotalPages
+    }' />
+}

@@ -13,26 +13,32 @@ namespace CardCollector.Services
         private const int SetBreakdownItemLimit = 20;
 
         private readonly ICardDataRepository _cardDataRepository;
+        private readonly ICardSetRepository _cardSetRepository;
         private readonly ICollectionEntryValueRepository _collectionEntryValueRepository;
         private readonly ICollectionRepository _collectionRepository;
         private readonly ICollectionValueRepository _collectionValueRepository;
+        private readonly IDismissedNewPrintingRepository _dismissedNewPrintingRepository;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly int _pricingDelayMs;
         private readonly IPricingService _pricingService;
 
         public CardService(
             ICardDataRepository cardDataRepository,
+            ICardSetRepository cardSetRepository,
             ICollectionRepository collectionRepository,
             ICollectionEntryValueRepository collectionEntryValueRepository,
             ICollectionValueRepository collectionValueRepository,
+            IDismissedNewPrintingRepository dismissedNewPrintingRepository,
             IPreferredVersionRepository preferredVersionRepository,
             IPricingService pricingService,
             IConfiguration config)
         {
             _cardDataRepository = cardDataRepository;
+            _cardSetRepository = cardSetRepository;
             _collectionEntryValueRepository = collectionEntryValueRepository;
             _collectionRepository = collectionRepository;
             _collectionValueRepository = collectionValueRepository;
+            _dismissedNewPrintingRepository = dismissedNewPrintingRepository;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingDelayMs = config.GetValue<int>("CardDataSettings:PricingDelayMs", 100);
             _pricingService = pricingService;
@@ -152,6 +158,9 @@ namespace CardCollector.Services
 
             return (totalValue, entries.Count, setValueBreakdown);
         }
+
+        public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName) =>
+            await _dismissedNewPrintingRepository.AddAsync(cardID, setCode, rarityName).ConfigureAwait(false);
 
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
 
@@ -274,6 +283,64 @@ namespace CardCollector.Services
                 .OrderBy(g => g.CardName)
                 .ThenBy(g => g.SetCode)
                 .ToList();
+        }
+
+        public async Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync()
+        {
+            var preferredVersions = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
+            var dismissed = await _dismissedNewPrintingRepository.GetAllAsync().ConfigureAwait(false);
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+            var result = new List<NewPrintingOpportunityViewModel>();
+            var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
+
+            foreach (var pv in preferredVersions)
+            {
+                var card = _cardDataRepository.GetCardByID(pv.CardID);
+                if (card?.CardSets is null || card.CardImages is null)
+                    continue;
+
+                var preferredDate = _cardSetRepository.GetTCGDateBySetCode(pv.SetCode);
+                if (preferredDate is null)
+                    continue;
+
+                var image = card.CardImages.FirstOrDefault(i => i.ID == pv.ImageID);
+
+                var newerPrintings = card.CardSets
+                    .Where(s => s.Code != pv.SetCode || s.RarityName != pv.RarityName)
+                    .Select(s => (Set: s, Date: _cardSetRepository.GetTCGDateBySetCode(s.Code ?? string.Empty)))
+                    .Where(x => x.Date is not null
+                                && string.Compare(x.Date, preferredDate, StringComparison.Ordinal) > 0
+                                && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
+                                && !dismissed.Contains((pv.CardID, x.Set.Code ?? string.Empty, x.Set.RarityName ?? string.Empty)))
+                    .Select(x => new NewPrintingOptionViewModel
+                    {
+                        RarityName = x.Set.RarityName ?? string.Empty,
+                        ReleaseDate = x.Date,
+                        SetCode = x.Set.Code ?? string.Empty,
+                        SetName = setNamesByCode.TryGetValue(x.Set.Code ?? string.Empty, out var sn) ? sn : x.Set.Name ?? string.Empty
+                    })
+                    .OrderBy(o => o.ReleaseDate)
+                    .ThenBy(o => o.SetCode)
+                    .ToList();
+
+                if (newerPrintings.Count == 0)
+                    continue;
+
+                result.Add(new NewPrintingOpportunityViewModel
+                {
+                    CardID = pv.CardID,
+                    CardName = card.Name ?? string.Empty,
+                    CurrentRarityName = pv.RarityName ?? string.Empty,
+                    CurrentReleaseDate = preferredDate,
+                    CurrentSetCode = pv.SetCode,
+                    CurrentSetName = setNamesByCode.TryGetValue(pv.SetCode, out var csn) ? csn : pv.SetCode,
+                    ImageID = pv.ImageID,
+                    ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
+                    NewerPrintings = newerPrintings
+                });
+            }
+
+            return result.OrderBy(r => r.CardName).ToList();
         }
 
         public async Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID)
@@ -464,6 +531,9 @@ namespace CardCollector.Services
                 }
             };
         }
+
+        public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName) =>
+            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, newSetCode, newRarityName).ConfigureAwait(false);
 
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
         {

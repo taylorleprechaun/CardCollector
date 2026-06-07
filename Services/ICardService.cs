@@ -25,6 +25,11 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync();
 
         /// <summary>
+        /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.
+        /// </summary>
+        Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName);
+
+        /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.
         /// </summary>
         Card? GetCardByID(int cardID);
@@ -65,6 +70,11 @@ namespace CardCollector.Services
         Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync();
 
         /// <summary>
+        /// Returns all cards with a preferred version where a newer set printing exists and has not been dismissed.
+        /// </summary>
+        Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
+
+        /// <summary>
         /// Returns the preferred version for the given image ID, or null if none is set.
         /// </summary>
         Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID);
@@ -103,5 +113,10 @@ namespace CardCollector.Services
         /// Returns a paginated, filtered, and sorted page of wishlist items.
         /// </summary>
         Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false);
+
+        /// <summary>
+        /// Updates the preferred version for the given image ID to the specified newer printing.
+        /// </summary>
+        Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName);
     }
 }
