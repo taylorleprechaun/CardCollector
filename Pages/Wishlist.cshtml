@@ -22,13 +22,13 @@
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1>Wishlist</h1>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-primary fs-6">@Model.Results.TotalCount to acquire</span>
+        <span class="badge bg-primary fs-6">@Model.Results.TotalCount needed</span>
         <a href="/Export?handler=Wishlist" class="btn btn-outline-secondary btn-sm">Export CSV</a>
     </div>
 </div>
 
 
-<p class="text-muted mb-4">Preferred versions you haven&rsquo;t ordered or owned yet. Use <a href="/Discover">Discover</a> to add more.</p>
+<p class="text-muted mb-4">Cards you still need: preferred versions you haven&rsquo;t ordered or owned yet, plus cards you own but haven&rsquo;t completed (3 copies). Use <a href="/Discover">Discover</a> to add more.</p>
 
 <partial name="_SearchBar" model='new SearchBarViewModel(AutocompleteURL: "?handler=Autocomplete", PageSize: Model.PageSize, Placeholder: "Search by name, set, or rarity…", Query: Model.Query)' />
 
@@ -61,6 +61,7 @@ else
                     </th>
                     <th>Set</th>
                     <th>Rarity</th>
+                    <th>Need</th>
                     <th></th>
                 </tr>
             </thead>
@@ -77,6 +78,16 @@ else
                             <code class="text-muted small">@item.SetCode</code>
                         </td>
                         <td>@item.RarityName</td>
+                        <td>
+                            @if (item.QuantityOwned > 0)
+                            {
+                                <span class="badge bg-warning text-dark">Need @item.QuantityNeeded <small class="opacity-75">(own @item.QuantityOwned)</small></span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Need @item.QuantityNeeded</span>
+                            }
+                        </td>
                         <td class="text-nowrap">
                             <button type="button"
                                     class="btn btn-sm btn-primary me-1"

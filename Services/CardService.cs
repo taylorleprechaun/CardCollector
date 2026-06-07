@@ -305,15 +305,37 @@ namespace CardCollector.Services
 
             var collectedPairs = await _collectionRepository.GetCollectedPairsAsync().ConfigureAwait(false);
 
-            var wishlistItems = allPreferred
+            var notCollected = allPreferred
                 .Where(pv => !collectedPairs.Contains((pv.ImageID, pv.SetCode)))
                 .ToList();
 
+            var partiallyCollected = allPreferred
+                .Where(pv => collectedPairs.Contains((pv.ImageID, pv.SetCode)))
+                .ToList();
+
+            var ownedQuantities = partiallyCollected.Count > 0
+                ? await _collectionRepository.GetOwnedQuantitiesForPairsAsync(
+                    partiallyCollected.Select(pv => (pv.ImageID, pv.SetCode))).ConfigureAwait(false)
+                : new Dictionary<(int, string), int>();
+
             var results = new List<WishlistItemViewModel>();
-            foreach (var pv in wishlistItems)
+
+            foreach (var pv in notCollected)
             {
                 var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
                 results.Add(WishlistItemViewModel.From(printing));
+            }
+
+            foreach (var pv in partiallyCollected)
+            {
+                if (!ownedQuantities.TryGetValue((pv.ImageID, pv.SetCode), out var ownedQty))
+                    continue;
+
+                if (ownedQty <= 0 || ownedQty >= CollectionGroupViewModel.CompleteThreshold)
+                    continue;
+
+                var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
+                results.Add(WishlistItemViewModel.From(printing, ownedQty));
             }
 
             return results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode);

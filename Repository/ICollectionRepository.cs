@@ -33,6 +33,12 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
+        /// Returns the total owned quantity per (imageID, setCode) pair for the given set of pairs.
+        /// Pairs with no owned entries are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs);
+
+        /// <summary>
         /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
         /// Image IDs that are not owned are omitted from the result.
         /// </summary>

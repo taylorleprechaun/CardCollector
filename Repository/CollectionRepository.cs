@@ -55,6 +55,28 @@ namespace CardCollector.Repository
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
 
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs)
+        {
+            var pairList = pairs.ToList();
+            if (pairList.Count == 0)
+                return new Dictionary<(int ImageID, string SetCode), int>();
+
+            var imageIDs = pairList.Select(p => p.ImageID).ToHashSet();
+
+            var entries = await _context.CollectionEntries
+                .Where(e => imageIDs.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            var pairSet = pairList.ToHashSet();
+
+            return entries
+                .Where(e => pairSet.Contains((e.ImageID, e.SetCode)))
+                .GroupBy(e => (e.ImageID, e.SetCode))
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+        }
+
         public async Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
