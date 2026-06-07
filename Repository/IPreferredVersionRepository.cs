@@ -23,13 +23,19 @@ namespace CardCollector.Repository
         Task<IEnumerable<PreferredVersion>> GetAllAsync();
 
         /// <summary>
+        /// Returns the preferred version for the given card ID (any artwork), or null if none is set.
+        /// </summary>
+        Task<PreferredVersion?> GetByCardIDAsync(int cardID);
+
+        /// <summary>
         /// Returns a dictionary of preferred versions keyed by image ID for the given set of image IDs.
         /// </summary>
         Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
-        /// Returns the set of image IDs that have a preferred version saved.
+        /// Returns the set of card IDs that have any preferred version saved.
         /// </summary>
-        Task<IReadOnlySet<int>> GetPreferredImageIDsAsync();
+        Task<IReadOnlySet<int>> GetPreferredCardIDsAsync();
+
     }
 }

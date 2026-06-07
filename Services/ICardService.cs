@@ -60,9 +60,9 @@ namespace CardCollector.Services
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync();
 
         /// <summary>
-        /// Returns all collection entries for the given image ID.
+        /// Returns all collection entries for the given card ID across all artworks.
         /// </summary>
-        Task<IEnumerable<CollectionEntry>> GetEntriesByImageIDAsync(int imageID);
+        Task<IEnumerable<CollectionEntry>> GetEntriesByCardIDAsync(int cardID);
 
         /// <summary>
         /// Returns owned entries grouped by printing, annotated with preferred-version and completion status.
@@ -75,14 +75,14 @@ namespace CardCollector.Services
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
 
         /// <summary>
-        /// Returns the preferred version for the given image ID, or null if none is set.
+        /// Returns the preferred version for the given card ID (any artwork), or null if none is set.
         /// </summary>
-        Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID);
+        Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID);
 
         /// <summary>
-        /// Returns a random artwork that has not yet been added to the user's preferred versions.
+        /// Returns a random card that has no preferred version set for any of its artworks.
         /// </summary>
-        Task<(Card Card, Image Image)?> GetRandomUncollectedAsync();
+        Task<Card?> GetRandomUncollectedAsync();
 
         /// <summary>
         /// Returns all preferred versions that have not yet been ordered or owned.
@@ -100,7 +100,7 @@ namespace CardCollector.Services
         Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null);
 
         /// <summary>
-        /// Returns a paginated, filtered page of browseable card artworks matching the given criteria.
+        /// Returns a paginated, filtered page of browseable cards matching the given criteria.
         /// </summary>
         Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria);
 

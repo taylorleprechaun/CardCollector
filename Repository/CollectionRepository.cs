@@ -31,9 +31,9 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID) =>
+        public async Task<IEnumerable<CollectionEntry>> GetByCardIDAsync(int cardID) =>
             await _context.CollectionEntries
-                .Where(e => e.ImageID == imageID)
+                .Where(e => e.CardID == cardID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -140,52 +140,6 @@ namespace CardCollector.Repository
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
         }
 
-        public async Task<IReadOnlySet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs)
-        {
-            var ids = cardIDs.ToHashSet();
-            if (ids.Count == 0)
-                return new HashSet<int>();
-
-            var preferredLookup = await GetPreferredPairLookupAsync().ConfigureAwait(false);
-
-            var ownedEntries = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.ImageID, e.SetCode })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            var nonPlaceholderCardIDs = ownedEntries
-                .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
-                .Select(e => e.CardID)
-                .ToHashSet();
-
-            var allOwnedCardIDs = ownedEntries.Select(e => e.CardID).ToHashSet();
-            return allOwnedCardIDs.Except(nonPlaceholderCardIDs).ToHashSet();
-        }
-
-        public async Task<IReadOnlySet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs)
-        {
-            var ids = imageIDs.ToHashSet();
-            if (ids.Count == 0)
-                return new HashSet<int>();
-
-            var preferredLookup = await GetPreferredPairLookupAsync().ConfigureAwait(false);
-
-            var ownedEntries = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.ImageID, e.SetCode })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            var nonPlaceholderImageIDs = ownedEntries
-                .Where(e => preferredLookup.Contains($"{e.ImageID}:{e.SetCode}"))
-                .Select(e => e.ImageID)
-                .ToHashSet();
-
-            var allOwnedImageIDs = ownedEntries.Select(e => e.ImageID).ToHashSet();
-            return allOwnedImageIDs.Except(nonPlaceholderImageIDs).ToHashSet();
-        }
-
         public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
@@ -206,28 +160,6 @@ namespace CardCollector.Repository
                 .ConfigureAwait(false);
 
             return rows.ToDictionary(r => r.CardID, r => r.Status);
-        }
-
-        public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs)
-        {
-            var ids = imageIDs.ToHashSet();
-            if (ids.Count == 0)
-                return new Dictionary<int, CollectionStatus>();
-
-            var rows = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.ImageID))
-                .GroupBy(e => e.ImageID)
-                .Select(g => new
-                {
-                    ImageID = g.Key,
-                    Status = g.Any(e => e.Status == CollectionStatus.Owned)
-                               ? CollectionStatus.Owned
-                               : CollectionStatus.Ordered
-                })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            return rows.ToDictionary(r => r.ImageID, r => r.Status);
         }
 
         public async Task<bool> UpdateAsync(CollectionEntry entry)
@@ -262,13 +194,5 @@ namespace CardCollector.Repository
             return true;
         }
 
-        private async Task<IReadOnlySet<string>> GetPreferredPairLookupAsync()
-        {
-            var preferredPairs = await _context.PreferredVersions
-                .Select(pv => new { pv.ImageID, pv.SetCode })
-                .ToListAsync()
-                .ConfigureAwait(false);
-            return preferredPairs.Select(pv => $"{pv.ImageID}:{pv.SetCode}").ToHashSet();
-        }
     }
 }

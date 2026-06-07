@@ -34,15 +34,15 @@ namespace CardCollector.Pages
 
         public async Task OnGetAsync()
         {
-            var result = await _cardService.GetRandomUncollectedAsync();
-            if (result is null)
+            var card = await _cardService.GetRandomUncollectedAsync();
+            if (card is null)
             {
                 IsComplete = true;
                 return;
             }
 
-            CurrentCard = result.Value.Card;
-            CurrentImage = result.Value.Image;
+            CurrentCard = card;
+            CurrentImage = card.CardImages?.FirstOrDefault();
         }
 
         public async Task<IActionResult> OnPostSetPreferredAsync()

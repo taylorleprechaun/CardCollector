@@ -18,9 +18,9 @@ namespace CardCollector.Repository
         Task<bool> DeleteAsync(int id);
 
         /// <summary>
-        /// Returns all entries for the given image ID.
+        /// Returns all entries for the given card ID across all artworks.
         /// </summary>
-        Task<IEnumerable<CollectionEntry>> GetByImageIDAsync(int imageID);
+        Task<IEnumerable<CollectionEntry>> GetByCardIDAsync(int cardID);
 
         /// <summary>
         /// Returns all entries with the given collection status, ordered by date created descending.
@@ -50,24 +50,9 @@ namespace CardCollector.Repository
         Task<OwnedCollectionStats> GetOwnedStatsAsync();
 
         /// <summary>
-        /// Returns the card IDs from the given set that are owned but do not match any preferred version.
-        /// </summary>
-        Task<IReadOnlySet<int>> GetPlaceholderCardIDsAsync(IEnumerable<int> cardIDs);
-
-        /// <summary>
-        /// Returns the image IDs from the given set that are owned but do not match any preferred version.
-        /// </summary>
-        Task<IReadOnlySet<int>> GetPlaceholderImageIDsAsync(IEnumerable<int> imageIDs);
-
-        /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per card ID for the given set of card IDs.
         /// </summary>
         Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);
-
-        /// <summary>
-        /// Returns the highest-priority status (Owned beats Ordered) per image ID for the given set of image IDs.
-        /// </summary>
-        Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByImageIDsAsync(IEnumerable<int> imageIDs);
 
         /// <summary>
         /// Updates the mutable fields of an existing entry. Returns false if no such entry exists.

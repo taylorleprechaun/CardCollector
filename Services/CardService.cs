@@ -218,7 +218,7 @@ namespace CardCollector.Services
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
-            var totalArtworks = _cardDataRepository.GetBrowseableArtworks().Count();
+            var totalCards = _cardDataRepository.GetBrowseableCards().Count();
             var groups = await GetGroupedOwnedAsync().ConfigureAwait(false);
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
             var ownedStats = await _collectionRepository.GetOwnedStatsAsync().ConfigureAwait(false);
@@ -236,7 +236,7 @@ namespace CardCollector.Services
                 CompletedCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Complete),
                 OrderedCount = ordered.Count(),
                 PlaceholderSetCount = groups.Count(g => g.CompletionStatus == CollectionCompletionStatus.Placeholder),
-                TotalArtworks = totalArtworks,
+                TotalCards = totalCards,
                 TotalCardQuantity = ownedStats.TotalQuantity,
                 TotalSpent = ownedStats.TotalSpent,
                 WishlistCount = wishlistCount
@@ -249,8 +249,8 @@ namespace CardCollector.Services
         public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync()
             => GetEnrichedByStatusAsync(CollectionStatus.Owned);
 
-        public async Task<IEnumerable<CollectionEntry>> GetEntriesByImageIDAsync(int imageID) =>
-            await _collectionRepository.GetByImageIDAsync(imageID).ConfigureAwait(false);
+        public async Task<IEnumerable<CollectionEntry>> GetEntriesByCardIDAsync(int cardID) =>
+            await _collectionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
 
         public async Task<IEnumerable<CollectionGroupViewModel>> GetGroupedOwnedAsync()
         {
@@ -260,7 +260,7 @@ namespace CardCollector.Services
             var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs).ConfigureAwait(false);
 
             return entries
-                .GroupBy(e => (e.CardName, e.ImageURLSmall, e.SetCode, e.SetName, e.RarityCode))
+                .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityCode))
                 .Select(g =>
                 {
                     var first = g.First();
@@ -269,9 +269,10 @@ namespace CardCollector.Services
                         ? withPrice.Sum(e => e.Quantity * e.PurchasePrice!.Value)
                         : null;
 
-                    var isPreferred = preferredVersions.TryGetValue(first.ImageID, out var pv)
-                                      && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
-                                      && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase));
+                    var isPreferred = g.Select(e => e.ImageID).Distinct().Any(imgID =>
+                        preferredVersions.TryGetValue(imgID, out var pv)
+                        && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
+                        && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase)));
 
                     return CollectionGroupViewModel.From(
                         printing: first,
@@ -343,18 +344,15 @@ namespace CardCollector.Services
             return result.OrderBy(r => r.CardName).ToList();
         }
 
-        public async Task<PreferredVersion?> GetPreferredVersionByImageIDAsync(int imageID)
-        {
-            var dict = await _preferredVersionRepository.GetByImageIDsAsync(new[] { imageID }).ConfigureAwait(false);
-            return dict.TryGetValue(imageID, out var pv) ? pv : null;
-        }
+        public async Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID) =>
+            await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
 
-        public async Task<(Card Card, Image Image)?> GetRandomUncollectedAsync()
+        public async Task<Card?> GetRandomUncollectedAsync()
         {
-            var preferredImageIDs = await _preferredVersionRepository.GetPreferredImageIDsAsync().ConfigureAwait(false);
+            var preferredCardIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);
 
-            var uncollected = _cardDataRepository.GetBrowseableArtworks()
-                .Where(a => !preferredImageIDs.Contains(a.Image.ID))
+            var uncollected = _cardDataRepository.GetBrowseableCards()
+                .Where(c => !preferredCardIDs.Contains(c.ID))
                 .ToList();
 
             if (uncollected.Count == 0)
@@ -420,47 +418,66 @@ namespace CardCollector.Services
             var page = criteria.Page;
             var pageSize = criteria.PageSize;
 
-            var filtered = _cardDataRepository.GetBrowseableArtworks()
-                .Where(a => string.IsNullOrWhiteSpace(query) ||
-                            a.Card.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
+            var filtered = _cardDataRepository.GetBrowseableCards()
+                .Where(c => string.IsNullOrWhiteSpace(query) ||
+                            c.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
 
             if (!string.IsNullOrWhiteSpace(criteria.CardType))
-                filtered = filtered.Where(a => a.Card.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
+                filtered = filtered.Where(c => c.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
 
             if (!string.IsNullOrWhiteSpace(criteria.Attribute))
-                filtered = filtered.Where(a => a.Card.Attribute == criteria.Attribute);
+                filtered = filtered.Where(c => c.Attribute == criteria.Attribute);
 
             if (!string.IsNullOrWhiteSpace(criteria.RarityName))
-                filtered = filtered.Where(a => a.Card.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
+                filtered = filtered.Where(c => c.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
 
             if (criteria.LevelMin.HasValue)
-                filtered = filtered.Where(a => a.Card.Level >= criteria.LevelMin);
+                filtered = filtered.Where(c => c.Level >= criteria.LevelMin);
 
             if (criteria.LevelMax.HasValue)
-                filtered = filtered.Where(a => a.Card.Level <= criteria.LevelMax);
+                filtered = filtered.Where(c => c.Level <= criteria.LevelMax);
 
-            var orderedFiltered = filtered.OrderBy(a => a.Card.Name).ThenBy(a => a.Image.ID).ToList();
+            var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
 
             var totalCount = orderedFiltered.Count;
             var slice = orderedFiltered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var imageIDs = slice.Select(a => a.Image.ID).ToList();
-            var statusMap = await _collectionRepository.GetStatusByImageIDsAsync(imageIDs).ConfigureAwait(false);
-            var completionMap = await _collectionRepository.GetCompletionStatusByImageIDsAsync(imageIDs).ConfigureAwait(false);
+            var cardIDs = slice.Select(c => c.ID).ToList();
+            var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs).ConfigureAwait(false);
 
-            var items = slice.Select(a => new CardListItemViewModel
+            // Roll up completion status from all artworks of each card in the slice.
+            var allImageIDs = slice
+                .SelectMany(c => c.CardImages?.Select(i => i.ID) ?? [])
+                .ToList();
+            var imageCompletionMap = await _collectionRepository.GetCompletionStatusByImageIDsAsync(allImageIDs).ConfigureAwait(false);
+            var cardCompletionMap = slice.ToDictionary(
+                c => c.ID,
+                c =>
+                {
+                    var statuses = (c.CardImages ?? [])
+                        .Select(i => imageCompletionMap.TryGetValue(i.ID, out var s) ? s : (CollectionCompletionStatus?)null)
+                        .Where(s => s.HasValue)
+                        .Select(s => s!.Value)
+                        .ToList();
+                    if (statuses.Count == 0) return (CollectionCompletionStatus?)null;
+                    if (statuses.Contains(CollectionCompletionStatus.Complete)) return CollectionCompletionStatus.Complete;
+                    if (statuses.Contains(CollectionCompletionStatus.Incomplete)) return CollectionCompletionStatus.Incomplete;
+                    return CollectionCompletionStatus.Placeholder;
+                });
+
+            var items = slice.Select(c => new CardListItemViewModel
             {
-                Attribute = a.Card.Attribute ?? string.Empty,
-                CardID = a.Card.ID,
-                CardType = a.Card.CardType ?? string.Empty,
-                CompletionStatus = statusMap.TryGetValue(a.Image.ID, out var rawStatus) && rawStatus == CollectionStatus.Owned
-                    ? (completionMap.TryGetValue(a.Image.ID, out var cs) ? cs : (CollectionCompletionStatus?)null)
+                Attribute = c.Attribute ?? string.Empty,
+                CardID = c.ID,
+                CardType = c.CardType ?? string.Empty,
+                CompletionStatus = statusMap.TryGetValue(c.ID, out var rawStatus) && rawStatus == CollectionStatus.Owned
+                    ? (cardCompletionMap.TryGetValue(c.ID, out var cs) ? cs : null)
                     : null,
-                ImageID = a.Image.ID,
-                ImageURLSmall = a.Image.ImageURLSmall ?? string.Empty,
-                Name = a.Card.Name ?? string.Empty,
-                Status = statusMap.TryGetValue(a.Image.ID, out var s) ? s : null,
-                Type = a.Card.Type ?? string.Empty
+                ImageID = c.CardImages?.FirstOrDefault()?.ID ?? c.ID,
+                ImageURLSmall = c.CardImages?.FirstOrDefault()?.ImageURLSmall ?? string.Empty,
+                Name = c.Name ?? string.Empty,
+                Status = statusMap.TryGetValue(c.ID, out var s) ? s : null,
+                Type = c.Type ?? string.Empty
             }).ToList();
 
             return new PagedResult<CardListItemViewModel>

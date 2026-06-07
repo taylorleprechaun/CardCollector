@@ -14,8 +14,6 @@ namespace CardCollector.Repository
     {
         private const string CardInfoApiPath = "api/v7/cardinfo.php";
 
-        private readonly IReadOnlyList<(Card Card, Image Image)> _artworks;
-        private readonly IReadOnlyList<(Card Card, Image Image)> _browseableArtworks;
         private readonly IReadOnlyList<Card> _browseableCards;
         private readonly int _cacheTtlDays;
         private readonly IReadOnlyDictionary<int, Card> _cardIndex;
@@ -39,13 +37,11 @@ namespace CardCollector.Repository
                 ?? "https://dawnbrandbots.github.io/yaml-yugi/cards.yaml";
 
             var rawCards = LoadCards();
-            var imagesByCardId = LoadImages();
-            AttachImages(rawCards, imagesByCardId);
+            var imagesByCardID = LoadImages();
+            AttachImages(rawCards, imagesByCardID);
 
             _cards = rawCards;
             _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
-            _artworks = BuildArtworkList(_cards);
-            _browseableArtworks = BuildArtworkList(_browseableCards);
             _cardIndex = rawCards.ToDictionary(c => c.ID);
             _setNamesByCode = BuildSetNameIndex(rawCards);
             DistinctAttributes = _browseableCards
@@ -64,11 +60,7 @@ namespace CardCollector.Repository
                 .ToList();
         }
 
-        public IEnumerable<(Card Card, Image Image)> GetAllArtworks() => _artworks;
-
         public IEnumerable<Card> GetAllCards() => _cards;
-
-        public IEnumerable<(Card Card, Image Image)> GetBrowseableArtworks() => _browseableArtworks;
 
         public IEnumerable<Card> GetBrowseableCards() => _browseableCards;
 
@@ -77,35 +69,22 @@ namespace CardCollector.Repository
 
         public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
 
-        private static void AttachImages(IReadOnlyList<Card> cards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardId)
+        private static void AttachImages(IReadOnlyList<Card> cards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
         {
             foreach (var card in cards)
             {
-                if (imagesByCardId.TryGetValue(card.ID, out var images))
+                if (imagesByCardID.TryGetValue(card.ID, out var images))
                     card.CardImages = images;
                 else
                     card.CardImages = [BuildFallbackImage(card.ID)];
             }
         }
 
-        private static IReadOnlyList<(Card, Image)> BuildArtworkList(IReadOnlyList<Card> cards)
+        private static Image BuildFallbackImage(int cardID) => new()
         {
-            var artworks = new List<(Card, Image)>();
-            foreach (var card in cards)
-            {
-                if (card.CardImages is null)
-                    continue;
-                foreach (var image in card.CardImages)
-                    artworks.Add((card, image));
-            }
-            return artworks;
-        }
-
-        private static Image BuildFallbackImage(int cardId) => new()
-        {
-            ID = cardId,
-            ImageURL = $"https://images.ygoprodeck.com/images/cards/{cardId}.jpg",
-            ImageURLSmall = $"https://images.ygoprodeck.com/images/cards_small/{cardId}.jpg"
+            ID = cardID,
+            ImageURL = $"https://images.ygoprodeck.com/images/cards/{cardID}.jpg",
+            ImageURLSmall = $"https://images.ygoprodeck.com/images/cards_small/{cardID}.jpg"
         };
 
         private static IReadOnlyDictionary<string, string> BuildSetNameIndex(IReadOnlyList<Card> cards)

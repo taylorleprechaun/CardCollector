@@ -117,7 +117,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                         {
                                             <span class="badge bg-warning text-dark me-1">&#9733; Preferred</span>
                                             <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
-                                                <input type="hidden" name="ImageID" value="@Model.ImageID" />
+                                                <input type="hidden" name="ImageID" value="@(Model.PreferredVersion!.ImageID)" />
                                                 <input type="hidden" name="ID" value="@Model.ID" />
                                                 @if (!string.IsNullOrEmpty(Model.ReturnURL))
                                                 {
@@ -130,7 +130,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                         {
                                             <form method="post" asp-page-handler="SetPreferred" class="d-inline">
                                                 <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
-                                                <input type="hidden" name="ImageID" value="@Model.ImageID" />
+                                                <input type="hidden" name="ImageID" value="@primaryImage!.ID" />
                                                 <input type="hidden" name="SetCode" value="@set.Code" />
                                                 <input type="hidden" name="RarityName" value="@set.RarityName" />
                                                 <input type="hidden" name="ID" value="@Model.ID" />

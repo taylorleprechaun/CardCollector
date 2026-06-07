@@ -12,13 +12,13 @@ namespace CardCollector.ViewModels
 
         public int OrderedCount { get; set; }
 
-        public double PercentCompleted => TotalArtworks == 0 ? 0 : (double)CompletedCount / TotalArtworks * 100;
+        public double PercentCompleted => TotalCards == 0 ? 0 : (double)CompletedCount / TotalCards * 100;
 
         public int PlaceholderSetCount { get; set; }
 
-        public int RemainingCount => TotalArtworks - CompletedCount - OrderedCount;
+        public int RemainingCount => TotalCards - CompletedCount - OrderedCount;
 
-        public int TotalArtworks { get; set; }
+        public int TotalCards { get; set; }
 
         public int TotalCardQuantity { get; set; }
 

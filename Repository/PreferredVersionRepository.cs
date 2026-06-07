@@ -55,6 +55,11 @@ namespace CardCollector.Repository
             }
         }
 
+        public async Task<PreferredVersion?> GetByCardIDAsync(int cardID) =>
+            await _context.PreferredVersions
+                .FirstOrDefaultAsync(pv => pv.CardID == cardID)
+                .ConfigureAwait(false);
+
         public async Task<IEnumerable<PreferredVersion>> GetAllAsync() =>
             await _context.PreferredVersions.ToListAsync().ConfigureAwait(false);
 
@@ -72,14 +77,16 @@ namespace CardCollector.Repository
             return results.ToDictionary(pv => pv.ImageID);
         }
 
-        public async Task<IReadOnlySet<int>> GetPreferredImageIDsAsync()
+        public async Task<IReadOnlySet<int>> GetPreferredCardIDsAsync()
         {
             var ids = await _context.PreferredVersions
-                .Select(pv => pv.ImageID)
+                .Select(pv => pv.CardID)
+                .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             return ids.ToHashSet();
         }
+
     }
 }

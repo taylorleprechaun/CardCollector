@@ -80,25 +80,17 @@ namespace CardCollector.Pages
                 return;
             }
 
-            var effectiveImageID = ImageID != 0
-                ? ImageID
-                : CurrentCard.CardImages?.FirstOrDefault()?.ID ?? 0;
+            var entries = await _cardService.GetEntriesByCardIDAsync(ID);
+            CollectionEntriesBySetCode = entries
+                .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty))
+                .ToDictionary(
+                    g => g.Key,
+                    g => (
+                        Status: g.Any(e => e.Status == CollectionStatus.Owned) ? CollectionStatus.Owned : CollectionStatus.Ordered,
+                        TotalQuantity: g.Sum(e => e.Quantity)
+                    ));
 
-            if (effectiveImageID != 0)
-            {
-                var entries = await _cardService.GetEntriesByImageIDAsync(effectiveImageID);
-                CollectionEntriesBySetCode = entries
-                    .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty))
-                    .ToDictionary(
-                        g => g.Key,
-                        g => (
-                            Status: g.Any(e => e.Status == CollectionStatus.Owned) ? CollectionStatus.Owned : CollectionStatus.Ordered,
-                            TotalQuantity: g.Sum(e => e.Quantity)
-                        ));
-            }
-
-            if (ImageID != 0)
-                PreferredVersion = await _cardService.GetPreferredVersionByImageIDAsync(ImageID);
+            PreferredVersion = await _cardService.GetPreferredVersionByCardIDAsync(ID);
         }
 
         public async Task<IActionResult> OnPostOrderAsync(
