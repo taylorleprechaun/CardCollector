@@ -2,17 +2,18 @@ function setSelect(id, value) {
     document.getElementById(id).value = value;
 }
 
-function openEditModal(entryID, qty, condition, edition, acquisition, purchaseDate, purchasePrice, marketPriceAtEntry, rarityName) {
-    document.getElementById('editEntryID').value = entryID;
-    document.getElementById('editRarityName').value = rarityName || '';
-    document.getElementById('editRarityDisplay').textContent = rarityName || '';
-    document.getElementById('editQuantity').value = qty;
-    setSelect('editCondition', condition);
-    setSelect('editEdition', edition);
-    setSelect('editAcquisition', acquisition);
-    document.getElementById('editPurchaseDate').value = purchaseDate;
-    document.getElementById('editPurchasePrice').value = purchasePrice;
-    document.getElementById('editMarketPrice').value = marketPriceAtEntry;
+function openEditModal(btn) {
+    const ds = btn.dataset;
+    document.getElementById('editEntryID').value = ds.entryId;
+    document.getElementById('editRarityName').value = ds.rarityName || '';
+    document.getElementById('editRarityDisplay').textContent = ds.rarityName || '';
+    document.getElementById('editQuantity').value = ds.quantity;
+    setSelect('editCondition', ds.condition);
+    setSelect('editEdition', ds.edition);
+    setSelect('editAcquisition', ds.acquisitionMethod);
+    document.getElementById('editPurchaseDate').value = ds.purchaseDate;
+    document.getElementById('editPurchasePrice').value = ds.purchasePrice;
+    document.getElementById('editMarketPrice').value = ds.marketPrice;
     new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 

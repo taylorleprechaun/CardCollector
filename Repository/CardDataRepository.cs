@@ -26,6 +26,7 @@ namespace CardCollector.Repository
 
         public IReadOnlyList<string> DistinctAttributes { get; }
         public IReadOnlyList<string> DistinctRarityNames { get; }
+        public IReadOnlyList<string> DistinctSetNames { get; }
 
         public CardDataRepository(ILogger<CardDataRepository> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
@@ -57,6 +58,14 @@ namespace CardCollector.Repository
                 .Select(r => r!)
                 .Distinct()
                 .OrderBy(r => r)
+                .ToList();
+            DistinctSetNames = _browseableCards
+                .SelectMany(c => c.CardSets ?? [])
+                .Select(s => s.Name)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Select(n => n!)
+                .Distinct()
+                .OrderBy(n => n)
                 .ToList();
         }
 

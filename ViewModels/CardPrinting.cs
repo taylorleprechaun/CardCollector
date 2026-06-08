@@ -2,11 +2,15 @@ namespace CardCollector.ViewModels
 {
     public class CardPrinting
     {
+        public const int CompleteThreshold = 3;
+
         public IReadOnlyList<string> AvailableRarities { get; init; } = [];
 
         public int CardID { get; init; }
 
         public string CardName { get; init; } = string.Empty;
+
+        public string CardType { get; init; } = string.Empty;
 
         public int ImageID { get; init; }
 

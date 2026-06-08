@@ -7,8 +7,6 @@ namespace CardCollector.Pages
 {
     public sealed class BrowseModel : SearchablePageModel
     {
-        private static readonly IReadOnlyList<string> CardTypes = ["Monster", "Spell", "Trap"];
-
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardService _cardService;
 
@@ -17,9 +15,11 @@ namespace CardCollector.Pages
 
         public IReadOnlyList<string> AvailableAttributes { get; private set; } = [];
 
-        public IReadOnlyList<string> AvailableCardTypes { get; } = CardTypes;
+        public IReadOnlyList<string> AvailableCardTypes { get; } = AdvancedFiltersViewModel.CardTypes;
 
         public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
+
+        public IReadOnlyList<string> AvailableSetNames { get; private set; } = [];
 
         protected override ICardService CardService => _cardService;
 
@@ -29,6 +29,7 @@ namespace CardCollector.Pages
         public bool HasActiveFilters => !string.IsNullOrWhiteSpace(CardType)
             || !string.IsNullOrWhiteSpace(Attribute)
             || !string.IsNullOrWhiteSpace(RarityName)
+            || !string.IsNullOrWhiteSpace(SetName)
             || LevelMin.HasValue
             || LevelMax.HasValue;
 
@@ -43,6 +44,9 @@ namespace CardCollector.Pages
 
         public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
 
+        [BindProperty(SupportsGet = true)]
+        public string? SetName { get; set; }
+
         public BrowseModel(ICardService cardService, ICardDataRepository cardDataRepository)
         {
             _cardService = cardService;
@@ -55,7 +59,8 @@ namespace CardCollector.Pages
             ["cardType"] = CardType,
             ["levelMax"] = LevelMax?.ToString(),
             ["levelMin"] = LevelMin?.ToString(),
-            ["rarityName"] = RarityName
+            ["rarityName"] = RarityName,
+            ["setName"] = SetName
         };
 
         public async Task OnGetAsync()
@@ -63,6 +68,7 @@ namespace CardCollector.Pages
             NormalizeSearchParameters();
             AvailableAttributes = _cardDataRepository.DistinctAttributes;
             AvailableRarityNames = _cardDataRepository.DistinctRarityNames;
+            AvailableSetNames = _cardDataRepository.DistinctSetNames;
 
             var criteria = new BrowseSearchCriteria
             {
@@ -73,7 +79,8 @@ namespace CardCollector.Pages
                 Page = PageNumber,
                 PageSize = PageSize,
                 Query = Query,
-                RarityName = RarityName
+                RarityName = RarityName,
+                SetName = SetName
             };
 
             Results = await _cardService.SearchCardsAsync(criteria);

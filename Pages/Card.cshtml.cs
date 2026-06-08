@@ -57,7 +57,7 @@ namespace CardCollector.Pages
                 && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
             return !isPreferred
                 ? CollectionCompletionStatus.Placeholder
-                : totalQuantity >= CollectionGroupViewModel.CompleteThreshold
+                : totalQuantity >= CardPrinting.CompleteThreshold
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
         }
@@ -99,15 +99,13 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
-            var added = await _cardService.AddEntryAsync(
+            await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 quantity, condition, edition,
                 acquisitionMethod, IsPlaceholder,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
-            if (!added)
-                TempData["Error"] = "That printing is already in your collection.";
-            else if (setAsPreferred)
+            if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
 
             return RedirectToPage(new { ID, ImageID, ReturnURL });
@@ -119,15 +117,13 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
-            var added = await _cardService.AddEntryAsync(
+            await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod, IsPlaceholder,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
-            if (!added)
-                TempData["Error"] = "That printing is already in your collection.";
-            else if (setAsPreferred)
+            if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
 
             return RedirectToPage(new { ID, ImageID, ReturnURL });

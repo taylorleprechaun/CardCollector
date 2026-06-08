@@ -1,0 +1,2 @@
+.chevron { transition: transform 0.2s ease; display: inline-block; font-size: 0.75rem; }
+.list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }

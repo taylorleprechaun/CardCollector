@@ -44,7 +44,7 @@ namespace CardCollector.Services
             _pricingService = pricingService;
         }
 
-        public async Task<bool> AddEntryAsync(
+        public async Task AddEntryAsync(
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
@@ -71,7 +71,6 @@ namespace CardCollector.Services
             };
 
             await _collectionRepository.AddAsync(entry).ConfigureAwait(false);
-            return true;
         }
 
         public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
@@ -396,7 +395,7 @@ namespace CardCollector.Services
                 if (!ownedQuantities.TryGetValue((pv.ImageID, pv.SetCode), out var ownedQty))
                     continue;
 
-                if (ownedQty <= 0 || ownedQty >= CollectionGroupViewModel.CompleteThreshold)
+                if (ownedQty <= 0 || ownedQty >= CardPrinting.CompleteThreshold)
                     continue;
 
                 var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
@@ -414,22 +413,18 @@ namespace CardCollector.Services
 
         public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria)
         {
-            var query = criteria.Query;
             var page = criteria.Page;
             var pageSize = criteria.PageSize;
 
-            var filtered = _cardDataRepository.GetBrowseableCards()
-                .Where(c => string.IsNullOrWhiteSpace(query) ||
-                            c.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
-
-            if (!string.IsNullOrWhiteSpace(criteria.CardType))
-                filtered = filtered.Where(c => c.CardType?.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase) == true);
+            var filtered = ApplyCommonCardFilters(
+                _cardDataRepository.GetBrowseableCards(),
+                criteria.Query,
+                criteria.CardType,
+                criteria.SetName,
+                criteria.RarityName);
 
             if (!string.IsNullOrWhiteSpace(criteria.Attribute))
                 filtered = filtered.Where(c => c.Attribute == criteria.Attribute);
-
-            if (!string.IsNullOrWhiteSpace(criteria.RarityName))
-                filtered = filtered.Where(c => c.CardSets?.Any(s => s.RarityName == criteria.RarityName) == true);
 
             if (criteria.LevelMin.HasValue)
                 filtered = filtered.Where(c => c.Level >= criteria.LevelMin);
@@ -489,45 +484,53 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize)
+        public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(CollectionSearchCriteria criteria)
         {
             var allGroups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).ToList();
 
-            var filtered = allGroups
-                .Where(g => string.IsNullOrWhiteSpace(query) ||
-                            g.CardName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                            g.SetName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                            g.SetCode.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                            g.RarityCode.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var filtered = ApplyCommonPrintingFilters(
+                allGroups,
+                criteria.Query,
+                criteria.CardType,
+                criteria.SetName,
+                criteria.RarityName);
 
-            var totalCount = filtered.Count;
-            var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            if (criteria.Condition.HasValue)
+                filtered = filtered.Where(g => g.Entries.Any(e => e.Condition == criteria.Condition));
+
+            if (criteria.Edition.HasValue)
+                filtered = filtered.Where(g => g.Entries.Any(e => e.Edition == criteria.Edition));
+
+            if (criteria.AcquisitionMethod.HasValue)
+                filtered = filtered.Where(g => g.Entries.Any(e => e.AcquisitionMethod == criteria.AcquisitionMethod));
+
+            var filteredList = filtered.ToList();
+            var totalCount = filteredList.Count;
+            var items = filteredList.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
 
             return new PagedResult<CollectionGroupViewModel>
             {
                 Items = items,
-                Page = page,
-                PageSize = pageSize,
+                Page = criteria.Page,
+                PageSize = criteria.PageSize,
                 TotalCount = totalCount
             };
         }
 
-        public async Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false)
+        public async Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria)
         {
             var allItems = (await GetWishlistAsync().ConfigureAwait(false)).ToList();
 
-            var filtered = allItems
-                .Where(item => string.IsNullOrWhiteSpace(query) ||
-                               item.CardName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                               item.SetName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                               item.SetCode.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                               item.RarityName.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var filtered = ApplyCommonPrintingFilters(
+                allItems,
+                criteria.Query,
+                criteria.CardType,
+                criteria.SetName,
+                criteria.RarityName);
 
-            IEnumerable<WishlistItemViewModel> sorted = sortBy switch
+            IEnumerable<WishlistItemViewModel> sorted = criteria.SortBy switch
             {
-                WishlistSortBy.Name => sortDescending
+                WishlistSortBy.Name => criteria.SortDescending
                     ? filtered.OrderByDescending(i => i.CardName).ThenBy(i => i.SetCode)
                     : filtered.OrderBy(i => i.CardName).ThenBy(i => i.SetCode),
                 _ => filtered.OrderBy(i => i.CardName).ThenBy(i => i.SetCode)
@@ -535,22 +538,93 @@ namespace CardCollector.Services
 
             var sortedList = sorted.ToList();
             var totalCount = sortedList.Count;
-            var items = sortedList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var items = sortedList.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
 
             return new WishlistSearchResult
             {
                 PagedItems = new PagedResult<WishlistItemViewModel>
                 {
                     Items = items,
-                    Page = page,
-                    PageSize = pageSize,
+                    Page = criteria.Page,
+                    PageSize = criteria.PageSize,
                     TotalCount = totalCount
                 }
             };
         }
 
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
+        {
+            var items = await GetWishlistAsync().ConfigureAwait(false);
+            return items
+                .Select(i => i.RarityName)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList();
+        }
+
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync()
+        {
+            var items = await GetWishlistAsync().ConfigureAwait(false);
+            return items
+                .Select(i => i.SetName)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+        }
+
         public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName) =>
             await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, newSetCode, newRarityName).ConfigureAwait(false);
+
+        private static IEnumerable<Card> ApplyCommonCardFilters(
+            IEnumerable<Card> cards,
+            string? query,
+            string? cardType,
+            string? setName,
+            string? rarityName)
+        {
+            if (!string.IsNullOrWhiteSpace(query))
+                cards = cards.Where(c => c.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!string.IsNullOrWhiteSpace(cardType))
+                cards = cards.Where(c => c.CardType?.Contains(cardType, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!string.IsNullOrWhiteSpace(setName))
+                cards = cards.Where(c => c.CardSets?.Any(s => s.Name?.Equals(setName, StringComparison.OrdinalIgnoreCase) == true) == true);
+
+            if (!string.IsNullOrWhiteSpace(rarityName))
+                cards = cards.Where(c => c.CardSets?.Any(s => s.RarityName == rarityName) == true);
+
+            return cards;
+        }
+
+        private static IEnumerable<T> ApplyCommonPrintingFilters<T>(
+            IEnumerable<T> items,
+            string? query,
+            string? cardType,
+            string? setName,
+            string? rarityName) where T : CardPrinting
+        {
+            if (!string.IsNullOrWhiteSpace(query))
+                items = items.Where(i =>
+                    i.CardName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    i.SetName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    i.SetCode.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    i.RarityCode.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    i.RarityName.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(cardType))
+                items = items.Where(i => i.CardType.Contains(cardType, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(setName))
+                items = items.Where(i => i.SetName.Equals(setName, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(rarityName))
+                items = items.Where(i => i.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
+
+            return items;
+        }
 
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
         {
@@ -572,6 +646,7 @@ namespace CardCollector.Services
                 AvailableRarities = availableRarities,
                 CardID = cardID,
                 CardName = card?.Name ?? "Unknown",
+                CardType = card?.CardType ?? string.Empty,
                 ImageID = imageID,
                 ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
                 Price = set?.Price,

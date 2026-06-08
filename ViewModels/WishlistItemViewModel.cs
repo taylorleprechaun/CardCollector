@@ -2,7 +2,7 @@ namespace CardCollector.ViewModels
 {
     public sealed class WishlistItemViewModel : CardPrinting
     {
-        public int QuantityNeeded => CollectionGroupViewModel.CompleteThreshold - QuantityOwned;
+        public int QuantityNeeded => CompleteThreshold - QuantityOwned;
 
         public int QuantityOwned { get; init; } = 0;
 
@@ -11,6 +11,7 @@ namespace CardCollector.ViewModels
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
+            CardType = printing.CardType,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,

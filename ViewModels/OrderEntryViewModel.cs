@@ -29,6 +29,7 @@ namespace CardCollector.ViewModels
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
+            CardType = printing.CardType,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,

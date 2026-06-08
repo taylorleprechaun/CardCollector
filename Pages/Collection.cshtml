@@ -4,6 +4,13 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
+    int activeFilterCount = (string.IsNullOrWhiteSpace(Model.CardType) ? 0 : 1)
+        + (string.IsNullOrWhiteSpace(Model.SetName) ? 0 : 1)
+        + (string.IsNullOrWhiteSpace(Model.RarityName) ? 0 : 1)
+        + (Model.Condition.HasValue ? 1 : 0)
+        + (Model.Edition.HasValue ? 1 : 0)
+        + (Model.AcquisitionMethod.HasValue ? 1 : 0);
+    var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -14,19 +21,90 @@
     </div>
 </div>
 
-<partial name="_SearchBar" model='new SearchBarViewModel(AutocompleteURL: "?handler=Autocomplete", PageSize: Model.PageSize, Placeholder: "Search by name, set, or rarity…", Query: Model.Query)' />
+<form method="get" class="row g-2 mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="col">
+        <input type="search"
+               name="query"
+               value="@Model.Query"
+               autocomplete="off"
+               class="form-control"
+               placeholder="Search by name, set, or rarity…"
+               list="card-suggestions"
+               data-autocomplete-url="?handler=Autocomplete" />
+        <datalist id="card-suggestions"></datalist>
+    </div>
+    <div class="col-auto">
+        <select name="pageSize" class="form-select">
+            @foreach (var size in new[] { 10, 25, 50, 100 })
+            {
+                <option value="@size" selected="@(Model.PageSize == size)">@size per page</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-outline-secondary"
+                data-bs-toggle="collapse" data-bs-target="#filterPanel"
+                aria-expanded="@(Model.HasActiveFilters ? "true" : "false")" aria-controls="filterPanel"
+                aria-label="@(activeFilterCount > 0 ? $"Filters ({activeFilterCount} active)" : "Filters")">
+            Filters
+            @if (activeFilterCount > 0)
+            {
+                <span class="badge bg-primary ms-1">@activeFilterCount</span>
+            }
+        </button>
+    </div>
+</form>
+
+<div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
+    <div class="card card-body mb-3">
+        <form method="get">
+            <input type="hidden" name="pageNumber" value="1" />
+            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            @if (!string.IsNullOrWhiteSpace(Model.Query))
+            {
+                <input type="hidden" name="query" value="@Model.Query" />
+            }
+            <partial name="_AdvancedFilters" model='new AdvancedFiltersViewModel
+            {
+                AvailableAcquisitionMethods = Model.AvailableAcquisitionMethods,
+                AvailableConditions = Model.AvailableConditions,
+                AvailableEditions = Model.AvailableEditions,
+                AvailableRarityNames = Model.AvailableRarityNames,
+                AvailableSetNames = Model.AvailableSetNames,
+                CurrentAcquisitionMethod = Model.AcquisitionMethod?.ToString(),
+                CurrentCardType = Model.CardType,
+                CurrentCondition = Model.Condition?.ToString(),
+                CurrentEdition = Model.Edition?.ToString(),
+                CurrentRarityName = Model.RarityName,
+                CurrentSetName = Model.SetName,
+                ShowAcquisitionMethod = true,
+                ShowCondition = true,
+                ShowEdition = true
+            }' />
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+                <a href="/Collection@(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")"
+                   class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+</div>
 
 @if (!Model.GroupedCards.Items.Any())
 {
     <div class="alert alert-info text-center py-5">
-        @if (string.IsNullOrEmpty(Model.Query))
+        @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
         {
             <h4>Nothing owned yet</h4>
             <p class="mb-3">Head to <a href="/Orders">Orders</a> to mark cards as owned.</p>
         }
         else
         {
-            <span>No cards match &ldquo;@Model.Query&rdquo;.</span>
+            <span>No cards match your search or filters.</span>
         }
     </div>
 }
@@ -158,24 +236,21 @@ else
                                         </td>
                                         <td class="text-nowrap">
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    onclick="openEditModal(
-                                                        @entry.EntryID,
-                                                        @entry.Quantity,
-                                                        '@(entry.Condition.HasValue ? ((int)entry.Condition.Value).ToString() : "")',
-                                                        '@(entry.Edition.HasValue ? ((int)entry.Edition.Value).ToString() : "")',
-                                                        '@(entry.AcquisitionMethod.HasValue ? ((int)entry.AcquisitionMethod.Value).ToString() : "")',
-                                                        '@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                        '@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")',
-                                                        '@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")',
-                                                        '@entry.RarityName.Replace("'", "\\'")')" >
+                                                    data-entry-id="@entry.EntryID"
+                                                    data-quantity="@entry.Quantity"
+                                                    data-condition="@(entry.Condition.HasValue ? ((int)entry.Condition.Value).ToString() : "")"
+                                                    data-edition="@(entry.Edition.HasValue ? ((int)entry.Edition.Value).ToString() : "")"
+                                                    data-acquisition-method="@(entry.AcquisitionMethod.HasValue ? ((int)entry.AcquisitionMethod.Value).ToString() : "")"
+                                                    data-purchase-date="@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")"
+                                                    data-purchase-price="@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")"
+                                                    data-market-price="@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")"
+                                                    data-rarity-name="@entry.RarityName"
+                                                    onclick="openEditModal(this)">
                                                 Edit
                                             </button>
-                                            <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
+                                            <form method="post" action="/Collection?handler=Delete&@filterParams" class="d-inline ms-1"
                                                   onsubmit="return confirm('Remove this entry from your collection?')">
                                                 <input type="hidden" name="entryID" value="@entry.EntryID" />
-                                                <input type="hidden" name="query" value="@Model.Query" />
-                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
                                             </form>
                                         </td>
@@ -199,17 +274,14 @@ else
         }
     </div>
 
-    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Collection pagination", PageName = "Collection", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.GroupedCards.TotalPages, HasPreviousPage = Model.GroupedCards.HasPreviousPage, HasNextPage = Model.GroupedCards.HasNextPage }' />
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Collection pagination", PageName = "Collection", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.GroupedCards.TotalPages, HasPreviousPage = Model.GroupedCards.HasPreviousPage, HasNextPage = Model.GroupedCards.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
 }
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" asp-page-handler="Edit">
-                <input type="hidden" name="query" value="@Model.Query" />
-                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            <form method="post" action="/Collection?handler=Edit&@filterParams">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Entry</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -231,10 +303,7 @@ else
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" asp-page-handler="AddPurchase">
-                <input type="hidden" name="query" value="@Model.Query" />
-                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            <form method="post" action="/Collection?handler=AddPurchase&@filterParams">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addModalLabel">Add Purchase</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -254,11 +323,6 @@ else
         </div>
     </div>
 </div>
-
-<style>
-    .chevron { transition: transform 0.2s ease; display: inline-block; font-size: 0.75rem; }
-    .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
-</style>
 
 @section Scripts {
     <script src="~/js/collection.js"></script>

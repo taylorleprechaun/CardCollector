@@ -33,16 +33,41 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
-        /// Returns the total owned quantity per (imageID, setCode) pair for the given set of pairs.
-        /// Pairs with no owned entries are omitted from the result.
-        /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs);
-
-        /// <summary>
         /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
         /// Image IDs that are not owned are omitted from the result.
         /// </summary>
         Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs);
+
+        /// <summary>
+        /// Returns the distinct non-null acquisition methods present in owned entries, sorted.
+        /// </summary>
+        Task<IReadOnlyList<AcquisitionMethod>> GetDistinctAcquisitionMethodsAsync();
+
+        /// <summary>
+        /// Returns the distinct non-null conditions present in owned entries, sorted.
+        /// </summary>
+        Task<IReadOnlyList<CardCondition>> GetDistinctConditionsAsync();
+
+        /// <summary>
+        /// Returns the distinct non-null editions present in owned entries, sorted.
+        /// </summary>
+        Task<IReadOnlyList<CardEdition>> GetDistinctEditionsAsync();
+
+        /// <summary>
+        /// Returns the distinct non-null rarity names present in owned entries, sorted.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetDistinctRarityNamesAsync();
+
+        /// <summary>
+        /// Returns the distinct set codes present in owned entries, sorted.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetDistinctSetCodesAsync();
+
+        /// <summary>
+        /// Returns the total owned quantity per (imageID, setCode) pair for the given set of pairs.
+        /// Pairs with no owned entries are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs);
 
         /// <summary>
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.

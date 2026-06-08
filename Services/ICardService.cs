@@ -10,9 +10,9 @@ namespace CardCollector.Services
     public interface ICardService
     {
         /// <summary>
-        /// Adds a new entry to the collection. Returns false if an entry for the same (imageID, setCode) already exists.
+        /// Adds a new entry to the collection.
         /// </summary>
-        Task<bool> AddEntryAsync(
+        Task AddEntryAsync(
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
@@ -105,14 +105,24 @@ namespace CardCollector.Services
         Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria);
 
         /// <summary>
-        /// Returns a paginated, filtered page of owned collection groups matching the given query.
+        /// Returns a paginated, filtered page of owned collection groups matching the given criteria.
         /// </summary>
-        Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(string? query, int page, int pageSize);
+        Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(CollectionSearchCriteria criteria);
 
         /// <summary>
         /// Returns a paginated, filtered, and sorted page of wishlist items.
         /// </summary>
-        Task<WishlistSearchResult> SearchWishlistAsync(string? query, int page, int pageSize, WishlistSortBy sortBy = WishlistSortBy.Name, bool sortDescending = false);
+        Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
+
+        /// <summary>
+        /// Returns the distinct rarity names present in the current wishlist.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync();
+
+        /// <summary>
+        /// Returns the distinct set names present in the current wishlist.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
 
         /// <summary>
         /// Updates the preferred version for the given image ID to the specified newer printing.

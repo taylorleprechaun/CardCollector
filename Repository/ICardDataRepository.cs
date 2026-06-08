@@ -18,6 +18,11 @@ namespace CardCollector.Repository
         IReadOnlyList<string> DistinctRarityNames { get; }
 
         /// <summary>
+        /// All distinct set names from browseable cards, sorted.
+        /// </summary>
+        IReadOnlyList<string> DistinctSetNames { get; }
+
+        /// <summary>
         /// Returns all cards including non-browseable ones (e.g. cards whose only sets were Speed Duel).
         /// </summary>
         IEnumerable<Card> GetAllCards();

@@ -4,8 +4,6 @@ namespace CardCollector.ViewModels
 {
     public sealed class CollectionGroupViewModel : CardPrinting
     {
-        internal const int CompleteThreshold = 3;
-
         public CollectionCompletionStatus CompletionStatus =>
             !IsPreferredVersion
                 ? CollectionCompletionStatus.Placeholder
@@ -31,6 +29,7 @@ namespace CardCollector.ViewModels
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
+            CardType = printing.CardType,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
