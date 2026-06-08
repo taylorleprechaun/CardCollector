@@ -423,15 +423,6 @@ namespace CardCollector.Services
                 criteria.SetName,
                 criteria.RarityName);
 
-            if (!string.IsNullOrWhiteSpace(criteria.Attribute))
-                filtered = filtered.Where(c => c.Attribute == criteria.Attribute);
-
-            if (criteria.LevelMin.HasValue)
-                filtered = filtered.Where(c => c.Level >= criteria.LevelMin);
-
-            if (criteria.LevelMax.HasValue)
-                filtered = filtered.Where(c => c.Level <= criteria.LevelMax);
-
             var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
 
             var totalCount = orderedFiltered.Count;
@@ -590,11 +581,10 @@ namespace CardCollector.Services
             if (!string.IsNullOrWhiteSpace(cardType))
                 cards = cards.Where(c => c.CardType?.Contains(cardType, StringComparison.OrdinalIgnoreCase) == true);
 
-            if (!string.IsNullOrWhiteSpace(setName))
-                cards = cards.Where(c => c.CardSets?.Any(s => s.Name?.Equals(setName, StringComparison.OrdinalIgnoreCase) == true) == true);
-
-            if (!string.IsNullOrWhiteSpace(rarityName))
-                cards = cards.Where(c => c.CardSets?.Any(s => s.RarityName == rarityName) == true);
+            if (!string.IsNullOrWhiteSpace(setName) || !string.IsNullOrWhiteSpace(rarityName))
+                cards = cards.Where(c => c.CardSets?.Any(s =>
+                    (string.IsNullOrWhiteSpace(setName) || s.Name?.Equals(setName, StringComparison.OrdinalIgnoreCase) == true) &&
+                    (string.IsNullOrWhiteSpace(rarityName) || s.RarityName == rarityName)) == true);
 
             return cards;
         }

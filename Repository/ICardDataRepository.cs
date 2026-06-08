@@ -8,11 +8,6 @@ namespace CardCollector.Repository
     public interface ICardDataRepository
     {
         /// <summary>
-        /// All distinct attribute values (e.g. DARK, LIGHT) present in the card data.
-        /// </summary>
-        IReadOnlyList<string> DistinctAttributes { get; }
-
-        /// <summary>
         /// All distinct rarity name strings present in the card data.
         /// </summary>
         IReadOnlyList<string> DistinctRarityNames { get; }

@@ -10,11 +10,6 @@ namespace CardCollector.Pages
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardService _cardService;
 
-        [BindProperty(SupportsGet = true)]
-        public string? Attribute { get; set; }
-
-        public IReadOnlyList<string> AvailableAttributes { get; private set; } = [];
-
         public IReadOnlyList<string> AvailableCardTypes { get; } = AdvancedFiltersViewModel.CardTypes;
 
         public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
@@ -27,17 +22,8 @@ namespace CardCollector.Pages
         public string? CardType { get; set; }
 
         public bool HasActiveFilters => !string.IsNullOrWhiteSpace(CardType)
-            || !string.IsNullOrWhiteSpace(Attribute)
             || !string.IsNullOrWhiteSpace(RarityName)
-            || !string.IsNullOrWhiteSpace(SetName)
-            || LevelMin.HasValue
-            || LevelMax.HasValue;
-
-        [BindProperty(SupportsGet = true)]
-        public int? LevelMax { get; set; }
-
-        [BindProperty(SupportsGet = true)]
-        public int? LevelMin { get; set; }
+            || !string.IsNullOrWhiteSpace(SetName);
 
         [BindProperty(SupportsGet = true)]
         public string? RarityName { get; set; }
@@ -55,10 +41,7 @@ namespace CardCollector.Pages
 
         public IReadOnlyDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
         {
-            ["attribute"] = Attribute,
             ["cardType"] = CardType,
-            ["levelMax"] = LevelMax?.ToString(),
-            ["levelMin"] = LevelMin?.ToString(),
             ["rarityName"] = RarityName,
             ["setName"] = SetName
         };
@@ -66,16 +49,12 @@ namespace CardCollector.Pages
         public async Task OnGetAsync()
         {
             NormalizeSearchParameters();
-            AvailableAttributes = _cardDataRepository.DistinctAttributes;
             AvailableRarityNames = _cardDataRepository.DistinctRarityNames;
             AvailableSetNames = _cardDataRepository.DistinctSetNames;
 
             var criteria = new BrowseSearchCriteria
             {
-                Attribute = Attribute,
                 CardType = CardType,
-                LevelMax = LevelMax,
-                LevelMin = LevelMin,
                 Page = PageNumber,
                 PageSize = PageSize,
                 Query = Query,

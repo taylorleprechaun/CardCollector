@@ -24,7 +24,6 @@ namespace CardCollector.Repository
         private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
         private readonly string _yamlYugiUrl;
 
-        public IReadOnlyList<string> DistinctAttributes { get; }
         public IReadOnlyList<string> DistinctRarityNames { get; }
         public IReadOnlyList<string> DistinctSetNames { get; }
 
@@ -45,12 +44,6 @@ namespace CardCollector.Repository
             _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
             _cardIndex = rawCards.ToDictionary(c => c.ID);
             _setNamesByCode = BuildSetNameIndex(rawCards);
-            DistinctAttributes = _browseableCards
-                .Where(c => !string.IsNullOrEmpty(c.Attribute))
-                .Select(c => c.Attribute!)
-                .Distinct()
-                .OrderBy(a => a)
-                .ToList();
             DistinctRarityNames = _browseableCards
                 .SelectMany(c => c.CardSets ?? [])
                 .Select(s => s.RarityName)
