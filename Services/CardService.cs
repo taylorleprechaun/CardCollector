@@ -416,11 +416,12 @@ namespace CardCollector.Services
             var page = criteria.Page;
             var pageSize = criteria.PageSize;
 
+            var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
             var filtered = ApplyCommonCardFilters(
                 _cardDataRepository.GetBrowseableCards(),
                 criteria.Query,
                 criteria.CardType,
-                criteria.SetName,
+                setPrefix,
                 criteria.RarityName);
 
             var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
@@ -479,11 +480,12 @@ namespace CardCollector.Services
         {
             var allGroups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).ToList();
 
+            var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
             var filtered = ApplyCommonPrintingFilters(
                 allGroups,
                 criteria.Query,
                 criteria.CardType,
-                criteria.SetName,
+                setPrefix,
                 criteria.RarityName);
 
             if (criteria.Condition.HasValue)
@@ -512,11 +514,12 @@ namespace CardCollector.Services
         {
             var allItems = (await GetWishlistAsync().ConfigureAwait(false)).ToList();
 
+            var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
             var filtered = ApplyCommonPrintingFilters(
                 allItems,
                 criteria.Query,
                 criteria.CardType,
-                criteria.SetName,
+                setPrefix,
                 criteria.RarityName);
 
             IEnumerable<WishlistItemViewModel> sorted = criteria.SortBy switch
@@ -557,8 +560,10 @@ namespace CardCollector.Services
         public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync()
         {
             var items = await GetWishlistAsync().ConfigureAwait(false);
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             return items
-                .Select(i => i.SetName)
+                .Where(i => !string.IsNullOrEmpty(i.SetCode))
+                .Select(i => setNamesByCode.TryGetValue(i.SetCode, out var name) ? name : i.SetName)
                 .Where(n => !string.IsNullOrEmpty(n))
                 .Distinct()
                 .OrderBy(n => n)
@@ -572,7 +577,7 @@ namespace CardCollector.Services
             IEnumerable<Card> cards,
             string? query,
             string? cardType,
-            string? setName,
+            string? setPrefix,
             string? rarityName)
         {
             if (!string.IsNullOrWhiteSpace(query))
@@ -581,9 +586,9 @@ namespace CardCollector.Services
             if (!string.IsNullOrWhiteSpace(cardType))
                 cards = cards.Where(c => c.CardType?.Contains(cardType, StringComparison.OrdinalIgnoreCase) == true);
 
-            if (!string.IsNullOrWhiteSpace(setName) || !string.IsNullOrWhiteSpace(rarityName))
+            if (!string.IsNullOrWhiteSpace(setPrefix) || !string.IsNullOrWhiteSpace(rarityName))
                 cards = cards.Where(c => c.CardSets?.Any(s =>
-                    (string.IsNullOrWhiteSpace(setName) || s.Name?.Equals(setName, StringComparison.OrdinalIgnoreCase) == true) &&
+                    (string.IsNullOrWhiteSpace(setPrefix) || (s.Code != null && GetSetPrefix(s.Code).Equals(setPrefix, StringComparison.OrdinalIgnoreCase))) &&
                     (string.IsNullOrWhiteSpace(rarityName) || s.RarityName == rarityName)) == true);
 
             return cards;
@@ -593,7 +598,7 @@ namespace CardCollector.Services
             IEnumerable<T> items,
             string? query,
             string? cardType,
-            string? setName,
+            string? setPrefix,
             string? rarityName) where T : CardPrinting
         {
             if (!string.IsNullOrWhiteSpace(query))
@@ -607,13 +612,19 @@ namespace CardCollector.Services
             if (!string.IsNullOrWhiteSpace(cardType))
                 items = items.Where(i => i.CardType.Contains(cardType, StringComparison.OrdinalIgnoreCase));
 
-            if (!string.IsNullOrWhiteSpace(setName))
-                items = items.Where(i => i.SetName.Equals(setName, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(setPrefix))
+                items = items.Where(i => GetSetPrefix(i.SetCode).Equals(setPrefix, StringComparison.OrdinalIgnoreCase));
 
             if (!string.IsNullOrWhiteSpace(rarityName))
                 items = items.Where(i => i.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
 
             return items;
+        }
+
+        private static string GetSetPrefix(string code)
+        {
+            var hyphen = code.IndexOf('-');
+            return hyphen > 0 ? code[..hyphen] : code;
         }
 
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)

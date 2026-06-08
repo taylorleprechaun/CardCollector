@@ -23,18 +23,11 @@ namespace CardCollector.Pages
 
         protected override ICardService CardService => _cardService;
 
-        [BindProperty(SupportsGet = true)]
-        public string? CardType { get; set; }
-
         [BindProperty]
         public CardCondition? Condition { get; set; }
 
         [BindProperty]
         public CardEdition? Edition { get; set; }
-
-        public bool HasActiveFilters => !string.IsNullOrWhiteSpace(CardType)
-            || !string.IsNullOrWhiteSpace(SetName)
-            || !string.IsNullOrWhiteSpace(RarityName);
 
         [BindProperty]
         public int ImageID { get; set; }
@@ -51,16 +44,10 @@ namespace CardCollector.Pages
         [BindProperty]
         public int Quantity { get; set; } = 1;
 
-        [BindProperty(SupportsGet = true)]
-        public string? RarityName { get; set; }
-
         public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
 
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
-
-        [BindProperty(SupportsGet = true)]
-        public string? SetName { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public WishlistSortBy SortBy { get; set; } = WishlistSortBy.Name;
@@ -74,14 +61,15 @@ namespace CardCollector.Pages
             _cardSetRepository = cardSetRepository;
         }
 
-        public IReadOnlyDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
+        public override IReadOnlyDictionary<string, string?> GetPaginationParams()
         {
-            ["cardType"] = CardType,
-            ["rarityName"] = RarityName,
-            ["setName"] = SetName,
-            ["sortBy"] = SortBy.ToString(),
-            ["sortDescending"] = SortDescending.ToString()
-        };
+            var dict = new Dictionary<string, string?>(base.GetPaginationParams())
+            {
+                ["sortBy"] = SortBy.ToString(),
+                ["sortDescending"] = SortDescending.ToString()
+            };
+            return dict;
+        }
 
         public string GetTCGDate(string setCode) =>
             _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;

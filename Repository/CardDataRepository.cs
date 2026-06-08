@@ -22,6 +22,7 @@ namespace CardCollector.Repository
         private readonly int _imageCacheTtlDays;
         private readonly ILogger<CardDataRepository> _logger;
         private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
+        private readonly IReadOnlyDictionary<string, string> _setPrefixByName;
         private readonly string _yamlYugiUrl;
 
         public IReadOnlyList<string> DistinctRarityNames { get; }
@@ -43,7 +44,18 @@ namespace CardCollector.Repository
             _cards = rawCards;
             _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
             _cardIndex = rawCards.ToDictionary(c => c.ID);
-            _setNamesByCode = BuildSetNameIndex(rawCards);
+
+            var (setNamesByCode, setPrefixByName) = BuildSetNameIndex(rawCards);
+            _setNamesByCode = setNamesByCode;
+            _setPrefixByName = setPrefixByName;
+
+            var browseablePrefixes = new HashSet<string>(
+                _browseableCards
+                    .SelectMany(c => c.CardSets ?? [])
+                    .Where(s => !string.IsNullOrEmpty(s.Code))
+                    .Select(s => GetSetPrefix(s.Code!)),
+                StringComparer.OrdinalIgnoreCase);
+
             DistinctRarityNames = _browseableCards
                 .SelectMany(c => c.CardSets ?? [])
                 .Select(s => s.RarityName)
@@ -52,12 +64,9 @@ namespace CardCollector.Repository
                 .Distinct()
                 .OrderBy(r => r)
                 .ToList();
-            DistinctSetNames = _browseableCards
-                .SelectMany(c => c.CardSets ?? [])
-                .Select(s => s.Name)
-                .Where(n => !string.IsNullOrEmpty(n))
-                .Select(n => n!)
-                .Distinct()
+            DistinctSetNames = _setPrefixByName
+                .Where(kvp => browseablePrefixes.Contains(kvp.Value))
+                .Select(kvp => kvp.Key)
                 .OrderBy(n => n)
                 .ToList();
         }
@@ -68,6 +77,9 @@ namespace CardCollector.Repository
 
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
+
+        public string? GetSetPrefixByName(string name) =>
+            _setPrefixByName.TryGetValue(name, out var prefix) ? prefix : null;
 
         public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
 
@@ -89,18 +101,38 @@ namespace CardCollector.Repository
             ImageURLSmall = $"https://images.ygoprodeck.com/images/cards_small/{cardID}.jpg"
         };
 
-        private static IReadOnlyDictionary<string, string> BuildSetNameIndex(IReadOnlyList<Card> cards)
+        private static (IReadOnlyDictionary<string, string> namesByCode, IReadOnlyDictionary<string, string> prefixByName) BuildSetNameIndex(IReadOnlyList<Card> cards)
         {
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            // Step 1: prefix → shortest canonical name (shorter names are the base set, not promo variants)
+            var prefixToName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var card in cards)
-            {
                 foreach (var set in card.CardSets ?? [])
-                {
                     if (!string.IsNullOrEmpty(set.Code) && !string.IsNullOrEmpty(set.Name))
-                        dict.TryAdd(set.Code, set.Name);
-                }
-            }
-            return dict;
+                    {
+                        var prefix = GetSetPrefix(set.Code!);
+                        if (!prefixToName.TryGetValue(prefix, out var existing) || set.Name!.Length < existing.Length)
+                            prefixToName[prefix] = set.Name!;
+                    }
+
+            // Step 2: full card code → canonical name
+            var namesByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var card in cards)
+                foreach (var set in card.CardSets ?? [])
+                    if (!string.IsNullOrEmpty(set.Code) && prefixToName.TryGetValue(GetSetPrefix(set.Code!), out var canonicalName))
+                        namesByCode.TryAdd(set.Code!, canonicalName);
+
+            // Step 3: canonical name → prefix (reverse of step 1)
+            var prefixByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (prefix, name) in prefixToName)
+                prefixByName.TryAdd(name, prefix);
+
+            return (namesByCode, prefixByName);
+        }
+
+        private static string GetSetPrefix(string code)
+        {
+            var hyphen = code.IndexOf('-');
+            return hyphen > 0 ? code[..hyphen] : code;
         }
 
         private static IReadOnlyList<Set> BuildSets(YamlCard y)

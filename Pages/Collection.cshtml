@@ -4,12 +4,6 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
-    int activeFilterCount = (string.IsNullOrWhiteSpace(Model.CardType) ? 0 : 1)
-        + (string.IsNullOrWhiteSpace(Model.SetName) ? 0 : 1)
-        + (string.IsNullOrWhiteSpace(Model.RarityName) ? 0 : 1)
-        + (Model.Condition.HasValue ? 1 : 0)
-        + (Model.Edition.HasValue ? 1 : 0)
-        + (Model.AcquisitionMethod.HasValue ? 1 : 0);
     var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
 }
 
@@ -21,43 +15,12 @@
     </div>
 </div>
 
-<form method="get" class="row g-2 mb-4">
-    <input type="hidden" name="pageNumber" value="1" />
-    <div class="col">
-        <input type="search"
-               name="query"
-               value="@Model.Query"
-               autocomplete="off"
-               class="form-control"
-               placeholder="Search by name, set, or rarity…"
-               list="card-suggestions"
-               data-autocomplete-url="?handler=Autocomplete" />
-        <datalist id="card-suggestions"></datalist>
-    </div>
-    <div class="col-auto">
-        <select name="pageSize" class="form-select">
-            @foreach (var size in new[] { 10, 25, 50, 100 })
-            {
-                <option value="@size" selected="@(Model.PageSize == size)">@size per page</option>
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-    <div class="col-auto">
-        <button type="button" class="btn btn-outline-secondary"
-                data-bs-toggle="collapse" data-bs-target="#filterPanel"
-                aria-expanded="@(Model.HasActiveFilters ? "true" : "false")" aria-controls="filterPanel"
-                aria-label="@(activeFilterCount > 0 ? $"Filters ({activeFilterCount} active)" : "Filters")">
-            Filters
-            @if (activeFilterCount > 0)
-            {
-                <span class="badge bg-primary ms-1">@activeFilterCount</span>
-            }
-        </button>
-    </div>
-</form>
+<partial name="_SearchBar" model='new SearchBarViewModel(
+    AutocompleteURL: "?handler=Autocomplete",
+    FilterCount: Model.ActiveFilterCount,
+    PageSize: Model.PageSize,
+    Placeholder: "Search by name, set, or rarity…",
+    Query: Model.Query)' />
 
 <div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
     <div class="card card-body mb-3">

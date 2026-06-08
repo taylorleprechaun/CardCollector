@@ -33,4 +33,20 @@
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Search</button>
     </div>
+    @if (Model.FilterCount != null)
+    {
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-secondary"
+                    data-bs-toggle="collapse" data-bs-target="#filterPanel"
+                    aria-expanded="@(Model.FilterCount > 0 ? "true" : "false")"
+                    aria-controls="filterPanel"
+                    aria-label="@(Model.FilterCount > 0 ? $"Filters ({Model.FilterCount} active)" : "Filters")">
+                Filters
+                @if (Model.FilterCount > 0)
+                {
+                    <span class="badge bg-primary ms-1">@Model.FilterCount</span>
+                }
+            </button>
+        </div>
+    }
 </form>

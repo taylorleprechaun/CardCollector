@@ -5,9 +5,6 @@
 @{
     ViewData["Title"] = "Browse";
     var returnURL = Uri.EscapeDataString(Request.Path + Request.QueryString);
-    int activeFilterCount = (string.IsNullOrWhiteSpace(Model.CardType) ? 0 : 1)
-        + (string.IsNullOrWhiteSpace(Model.RarityName) ? 0 : 1)
-        + (string.IsNullOrWhiteSpace(Model.SetName) ? 0 : 1);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,43 +12,12 @@
     <span class="text-muted">@Model.Results.TotalCount.ToString("N0") cards</span>
 </div>
 
-<form method="get" class="row g-2 mb-4">
-    <input type="hidden" name="pageNumber" value="1" />
-    <div class="col">
-        <input type="search"
-               name="query"
-               value="@Model.Query"
-               autocomplete="off"
-               class="form-control"
-               placeholder="Search by name, set, or rarity…"
-               list="card-suggestions"
-               data-autocomplete-url="?handler=Autocomplete" />
-        <datalist id="card-suggestions"></datalist>
-    </div>
-    <div class="col-auto">
-        <select name="pageSize" class="form-select">
-            @foreach (var size in new[] { 10, 25, 50, 100 })
-            {
-                <option value="@size" selected="@(Model.PageSize == size)">@size per page</option>
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-    <div class="col-auto">
-        <button type="button" class="btn btn-outline-secondary"
-                data-bs-toggle="collapse" data-bs-target="#filterPanel"
-                aria-expanded="@(Model.HasActiveFilters ? "true" : "false")" aria-controls="filterPanel"
-                aria-label="@(activeFilterCount > 0 ? $"Filters ({activeFilterCount} active)" : "Filters")">
-            Filters
-            @if (activeFilterCount > 0)
-            {
-                <span class="badge bg-primary ms-1">@activeFilterCount</span>
-            }
-        </button>
-    </div>
-</form>
+<partial name="_SearchBar" model='new SearchBarViewModel(
+    AutocompleteURL: "?handler=Autocomplete",
+    FilterCount: Model.ActiveFilterCount,
+    PageSize: Model.PageSize,
+    Placeholder: "Search by name, set, or rarity…",
+    Query: Model.Query)' />
 
 <div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
     <div class="card card-body mb-3">
@@ -62,45 +28,14 @@
             {
                 <input type="hidden" name="query" value="@Model.Query" />
             }
-            <div class="row g-3">
-                <div class="col-sm-6 col-md-3">
-                    <label for="filter-card-type" class="form-label">Type</label>
-                    <select id="filter-card-type" name="cardType" class="form-select form-select-sm">
-                        <option value="">All</option>
-                        @foreach (var ct in Model.AvailableCardTypes)
-                        {
-                            <option value="@ct" selected="@(Model.CardType == ct)">@ct</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label for="filter-set-input" class="form-label">Set</label>
-                    <input type="text"
-                           id="filter-set-input"
-                           name="setName"
-                           value="@Model.SetName"
-                           class="form-control form-control-sm"
-                           placeholder="Type to filter…"
-                           list="set-filter-datalist"
-                           autocomplete="off" />
-                    <datalist id="set-filter-datalist">
-                        @foreach (var s in Model.AvailableSetNames)
-                        {
-                            <option value="@s">@s</option>
-                        }
-                    </datalist>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label for="filter-rarity-select" class="form-label">Rarity</label>
-                    <select id="filter-rarity-select" name="rarityName" class="form-select form-select-sm">
-                        <option value="">All</option>
-                        @foreach (var rarity in Model.AvailableRarityNames)
-                        {
-                            <option value="@rarity" selected="@(Model.RarityName == rarity)">@rarity</option>
-                        }
-                    </select>
-                </div>
-            </div>
+            <partial name="_AdvancedFilters" model='new AdvancedFiltersViewModel
+            {
+                AvailableRarityNames = Model.AvailableRarityNames,
+                AvailableSetNames = Model.AvailableSetNames,
+                CurrentCardType = Model.CardType,
+                CurrentRarityName = Model.RarityName,
+                CurrentSetName = Model.SetName
+            }' />
             <div class="d-flex gap-2 mt-3">
                 <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
                 <a href="/Browse@(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")"

@@ -29,9 +29,6 @@ namespace CardCollector.Pages
         protected override ICardService CardService => _cardService;
 
         [BindProperty(SupportsGet = true)]
-        public string? CardType { get; set; }
-
-        [BindProperty(SupportsGet = true)]
         public CardCondition? Condition { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -39,18 +36,15 @@ namespace CardCollector.Pages
 
         public PagedResult<CollectionGroupViewModel> GroupedCards { get; private set; } = new();
 
-        public bool HasActiveFilters => !string.IsNullOrWhiteSpace(CardType)
-            || !string.IsNullOrWhiteSpace(SetName)
-            || !string.IsNullOrWhiteSpace(RarityName)
+        public override int ActiveFilterCount => base.ActiveFilterCount
+            + (Condition.HasValue ? 1 : 0)
+            + (Edition.HasValue ? 1 : 0)
+            + (AcquisitionMethod.HasValue ? 1 : 0);
+
+        public override bool HasActiveFilters => base.HasActiveFilters
             || Condition.HasValue
             || Edition.HasValue
             || AcquisitionMethod.HasValue;
-
-        [BindProperty(SupportsGet = true)]
-        public string? RarityName { get; set; }
-
-        [BindProperty(SupportsGet = true)]
-        public string? SetName { get; set; }
 
         public CollectionModel(
             ICardDataRepository cardDataRepository,
@@ -64,15 +58,16 @@ namespace CardCollector.Pages
             _collectionRepository = collectionRepository;
         }
 
-        public IReadOnlyDictionary<string, string?> GetPaginationParams() => new Dictionary<string, string?>
+        public override IReadOnlyDictionary<string, string?> GetPaginationParams()
         {
-            ["acquisitionMethod"] = AcquisitionMethod?.ToString(),
-            ["cardType"] = CardType,
-            ["condition"] = Condition?.ToString(),
-            ["edition"] = Edition?.ToString(),
-            ["rarityName"] = RarityName,
-            ["setName"] = SetName
-        };
+            var dict = new Dictionary<string, string?>(base.GetPaginationParams())
+            {
+                ["acquisitionMethod"] = AcquisitionMethod?.ToString(),
+                ["condition"] = Condition?.ToString(),
+                ["edition"] = Edition?.ToString()
+            };
+            return dict;
+        }
 
         public string GetTCGDate(string setCode) =>
             _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
