@@ -75,6 +75,11 @@ namespace CardCollector.Repository
         Task<OwnedCollectionStats> GetOwnedStatsAsync();
 
         /// <summary>
+        /// Returns distinct card IDs that have at least one entry with the given status.
+        /// </summary>
+        Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status);
+
+        /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per card ID for the given set of card IDs.
         /// </summary>
         Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs);

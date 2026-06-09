@@ -185,6 +185,17 @@ namespace CardCollector.Repository
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
         }
 
+        public async Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status)
+        {
+            var ids = await _context.CollectionEntries
+                .Where(e => e.Status == status)
+                .Select(e => e.CardID)
+                .Distinct()
+                .ToListAsync()
+                .ConfigureAwait(false);
+            return ids.ToHashSet();
+        }
+
         public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();

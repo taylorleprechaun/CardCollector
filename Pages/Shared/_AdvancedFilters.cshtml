@@ -77,4 +77,31 @@
             </select>
         </div>
     }
+    @if (Model.ShowCollectionFilters)
+    {
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-collection" class="form-label">Collection</label>
+            <select id="filter-collection" name="collectionFilter" class="form-select form-select-sm">
+                <option value="">Any</option>
+                <option value="yes" selected="@(Model.CurrentCollectionFilter == "yes")">In Collection</option>
+                <option value="no" selected="@(Model.CurrentCollectionFilter == "no")">Not In Collection</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-ordered" class="form-label">Ordered</label>
+            <select id="filter-ordered" name="orderedFilter" class="form-select form-select-sm">
+                <option value="">Any</option>
+                <option value="yes" selected="@(Model.CurrentOrderedFilter == "yes")">Ordered</option>
+                <option value="no" selected="@(Model.CurrentOrderedFilter == "no")">Not Ordered</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-wishlist" class="form-label">Wishlist</label>
+            <select id="filter-wishlist" name="wishlistFilter" class="form-select form-select-sm">
+                <option value="">Any</option>
+                <option value="yes" selected="@(Model.CurrentWishlistFilter == "yes")">In Wishlist</option>
+                <option value="no" selected="@(Model.CurrentWishlistFilter == "no")">Not In Wishlist</option>
+            </select>
+        </div>
+    }
 </div>

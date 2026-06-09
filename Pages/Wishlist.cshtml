@@ -21,6 +21,8 @@
         return $"/Wishlist?sortBy={col}&sortDescending={desc}&pageSize={Model.PageSize}&pageNumber=1{q}{ct}{sn}{rn}";
     }
 
+    var clearFiltersURL = $"/Wishlist?sortBy={Model.SortBy}&sortDescending={Model.SortDescending}&pageSize={Model.PageSize}{(!string.IsNullOrWhiteSpace(Model.Query) ? $"&query={Uri.EscapeDataString(Model.Query)}" : "")}";
+
 }
 
 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -34,40 +36,29 @@
 
 <p class="text-muted mb-4">Cards you still need: preferred versions you haven&rsquo;t ordered or owned yet, plus cards you own but haven&rsquo;t completed (@CardPrinting.CompleteThreshold copies). Use <a href="/Discover">Discover</a> to add more.</p>
 
-<partial name="_SearchBar" model='new SearchBarViewModel(
-    AutocompleteURL: "?handler=Autocomplete",
-    FilterCount: Model.ActiveFilterCount,
-    PageSize: Model.PageSize,
-    Placeholder: "Search by name, set, or rarity…",
-    Query: Model.Query)' />
-
-<div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
-    <div class="card card-body mb-3">
-        <form method="get">
-            <input type="hidden" name="pageNumber" value="1" />
-            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-            <input type="hidden" name="sortBy" value="@Model.SortBy" />
-            <input type="hidden" name="sortDescending" value="@Model.SortDescending" />
-            @if (!string.IsNullOrWhiteSpace(Model.Query))
-            {
-                <input type="hidden" name="query" value="@Model.Query" />
-            }
-            <partial name="_AdvancedFilters" model='new AdvancedFiltersViewModel
-            {
-                AvailableRarityNames = Model.AvailableRarityNames,
-                AvailableSetNames = Model.AvailableSetNames,
-                CurrentCardType = Model.CardType,
-                CurrentRarityName = Model.RarityName,
-                CurrentSetName = Model.SetName
-            }' />
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
-                <a href="/Wishlist?sortBy=@Model.SortBy&sortDescending=@Model.SortDescending&pageSize=@Model.PageSize@(!string.IsNullOrWhiteSpace(Model.Query) ? $"&query={Uri.EscapeDataString(Model.Query)}" : "")"
-                   class="btn btn-outline-secondary btn-sm">Clear Filters</a>
-            </div>
-        </form>
-    </div>
-</div>
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=Autocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    ExtraHiddenInputs = new Dictionary<string, string>
+    {
+        ["sortBy"] = Model.SortBy.ToString(),
+        ["sortDescending"] = Model.SortDescending.ToString()
+    },
+    Filters = new AdvancedFiltersViewModel
+    {
+        AvailableRarityNames = Model.AvailableRarityNames,
+        AvailableSetNames = Model.AvailableSetNames,
+        CurrentCardType = Model.CardType,
+        CurrentRarityName = Model.RarityName,
+        CurrentSetName = Model.SetName
+    },
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by name, set, or rarity…",
+    Query = Model.Query
+}' />
 
 @if (!Model.Results.Items.Any())
 {

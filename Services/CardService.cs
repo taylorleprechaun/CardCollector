@@ -458,6 +458,38 @@ namespace CardCollector.Services
                 setPrefix,
                 criteria.RarityName);
 
+            if (criteria.InCollection.HasValue || criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue)
+            {
+                IReadOnlySet<int>? ownedIDs = null;
+                IReadOnlySet<int>? orderedIDs = null;
+                IReadOnlySet<int>? preferredIDs = null;
+
+                if (criteria.InCollection.HasValue || criteria.InWishlist.HasValue)
+                    ownedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
+
+                if (criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue)
+                    orderedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+
+                if (criteria.InWishlist.HasValue)
+                    preferredIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);
+
+                if (criteria.InCollection == true)  filtered = filtered.Where(c => ownedIDs!.Contains(c.ID));
+                if (criteria.InCollection == false) filtered = filtered.Where(c => !ownedIDs!.Contains(c.ID));
+                if (criteria.IsOrdered == true)     filtered = filtered.Where(c => orderedIDs!.Contains(c.ID));
+                if (criteria.IsOrdered == false)    filtered = filtered.Where(c => !orderedIDs!.Contains(c.ID));
+
+                if (criteria.InWishlist == true)
+                {
+                    var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
+                    filtered = filtered.Where(c => preferredIDs!.Contains(c.ID) && !collectedIDs.Contains(c.ID));
+                }
+                else if (criteria.InWishlist == false)
+                {
+                    var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
+                    filtered = filtered.Where(c => !preferredIDs!.Contains(c.ID) || collectedIDs.Contains(c.ID));
+                }
+            }
+
             var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
 
             var totalCount = orderedFiltered.Count;

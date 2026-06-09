@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Collection";
     var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
+    var clearFiltersURL = $"/Collection{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,47 +16,33 @@
     </div>
 </div>
 
-<partial name="_SearchBar" model='new SearchBarViewModel(
-    AutocompleteURL: "?handler=Autocomplete",
-    FilterCount: Model.ActiveFilterCount,
-    PageSize: Model.PageSize,
-    Placeholder: "Search by name, set, or rarity…",
-    Query: Model.Query)' />
-
-<div class="collapse @(Model.HasActiveFilters ? "show" : "")" id="filterPanel">
-    <div class="card card-body mb-3">
-        <form method="get">
-            <input type="hidden" name="pageNumber" value="1" />
-            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-            @if (!string.IsNullOrWhiteSpace(Model.Query))
-            {
-                <input type="hidden" name="query" value="@Model.Query" />
-            }
-            <partial name="_AdvancedFilters" model='new AdvancedFiltersViewModel
-            {
-                AvailableAcquisitionMethods = Model.AvailableAcquisitionMethods,
-                AvailableConditions = Model.AvailableConditions,
-                AvailableEditions = Model.AvailableEditions,
-                AvailableRarityNames = Model.AvailableRarityNames,
-                AvailableSetNames = Model.AvailableSetNames,
-                CurrentAcquisitionMethod = Model.AcquisitionMethod?.ToString(),
-                CurrentCardType = Model.CardType,
-                CurrentCondition = Model.Condition?.ToString(),
-                CurrentEdition = Model.Edition?.ToString(),
-                CurrentRarityName = Model.RarityName,
-                CurrentSetName = Model.SetName,
-                ShowAcquisitionMethod = true,
-                ShowCondition = true,
-                ShowEdition = true
-            }' />
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
-                <a href="/Collection@(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")"
-                   class="btn btn-outline-secondary btn-sm">Clear Filters</a>
-            </div>
-        </form>
-    </div>
-</div>
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=Autocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    Filters = new AdvancedFiltersViewModel
+    {
+        AvailableAcquisitionMethods = Model.AvailableAcquisitionMethods,
+        AvailableConditions = Model.AvailableConditions,
+        AvailableEditions = Model.AvailableEditions,
+        AvailableRarityNames = Model.AvailableRarityNames,
+        AvailableSetNames = Model.AvailableSetNames,
+        CurrentAcquisitionMethod = Model.AcquisitionMethod?.ToString(),
+        CurrentCardType = Model.CardType,
+        CurrentCondition = Model.Condition?.ToString(),
+        CurrentEdition = Model.Edition?.ToString(),
+        CurrentRarityName = Model.RarityName,
+        CurrentSetName = Model.SetName,
+        ShowAcquisitionMethod = true,
+        ShowCondition = true,
+        ShowEdition = true
+    },
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by name, set, or rarity…",
+    Query = Model.Query
+}' />
 
 @if (!Model.GroupedCards.Items.Any())
 {
