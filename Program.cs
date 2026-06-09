@@ -47,13 +47,14 @@ app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, I
 
 app.MapPost("/api/stats/calculate-value", async (ICardService cardService) =>
 {
-    var (totalValue, cardCount, setValueBreakdown) = await cardService.CalculateCurrentMarketValueAsync();
+    var (totalValue, cardCount, setValueBreakdown, topValueCards) = await cardService.CalculateCurrentMarketValueAsync();
     return Results.Json(new
     {
         totalValue,
         cardCount,
         setValueLabels = setValueBreakdown.Select(x => x.Label).ToArray(),
-        setValueData = setValueBreakdown.Select(x => x.Value).ToArray()
+        setValueData = setValueBreakdown.Select(x => x.Value).ToArray(),
+        topCards = topValueCards.Select(x => new { cardName = x.CardName, setName = x.SetName, rarityName = x.RarityName, value = x.Value }).ToArray()
     });
 });
 

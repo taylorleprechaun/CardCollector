@@ -73,7 +73,7 @@ namespace CardCollector.Services
             await _collectionRepository.AddAsync(entry).ConfigureAwait(false);
         }
 
-        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync()
+        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync()
         {
             var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
 
@@ -88,7 +88,18 @@ namespace CardCollector.Services
                     .Take(SetBreakdownItemLimit)
                     .ToList();
 
-                return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown);
+                var cachedEntries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
+                var cachedQuantityByID = cachedEntries.ToDictionary(e => e.ID, e => e.Quantity);
+                var cachedTopCards = cachedEntrySnapshots
+                    .Where(s => cachedQuantityByID.ContainsKey(s.CollectionEntryID) && cachedQuantityByID[s.CollectionEntryID] > 0)
+                    .Select(s => (s.CardName, s.SetName, s.RarityName, UnitPrice: s.MarketValue / cachedQuantityByID[s.CollectionEntryID]))
+                    .GroupBy(x => (x.CardName, x.SetName, x.RarityName))
+                    .Select(g => (g.Key.CardName, g.Key.SetName, g.Key.RarityName, g.First().UnitPrice))
+                    .OrderByDescending(x => x.Item4)
+                    .Take(10)
+                    .ToList();
+
+                return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown, cachedTopCards);
             }
 
             var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
@@ -142,7 +153,7 @@ namespace CardCollector.Services
 
             await _collectionValueRepository.UpsertSnapshotAsync(new CollectionValueSnapshot
             {
-                CardCount = entries.Count,
+                CardCount = entries.Sum(e => e.Quantity),
                 DateCreated = DateTime.UtcNow,
                 SnapshotDate = today,
                 TotalValue = totalValue
@@ -155,7 +166,19 @@ namespace CardCollector.Services
                 .Take(SetBreakdownItemLimit)
                 .ToList();
 
-            return (totalValue, entries.Count, setValueBreakdown);
+            var topValueCards = priceCache
+                .Where(kv => kv.Value.HasValue)
+                .OrderByDescending(kv => kv.Value!.Value)
+                .Take(10)
+                .Select(kv => (
+                    cardNames.TryGetValue(kv.Key.CardID, out var name) ? name : string.Empty,
+                    setNamesByCode.TryGetValue(kv.Key.SetCode, out var sn) ? sn : kv.Key.SetCode,
+                    kv.Key.RarityName,
+                    kv.Value!.Value
+                ))
+                .ToList();
+
+            return (totalValue, entries.Count, setValueBreakdown, topValueCards);
         }
 
         public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName) =>
@@ -191,16 +214,26 @@ namespace CardCollector.Services
                 .GroupBy(e => e.AcquisitionMethod.HasValue
                     ? e.AcquisitionMethod.Value.GetDisplayName()
                     : "Unknown")
-                .Select(g => (g.Key, g.Count()))
+                .Select(g => (g.Key, g.Sum(e => e.Quantity)))
                 .OrderByDescending(x => x.Item2)
                 .ToList();
 
-            var latestEntrySnapshots = await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false);
+            var latestEntrySnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false)).ToList();
             var setValueBreakdown = latestEntrySnapshots
                 .GroupBy(s => s.SetName)
                 .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
                 .OrderByDescending(x => x.Item2)
                 .Take(SetBreakdownItemLimit)
+                .ToList();
+
+            var quantityByID = ownedEntries.ToDictionary(e => e.ID, e => e.Quantity);
+            var topValueCards = latestEntrySnapshots
+                .Where(s => quantityByID.ContainsKey(s.CollectionEntryID) && quantityByID[s.CollectionEntryID] > 0)
+                .Select(s => (s.CardName, s.SetName, s.RarityName, UnitPrice: s.MarketValue / quantityByID[s.CollectionEntryID]))
+                .GroupBy(x => (x.CardName, x.SetName, x.RarityName))
+                .Select(g => (g.Key.CardName, g.Key.SetName, g.Key.RarityName, g.First().UnitPrice))
+                .OrderByDescending(x => x.Item4)
+                .Take(10)
                 .ToList();
 
             var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync().ConfigureAwait(false);
@@ -211,6 +244,7 @@ namespace CardCollector.Services
                 RarityBreakdown = rarityBreakdown,
                 SetBreakdown = setBreakdown,
                 SetValueBreakdown = setValueBreakdown,
+                TopValueCards = topValueCards,
                 ValueHistory = valueHistory.ToList()
             };
         }

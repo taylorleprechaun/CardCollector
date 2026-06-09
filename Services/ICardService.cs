@@ -22,7 +22,7 @@ namespace CardCollector.Services
         /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
         /// </summary>
-        Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown)> CalculateCurrentMarketValueAsync();
+        Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync();
 
         /// <summary>
         /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.

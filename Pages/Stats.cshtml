@@ -17,7 +17,9 @@
                 }
                 else
                 {
-                    <canvas id="setChart"></canvas>
+                    <div style="height:560px; position:relative">
+                        <canvas id="setChart"></canvas>
+                    </div>
                 }
             </div>
         </div>
@@ -30,7 +32,9 @@
                 {
                     <p class="text-muted" id="noSetValueMsg">No market value data yet. Click &ldquo;Calculate Current Market Value&rdquo; below to populate this chart.</p>
                 }
-                <canvas id="setValueChart" @(Model.Stats.SetValueBreakdown.Count == 0 ? "style=\"display:none\"" : "")></canvas>
+                <div id="setValueChartWrapper" style="height:560px; position:relative; @(Model.Stats.SetValueBreakdown.Count == 0 ? "display:none" : "")">
+                    <canvas id="setValueChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -40,16 +44,24 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header fw-semibold">Rarity Breakdown</div>
-            <div class="card-body d-flex align-items-center justify-content-center">
+            <div class="card-body">
                 @if (Model.Stats.RarityBreakdown.Count == 0)
                 {
                     <p class="text-muted">No owned cards yet.</p>
                 }
                 else
                 {
-                    <div style="max-width:400px; width:100%">
-                        <canvas id="rarityChart"></canvas>
-                    </div>
+                    <ol class="list-group list-group-flush list-group-numbered">
+                        @for (int i = 0; i < Model.Stats.RarityBreakdown.Count; i++)
+                        {
+                            var item = Model.Stats.RarityBreakdown[i];
+                            var badgeStyle = i == 0 ? "background-color:#FFD700;color:#000" : i == 1 ? "background-color:#C0C0C0;color:#000" : i == 2 ? "background-color:#CD7F32;color:#fff" : "background-color:#6c757d;color:#fff";
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @item.Label
+                                <span class="badge rounded-pill" style="@badgeStyle">@item.Count</span>
+                            </li>
+                        }
+                    </ol>
                 }
             </div>
         </div>
@@ -57,18 +69,70 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header fw-semibold">Acquisition Method</div>
-            <div class="card-body d-flex align-items-center justify-content-center">
+            <div class="card-body">
                 @if (Model.Stats.AcquisitionBreakdown.Count == 0)
                 {
                     <p class="text-muted">No owned cards yet.</p>
                 }
                 else
                 {
-                    <div style="max-width:400px; width:100%">
-                        <canvas id="acquisitionChart"></canvas>
-                    </div>
+                    <ol class="list-group list-group-flush list-group-numbered">
+                        @for (int i = 0; i < Model.Stats.AcquisitionBreakdown.Count; i++)
+                        {
+                            var item = Model.Stats.AcquisitionBreakdown[i];
+                            var badgeStyle = i == 0 ? "background-color:#FFD700;color:#000" : i == 1 ? "background-color:#C0C0C0;color:#000" : i == 2 ? "background-color:#CD7F32;color:#fff" : "background-color:#6c757d;color:#fff";
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @item.Label
+                                <span class="badge rounded-pill" style="@badgeStyle">@item.Count</span>
+                            </li>
+                        }
+                    </ol>
                 }
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Top 10 Most Valuable Cards</div>
+    <div class="card-body">
+        @if (Model.Stats.TopValueCards.Count == 0)
+        {
+            <p class="text-muted" id="noTopCardsMsg">No market value data yet. Click &ldquo;Calculate Current Market Value&rdquo; below to populate this section.</p>
+        }
+        <div id="topCardsWrapper" @(Model.Stats.TopValueCards.Count == 0 ? "style=\"display:none\"" : "")>
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-center">#</th>
+                        <th>Card</th>
+                        <th>Set</th>
+                        <th>Rarity</th>
+                        <th class="text-end">Market Value</th>
+                    </tr>
+                </thead>
+                <tbody id="topCardsBody">
+                    @for (int i = 0; i < Model.Stats.TopValueCards.Count; i++)
+                    {
+                        var card = Model.Stats.TopValueCards[i];
+                        <tr>
+                            @if (i < 3)
+                            {
+                                var rankStyle = i == 0 ? "background-color:#FFD700;color:#000" : i == 1 ? "background-color:#C0C0C0;color:#000" : "background-color:#CD7F32;color:#fff";
+                                <td class="text-center"><span class="badge rounded-pill" style="@rankStyle">@(i + 1)</span></td>
+                            }
+                            else
+                            {
+                                <td class="text-center text-muted">@(i + 1)</td>
+                            }
+                            <td>@card.CardName</td>
+                            <td>@card.SetName</td>
+                            <td>@card.RarityName</td>
+                            <td class="text-end">$@card.Value.ToString("F2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -98,17 +162,15 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-        const rarityLabels = @Html.Raw(Model.Stats.RarityLabelsJson);
-        const rarityCounts = @Html.Raw(Model.Stats.RarityCountsJson);
         const setLabels = @Html.Raw(Model.Stats.SetLabelsJson);
         const setCounts = @Html.Raw(Model.Stats.SetCountsJson);
-        const acqLabels = @Html.Raw(Model.Stats.AcquisitionLabelsJson);
-        const acqCounts = @Html.Raw(Model.Stats.AcquisitionCountsJson);
         const setValueLabels = @Html.Raw(Model.Stats.SetValueLabelsJson);
         const setValueData = @Html.Raw(Model.Stats.SetValueDataJson);
         const historyDates = @Html.Raw(Model.Stats.ValueHistoryDatesJson);
         const historyValues = @Html.Raw(Model.Stats.ValueHistoryValuesJson);
+        const historyCardCounts = @Html.Raw(Model.Stats.ValueHistoryCardCountsJson);
     </script>
     <script src="~/js/stats.js"></script>
 }
