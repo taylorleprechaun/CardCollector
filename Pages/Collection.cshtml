@@ -213,6 +213,7 @@ else
                                             </button>
                                             <form method="post" action="/Collection?handler=Delete&@filterParams" class="d-inline ms-1"
                                                   onsubmit="return confirm('Remove this entry from your collection?')">
+                                                @Html.AntiForgeryToken()
                                                 <input type="hidden" name="entryID" value="@entry.EntryID" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
                                             </form>
@@ -245,6 +246,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=Edit&@filterParams">
+                @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Entry</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -267,6 +269,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=AddPurchase&@filterParams">
+                @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="addModalLabel">Add Purchase</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
