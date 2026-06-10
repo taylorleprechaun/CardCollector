@@ -178,7 +178,7 @@ namespace CardCollector.Services
                 ))
                 .ToList();
 
-            return (totalValue, entries.Count, setValueBreakdown, topValueCards);
+            return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
         }
 
         public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName) =>
