@@ -7,7 +7,7 @@ namespace CardCollector.DTO.YamlYugi
         public string? CardType { get; set; }
         public string? Def { get; set; }
         public int? Level { get; set; }
-        public IReadOnlyList<string>? LinkArrows { get; set; }
+        public List<string>? LinkArrows { get; set; }
         public string? MonsterTypeLine { get; set; }
         public YamlLocalizedString? Name { get; set; }
         public int? Password { get; set; }
@@ -26,12 +26,12 @@ namespace CardCollector.DTO.YamlYugi
 
     public sealed class YamlCardSets
     {
-        public IReadOnlyList<YamlSetEntry>? En { get; set; }
+        public List<YamlSetEntry>? En { get; set; }
     }
 
     public sealed class YamlSetEntry
     {
-        public IReadOnlyList<string>? Rarities { get; set; }
+        public List<string>? Rarities { get; set; }
         public string? SetName { get; set; }
         public string? SetNumber { get; set; }
     }
