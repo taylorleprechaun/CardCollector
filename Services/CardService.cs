@@ -71,6 +71,7 @@ namespace CardCollector.Services
             };
 
             await _collectionRepository.AddAsync(entry).ConfigureAwait(false);
+            await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
         }
 
         public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync()
@@ -442,8 +443,11 @@ namespace CardCollector.Services
         public async Task RemoveFromWishlistAsync(int imageID) =>
             await _preferredVersionRepository.DeleteAsync(imageID).ConfigureAwait(false);
 
-        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null) =>
+        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null)
+        {
             await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName).ConfigureAwait(false);
+            await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
+        }
 
         public async Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria)
         {
@@ -636,8 +640,11 @@ namespace CardCollector.Services
                 .ToList();
         }
 
-        public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName) =>
+        public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName)
+        {
             await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, newSetCode, newRarityName).ConfigureAwait(false);
+            await AutoDismissNewPrintingsForCardAsync(cardID, newSetCode).ConfigureAwait(false);
+        }
 
         private static IEnumerable<Card> ApplyCommonCardFilters(
             IEnumerable<Card> cards,
@@ -691,6 +698,30 @@ namespace CardCollector.Services
         {
             var hyphen = code.IndexOf('-');
             return hyphen > 0 ? code[..hyphen] : code;
+        }
+
+        private async Task AutoDismissNewPrintingsForCardAsync(int cardID, string setCode)
+        {
+            var card = _cardDataRepository.GetCardByID(cardID);
+            if (card?.CardSets is null)
+                return;
+
+            var cutoffDate = _cardSetRepository.GetTCGDateBySetCode(setCode);
+            if (cutoffDate is null)
+                return;
+
+            var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
+
+            var toDismiss = card.CardSets
+                .Select(s => (Set: s, Date: _cardSetRepository.GetTCGDateBySetCode(s.Code ?? string.Empty)))
+                .Where(x => x.Date is not null
+                            && string.Compare(x.Date, cutoffDate, StringComparison.Ordinal) > 0
+                            && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0)
+                .ToList();
+
+            foreach (var (set, _) in toDismiss)
+                await _dismissedNewPrintingRepository.AddAsync(cardID, set.Code ?? string.Empty, set.RarityName ?? string.Empty)
+                    .ConfigureAwait(false);
         }
 
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
