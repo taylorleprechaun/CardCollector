@@ -4,14 +4,25 @@ namespace CardCollector.ViewModels
 {
     public sealed class CollectionGroupViewModel : CardPrinting
     {
-        public CollectionCompletionStatus CompletionStatus =>
-            !IsPreferredVersion
-                ? CollectionCompletionStatus.Placeholder
-                : TotalQuantity >= CompleteThreshold
-                    ? CollectionCompletionStatus.Complete
-                    : CollectionCompletionStatus.Incomplete;
+        public CollectionCompletionStatus CompletionStatus
+        {
+            get
+            {
+                if (!IsPreferredVersion)
+                    return CollectionCompletionStatus.Placeholder;
+
+                var nonPlaceholderQty = Entries.Where(e => !e.IsPlaceholder).Sum(e => e.Quantity);
+
+                if (nonPlaceholderQty >= CompleteThreshold || (nonPlaceholderQty > 0 && HasAnyPlaceholderForImage))
+                    return CollectionCompletionStatus.Complete;
+
+                return CollectionCompletionStatus.Incomplete;
+            }
+        }
 
         public IReadOnlyList<OrderEntryViewModel> Entries { get; init; } = [];
+
+        public bool HasAnyPlaceholderForImage { get; init; }
 
         public bool IsPreferredVersion { get; init; }
 
@@ -23,6 +34,7 @@ namespace CardCollector.ViewModels
             CardPrinting printing,
             IReadOnlyList<OrderEntryViewModel> entries,
             bool isPreferredVersion,
+            bool hasAnyPlaceholderForImage,
             decimal? totalCost,
             int totalQuantity) => new()
         {
@@ -38,6 +50,7 @@ namespace CardCollector.ViewModels
             SetCode = printing.SetCode,
             SetName = printing.SetName,
             Entries = entries,
+            HasAnyPlaceholderForImage = hasAnyPlaceholderForImage,
             IsPreferredVersion = isPreferredVersion,
             TotalCost = totalCost,
             TotalQuantity = totalQuantity

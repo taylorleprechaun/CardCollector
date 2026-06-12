@@ -49,7 +49,12 @@
 </div>
 <div class="row g-2">
     <div class="col-4">
-        <label class="form-label">Purchase Date</label>
+        <label class="form-label d-flex align-items-center gap-1">
+            Purchase Date
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
+                    onclick="document.getElementById('@(Model.Prefix)PurchaseDate').value = ''"
+                    title="Clear date">&times;</button>
+        </label>
         <input type="date" name="purchaseDate" id="@(Model.Prefix)PurchaseDate" class="form-control form-control-sm" />
     </div>
     <div class="col-4">

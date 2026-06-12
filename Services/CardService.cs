@@ -292,6 +292,7 @@ namespace CardCollector.Services
 
             var imageIDs = entries.Select(e => e.ImageID).Distinct().ToHashSet();
             var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs).ConfigureAwait(false);
+            var placeholderImageIDs = entries.Where(e => e.IsPlaceholder).Select(e => e.ImageID).ToHashSet();
 
             return entries
                 .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityCode))
@@ -312,6 +313,7 @@ namespace CardCollector.Services
                         printing: first,
                         entries: g.ToList(),
                         isPreferredVersion: isPreferred,
+                        hasAnyPlaceholderForImage: placeholderImageIDs.Contains(first.ImageID),
                         totalCost: totalCost,
                         totalQuantity: g.Sum(e => e.Quantity));
                 })

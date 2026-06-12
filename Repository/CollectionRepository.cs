@@ -63,7 +63,7 @@ namespace CardCollector.Repository
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
+                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity, e.IsPlaceholder })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -81,15 +81,23 @@ namespace CardCollector.Repository
             foreach (var group in ownedEntries.GroupBy(e => e.ImageID))
             {
                 var preferred = preferredVersions.FirstOrDefault(pv => pv.ImageID == group.Key);
-                var preferredEntry = preferred is null ? null : group.FirstOrDefault(e =>
+                var preferredEntries = preferred is null ? [] : group.Where(e =>
                     e.SetCode.Equals(preferred.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                    (preferred.RarityName is null || preferred.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)));
+                    (preferred.RarityName is null || preferred.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
 
-                result[group.Key] = preferredEntry is null
-                    ? CollectionCompletionStatus.Placeholder
-                    : preferredEntry.Quantity >= CardPrinting.CompleteThreshold
-                        ? CollectionCompletionStatus.Complete
-                        : CollectionCompletionStatus.Incomplete;
+                if (preferredEntries.Count == 0)
+                {
+                    result[group.Key] = CollectionCompletionStatus.Placeholder;
+                    continue;
+                }
+
+                var nonPlaceholderQty = preferredEntries.Where(e => !e.IsPlaceholder).Sum(e => e.Quantity);
+                var hasAnyPlaceholder = group.Any(e => e.IsPlaceholder);
+
+                result[group.Key] = nonPlaceholderQty >= CardPrinting.CompleteThreshold || (nonPlaceholderQty > 0 && hasAnyPlaceholder)
+                    ? CollectionCompletionStatus.Complete
+                    : CollectionCompletionStatus.Incomplete;
             }
 
             return result;
