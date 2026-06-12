@@ -77,6 +77,17 @@
             </select>
         </div>
     }
+    @if (Model.ShowCheckedOutFilter)
+    {
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-checked-out" class="form-label">Checked Out</label>
+            <select id="filter-checked-out" name="checkedOutFilter" class="form-select form-select-sm">
+                <option value="">Any</option>
+                <option value="yes" selected="@(Model.CurrentCheckedOutFilter == "yes")">Checked Out</option>
+                <option value="no" selected="@(Model.CurrentCheckedOutFilter == "no")">Not Checked Out</option>
+            </select>
+        </div>
+    }
     @if (Model.ShowCollectionFilters)
     {
         <div class="col-sm-6 col-md-3">

@@ -29,6 +29,9 @@ namespace CardCollector.Pages
         protected override ICardService CardService => _cardService;
 
         [BindProperty(SupportsGet = true)]
+        public string? CheckedOutFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
         public CardCondition? Condition { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -39,12 +42,14 @@ namespace CardCollector.Pages
         public override int ActiveFilterCount => base.ActiveFilterCount
             + (Condition.HasValue ? 1 : 0)
             + (Edition.HasValue ? 1 : 0)
-            + (AcquisitionMethod.HasValue ? 1 : 0);
+            + (AcquisitionMethod.HasValue ? 1 : 0)
+            + (string.IsNullOrEmpty(CheckedOutFilter) ? 0 : 1);
 
         public override bool HasActiveFilters => base.HasActiveFilters
             || Condition.HasValue
             || Edition.HasValue
-            || AcquisitionMethod.HasValue;
+            || AcquisitionMethod.HasValue
+            || !string.IsNullOrEmpty(CheckedOutFilter);
 
         public CollectionModel(
             ICardDataRepository cardDataRepository,
@@ -63,6 +68,7 @@ namespace CardCollector.Pages
             var dict = new Dictionary<string, string?>(base.GetPaginationParams())
             {
                 ["acquisitionMethod"] = AcquisitionMethod?.ToString(),
+                ["checkedOutFilter"] = CheckedOutFilter,
                 ["condition"] = Condition?.ToString(),
                 ["edition"] = Edition?.ToString()
             };
@@ -95,6 +101,7 @@ namespace CardCollector.Pages
                 CardType = CardType,
                 Condition = Condition,
                 Edition = Edition,
+                IsCheckedOut = ParseFilter(CheckedOutFilter),
                 Page = PageNumber,
                 PageSize = PageSize,
                 Query = Query,
@@ -103,6 +110,19 @@ namespace CardCollector.Pages
             };
 
             GroupedCards = await _cardService.SearchGroupedOwnedAsync(criteria).ConfigureAwait(false);
+        }
+
+        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode)
+        {
+            await _cardService.CheckInCardAsync(imageID, setCode).ConfigureAwait(false);
+            return RedirectToPage(BuildFilterRedirect());
+        }
+
+        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, int quantity)
+        {
+            if (quantity >= 1)
+                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, quantity).ConfigureAwait(false);
+            return RedirectToPage(BuildFilterRedirect());
         }
 
         public async Task<IActionResult> OnPostAddPurchaseAsync(
@@ -162,6 +182,7 @@ namespace CardCollector.Pages
         {
             acquisitionMethod = Request.Query["acquisitionMethod"].FirstOrDefault(),
             cardType = CardType,
+            checkedOutFilter = Request.Query["checkedOutFilter"].FirstOrDefault(),
             condition = Request.Query["condition"].FirstOrDefault(),
             edition = Request.Query["edition"].FirstOrDefault(),
             pageNumber = PageNumber,
@@ -170,5 +191,8 @@ namespace CardCollector.Pages
             rarityName = Request.Query["rarityName"].FirstOrDefault(),
             setName = SetName
         };
+
+        private static bool? ParseFilter(string? value) =>
+            value == "yes" ? true : value == "no" ? false : null;
     }
 }

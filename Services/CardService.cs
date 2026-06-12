@@ -14,6 +14,7 @@ namespace CardCollector.Services
 
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardSetRepository _cardSetRepository;
+        private readonly ICheckedOutRepository _checkedOutRepository;
         private readonly ICollectionEntryValueRepository _collectionEntryValueRepository;
         private readonly ICollectionRepository _collectionRepository;
         private readonly ICollectionValueRepository _collectionValueRepository;
@@ -25,6 +26,7 @@ namespace CardCollector.Services
         public CardService(
             ICardDataRepository cardDataRepository,
             ICardSetRepository cardSetRepository,
+            ICheckedOutRepository checkedOutRepository,
             ICollectionRepository collectionRepository,
             ICollectionEntryValueRepository collectionEntryValueRepository,
             ICollectionValueRepository collectionValueRepository,
@@ -35,6 +37,7 @@ namespace CardCollector.Services
         {
             _cardDataRepository = cardDataRepository;
             _cardSetRepository = cardSetRepository;
+            _checkedOutRepository = checkedOutRepository;
             _collectionEntryValueRepository = collectionEntryValueRepository;
             _collectionRepository = collectionRepository;
             _collectionValueRepository = collectionValueRepository;
@@ -182,6 +185,37 @@ namespace CardCollector.Services
             return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
         }
 
+        public async Task CheckInCardAsync(int imageID, string setCode)
+        {
+            if (string.IsNullOrWhiteSpace(setCode)) throw new ArgumentException("setCode is required.", nameof(setCode));
+
+            await _checkedOutRepository.RemoveAsync(imageID, setCode).ConfigureAwait(false);
+        }
+
+        public async Task CheckOutCardAsync(int cardID, int imageID, string setCode, int quantity)
+        {
+            if (string.IsNullOrWhiteSpace(setCode)) throw new ArgumentException("setCode is required.", nameof(setCode));
+
+            var existing = await _checkedOutRepository.GetAsync(imageID, setCode).ConfigureAwait(false);
+            if (existing is not null)
+            {
+                await _checkedOutRepository.UpdateAsync(imageID, setCode, quantity).ConfigureAwait(false);
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            await _checkedOutRepository.AddAsync(new Data.Models.CheckedOutCard
+            {
+                CardID = cardID,
+                CheckedOutDate = now,
+                DateCreated = now,
+                DateModified = now,
+                ImageID = imageID,
+                Quantity = quantity,
+                SetCode = setCode
+            }).ConfigureAwait(false);
+        }
+
         public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName) =>
             await _dismissedNewPrintingRepository.AddAsync(cardID, setCode, rarityName).ConfigureAwait(false);
 
@@ -293,6 +327,7 @@ namespace CardCollector.Services
             var imageIDs = entries.Select(e => e.ImageID).Distinct().ToHashSet();
             var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs).ConfigureAwait(false);
             var placeholderImageIDs = entries.Where(e => e.IsPlaceholder).Select(e => e.ImageID).ToHashSet();
+            var checkedOutLookup = await _checkedOutRepository.GetCheckedOutLookupAsync().ConfigureAwait(false);
 
             return entries
                 .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityCode))
@@ -309,13 +344,17 @@ namespace CardCollector.Services
                         && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
                         && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase)));
 
+                    var hasCheckout = checkedOutLookup.TryGetValue((first.ImageID, first.SetCode), out var checkoutInfo);
+
                     return CollectionGroupViewModel.From(
                         printing: first,
                         entries: g.ToList(),
                         isPreferredVersion: isPreferred,
                         hasAnyPlaceholderForImage: placeholderImageIDs.Contains(first.ImageID),
                         totalCost: totalCost,
-                        totalQuantity: g.Sum(e => e.Quantity));
+                        totalQuantity: g.Sum(e => e.Quantity),
+                        checkedOutQuantity: hasCheckout ? checkoutInfo.Quantity : 0,
+                        checkedOutDate: hasCheckout ? checkoutInfo.Date : null);
                 })
                 .OrderBy(g => g.CardName)
                 .ThenBy(g => g.SetCode)
@@ -548,6 +587,55 @@ namespace CardCollector.Services
             };
         }
 
+        public async Task<PagedResult<CheckedOutCardViewModel>> SearchCheckedOutAsync(CheckedOutSearchCriteria criteria)
+        {
+            var records = await _checkedOutRepository.GetAllAsync().ConfigureAwait(false);
+
+            var pairs = records.Select(r => (r.ImageID, r.SetCode)).ToList();
+            var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPairsAsync(pairs).ConfigureAwait(false);
+
+            var enriched = records
+                .Select(r =>
+                {
+                    var printing = BuildCardPrinting(r.CardID, r.ImageID, r.SetCode, null);
+                    ownedQuantities.TryGetValue((r.ImageID, r.SetCode), out var totalOwned);
+                    return CheckedOutCardViewModel.From(printing, r.CheckedOutDate, r.Quantity, totalOwned);
+                })
+                .ToList();
+
+            IEnumerable<CheckedOutCardViewModel> filtered = enriched;
+
+            if (!string.IsNullOrWhiteSpace(criteria.Query))
+                filtered = filtered.Where(c => c.CardName.Contains(criteria.Query, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(criteria.CardType))
+                filtered = filtered.Where(c => c.CardType.Contains(criteria.CardType, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(criteria.SetName))
+            {
+                var setPrefix = _cardDataRepository.GetSetPrefixByName(criteria.SetName);
+                if (!string.IsNullOrWhiteSpace(setPrefix))
+                    filtered = filtered.Where(c => GetSetPrefix(c.SetCode).Equals(setPrefix, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.RarityName))
+                filtered = filtered.Where(c => c.RarityName == criteria.RarityName);
+
+            var filteredList = filtered.OrderBy(c => c.CardName).ThenBy(c => c.SetCode).ToList();
+            var totalCount = filteredList.Count;
+            var totalQuantitySum = filteredList.Sum(c => c.CheckedOutQuantity);
+            var items = filteredList.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
+
+            return new PagedResult<CheckedOutCardViewModel>
+            {
+                Items = items,
+                Page = criteria.Page,
+                PageSize = criteria.PageSize,
+                TotalCount = totalCount,
+                TotalQuantitySum = totalQuantitySum
+            };
+        }
+
         public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(CollectionSearchCriteria criteria)
         {
             var allGroups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).ToList();
@@ -568,6 +656,9 @@ namespace CardCollector.Services
 
             if (criteria.AcquisitionMethod.HasValue)
                 filtered = filtered.Where(g => g.Entries.Any(e => e.AcquisitionMethod == criteria.AcquisitionMethod));
+
+            if (criteria.IsCheckedOut.HasValue)
+                filtered = filtered.Where(g => g.IsCheckedOut == criteria.IsCheckedOut.Value);
 
             var filteredList = filtered.ToList();
             var totalCount = filteredList.Count;

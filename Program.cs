@@ -16,6 +16,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
 builder.Services.AddSingleton<ICardSetRepository, CardSetRepository>();
+builder.Services.AddScoped<ICheckedOutRepository, CheckedOutRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
 builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
@@ -30,6 +31,25 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.EnsureCreated();
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS ""CheckedOutCards"" (
+            ""ID""             INTEGER NOT NULL CONSTRAINT ""PK_CheckedOutCards"" PRIMARY KEY AUTOINCREMENT,
+            ""CardID""         INTEGER NOT NULL,
+            ""CheckedOutDate"" TEXT    NOT NULL,
+            ""DateCreated""    TEXT    NOT NULL,
+            ""DateModified""   TEXT    NOT NULL,
+            ""ImageID""        INTEGER NOT NULL,
+            ""SetCode""        TEXT    NOT NULL,
+            ""Quantity""       INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS ""IX_CheckedOutCards_ImageID_SetCode""
+            ON ""CheckedOutCards"" (""ImageID"", ""SetCode"");
+    ");
+    var existingCols = db.Database
+        .SqlQuery<string>($"SELECT name FROM pragma_table_info('CheckedOutCards')")
+        .ToList();
+    if (!existingCols.Contains("Quantity"))
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""CheckedOutCards"" ADD COLUMN ""Quantity"" INTEGER NOT NULL DEFAULT 1");
 }
 
 if (!app.Environment.IsDevelopment())

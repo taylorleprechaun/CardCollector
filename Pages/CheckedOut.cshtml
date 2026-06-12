@@ -1,0 +1,92 @@
+@page
+@model CheckedOutModel
+@using CardCollector.ViewModels
+@{
+    ViewData["Title"] = "Checked Out";
+    var clearFiltersURL = $"/CheckedOut{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
+    var filterParams = $"query={Uri.EscapeDataString(Model.Query ?? string.Empty)}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Checked Out</h1>
+    @if (Model.Results.TotalCount > 0)
+    {
+        <div class="d-flex flex-column align-items-end gap-1">
+            <span class="badge bg-warning text-dark fs-6">@Model.Results.TotalCount unique</span>
+            <span class="badge bg-warning text-dark fs-6">@Model.Results.TotalQuantitySum individual</span>
+        </div>
+    }
+</div>
+
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=Autocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by card name…",
+    Query = Model.Query
+}' />
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
+        {
+            <h4>No checked-out cards</h4>
+            <p class="mb-0">Use the <strong>Check Out</strong> button on the <a href="/Collection">Collection</a> page to mark a card as lent out.</p>
+        }
+        else
+        {
+            <span>No cards match your search.</span>
+        }
+    </div>
+}
+else
+{
+    <div class="list-group mb-4">
+        @foreach (var item in Model.Results.Items)
+        {
+            <div class="list-group-item d-flex align-items-center gap-3 py-2">
+                <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
+                <div class="flex-grow-1 min-width-0">
+                    <div class="fw-semibold">@item.CardName</div>
+                    <div class="text-muted small">
+                        @item.SetName &middot; @item.SetCode
+                        @if (!string.IsNullOrEmpty(item.RarityName))
+                        {
+                            <span>&middot; @item.RarityName</span>
+                        }
+                    </div>
+                </div>
+                <form method="post" class="d-flex flex-column flex-shrink-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="cardID"  value="@item.CardID"  />
+                    <input type="hidden" name="imageID" value="@item.ImageID" />
+                    <input type="hidden" name="setCode" value="@item.SetCode" />
+                    <div class="d-flex align-items-center gap-1">
+                        <small class="text-muted">Check Out:</small>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
+                            @for (int q = 1; q <= 3; q++)
+                            {
+                                var isActive = item.CheckedOutQuantity == q;
+                                var isDisabled = isActive || q > item.TotalOwnedQuantity;
+                                <button type="submit" name="quantity" value="@q"
+                                        formaction="/CheckedOut?handler=CheckOut&@filterParams"
+                                        class="btn btn-sm @(isActive ? "btn-warning" : "btn-outline-secondary")"
+                                        @(isDisabled ? "disabled" : "")>@q</button>
+                            }
+                            <button type="submit"
+                                    formaction="/CheckedOut?handler=CheckIn&@filterParams"
+                                    class="btn btn-sm btn-outline-success">Check In</button>
+                        </div>
+                    </div>
+                    <small class="text-muted text-center">since @item.CheckedOutDate.ToString("MMM d, yyyy")</small>
+                </form>
+            </div>
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Checked out pagination", PageName = "CheckedOut", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}

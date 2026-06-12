@@ -4,6 +4,10 @@ namespace CardCollector.ViewModels
 {
     public sealed class CollectionGroupViewModel : CardPrinting
     {
+        public DateTime? CheckedOutDate { get; init; }
+
+        public int CheckedOutQuantity { get; init; }
+
         public CollectionCompletionStatus CompletionStatus
         {
             get
@@ -24,6 +28,8 @@ namespace CardCollector.ViewModels
 
         public bool HasAnyPlaceholderForImage { get; init; }
 
+        public bool IsCheckedOut => CheckedOutQuantity > 0;
+
         public bool IsPreferredVersion { get; init; }
 
         public decimal? TotalCost { get; init; }
@@ -36,12 +42,16 @@ namespace CardCollector.ViewModels
             bool isPreferredVersion,
             bool hasAnyPlaceholderForImage,
             decimal? totalCost,
-            int totalQuantity) => new()
+            int totalQuantity,
+            int checkedOutQuantity = 0,
+            DateTime? checkedOutDate = null) => new()
         {
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,
+            CheckedOutDate = checkedOutDate,
+            CheckedOutQuantity = checkedOutQuantity,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,

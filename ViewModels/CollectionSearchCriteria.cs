@@ -7,5 +7,6 @@ namespace CardCollector.ViewModels
         public AcquisitionMethod? AcquisitionMethod { get; set; }
         public CardCondition? Condition { get; set; }
         public CardEdition? Edition { get; set; }
+        public bool? IsCheckedOut { get; set; }
     }
 }

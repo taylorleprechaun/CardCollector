@@ -4,7 +4,7 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
-    var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
+    var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&checkedOutFilter={Model.CheckedOutFilter}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
     var clearFiltersURL = $"/Collection{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
 }
 
@@ -30,11 +30,13 @@
         AvailableSetNames = Model.AvailableSetNames,
         CurrentAcquisitionMethod = Model.AcquisitionMethod?.ToString(),
         CurrentCardType = Model.CardType,
+        CurrentCheckedOutFilter = Model.CheckedOutFilter,
         CurrentCondition = Model.Condition?.ToString(),
         CurrentEdition = Model.Edition?.ToString(),
         CurrentRarityName = Model.RarityName,
         CurrentSetName = Model.SetName,
         ShowAcquisitionMethod = true,
+        ShowCheckedOutFilter = true,
         ShowCondition = true,
         ShowEdition = true
     },
@@ -70,33 +72,64 @@ else
 
             <div class="list-group-item p-0">
                 <!-- Toggle row -->
-                <div class="list-group-item-action d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
-                     role="button"
-                     data-bs-toggle="collapse"
-                     data-bs-target="#@collapseID"
-                     aria-expanded="false"
-                     aria-controls="@collapseID">
-                    <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="fw-semibold">@group.CardName</div>
-                        <div class="text-muted small">
-                            @group.SetName &middot; @group.SetCode &middot; @group.RarityCode
+                <div class="d-flex align-items-center">
+                    <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
+                         role="button"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#@collapseID"
+                         aria-expanded="false"
+                         aria-controls="@collapseID">
+                        <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="fw-semibold">@group.CardName</div>
+                            <div class="text-muted small">
+                                @group.SetName &middot; @group.SetCode &middot; @group.RarityCode
+                            </div>
+                            <div class="text-muted small">&times;@group.TotalQuantity</div>
                         </div>
-                        <div class="text-muted small">&times;@group.TotalQuantity</div>
+                        @if (status == CollectionCompletionStatus.Complete)
+                        {
+                            <span class="badge bg-success flex-shrink-0">Complete</span>
+                        }
+                        else if (status == CollectionCompletionStatus.Incomplete)
+                        {
+                            <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
+                        }
+                        <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
                     </div>
-                    @if (status == CollectionCompletionStatus.Complete)
-                    {
-                        <span class="badge bg-success flex-shrink-0">Complete</span>
-                    }
-                    else if (status == CollectionCompletionStatus.Incomplete)
-                    {
-                        <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
-                    }
-                    <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
+                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 pe-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="cardID" value="@group.CardID" />
+                        <input type="hidden" name="imageID" value="@group.ImageID" />
+                        <input type="hidden" name="setCode" value="@group.SetCode" />
+                        <div class="d-flex align-items-center gap-1">
+                            <small class="text-muted">Check Out:</small>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
+                                @for (int q = 1; q <= 3; q++)
+                                {
+                                    var isActive = group.CheckedOutQuantity == q;
+                                    var btnClass = isActive ? "btn-warning" : "btn-outline-secondary";
+                                    var isDisabled = isActive || q > group.TotalQuantity;
+                                    <button type="submit" name="quantity" value="@q"
+                                            formaction="/Collection?handler=CheckOut&@filterParams"
+                                            class="btn btn-sm @btnClass"
+                                            @(isDisabled ? "disabled" : "")>@q</button>
+                                }
+                                <button type="submit"
+                                        formaction="/Collection?handler=CheckIn&@filterParams"
+                                        class="btn btn-sm btn-outline-success"
+                                        @(group.CheckedOutQuantity == 0 ? "disabled" : "")>Check In</button>
+                            </div>
+                        </div>
+                        @if (group.IsCheckedOut)
+                        {
+                            <small class="text-muted text-center">since @group.CheckedOutDate!.Value.ToString("MMM d, yyyy")</small>
+                        }
+                    </form>
                 </div>
 
                 <!-- Expanded entries -->

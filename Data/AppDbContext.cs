@@ -5,6 +5,8 @@ namespace CardCollector.Data
 {
     public class AppDBContext : DbContext
     {
+        public DbSet<CheckedOutCard> CheckedOutCards { get; set; }
+
         public DbSet<CollectionEntry> CollectionEntries { get; set; }
 
         public DbSet<CollectionEntryValueSnapshot> CollectionEntryValueSnapshots { get; set; }
@@ -19,6 +21,12 @@ namespace CardCollector.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CheckedOutCard>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.ImageID, e.SetCode }).IsUnique();
+            });
+
             modelBuilder.Entity<CollectionEntry>(entity =>
             {
                 entity.HasKey(e => e.ID);

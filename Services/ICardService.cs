@@ -25,6 +25,16 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync();
 
         /// <summary>
+        /// Clears the checked-out status for the given (imageID, setCode) group.
+        /// </summary>
+        Task CheckInCardAsync(int imageID, string setCode);
+
+        /// <summary>
+        /// Sets the checked-out quantity for the given group. Creates a new record if none exists (recording today as the checkout date); updates quantity on an existing record.
+        /// </summary>
+        Task CheckOutCardAsync(int cardID, int imageID, string setCode, int quantity);
+
+        /// <summary>
         /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.
         /// </summary>
         Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName);
@@ -103,6 +113,11 @@ namespace CardCollector.Services
         /// Returns a paginated, filtered page of browseable cards matching the given criteria.
         /// </summary>
         Task<PagedResult<CardListItemViewModel>> SearchCardsAsync(BrowseSearchCriteria criteria);
+
+        /// <summary>
+        /// Returns a paginated, filtered page of checked-out cards matching the given criteria.
+        /// </summary>
+        Task<PagedResult<CheckedOutCardViewModel>> SearchCheckedOutAsync(CheckedOutSearchCriteria criteria);
 
         /// <summary>
         /// Returns a paginated, filtered page of owned collection groups matching the given criteria.
