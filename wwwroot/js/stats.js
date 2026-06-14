@@ -184,27 +184,40 @@ function updateTopCards(topCards) {
     wrapper.style.display = '';
 }
 
-async function calculateValue() {
+function calculateValue() {
     const btn = document.getElementById('calcValueBtn');
     const statusDiv = document.getElementById('calcStatus');
-    const spinner = document.getElementById('calcSpinner');
+    const progressWrapper = document.getElementById('calcProgressWrapper');
+    const progressBar = document.getElementById('calcProgressBar');
+    const progressText = document.getElementById('calcProgressText');
     const result = document.getElementById('calcResult');
     const error = document.getElementById('calcError');
 
     btn.disabled = true;
     statusDiv.style.display = '';
-    spinner.style.display = 'flex';
+    progressWrapper.style.display = '';
+    progressBar.style.width = '0%';
+    progressBar.setAttribute('aria-valuenow', 0);
+    progressText.textContent = 'Fetching prices…';
     result.style.display = 'none';
     error.style.display = 'none';
 
-    try {
-        const resp = await fetch('/api/stats/calculate-value', { method: 'POST' });
-        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    const source = new EventSource('/api/stats/calculate-value/stream');
 
-        const data = await resp.json();
+    source.addEventListener('progress', e => {
+        const { current, total } = JSON.parse(e.data);
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+        progressBar.style.width = pct + '%';
+        progressBar.setAttribute('aria-valuenow', pct);
+        progressText.textContent = `Fetching prices… ${current} / ${total}`;
+    });
+
+    source.addEventListener('complete', e => {
+        source.close();
+        const data = JSON.parse(e.data);
         const formatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        spinner.style.display = 'none';
+        progressWrapper.style.display = 'none';
         result.style.display = '';
         result.textContent = `Current market value: ${formatted} across ${data.cardCount} owned entries.`;
 
@@ -225,13 +238,17 @@ async function calculateValue() {
 
         if (data.topCards && data.topCards.length > 0)
             updateTopCards(data.topCards);
-    } catch (err) {
-        spinner.style.display = 'none';
+
+        btn.disabled = false;
+    });
+
+    source.addEventListener('error', () => {
+        source.close();
+        progressWrapper.style.display = 'none';
         error.style.display = '';
         error.textContent = 'Failed to calculate market value. Please try again.';
-    } finally {
         btn.disabled = false;
-    }
+    });
 }
 
 if (setLabels.length > 0) buildHorizontalBar('setChart', setLabels, setCounts);

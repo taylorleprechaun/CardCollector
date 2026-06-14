@@ -12,7 +12,8 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **Wishlist** &mdash; preferred versions you haven&rsquo;t ordered or owned yet, with search and sort
 - **New Printings** &mdash; cards where a newer set printing exists for your preferred version; dismiss or upgrade in one click
 - **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
-- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; calculate current market value with a live pricing fetch and track value over time with historical snapshots
+- **Checked Out** &mdash; cards currently lent out, with check-in/check-out controls on the Collection page
+- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; calculate current market value with a real-time progress bar (Server-Sent Events) and track value over time with historical snapshots
 - **Export** &mdash; download your collection or wishlist as a CSV
 
 ## Tech Stack
@@ -51,7 +52,7 @@ CardCollector/
 │   └── Models/              # EF entities and enums
 ├── DTO/                     # Card data structures (yaml-yugi card data + YGOProDeck image data)
 ├── Extensions/              # EnumExtensions (.GetDisplayName())
-├── Pages/                   # Razor Pages (Dashboard, Browse, Card, Collection, Discover, Wishlist, NewPrintings, Orders, Export)
+├── Pages/                   # Razor Pages (Dashboard, Browse, Card, Collection, CheckedOut, Discover, Wishlist, NewPrintings, Orders, Stats, Export)
 ├── Repository/              # Data access (CardDataRepository, CollectionRepository, PreferredVersionRepository)
 ├── Services/                # CardService (joins JSON + SQLite), PricingService (live TCGPlayer prices)
 ├── ViewModels/              # Page-specific view models
@@ -64,4 +65,4 @@ CardCollector/
 - Speed Duel sets are excluded from all card data at load time.
 - Card images are loaded from CDN URLs; no images are stored locally.
 - Live pricing data is fetched from the YGO Pro Deck pricing endpoint per card when needed.
-- Collection value is calculated on demand from the Stats page, which fetches live prices for all owned cards (up to 5 concurrent requests) and persists the results as dated snapshots. The Dashboard displays the value from the most recent snapshot.
+- Collection value is calculated on demand from the Stats page, which streams live price fetch progress via Server-Sent Events and persists the results as dated snapshots. The Dashboard displays the value from the most recent snapshot.

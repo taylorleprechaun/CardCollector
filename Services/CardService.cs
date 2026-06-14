@@ -77,7 +77,7 @@ namespace CardCollector.Services
             await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
         }
 
-        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync()
+        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync(Func<int, int, Task>? onProgress = null)
         {
             var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
 
@@ -102,7 +102,6 @@ namespace CardCollector.Services
                     .OrderByDescending(x => x.Item4)
                     .Take(10)
                     .ToList();
-
                 return (latestSnapshot.TotalValue, latestSnapshot.CardCount, cachedSetBreakdown, cachedTopCards);
             }
 
@@ -115,11 +114,15 @@ namespace CardCollector.Services
                 .ToList();
 
             var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName), decimal?>();
+            var totalPrintings = uniquePrintingKeys.Count;
+            var processedPrintings = 0;
             foreach (var key in uniquePrintingKeys)
             {
                 var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName).ConfigureAwait(false);
                 priceCache[key] = price;
                 await Task.Delay(_pricingDelayMs).ConfigureAwait(false);
+                if (onProgress is not null)
+                    await onProgress(++processedPrintings, totalPrintings).ConfigureAwait(false);
             }
 
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
@@ -237,6 +240,7 @@ namespace CardCollector.Services
                 .GroupBy(e => string.IsNullOrWhiteSpace(e.RarityName) ? "Unknown" : e.RarityName)
                 .Select(g => (g.Key, g.Count()))
                 .OrderByDescending(x => x.Item2)
+                .Take(10)
                 .ToList();
 
             var setBreakdown = ownedEntries
