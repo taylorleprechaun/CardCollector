@@ -87,4 +87,12 @@ app.MapGet("/api/stats/calculate-value/stream", async (ICardService cardService,
     await Send("complete", completeJson);
 });
 
+app.MapGet("/api/stats/card-price-history", async (string cardName, ICardService cardService) =>
+{
+    if (string.IsNullOrWhiteSpace(cardName))
+        return Results.BadRequest("cardName is required.");
+    var history = await cardService.GetCardPriceHistoryAsync(cardName);
+    return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
+});
+
 app.Run();

@@ -166,6 +166,31 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Card Price History</div>
+    <div class="card-body">
+        <div class="d-flex gap-2 mb-3 align-items-center">
+            <input id="cardHistoryInput" class="form-control" list="cardHistoryList"
+                   placeholder="Type a card name&hellip;" style="max-width:400px" />
+            <datalist id="cardHistoryList"></datalist>
+            <button class="btn btn-primary" onclick="loadCardPriceHistory()">Load History</button>
+        </div>
+        <div id="cardHistoryStatus" class="text-muted small mb-2" style="display:none"></div>
+        <div class="row g-3">
+            <div class="col-md-9">
+                <div id="cardHistoryChartWrapper" style="display:none; position:relative; height:300px">
+                    <canvas id="cardHistoryChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-3 text-center align-self-center"
+                 id="cardHistoryImageWrapper" style="display:none">
+                <img id="cardHistoryImg" src="" alt=""
+                     style="max-width:100%; max-height:300px; object-fit:contain" />
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
@@ -176,6 +201,7 @@
         const historyDates = @Html.Raw(Model.Stats.ValueHistoryDatesJson);
         const historyValues = @Html.Raw(Model.Stats.ValueHistoryValuesJson);
         const historyCardCounts = @Html.Raw(Model.Stats.ValueHistoryCardCountsJson);
+        const trackedCardImageMap = @Html.Raw(Model.TrackedCardImageMapJson);
     </script>
     <script src="~/js/stats.js"></script>
 }

@@ -13,7 +13,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **New Printings** &mdash; cards where a newer set printing exists for your preferred version; dismiss or upgrade in one click
 - **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
 - **Checked Out** &mdash; cards currently lent out, with check-in/check-out controls on the Collection page
-- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; calculate current market value with a real-time progress bar (Server-Sent Events) and track value over time with historical snapshots
+- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; calculate current market value with a real-time progress bar (Server-Sent Events); track collection value over time with historical snapshots; look up price history for any individual card with a per-card chart
 - **Export** &mdash; download your collection or wishlist as a CSV
 
 ## Tech Stack

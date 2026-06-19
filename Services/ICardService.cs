@@ -51,6 +51,11 @@ namespace CardCollector.Services
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
 
         /// <summary>
+        /// Returns the price history for the given card name, with one series per tracked printing.
+        /// </summary>
+        Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName);
+
+        /// <summary>
         /// Returns aggregated collection statistics including rarity, set, acquisition, and value breakdowns.
         /// </summary>
         Task<CollectionStatsViewModel> GetCollectionStatsAsync();
@@ -59,6 +64,11 @@ namespace CardCollector.Services
         /// Returns high-level stats for the dashboard: counts, market value, and wishlist size.
         /// </summary>
         Task<DashboardStats> GetDashboardStatsAsync();
+
+        /// <summary>
+        /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
+        /// </summary>
+        Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
 
         /// <summary>
         /// Returns all ordered entries enriched with card and set data.

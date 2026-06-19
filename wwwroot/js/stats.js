@@ -254,3 +254,97 @@ function calculateValue() {
 if (setLabels.length > 0) buildHorizontalBar('setChart', setLabels, setCounts);
 if (setValueLabels.length > 0) setValueChart = buildValueBar('setValueChart', setValueLabels, setValueData);
 if (historyDates.length > 0) buildValueChart(historyDates, historyValues, historyCardCounts);
+
+let cardHistoryChart = null;
+
+function buildPriceHistoryChart(series) {
+    const ctx = document.getElementById('cardHistoryChart');
+    const wrapper = document.getElementById('cardHistoryChartWrapper');
+    if (!ctx || !wrapper) return;
+
+    const datasets = series.map((s, i) => ({
+        label: s.label,
+        data: s.dates.map((d, j) => ({ x: d, y: s.values[j] })),
+        borderColor: CHART_COLORS[i % CHART_COLORS.length],
+        backgroundColor: 'transparent',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: false
+    }));
+
+    if (cardHistoryChart) {
+        cardHistoryChart.data.datasets = datasets;
+        cardHistoryChart.options.plugins.legend.display = series.length > 1;
+        cardHistoryChart.update();
+    } else {
+        cardHistoryChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                plugins: { legend: { display: series.length > 1 } },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { unit: 'day', tooltipFormat: 'MMM d, yyyy', displayFormats: { day: 'MMM d' } },
+                        ticks: { maxRotation: 45 }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: val => '$' + val.toFixed(2) }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    wrapper.style.display = '';
+}
+
+async function loadCardPriceHistory() {
+    const input = document.getElementById('cardHistoryInput');
+    const status = document.getElementById('cardHistoryStatus');
+    const wrapper = document.getElementById('cardHistoryChartWrapper');
+    const cardName = input?.value?.trim();
+    if (!cardName) return;
+
+    status.textContent = 'Loading…';
+    status.style.display = '';
+    if (wrapper) wrapper.style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/stats/card-price-history?cardName=${encodeURIComponent(cardName)}`);
+        if (!resp.ok) {
+            status.textContent = 'Failed to load price history.';
+            return;
+        }
+        const series = await resp.json();
+        if (!series.length) {
+            status.textContent = 'No price history found for this card.';
+            return;
+        }
+        status.style.display = 'none';
+        buildPriceHistoryChart(series);
+
+        const imgUrl = typeof trackedCardImageMap !== 'undefined' ? trackedCardImageMap[cardName] : null;
+        const sideImg = document.getElementById('cardHistoryImg');
+        const sideWrapper = document.getElementById('cardHistoryImageWrapper');
+        if (imgUrl && sideImg && sideWrapper) {
+            sideImg.src = imgUrl;
+            sideWrapper.style.display = '';
+        }
+    } catch {
+        status.textContent = 'Failed to load price history.';
+    }
+}
+
+if (typeof trackedCardImageMap !== 'undefined') {
+    const dl = document.getElementById('cardHistoryList');
+    if (dl) Object.keys(trackedCardImageMap).forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        dl.appendChild(opt);
+    });
+}
+

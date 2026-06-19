@@ -13,6 +13,25 @@ namespace CardCollector.Repository
             _context = context;
         }
 
+        public async Task<IEnumerable<string>> GetDistinctCardNamesAsync()
+        {
+            return await _context.CollectionEntryValueSnapshots
+                .Select(s => s.CardName)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync()
+                .ConfigureAwait(false);
+        }
+
+        public async Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardNameAsync(string cardName)
+        {
+            return await _context.CollectionEntryValueSnapshots
+                .Where(s => s.CardName == cardName)
+                .OrderBy(s => s.SnapshotDate)
+                .ToListAsync()
+                .ConfigureAwait(false);
+        }
+
         public async Task<IEnumerable<CollectionEntryValueSnapshot>> GetLatestSnapshotsAsync()
         {
             var latestDate = await _context.CollectionEntryValueSnapshots

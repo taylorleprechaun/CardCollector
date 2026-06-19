@@ -4,6 +4,7 @@ using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.ViewModels;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace CardCollector.Services
 {
@@ -19,6 +20,7 @@ namespace CardCollector.Services
         private readonly ICollectionRepository _collectionRepository;
         private readonly ICollectionValueRepository _collectionValueRepository;
         private readonly IDismissedNewPrintingRepository _dismissedNewPrintingRepository;
+        private readonly ILogger<CardService> _logger;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly int _pricingDelayMs;
         private readonly IPricingService _pricingService;
@@ -31,6 +33,7 @@ namespace CardCollector.Services
             ICollectionEntryValueRepository collectionEntryValueRepository,
             ICollectionValueRepository collectionValueRepository,
             IDismissedNewPrintingRepository dismissedNewPrintingRepository,
+            ILogger<CardService> logger,
             IPreferredVersionRepository preferredVersionRepository,
             IPricingService pricingService,
             IConfiguration config)
@@ -42,6 +45,7 @@ namespace CardCollector.Services
             _collectionRepository = collectionRepository;
             _collectionValueRepository = collectionValueRepository;
             _dismissedNewPrintingRepository = dismissedNewPrintingRepository;
+            _logger = logger;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingDelayMs = config.GetValue<int>("CardDataSettings:PricingDelayMs", 100);
             _pricingService = pricingService;
@@ -107,6 +111,9 @@ namespace CardCollector.Services
 
             var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
 
+            var previousSnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false))
+                .ToDictionary(s => s.CollectionEntryID, s => s.MarketValue);
+
             var uniquePrintingKeys = entries
                 .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
                 .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName!))
@@ -137,10 +144,24 @@ namespace CardCollector.Services
             foreach (var entry in entries.Where(e => !string.IsNullOrWhiteSpace(e.RarityName)))
             {
                 var key = (entry.CardID, entry.SetCode, entry.RarityName!);
-                if (!priceCache.TryGetValue(key, out var price) || !price.HasValue)
-                    continue;
+                priceCache.TryGetValue(key, out var price);
 
-                var entryValue = price.Value * entry.Quantity;
+                decimal entryValue;
+                if (price.HasValue)
+                {
+                    entryValue = price.Value * entry.Quantity;
+                }
+                else if (previousSnapshots.TryGetValue(entry.ID, out var previousValue))
+                {
+                    entryValue = previousValue;
+                    _logger.LogWarning("Price unavailable for entry {EntryID} ({SetCode} {RarityName}); using previous snapshot value {Value}",
+                        entry.ID, entry.SetCode, entry.RarityName, previousValue);
+                }
+                else
+                {
+                    continue;
+                }
+
                 totalValue += entryValue;
 
                 entrySnapshots.Add(new CollectionEntryValueSnapshot
@@ -173,16 +194,14 @@ namespace CardCollector.Services
                 .Take(SetBreakdownItemLimit)
                 .ToList();
 
-            var topValueCards = priceCache
-                .Where(kv => kv.Value.HasValue)
-                .OrderByDescending(kv => kv.Value!.Value)
+            var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
+            var topValueCards = entrySnapshots
+                .Where(s => quantityByEntryID.TryGetValue(s.CollectionEntryID, out var q) && q > 0)
+                .Select(s => (s.CardName, s.SetName, s.RarityName, UnitPrice: s.MarketValue / quantityByEntryID[s.CollectionEntryID]))
+                .GroupBy(x => (x.CardName, x.SetName, x.RarityName))
+                .Select(g => (g.Key.CardName, g.Key.SetName, g.Key.RarityName, g.First().UnitPrice))
+                .OrderByDescending(x => x.Item4)
                 .Take(10)
-                .Select(kv => (
-                    cardNames.TryGetValue(kv.Key.CardID, out var name) ? name : string.Empty,
-                    setNamesByCode.TryGetValue(kv.Key.SetCode, out var sn) ? sn : kv.Key.SetCode,
-                    kv.Key.RarityName,
-                    kv.Value!.Value
-                ))
                 .ToList();
 
             return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
@@ -230,6 +249,28 @@ namespace CardCollector.Services
                 .OrderBy(c => c.Name)
                 .Take(maxResults)
                 .Select(c => c.Name!);
+
+        public async Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName)
+        {
+            if (string.IsNullOrWhiteSpace(cardName)) throw new ArgumentException("cardName is required.", nameof(cardName));
+
+            var snapshots = (await _collectionEntryValueRepository.GetHistoryByCardNameAsync(cardName).ConfigureAwait(false)).ToList();
+
+            return snapshots
+                .GroupBy(s => (s.SetCode, s.RarityName))
+                .Select(g =>
+                {
+                    var byDate = g.GroupBy(s => s.SnapshotDate).OrderBy(dg => dg.Key).ToList();
+                    return new CardPriceHistorySeries
+                    {
+                        Label = $"{g.Key.SetCode} — {g.Key.RarityName}",
+                        Dates = byDate.Select(dg => dg.Key).ToList(),
+                        Values = byDate.Select(dg => dg.Sum(s => s.MarketValue)).ToList()
+                    };
+                })
+                .OrderBy(s => s.Label)
+                .ToList();
+        }
 
         public async Task<CollectionStatsViewModel> GetCollectionStatsAsync()
         {
@@ -439,6 +480,25 @@ namespace CardCollector.Services
 
             var index = Random.Shared.Next(uncollected.Count);
             return uncollected[index];
+        }
+
+        public async Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync()
+        {
+            var names = await _collectionEntryValueRepository.GetDistinctCardNamesAsync().ConfigureAwait(false);
+            var nameToCard = _cardDataRepository.GetBrowseableCards()
+                .Where(c => c.Name is not null && c.CardImages?.Count > 0)
+                .GroupBy(c => c.Name!)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+            var map = new Dictionary<string, string>();
+            foreach (var name in names)
+            {
+                if (nameToCard.TryGetValue(name, out var card))
+                {
+                    var url = card.CardImages![0].ImageURLSmall ?? card.CardImages[0].ImageURL;
+                    if (url is not null) map[name] = url;
+                }
+            }
+            return map;
         }
 
         public async Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync()
