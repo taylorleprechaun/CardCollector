@@ -75,7 +75,14 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var set in Model.CurrentCard.CardSets)
+                            @{
+                                var sortedSets = Model.CurrentCard.CardSets
+                                    .OrderBy(s => {
+                                        var d = Model.GetTCGDate(s.Code ?? string.Empty);
+                                        return string.IsNullOrEmpty(d) ? "9999-99-99" : d;
+                                    });
+                            }
+                            @foreach (var set in sortedSets)
                             {
                                 <tr>
                                     <td>@set.Name</td>
