@@ -55,6 +55,18 @@ namespace CardCollector.Repository
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
 
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync()
+        {
+            var pairs = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode })
+                .Distinct()
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
+
         public async Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
@@ -166,6 +178,36 @@ namespace CardCollector.Repository
                 .Where(e => pairSet.Contains((e.ImageID, e.SetCode)))
                 .GroupBy(e => (e.ImageID, e.SetCode))
                 .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+        }
+
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPreferredVersionsAsync(
+            IEnumerable<(int ImageID, string SetCode, string? RarityName)> preferredVersions)
+        {
+            var pvList = preferredVersions.ToList();
+            if (pvList.Count == 0)
+                return new Dictionary<(int ImageID, string SetCode), int>();
+
+            var imageIDs = pvList.Select(p => p.ImageID).ToHashSet();
+
+            var entries = await _context.CollectionEntries
+                .Where(e => imageIDs.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            var result = new Dictionary<(int ImageID, string SetCode), int>();
+            foreach (var pv in pvList)
+            {
+                var qty = entries
+                    .Where(e => e.ImageID == pv.ImageID
+                        && e.SetCode.Equals(pv.SetCode, StringComparison.OrdinalIgnoreCase)
+                        && (pv.RarityName is null || pv.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
+                    .Sum(e => e.Quantity);
+
+                if (qty > 0)
+                    result[(pv.ImageID, pv.SetCode)] = qty;
+            }
+            return result;
         }
 
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()

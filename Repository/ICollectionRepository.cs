@@ -33,6 +33,11 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
+        /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
+        /// </summary>
+        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();
+
+        /// <summary>
         /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
         /// Image IDs that are not owned are omitted from the result.
         /// </summary>
@@ -68,6 +73,13 @@ namespace CardCollector.Repository
         /// Pairs with no owned entries are omitted from the result.
         /// </summary>
         Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs);
+
+        /// <summary>
+        /// Returns the rarity-aware owned quantity per (imageID, setCode) pair for the given preferred versions.
+        /// When a preferred version specifies a non-null rarityName, only owned entries with a matching rarity are counted.
+        /// Pairs with no matching owned entries are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPreferredVersionsAsync(IEnumerable<(int ImageID, string SetCode, string? RarityName)> preferredVersions);
 
         /// <summary>
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.
