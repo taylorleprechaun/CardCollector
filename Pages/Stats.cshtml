@@ -140,9 +140,14 @@
 <div class="card mb-4">
     <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
         <span>Collection Value Over Time</span>
-        <button id="calcValueBtn" class="btn btn-sm btn-primary" onclick="calculateValue()">
-            Calculate Current Market Value
-        </button>
+        <div class="d-flex gap-2">
+            <button id="smartRefreshBtn" class="btn btn-sm btn-primary">
+                Smart Refresh (~10%)
+            </button>
+            <button id="calcValueBtn" class="btn btn-sm btn-outline-secondary">
+                Calculate Current Market Value
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <div id="calcStatus" class="mb-3" style="display:none">

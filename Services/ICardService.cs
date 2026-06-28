@@ -26,6 +26,14 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync(Func<int, int, Task>? onProgress = null);
 
         /// <summary>
+        /// Fetches live prices for a targeted subset of owned printings: always refreshes $0-valued printings, then
+        /// uses age-weighted random selection for the remaining ~10%. Uses last-known prices as fallback for
+        /// unrefreshed printings. Does not write a collection-level snapshot so the full refresh remains available.
+        /// Calls <paramref name="onProgress"/> with (current, total) after each price is fetched.
+        /// </summary>
+        Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateSmartMarketValueAsync(Func<int, int, Task>? onProgress = null);
+
+        /// <summary>
         /// Clears the checked-out status for the given (imageID, setCode) group.
         /// </summary>
         Task CheckInCardAsync(int imageID, string setCode);

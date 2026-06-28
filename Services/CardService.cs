@@ -12,6 +12,7 @@ namespace CardCollector.Services
     {
         private const string SnapshotDateFormat = "yyyy-MM-dd";
         private const int SetBreakdownItemLimit = 20;
+        private const double SmartRefreshSampleRate = 0.10;
 
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardSetRepository _cardSetRepository;
@@ -195,6 +196,155 @@ namespace CardCollector.Services
 
             var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
             var topValueCards = entrySnapshots
+                .Where(s => quantityByEntryID.TryGetValue(s.CollectionEntryID, out var q) && q > 0)
+                .Select(s => (s.CardName, s.SetName, s.RarityName, UnitPrice: s.MarketValue / quantityByEntryID[s.CollectionEntryID]))
+                .GroupBy(x => (x.CardName, x.SetName, x.RarityName))
+                .Select(g => (g.Key.CardName, g.Key.SetName, g.Key.RarityName, g.First().UnitPrice))
+                .OrderByDescending(x => x.Item4)
+                .Take(10)
+                .ToList();
+
+            return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
+        }
+
+        public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateSmartMarketValueAsync(Func<int, int, Task>? onProgress = null)
+        {
+            var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
+
+            var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
+
+            var latestSnapshots = (await _collectionEntryValueRepository.GetLatestSnapshotsAsync().ConfigureAwait(false)).ToList();
+            var previousValueByEntryID = latestSnapshots.ToDictionary(s => s.CollectionEntryID, s => s.MarketValue);
+            var latestDateByEntryID = latestSnapshots.ToDictionary(s => s.CollectionEntryID, s => s.SnapshotDate);
+
+            var printingGroups = entries
+                .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
+                .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName!))
+                .ToList();
+
+            var priorityKeys = new List<(int CardID, string SetCode, string RarityName)>();
+            var weightedPool = new List<((int CardID, string SetCode, string RarityName) Key, double Weight)>();
+
+            foreach (var group in printingGroups)
+            {
+                var groupEntries = group.ToList();
+                var hasAnyPrice = groupEntries.Any(e =>
+                    previousValueByEntryID.TryGetValue(e.ID, out var v) && v > 0m);
+
+                if (!hasAnyPrice)
+                {
+                    priorityKeys.Add(group.Key);
+                    continue;
+                }
+
+                var latestDate = groupEntries
+                    .Where(e => latestDateByEntryID.ContainsKey(e.ID))
+                    .Select(e => latestDateByEntryID[e.ID])
+                    .DefaultIfEmpty(null)
+                    .Max();
+
+                double weight = 1;
+                if (latestDate is not null
+                    && DateTime.TryParseExact(latestDate, SnapshotDateFormat, null, System.Globalization.DateTimeStyles.None, out var lastDate))
+                {
+                    weight = Math.Max(1, (DateTime.UtcNow.Date - lastDate).TotalDays);
+                }
+
+                weightedPool.Add((group.Key, weight));
+            }
+
+            var targetCount = (int)Math.Ceiling(weightedPool.Count * SmartRefreshSampleRate);
+            var selectedFromPool = WeightedSample(weightedPool, targetCount);
+            var keysToRefresh = new HashSet<(int, string, string)>(priorityKeys.Concat(selectedFromPool));
+
+            var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName), decimal?>();
+            var totalToRefresh = keysToRefresh.Count;
+            var refreshed = 0;
+            foreach (var key in keysToRefresh)
+            {
+                var price = await _pricingService.GetPrintingPriceAsync(key.Item1, key.Item2, key.Item3).ConfigureAwait(false);
+                priceCache[key] = price;
+                await Task.Delay(_pricingDelayMs).ConfigureAwait(false);
+                if (onProgress is not null)
+                    await onProgress(++refreshed, totalToRefresh).ConfigureAwait(false);
+            }
+
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+            var cardNames = entries
+                .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
+                .Select(e => e.CardID)
+                .Distinct()
+                .ToDictionary(id => id, id => _cardDataRepository.GetCardByID(id)?.Name ?? string.Empty);
+
+            var refreshedSnapshots = new List<CollectionEntryValueSnapshot>();
+            var allEntryValues = new Dictionary<int, decimal>();
+            decimal totalValue = 0m;
+
+            foreach (var entry in entries.Where(e => !string.IsNullOrWhiteSpace(e.RarityName)))
+            {
+                var key = (entry.CardID, entry.SetCode, entry.RarityName!);
+
+                decimal entryValue;
+                if (keysToRefresh.Contains(key) && priceCache.TryGetValue(key, out var freshPrice) && freshPrice.HasValue)
+                {
+                    entryValue = freshPrice.Value * entry.Quantity;
+                    refreshedSnapshots.Add(new CollectionEntryValueSnapshot
+                    {
+                        CardName = cardNames[entry.CardID],
+                        CollectionEntryID = entry.ID,
+                        DateCreated = DateTime.UtcNow,
+                        MarketValue = entryValue,
+                        RarityName = entry.RarityName!,
+                        SetCode = entry.SetCode,
+                        SetName = setNamesByCode.TryGetValue(entry.SetCode, out var n) ? n : entry.SetCode,
+                        SnapshotDate = today
+                    });
+                }
+                else if (previousValueByEntryID.TryGetValue(entry.ID, out var fallback))
+                {
+                    entryValue = fallback;
+                }
+                else
+                {
+                    continue;
+                }
+
+                totalValue += entryValue;
+                allEntryValues[entry.ID] = entryValue;
+            }
+
+            await _collectionEntryValueRepository.UpsertSelectiveSnapshotsAsync(refreshedSnapshots).ConfigureAwait(false);
+
+            var allSnapshots = latestSnapshots
+                .Where(s => allEntryValues.ContainsKey(s.CollectionEntryID))
+                .Select(s => new CollectionEntryValueSnapshot
+                {
+                    CardName = s.CardName,
+                    CollectionEntryID = s.CollectionEntryID,
+                    MarketValue = allEntryValues[s.CollectionEntryID],
+                    RarityName = s.RarityName,
+                    SetCode = s.SetCode,
+                    SetName = s.SetName,
+                    SnapshotDate = s.SnapshotDate
+                })
+                .ToList();
+
+            foreach (var snap in refreshedSnapshots)
+            {
+                var idx = allSnapshots.FindIndex(s => s.CollectionEntryID == snap.CollectionEntryID);
+                if (idx >= 0) allSnapshots[idx] = snap;
+                else allSnapshots.Add(snap);
+            }
+
+            var setValueBreakdown = allSnapshots
+                .GroupBy(s => s.SetName)
+                .Select(g => (g.Key, g.Sum(s => s.MarketValue)))
+                .OrderByDescending(x => x.Item2)
+                .Take(SetBreakdownItemLimit)
+                .ToList();
+
+            var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
+            var topValueCards = allSnapshots
                 .Where(s => quantityByEntryID.TryGetValue(s.CollectionEntryID, out var q) && q > 0)
                 .Select(s => (s.CardName, s.SetName, s.RarityName, UnitPrice: s.MarketValue / quantityByEntryID[s.CollectionEntryID]))
                 .GroupBy(x => (x.CardName, x.SetName, x.RarityName))
@@ -873,6 +1023,29 @@ namespace CardCollector.Services
         {
             var hyphen = code.IndexOf('-');
             return hyphen > 0 ? code[..hyphen] : code;
+        }
+
+        private static List<T> WeightedSample<T>(IList<(T Item, double Weight)> pool, int count)
+        {
+            var result = new List<T>(count);
+            var remaining = pool.ToList();
+            while (result.Count < count && remaining.Count > 0)
+            {
+                double total = remaining.Sum(x => x.Weight);
+                double threshold = Random.Shared.NextDouble() * total;
+                double cumulative = 0;
+                for (int i = 0; i < remaining.Count; i++)
+                {
+                    cumulative += remaining[i].Weight;
+                    if (cumulative >= threshold)
+                    {
+                        result.Add(remaining[i].Item);
+                        remaining.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+            return result;
         }
 
         private async Task AutoDismissNewPrintingsForCardAsync(int cardID, string setCode)

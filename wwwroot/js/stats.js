@@ -186,6 +186,7 @@ function updateTopCards(topCards) {
 
 function calculateValue() {
     const btn = document.getElementById('calcValueBtn');
+    const smartBtn = document.getElementById('smartRefreshBtn');
     const statusDiv = document.getElementById('calcStatus');
     const progressWrapper = document.getElementById('calcProgressWrapper');
     const progressBar = document.getElementById('calcProgressBar');
@@ -194,6 +195,7 @@ function calculateValue() {
     const error = document.getElementById('calcError');
 
     btn.disabled = true;
+    if (smartBtn) smartBtn.disabled = true;
     statusDiv.style.display = '';
     progressWrapper.style.display = '';
     progressBar.style.width = '0%';
@@ -240,6 +242,7 @@ function calculateValue() {
             updateTopCards(data.topCards);
 
         btn.disabled = false;
+        if (smartBtn) smartBtn.disabled = false;
     });
 
     source.addEventListener('error', () => {
@@ -248,6 +251,7 @@ function calculateValue() {
         error.style.display = '';
         error.textContent = 'Failed to calculate market value. Please try again.';
         btn.disabled = false;
+        if (smartBtn) smartBtn.disabled = false;
     });
 }
 
@@ -347,4 +351,67 @@ if (typeof trackedCardImageMap !== 'undefined') {
         dl.appendChild(opt);
     });
 }
+
+function smartRefresh() {
+    const calcBtn = document.getElementById('calcValueBtn');
+    const smartBtn = document.getElementById('smartRefreshBtn');
+    const statusDiv = document.getElementById('calcStatus');
+    const progressWrapper = document.getElementById('calcProgressWrapper');
+    const progressBar = document.getElementById('calcProgressBar');
+    const progressText = document.getElementById('calcProgressText');
+    const result = document.getElementById('calcResult');
+    const error = document.getElementById('calcError');
+
+    calcBtn.disabled = true;
+    smartBtn.disabled = true;
+    statusDiv.style.display = '';
+    progressWrapper.style.display = '';
+    progressBar.style.width = '0%';
+    progressBar.setAttribute('aria-valuenow', 0);
+    progressText.textContent = 'Smart refresh: fetching prices…';
+    result.style.display = 'none';
+    error.style.display = 'none';
+
+    const source = new EventSource('/api/stats/smart-refresh/stream');
+
+    source.addEventListener('progress', e => {
+        const { current, total } = JSON.parse(e.data);
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+        progressBar.style.width = pct + '%';
+        progressBar.setAttribute('aria-valuenow', pct);
+        progressText.textContent = `Smart refresh: fetching prices… ${current} / ${total}`;
+    });
+
+    source.addEventListener('complete', e => {
+        source.close();
+        const data = JSON.parse(e.data);
+        const formatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        progressWrapper.style.display = 'none';
+        result.style.display = '';
+        const smartFormatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        result.textContent = `Smart refresh complete: ~${smartFormatted} across ${data.cardCount} owned entries (unrefreshed printings use last known prices).`;
+
+        if (data.setValueLabels.length > 0)
+            updateSetValueChart(data.setValueLabels, data.setValueData);
+
+        if (data.topCards && data.topCards.length > 0)
+            updateTopCards(data.topCards);
+
+        calcBtn.disabled = false;
+        smartBtn.disabled = false;
+    });
+
+    source.addEventListener('error', () => {
+        source.close();
+        progressWrapper.style.display = 'none';
+        error.style.display = '';
+        error.textContent = 'Smart refresh failed. Please try again.';
+        calcBtn.disabled = false;
+        smartBtn.disabled = false;
+    });
+}
+
+document.getElementById('calcValueBtn')?.addEventListener('click', calculateValue);
+document.getElementById('smartRefreshBtn')?.addEventListener('click', smartRefresh);
 

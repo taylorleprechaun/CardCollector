@@ -18,7 +18,7 @@ namespace CardCollector.Repository
         Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardNameAsync(string cardName);
 
         /// <summary>
-        /// Returns the most recent set of per-entry value snapshots.
+        /// Returns the most recent snapshot for each collection entry, regardless of whether all entries share the same snapshot date.
         /// </summary>
         Task<IEnumerable<CollectionEntryValueSnapshot>> GetLatestSnapshotsAsync();
 
@@ -26,5 +26,10 @@ namespace CardCollector.Repository
         /// Inserts or updates entry-level value snapshots for the given snapshot date.
         /// </summary>
         Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate);
+
+        /// <summary>
+        /// Inserts or updates snapshots only for the supplied entries without touching snapshots for other entries or other dates.
+        /// </summary>
+        Task UpsertSelectiveSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots);
     }
 }
