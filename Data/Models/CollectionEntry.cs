@@ -22,8 +22,6 @@ namespace CardCollector.Data.Models
         [Required]
         public int ImageID { get; set; }
 
-        public bool IsPlaceholder { get; set; }
-
         public decimal? MarketPriceAtEntry { get; set; }
 
         public DateTime? PurchaseDate { get; set; }

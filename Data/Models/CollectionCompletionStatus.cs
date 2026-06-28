@@ -4,6 +4,7 @@ namespace CardCollector.Data.Models
     {
         Complete,
         Incomplete,
+        Owned,
         Placeholder
     }
 }

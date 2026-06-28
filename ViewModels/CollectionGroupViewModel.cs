@@ -13,24 +13,24 @@ namespace CardCollector.ViewModels
             get
             {
                 if (!IsPreferredVersion)
-                    return CollectionCompletionStatus.Placeholder;
+                    return PreferredVersionIsComplete
+                        ? CollectionCompletionStatus.Owned
+                        : CollectionCompletionStatus.Placeholder;
 
-                var nonPlaceholderQty = Entries.Where(e => !e.IsPlaceholder).Sum(e => e.Quantity);
-
-                if (nonPlaceholderQty >= CompleteThreshold || (nonPlaceholderQty > 0 && HasAnyPlaceholderForImage))
-                    return CollectionCompletionStatus.Complete;
-
-                return CollectionCompletionStatus.Incomplete;
+                var qty = Entries.Sum(e => e.Quantity);
+                return qty >= CompleteThreshold
+                    ? CollectionCompletionStatus.Complete
+                    : CollectionCompletionStatus.Incomplete;
             }
         }
 
         public IReadOnlyList<OrderEntryViewModel> Entries { get; init; } = [];
 
-        public bool HasAnyPlaceholderForImage { get; init; }
-
         public bool IsCheckedOut => CheckedOutQuantity > 0;
 
         public bool IsPreferredVersion { get; init; }
+
+        public bool PreferredVersionIsComplete { get; init; }
 
         public decimal? TotalCost { get; init; }
 
@@ -40,7 +40,7 @@ namespace CardCollector.ViewModels
             CardPrinting printing,
             IReadOnlyList<OrderEntryViewModel> entries,
             bool isPreferredVersion,
-            bool hasAnyPlaceholderForImage,
+            bool preferredVersionIsComplete,
             decimal? totalCost,
             int totalQuantity,
             int checkedOutQuantity = 0,
@@ -60,8 +60,8 @@ namespace CardCollector.ViewModels
             SetCode = printing.SetCode,
             SetName = printing.SetName,
             Entries = entries,
-            HasAnyPlaceholderForImage = hasAnyPlaceholderForImage,
             IsPreferredVersion = isPreferredVersion,
+            PreferredVersionIsComplete = preferredVersionIsComplete,
             TotalCost = totalCost,
             TotalQuantity = totalQuantity
         };

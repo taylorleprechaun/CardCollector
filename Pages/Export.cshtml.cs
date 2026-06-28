@@ -16,7 +16,7 @@ public sealed class ExportModel(ICardService cardService) : PageModel
     {
         var entries = await _cardService.GetEnrichedOwnedAsync();
         var sb = new StringBuilder();
-        sb.AppendLine("Card Name,Set Code,Set Name,Rarity,Condition,Edition,Acquisition Method,Quantity,Purchase Price,Market Price At Entry,Purchase Date,Is Placeholder,Date Added");
+        sb.AppendLine("Card Name,Set Code,Set Name,Rarity,Condition,Edition,Acquisition Method,Quantity,Purchase Price,Market Price At Entry,Purchase Date,Date Added");
 
         foreach (var e in entries)
         {
@@ -32,7 +32,6 @@ public sealed class ExportModel(ICardService cardService) : PageModel
                 e.PurchasePrice?.ToString("F2") ?? string.Empty,
                 e.MarketPriceAtEntry?.ToString("F2") ?? string.Empty,
                 e.PurchaseDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                e.IsPlaceholder ? "Yes" : "No",
                 e.DateCreated.ToString("yyyy-MM-dd")));
         }
 

@@ -54,7 +54,7 @@ namespace CardCollector.Services
         public async Task AddEntryAsync(
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
-            AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
+            AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
             string? rarityName = null)
         {
@@ -67,7 +67,6 @@ namespace CardCollector.Services
                 DateModified = DateTime.UtcNow,
                 Edition = edition,
                 ImageID = imageID,
-                IsPlaceholder = isPlaceholder,
                 MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
@@ -371,10 +370,10 @@ namespace CardCollector.Services
 
             var imageIDs = entries.Select(e => e.ImageID).Distinct().ToHashSet();
             var preferredVersions = await _preferredVersionRepository.GetByImageIDsAsync(imageIDs).ConfigureAwait(false);
-            var placeholderImageIDs = entries.Where(e => e.IsPlaceholder).Select(e => e.ImageID).ToHashSet();
             var checkedOutLookup = await _checkedOutRepository.GetCheckedOutLookupAsync().ConfigureAwait(false);
 
-            return entries
+            // Phase 1: build all groups; non-preferred groups default PreferredVersionIsComplete = false
+            var allGroups = entries
                 .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityCode))
                 .Select(g =>
                 {
@@ -395,12 +394,31 @@ namespace CardCollector.Services
                         printing: first,
                         entries: g.ToList(),
                         isPreferredVersion: isPreferred,
-                        hasAnyPlaceholderForImage: placeholderImageIDs.Contains(first.ImageID),
+                        preferredVersionIsComplete: false,
                         totalCost: totalCost,
                         totalQuantity: g.Sum(e => e.Quantity),
                         checkedOutQuantity: hasCheckout ? checkoutInfo.Quantity : 0,
                         checkedOutDate: hasCheckout ? checkoutInfo.Date : null);
                 })
+                .ToList();
+
+            // Phase 2: identify imageIDs where the preferred version group is Complete
+            var completePreferredImageIDs = allGroups
+                .Where(g => g.IsPreferredVersion && g.TotalQuantity >= CardPrinting.CompleteThreshold)
+                .Select(g => g.ImageID)
+                .ToHashSet();
+
+            // Phase 3: rebuild non-preferred groups with the correct PreferredVersionIsComplete flag
+            return allGroups
+                .Select(g => g.IsPreferredVersion ? g : CollectionGroupViewModel.From(
+                    printing: g,
+                    entries: g.Entries,
+                    isPreferredVersion: false,
+                    preferredVersionIsComplete: completePreferredImageIDs.Contains(g.ImageID),
+                    totalCost: g.TotalCost,
+                    totalQuantity: g.TotalQuantity,
+                    checkedOutQuantity: g.CheckedOutQuantity,
+                    checkedOutDate: g.CheckedOutDate))
                 .OrderBy(g => g.CardName)
                 .ThenBy(g => g.SetCode)
                 .ToList();

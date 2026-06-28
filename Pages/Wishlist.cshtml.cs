@@ -102,7 +102,7 @@ namespace CardCollector.Pages
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, Condition, Edition,
-                AcquisitionMethod, false,
+                AcquisitionMethod,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
 
             return RedirectToPage(BuildFilterRedirect());
@@ -113,7 +113,7 @@ namespace CardCollector.Pages
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, Condition, Edition,
-                AcquisitionMethod, false,
+                AcquisitionMethod,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
 
             return RedirectToPage(BuildFilterRedirect());

@@ -108,6 +108,10 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                             {
                                                 <span class="badge bg-warning text-dark">Incomplete &times; @collectionSummary.TotalQuantity</span>
                                             }
+                                            else if (completionStatus == CollectionCompletionStatus.Owned)
+                                            {
+                                                <span class="badge bg-info">Owned &times; @collectionSummary.TotalQuantity</span>
+                                            }
                                             else
                                             {
                                                 <span class="badge bg-secondary">Placeholder &times; @collectionSummary.TotalQuantity</span>

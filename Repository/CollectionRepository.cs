@@ -63,7 +63,7 @@ namespace CardCollector.Repository
 
             var ownedEntries = await _context.CollectionEntries
                 .Where(e => ids.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity, e.IsPlaceholder })
+                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -92,10 +92,8 @@ namespace CardCollector.Repository
                     continue;
                 }
 
-                var nonPlaceholderQty = preferredEntries.Where(e => !e.IsPlaceholder).Sum(e => e.Quantity);
-                var hasAnyPlaceholder = group.Any(e => e.IsPlaceholder);
-
-                result[group.Key] = nonPlaceholderQty >= CardPrinting.CompleteThreshold || (nonPlaceholderQty > 0 && hasAnyPlaceholder)
+                var qty = preferredEntries.Sum(e => e.Quantity);
+                result[group.Key] = qty >= CardPrinting.CompleteThreshold
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
             }

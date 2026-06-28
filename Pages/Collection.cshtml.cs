@@ -137,7 +137,7 @@ namespace CardCollector.Pages
             await _cardService.AddEntryAsync(
                 cardID, imageID, setCode, CollectionStatus.Owned,
                 quantity, condition, edition,
-                acquisitionMethod, false,
+                acquisitionMethod,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
             if (setAsPreferred)

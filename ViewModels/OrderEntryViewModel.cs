@@ -14,8 +14,6 @@ namespace CardCollector.ViewModels
 
         public int EntryID { get; init; }
 
-        public bool IsPlaceholder { get; init; }
-
         public decimal? MarketPriceAtEntry { get; init; }
 
         public DateTime? PurchaseDate { get; init; }
@@ -42,7 +40,6 @@ namespace CardCollector.ViewModels
             DateCreated = entry.DateCreated,
             Edition = entry.Edition,
             EntryID = entry.ID,
-            IsPlaceholder = entry.IsPlaceholder,
             MarketPriceAtEntry = entry.MarketPriceAtEntry,
             PurchaseDate = entry.PurchaseDate,
             PurchasePrice = entry.PurchasePrice,

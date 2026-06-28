@@ -15,7 +15,7 @@ namespace CardCollector.Services
         Task AddEntryAsync(
             int cardID, int imageID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
-            AcquisitionMethod? acquisitionMethod, bool isPlaceholder,
+            AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
             string? rarityName = null);
 

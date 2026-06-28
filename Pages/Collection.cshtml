@@ -95,6 +95,10 @@ else
                         {
                             <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
                         }
+                        else if (status == CollectionCompletionStatus.Owned)
+                        {
+                            <span class="badge bg-info flex-shrink-0">Owned</span>
+                        }
                         else
                         {
                             <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
@@ -153,10 +157,6 @@ else
                                 {
                                     <tr>
                                         <td>
-                                            @if (entry.IsPlaceholder)
-                                            {
-                                                <span class="badge bg-secondary me-1">Placeholder</span>
-                                            }
                                             @if (entry.Condition.HasValue)
                                             {
                                                 @entry.Condition.GetDisplayName()

@@ -29,9 +29,6 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public int ImageID { get; set; }
 
-        [BindProperty]
-        public bool IsPlaceholder { get; set; }
-
         public PreferredVersion? PreferredVersion { get; private set; }
 
         [BindProperty]
@@ -52,14 +49,25 @@ namespace CardCollector.Pages
         public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, string setCode, string rarityName)
         {
             if (status != CollectionStatus.Owned) return null;
+
             var isPreferred = PreferredVersion is not null
                 && PreferredVersion.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
                 && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
-            return !isPreferred
-                ? CollectionCompletionStatus.Placeholder
-                : totalQuantity >= CardPrinting.CompleteThreshold
+
+            if (isPreferred)
+                return totalQuantity >= CardPrinting.CompleteThreshold
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
+
+            if (PreferredVersion is not null
+                && CollectionEntriesBySetCode.TryGetValue(
+                    (PreferredVersion.SetCode, PreferredVersion.RarityName ?? string.Empty),
+                    out var preferredSummary)
+                && preferredSummary.Status == CollectionStatus.Owned
+                && preferredSummary.TotalQuantity >= CardPrinting.CompleteThreshold)
+                return CollectionCompletionStatus.Owned;
+
+            return CollectionCompletionStatus.Placeholder;
         }
 
         public string GetTCGDate(string setCode) =>
@@ -102,7 +110,7 @@ namespace CardCollector.Pages
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 quantity, condition, edition,
-                acquisitionMethod, IsPlaceholder,
+                acquisitionMethod,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
             if (setAsPreferred)
@@ -120,7 +128,7 @@ namespace CardCollector.Pages
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 quantity, condition, edition,
-                acquisitionMethod, IsPlaceholder,
+                acquisitionMethod,
                 purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
 
             if (setAsPreferred)
