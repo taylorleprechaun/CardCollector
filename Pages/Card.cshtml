@@ -66,11 +66,11 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                     <table class="table table-sm table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Set</th>
+                                <th class="d-none d-md-table-cell">Set</th>
                                 <th>Code</th>
                                 <th>Rarity</th>
                                 <th>Collection</th>
-                                <th>Preferred</th>
+                                <th class="d-none d-md-table-cell">Preferred</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -85,7 +85,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                             @foreach (var set in sortedSets)
                             {
                                 <tr>
-                                    <td>@set.Name</td>
+                                    <td class="d-none d-md-table-cell">@set.Name</td>
                                     <td><code>@set.Code</code></td>
                                     <td>@set.RarityName</td>
                                     <td>
@@ -118,7 +118,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                             }
                                         }
                                     </td>
-                                    <td class="text-nowrap">
+                                    <td class="text-nowrap d-none d-md-table-cell">
                                         @{
                                             var isPreferred = Model.PreferredVersion is not null
                                                 && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)

@@ -87,8 +87,8 @@ else
                             Card @SortIcon(WishlistSortBy.Name)
                         </a>
                     </th>
-                    <th>Set</th>
-                    <th>Rarity</th>
+                    <th class="d-none d-md-table-cell">Set</th>
+                    <th class="d-none d-md-table-cell">Rarity</th>
                     <th>Need</th>
                     <th></th>
                 </tr>
@@ -101,11 +101,11 @@ else
                             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
                         </td>
                         <td class="fw-semibold">@item.CardName</td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             <span class="d-block">@item.SetName</span>
                             <code class="text-muted small">@item.SetCode</code>
                         </td>
-                        <td>@item.RarityName</td>
+                        <td class="d-none d-md-table-cell">@item.RarityName</td>
                         <td>
                             @if (item.QuantityOwned > 0)
                             {

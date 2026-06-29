@@ -13,21 +13,29 @@
             <a class="navbar-brand fw-bold" href="/">Card Collector</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <div class="navbar-nav ms-3">
-                    <a class="nav-link" href="/">Dashboard</a>
-                    <a class="nav-link" href="/Browse">Browse</a>
-                    <a class="nav-link" href="/Collection">Collection</a>
-                    <a class="nav-link" href="/Discover">Discover</a>
-                    <a class="nav-link" href="/Wishlist">Wishlist</a>
-                    <a class="nav-link" href="/NewPrintings">New Printings</a>
-                    <a class="nav-link" href="/CheckedOut">Checked Out</a>
-                    <a class="nav-link" href="/Orders">Orders</a>
-                    <a class="nav-link" href="/Stats">Stats</a>
-                </div>
-                <div class="navbar-nav ms-auto">
-                    <form method="post" asp-page="/Logout">
-                        <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
-                    </form>
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <div class="navbar-nav me-auto ms-lg-3">
+                        <a class="nav-link" href="/">Dashboard</a>
+                        <a class="nav-link" href="/Browse">Browse</a>
+                        <a class="nav-link" href="/Collection">Collection</a>
+                        <a class="nav-link" href="/Discover">Discover</a>
+                        <a class="nav-link" href="/Wishlist">Wishlist</a>
+                        <a class="nav-link" href="/NewPrintings">New Printings</a>
+                        <a class="nav-link" href="/CheckedOut">Checked Out</a>
+                        <a class="nav-link" href="/Orders">Orders</a>
+                        <a class="nav-link" href="/Stats">Stats</a>
+                    </div>
+                    <div class="navbar-nav mt-2 mt-lg-0">
+                        <form method="post" asp-page="/Logout">
+                            <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
+                        </form>
+                    </div>
                 </div>
             }
         </div>
