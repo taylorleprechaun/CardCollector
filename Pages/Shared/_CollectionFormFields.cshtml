@@ -51,14 +51,11 @@
     <div class="col-12 col-sm-4">
         <label class="form-label d-flex align-items-center gap-1">
             Purchase Date
-            <button type="button" class="btn btn-sm btn-link p-0 text-secondary d-sm-none"
-                    onclick="document.getElementById('@(Model.Prefix)PurchaseDate').value = new Date().toLocaleDateString('en-CA')"
-                    title="Set to today">Today</button>
             <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
-                    onclick="document.getElementById('@(Model.Prefix)PurchaseDate').value = ''"
+                    onclick="document.getElementById('@(Model.Prefix)PurchaseDate')._flatpickr?.clear()"
                     title="Clear date">&times;</button>
         </label>
-        <input type="date" name="purchaseDate" id="@(Model.Prefix)PurchaseDate" class="form-control form-control-sm" />
+        <input type="date" name="purchaseDate" id="@(Model.Prefix)PurchaseDate" class="form-control form-control-sm cc-date-picker" />
     </div>
     <div class="col-12 col-sm-4">
         <label class="form-label">Purchase Price ($)</label>
