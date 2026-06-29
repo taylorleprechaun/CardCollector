@@ -21,6 +21,7 @@ Data/carddata.json.timestamp
 
 ## .NET secrets
 appsettings.Development.json
+appsettings-private.json
 
 ## OS
 .DS_Store

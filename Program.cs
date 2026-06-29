@@ -6,7 +6,26 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Configuration.AddJsonFile("appsettings-private.json", optional: true, reloadOnChange: true);
+
+builder.Services.AddAuthentication("CardCollectorCookie")
+    .AddCookie("CardCollectorCookie", options =>
+    {
+        options.LoginPath = "/Login";
+        options.Cookie.Name = builder.Configuration["Auth:CookieName"];
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.ExpireTimeSpan = TimeSpan.FromHours(
+            builder.Configuration.GetValue<int>("Auth:CookieExpirationHours"));
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/");
+    options.Conventions.AllowAnonymousToPage("/Login");
+});
 builder.Services.AddHttpClient("YGOProDeck", client =>
 {
     client.BaseAddress = new Uri("https://db.ygoprodeck.com/");
@@ -39,6 +58,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapRazorPages();
 
 app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, IPricingService pricingService) =>
