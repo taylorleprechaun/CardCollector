@@ -14,19 +14,19 @@ namespace CardCollector.Repository
     {
         private const string CardInfoApiPath = "api/v7/cardinfo.php";
 
-        private readonly IReadOnlyList<Card> _browseableCards;
+        private IReadOnlyList<Card> _browseableCards = default!;
         private readonly int _cacheTtlDays;
-        private readonly IReadOnlyDictionary<int, Card> _cardIndex;
-        private readonly IReadOnlyList<Card> _cards;
+        private IReadOnlyDictionary<int, Card> _cardIndex = default!;
+        private IReadOnlyList<Card> _cards = default!;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly int _imageCacheTtlDays;
         private readonly ILogger<CardDataRepository> _logger;
-        private readonly IReadOnlyDictionary<string, string> _setNamesByCode;
-        private readonly IReadOnlyDictionary<string, string> _setPrefixByName;
+        private IReadOnlyDictionary<string, string> _setNamesByCode = default!;
+        private IReadOnlyDictionary<string, string> _setPrefixByName = default!;
         private readonly string _yamlYugiUrl;
 
-        public IReadOnlyList<string> DistinctRarityNames { get; }
-        public IReadOnlyList<string> DistinctSetNames { get; }
+        public IReadOnlyList<string> DistinctRarityNames { get; private set; } = default!;
+        public IReadOnlyList<string> DistinctSetNames { get; private set; } = default!;
 
         public CardDataRepository(ILogger<CardDataRepository> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
@@ -37,38 +37,7 @@ namespace CardCollector.Repository
             _yamlYugiUrl = config.GetValue<string>("CardDataSettings:YamlYugiUrl")
                 ?? "https://dawnbrandbots.github.io/yaml-yugi/cards.yaml";
 
-            var rawCards = LoadCards();
-            var imagesByCardID = LoadImages();
-            AttachImages(rawCards, imagesByCardID);
-
-            _cards = rawCards;
-            _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
-            _cardIndex = rawCards.ToDictionary(c => c.ID);
-
-            var (setNamesByCode, setPrefixByName) = BuildSetNameIndex(rawCards);
-            _setNamesByCode = setNamesByCode;
-            _setPrefixByName = setPrefixByName;
-
-            var browseablePrefixes = new HashSet<string>(
-                _browseableCards
-                    .SelectMany(c => c.CardSets ?? [])
-                    .Where(s => !string.IsNullOrEmpty(s.Code))
-                    .Select(s => GetSetPrefix(s.Code!)),
-                StringComparer.OrdinalIgnoreCase);
-
-            DistinctRarityNames = _browseableCards
-                .SelectMany(c => c.CardSets ?? [])
-                .Select(s => s.RarityName)
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Select(r => r!)
-                .Distinct()
-                .OrderBy(r => r)
-                .ToList();
-            DistinctSetNames = _setPrefixByName
-                .Where(kvp => browseablePrefixes.Contains(kvp.Value))
-                .Select(kvp => kvp.Key)
-                .OrderBy(n => n)
-                .ToList();
+            Initialize(LoadCards(), LoadImages());
         }
 
         public IEnumerable<Card> GetAllCards() => _cards;
@@ -78,10 +47,19 @@ namespace CardCollector.Repository
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
 
+        public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
+
         public string? GetSetPrefixByName(string name) =>
             _setPrefixByName.TryGetValue(name, out var prefix) ? prefix : null;
 
-        public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
+        public async Task RefreshAsync()
+        {
+            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
+            TryDeleteFile(Path.Combine(cacheDir, "carddata.json.timestamp"));
+            TryDeleteFile(Path.Combine(cacheDir, "cardcache.json.timestamp"));
+
+            await Task.Run(() => Initialize(LoadCards(), LoadImages())).ConfigureAwait(false);
+        }
 
         private static void AttachImages(IReadOnlyList<Card> cards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
         {
@@ -127,12 +105,6 @@ namespace CardCollector.Repository
                 prefixByName.TryAdd(name, prefix);
 
             return (namesByCode, prefixByName);
-        }
-
-        private static string GetSetPrefix(string code)
-        {
-            var hyphen = code.IndexOf('-');
-            return hyphen > 0 ? code[..hyphen] : code;
         }
 
         private static IReadOnlyList<Set> BuildSets(YamlCard y)
@@ -238,6 +210,47 @@ namespace CardCollector.Repository
                 _logger.LogError(ex, "Failed to fetch image cache from YGOProDeck API");
                 return null;
             }
+        }
+
+        private static string GetSetPrefix(string code)
+        {
+            var hyphen = code.IndexOf('-');
+            return hyphen > 0 ? code[..hyphen] : code;
+        }
+
+        private void Initialize(IReadOnlyList<Card> rawCards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
+        {
+            AttachImages(rawCards, imagesByCardID);
+
+            _cards = rawCards;
+            _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
+            _cardIndex = rawCards.ToDictionary(c => c.ID);
+
+            var (setNamesByCode, setPrefixByName) = BuildSetNameIndex(rawCards);
+            _setNamesByCode = setNamesByCode;
+            _setPrefixByName = setPrefixByName;
+
+            var browseablePrefixes = new HashSet<string>(
+                _browseableCards
+                    .SelectMany(c => c.CardSets ?? [])
+                    .Where(s => !string.IsNullOrEmpty(s.Code))
+                    .Select(s => GetSetPrefix(s.Code!)),
+                StringComparer.OrdinalIgnoreCase);
+
+            DistinctRarityNames = _browseableCards
+                .SelectMany(c => c.CardSets ?? [])
+                .Select(s => s.RarityName)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Select(r => r!)
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList();
+
+            DistinctSetNames = _setPrefixByName
+                .Where(kvp => browseablePrefixes.Contains(kvp.Value))
+                .Select(kvp => kvp.Key)
+                .OrderBy(n => n)
+                .ToList();
         }
 
         private static bool IsCacheFresh(string cachePath, string timestampPath, int ttlDays)
@@ -386,6 +399,11 @@ namespace CardCollector.Repository
                 parser.MoveNext();
             if (parser.Current is DocumentEnd)
                 parser.MoveNext();
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try { File.Delete(path); } catch { /* ignore */ }
         }
 
         private sealed class ImageCacheRoot

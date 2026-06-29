@@ -196,6 +196,23 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Card Data</span>
+        <button id="refreshCardDataBtn" class="btn btn-sm btn-outline-secondary">
+            Redownload Card Data
+        </button>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-2">Downloads the latest card list from yaml-yugi and images from YGOProDeck, updates the local cache and in-memory data immediately.</p>
+        <div id="cardDataStatus" style="display:none">
+            <small id="cardDataProgress" class="text-muted">Downloading&hellip;</small>
+            <div id="cardDataResult" class="alert alert-success mb-0 mt-2" style="display:none"></div>
+            <div id="cardDataError" class="alert alert-danger mb-0 mt-2" style="display:none"></div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>

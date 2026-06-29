@@ -424,6 +424,46 @@ function smartRefresh() {
     });
 }
 
+function refreshCardData() {
+    if (!confirm('This will redownload all card data from yaml-yugi and YGOProDeck. This may take a minute. Continue?')) return;
+
+    const btn = document.getElementById('refreshCardDataBtn');
+    const statusDiv = document.getElementById('cardDataStatus');
+    const progressEl = document.getElementById('cardDataProgress');
+    const resultEl = document.getElementById('cardDataResult');
+    const errorEl = document.getElementById('cardDataError');
+
+    btn.disabled = true;
+    statusDiv.style.display = '';
+    progressEl.style.display = '';
+    progressEl.textContent = 'Downloading card data…';
+    resultEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    const source = new EventSource('/api/admin/refresh-card-data/stream');
+    let completed = false;
+
+    source.addEventListener('complete', e => {
+        completed = true;
+        source.close();
+        const data = JSON.parse(e.data);
+        progressEl.style.display = 'none';
+        resultEl.textContent = `Card data updated: ${data.cardCount.toLocaleString()} cards loaded.`;
+        resultEl.style.display = '';
+        btn.disabled = false;
+    });
+
+    source.addEventListener('error', () => {
+        source.close();
+        if (completed) return;
+        progressEl.style.display = 'none';
+        errorEl.textContent = 'Failed to download card data. Check server logs.';
+        errorEl.style.display = '';
+        btn.disabled = false;
+    });
+}
+
 document.getElementById('calcValueBtn')?.addEventListener('click', calculateValue);
 document.getElementById('smartRefreshBtn')?.addEventListener('click', smartRefresh);
+document.getElementById('refreshCardDataBtn')?.addEventListener('click', refreshCardData);
 

@@ -148,4 +148,22 @@ app.MapGet("/api/stats/card-price-history", async (string cardName, ICardService
     return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
 });
 
+app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository cardDataRepository, HttpContext ctx, CancellationToken ct) =>
+{
+    ctx.Response.ContentType = "text/event-stream";
+    ctx.Response.Headers.CacheControl = "no-cache";
+    ctx.Response.Headers.Connection = "keep-alive";
+
+    async Task Send(string eventName, string data)
+    {
+        await ctx.Response.WriteAsync($"event: {eventName}\ndata: {data}\n\n", ct);
+        await ctx.Response.Body.FlushAsync(ct);
+    }
+
+    await Send("start", "{}");
+    await cardDataRepository.RefreshAsync();
+    var count = cardDataRepository.GetBrowseableCards().Count();
+    await Send("complete", JsonSerializer.Serialize(new { cardCount = count }));
+});
+
 app.Run();
