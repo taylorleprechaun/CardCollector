@@ -398,6 +398,18 @@ function smartRefresh() {
         if (data.topCards && data.topCards.length > 0)
             updateTopCards(data.topCards);
 
+        const today = new Date().toISOString().slice(0, 10);
+        const idx = historyDates.indexOf(today);
+        if (idx >= 0) {
+            historyValues[idx] = data.totalValue;
+            historyCardCounts[idx] = data.cardCount;
+        } else {
+            historyDates.push(today);
+            historyValues.push(data.totalValue);
+            historyCardCounts.push(data.cardCount);
+        }
+        buildValueChart(historyDates, historyValues, historyCardCounts);
+
         calcBtn.disabled = false;
         smartBtn.disabled = false;
     });

@@ -315,6 +315,14 @@ namespace CardCollector.Services
 
             await _collectionEntryValueRepository.UpsertSelectiveSnapshotsAsync(refreshedSnapshots).ConfigureAwait(false);
 
+            await _collectionValueRepository.UpsertSnapshotAsync(new CollectionValueSnapshot
+            {
+                CardCount = entries.Sum(e => e.Quantity),
+                DateCreated = DateTime.UtcNow,
+                SnapshotDate = today,
+                TotalValue = totalValue
+            }).ConfigureAwait(false);
+
             var allSnapshots = latestSnapshots
                 .Where(s => allEntryValues.ContainsKey(s.CollectionEntryID))
                 .Select(s => new CollectionEntryValueSnapshot
@@ -405,6 +413,9 @@ namespace CardCollector.Services
 
             var snapshots = (await _collectionEntryValueRepository.GetHistoryByCardNameAsync(cardName).ConfigureAwait(false)).ToList();
 
+            var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
+            var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
+
             return snapshots
                 .GroupBy(s => (s.SetCode, s.RarityName))
                 .Select(g =>
@@ -414,7 +425,12 @@ namespace CardCollector.Services
                     {
                         Label = $"{g.Key.SetCode} — {g.Key.RarityName}",
                         Dates = byDate.Select(dg => dg.Key).ToList(),
-                        Values = byDate.Select(dg => dg.Sum(s => s.MarketValue)).ToList()
+                        Values = byDate.Select(dg =>
+                        {
+                            var totalValue = dg.Sum(s => s.MarketValue);
+                            var totalQty = dg.Sum(s => quantityByEntryID.TryGetValue(s.CollectionEntryID, out var q) && q > 0 ? q : 1);
+                            return totalValue / totalQty;
+                        }).ToList()
                     };
                 })
                 .OrderBy(s => s.Label)
