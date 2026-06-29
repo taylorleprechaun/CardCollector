@@ -72,7 +72,7 @@ else
 
             <div class="list-group-item p-0">
                 <!-- Toggle row -->
-                <div class="d-flex align-items-center">
+                <div class="d-flex flex-column flex-md-row align-items-md-center">
                     <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
                          role="button"
                          data-bs-toggle="collapse"
@@ -105,7 +105,7 @@ else
                         }
                         <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
                     </div>
-                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 pe-3">
+                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="cardID" value="@group.CardID" />
                         <input type="hidden" name="imageID" value="@group.ImageID" />
@@ -265,7 +265,7 @@ else
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=Edit&@filterParams">
                 @Html.AntiForgeryToken()
@@ -288,7 +288,7 @@ else
 
 <!-- Add Purchase Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=AddPurchase&@filterParams">
                 @Html.AntiForgeryToken()
