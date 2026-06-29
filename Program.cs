@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.Repository;
 using CardCollector.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -56,6 +57,10 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
