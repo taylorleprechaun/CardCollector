@@ -126,7 +126,7 @@ else {
 # Step 4: Sync database and cache files
 Write-Step "Step 4: Sync Data Files"
 if (-not $SyncData) {
-    Write-Skip "Data sync skipped (pass -SyncData to overwrite server database — use with caution)"
+    Write-Skip "Data sync skipped (pass -SyncData to overwrite server database - use with caution)"
 }
 else {
     Write-Host "  [WARN] -SyncData will overwrite the live server database with local data." -ForegroundColor Yellow
