@@ -1,6 +1,7 @@
 ## Build output
 bin/
 obj/
+publish/
 
 ## Visual Studio
 .vs/
@@ -21,6 +22,7 @@ Data/carddata.json.timestamp
 
 ## .NET secrets
 appsettings.Development.json
+appsettings-private.json
 
 ## OS
 .DS_Store

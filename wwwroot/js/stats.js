@@ -343,14 +343,20 @@ async function loadCardPriceHistory() {
     }
 }
 
-if (typeof trackedCardImageMap !== 'undefined') {
-    const dl = document.getElementById('cardHistoryList');
-    if (dl) Object.keys(trackedCardImageMap).forEach(n => {
-        const opt = document.createElement('option');
-        opt.value = n;
-        dl.appendChild(opt);
+(function () {
+    const cardNames = typeof trackedCardImageMap !== 'undefined' ? Object.keys(trackedCardImageMap) : [];
+    const input = document.getElementById('cardHistoryInput');
+    const dropdown = document.getElementById('cardHistoryDropdown');
+    if (!input || !dropdown || !cardNames.length) return;
+
+    const typeahead = buildTypeahead(input, dropdown, loadCardPriceHistory, loadCardPriceHistory);
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        typeahead.show(cardNames.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 20));
     });
-}
+})();
 
 function smartRefresh() {
     const calcBtn = document.getElementById('calcValueBtn');
@@ -398,6 +404,18 @@ function smartRefresh() {
         if (data.topCards && data.topCards.length > 0)
             updateTopCards(data.topCards);
 
+        const today = new Date().toISOString().slice(0, 10);
+        const idx = historyDates.indexOf(today);
+        if (idx >= 0) {
+            historyValues[idx] = data.totalValue;
+            historyCardCounts[idx] = data.cardCount;
+        } else {
+            historyDates.push(today);
+            historyValues.push(data.totalValue);
+            historyCardCounts.push(data.cardCount);
+        }
+        buildValueChart(historyDates, historyValues, historyCardCounts);
+
         calcBtn.disabled = false;
         smartBtn.disabled = false;
     });
@@ -412,6 +430,46 @@ function smartRefresh() {
     });
 }
 
+function refreshCardData() {
+    if (!confirm('This will redownload all card data from yaml-yugi and YGOProDeck. This may take a minute. Continue?')) return;
+
+    const btn = document.getElementById('refreshCardDataBtn');
+    const statusDiv = document.getElementById('cardDataStatus');
+    const progressEl = document.getElementById('cardDataProgress');
+    const resultEl = document.getElementById('cardDataResult');
+    const errorEl = document.getElementById('cardDataError');
+
+    btn.disabled = true;
+    statusDiv.style.display = '';
+    progressEl.style.display = '';
+    progressEl.textContent = 'Downloading card data…';
+    resultEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    const source = new EventSource('/api/admin/refresh-card-data/stream');
+    let completed = false;
+
+    source.addEventListener('complete', e => {
+        completed = true;
+        source.close();
+        const data = JSON.parse(e.data);
+        progressEl.style.display = 'none';
+        resultEl.textContent = `Card data updated: ${data.cardCount.toLocaleString()} cards loaded.`;
+        resultEl.style.display = '';
+        btn.disabled = false;
+    });
+
+    source.addEventListener('error', () => {
+        source.close();
+        if (completed) return;
+        progressEl.style.display = 'none';
+        errorEl.textContent = 'Failed to download card data. Check server logs.';
+        errorEl.style.display = '';
+        btn.disabled = false;
+    });
+}
+
 document.getElementById('calcValueBtn')?.addEventListener('click', calculateValue);
 document.getElementById('smartRefreshBtn')?.addEventListener('click', smartRefresh);
+document.getElementById('refreshCardDataBtn')?.addEventListener('click', refreshCardData);
 

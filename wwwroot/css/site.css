@@ -1,2 +1,15 @@
 .chevron { transition: transform 0.2s ease; display: inline-block; font-size: 0.75rem; }
 .list-group-toggle:not(.collapsed) .chevron { transform: rotate(90deg); }
+
+.flatpickr-today-btn {
+    display: block;
+    width: calc(100% - 16px);
+    margin: 6px 8px 8px;
+    padding: 4px 0;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.flatpickr-today-btn:hover { background: #e9ecef; }

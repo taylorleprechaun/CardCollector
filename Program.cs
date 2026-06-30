@@ -1,12 +1,32 @@
 using CardCollector.Data;
 using CardCollector.Repository;
 using CardCollector.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Configuration.AddJsonFile("appsettings-private.json", optional: true, reloadOnChange: true);
+
+builder.Services.AddAuthentication("CardCollectorCookie")
+    .AddCookie("CardCollectorCookie", options =>
+    {
+        options.LoginPath = "/Login";
+        options.Cookie.Name = builder.Configuration["Auth:CookieName"];
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.ExpireTimeSpan = TimeSpan.FromHours(
+            builder.Configuration.GetValue<int>("Auth:CookieExpirationHours"));
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/");
+    options.Conventions.AllowAnonymousToPage("/Login");
+});
 builder.Services.AddHttpClient("YGOProDeck", client =>
 {
     client.BaseAddress = new Uri("https://db.ygoprodeck.com/");
@@ -37,8 +57,14 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapRazorPages();
 
 app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, IPricingService pricingService) =>
@@ -120,6 +146,24 @@ app.MapGet("/api/stats/card-price-history", async (string cardName, ICardService
         return Results.BadRequest("cardName is required.");
     var history = await cardService.GetCardPriceHistoryAsync(cardName);
     return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
+});
+
+app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository cardDataRepository, HttpContext ctx, CancellationToken ct) =>
+{
+    ctx.Response.ContentType = "text/event-stream";
+    ctx.Response.Headers.CacheControl = "no-cache";
+    ctx.Response.Headers.Connection = "keep-alive";
+
+    async Task Send(string eventName, string data)
+    {
+        await ctx.Response.WriteAsync($"event: {eventName}\ndata: {data}\n\n", ct);
+        await ctx.Response.Body.FlushAsync(ct);
+    }
+
+    await Send("start", "{}");
+    await cardDataRepository.RefreshAsync();
+    var count = cardDataRepository.GetBrowseableCards().Count();
+    await Send("complete", JsonSerializer.Serialize(new { cardCount = count }));
 });
 
 app.Run();

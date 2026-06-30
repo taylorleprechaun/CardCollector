@@ -27,13 +27,13 @@ else
                     <th>Card</th>
                     <th>Set</th>
                     <th>Rarity</th>
-                    <th>Condition</th>
-                    <th>Edition</th>
-                    <th>Acquisition</th>
-                    <th>Purchase Date</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Ordered</th>
+                    <th class="d-none d-md-table-cell">Condition</th>
+                    <th class="d-none d-md-table-cell">Edition</th>
+                    <th class="d-none d-md-table-cell">Acquisition</th>
+                    <th class="d-none d-md-table-cell">Purchase Date</th>
+                    <th class="d-none d-md-table-cell">Qty</th>
+                    <th class="d-none d-md-table-cell">Price</th>
+                    <th class="d-none d-md-table-cell">Ordered</th>
                     <th></th>
                 </tr>
             </thead>
@@ -57,7 +57,7 @@ else
                             <code class="text-muted small">@order.SetCode</code>
                         </td>
                         <td>@order.RarityCode</td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             @if (order.Condition.HasValue)
                             {
                                 @order.Condition.GetDisplayName()
@@ -67,7 +67,7 @@ else
                                 <span class="text-muted">&mdash;</span>
                             }
                         </td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             @if (order.Edition.HasValue)
                             {
                                 @order.Edition.GetDisplayName()
@@ -77,7 +77,7 @@ else
                                 <span class="text-muted">&mdash;</span>
                             }
                         </td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             @if (order.AcquisitionMethod.HasValue)
                             {
                                 @order.AcquisitionMethod.GetDisplayName()
@@ -87,7 +87,7 @@ else
                                 <span class="text-muted">&mdash;</span>
                             }
                         </td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             @if (order.PurchaseDate.HasValue)
                             {
                                 @order.PurchaseDate.Value.ToString("MMM d, yyyy")
@@ -97,8 +97,8 @@ else
                                 <span class="text-muted">&mdash;</span>
                             }
                         </td>
-                        <td>×@order.Quantity</td>
-                        <td>
+                        <td class="d-none d-md-table-cell">×@order.Quantity</td>
+                        <td class="d-none d-md-table-cell">
                             @if (order.PurchasePrice.HasValue)
                             {
                                 <span>$@order.PurchasePrice.Value.ToString("F2")</span>
@@ -108,7 +108,7 @@ else
                                 <span class="text-muted">&mdash;</span>
                             }
                         </td>
-                        <td class="text-muted small">@order.DateCreated.ToString("MMM d, yyyy")</td>
+                        <td class="text-muted small d-none d-md-table-cell">@order.DateCreated.ToString("MMM d, yyyy")</td>
                         <td class="text-nowrap">
                             <button type="button" class="btn btn-sm btn-success"
                                     data-entry-id="@order.EntryID"
@@ -131,7 +131,7 @@ else
 
 <!-- Mark Owned Modal -->
 <div class="modal fade" id="markOwnedModal" tabindex="-1" aria-labelledby="markOwnedModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" asp-page-handler="MarkOwned">
                 <div class="modal-header">
@@ -155,5 +155,5 @@ else
 </div>
 
 @section Scripts {
-    <script src="~/js/orders.js"></script>
+    <script src="~/js/orders.js" asp-append-version="true"></script>
 }

@@ -72,7 +72,7 @@ else
 
             <div class="list-group-item p-0">
                 <!-- Toggle row -->
-                <div class="d-flex align-items-center">
+                <div class="d-flex flex-column flex-md-row align-items-md-center">
                     <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
                          role="button"
                          data-bs-toggle="collapse"
@@ -105,7 +105,7 @@ else
                         }
                         <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
                     </div>
-                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 pe-3">
+                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="cardID" value="@group.CardID" />
                         <input type="hidden" name="imageID" value="@group.ImageID" />
@@ -139,16 +139,17 @@ else
                 <!-- Expanded entries -->
                 <div class="collapse border-top" id="@collapseID">
                     <div class="p-3 ps-4">
+                        <div class="table-responsive">
                         <table class="table table-sm mb-3">
                             <thead class="table-light">
                                 <tr>
                                     <th>Condition</th>
-                                    <th>Edition</th>
-                                    <th>Acquisition</th>
-                                    <th>Purchase Date</th>
+                                    <th class="d-none d-md-table-cell">Edition</th>
+                                    <th class="d-none d-md-table-cell">Acquisition</th>
+                                    <th class="d-none d-md-table-cell">Purchase Date</th>
                                     <th>Qty</th>
                                     <th>Purchase Price</th>
-                                    <th>Market Price</th>
+                                    <th class="d-none d-md-table-cell">Market Price</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -166,7 +167,7 @@ else
                                                 <span class="text-muted">&mdash;</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="d-none d-md-table-cell">
                                             @if (entry.Edition.HasValue)
                                             {
                                                 @entry.Edition.GetDisplayName()
@@ -176,7 +177,7 @@ else
                                                 <span class="text-muted">&mdash;</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="d-none d-md-table-cell">
                                             @if (entry.AcquisitionMethod.HasValue)
                                             {
                                                 @entry.AcquisitionMethod.GetDisplayName()
@@ -186,7 +187,7 @@ else
                                                 <span class="text-muted">&mdash;</span>
                                             }
                                         </td>
-                                        <td class="text-muted small">
+                                        <td class="text-muted small d-none d-md-table-cell">
                                             @if (entry.PurchaseDate.HasValue)
                                             {
                                                 @entry.PurchaseDate.Value.ToString("MMM d, yyyy")
@@ -207,7 +208,7 @@ else
                                                 <span class="text-muted">&mdash;</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="d-none d-md-table-cell">
                                             @if (entry.MarketPriceAtEntry.HasValue)
                                             {
                                                 <span>$@entry.MarketPriceAtEntry.Value.ToString("F2")</span>
@@ -242,6 +243,7 @@ else
                                 }
                             </tbody>
                         </table>
+                        </div>
                         <button type="button" class="btn btn-sm btn-outline-primary"
                                 data-card-id="@group.CardID"
                                 data-image-id="@group.ImageID"
@@ -263,7 +265,7 @@ else
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=Edit&@filterParams">
                 @Html.AntiForgeryToken()
@@ -286,7 +288,7 @@ else
 
 <!-- Add Purchase Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=AddPurchase&@filterParams">
                 @Html.AntiForgeryToken()
@@ -311,5 +313,5 @@ else
 </div>
 
 @section Scripts {
-    <script src="~/js/collection.js"></script>
+    <script src="~/js/collection.js" asp-append-version="true"></script>
 }

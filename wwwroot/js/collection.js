@@ -11,7 +11,7 @@ function openEditModal(btn) {
     setSelect('editCondition', ds.condition);
     setSelect('editEdition', ds.edition);
     setSelect('editAcquisition', ds.acquisitionMethod);
-    document.getElementById('editPurchaseDate').value = ds.purchaseDate;
+    setPickerDate('editPurchaseDate', ds.purchaseDate);
     document.getElementById('editPurchasePrice').value = ds.purchasePrice;
     document.getElementById('editMarketPrice').value = ds.marketPrice;
     new bootstrap.Modal(document.getElementById('editModal')).show();
@@ -30,7 +30,7 @@ async function openAddModal(btn) {
     setSelect('atcCondition', CardDefaults.Condition);
     setSelect('atcEdition', CardDefaults.Edition);
     setSelect('atcAcquisition', CardDefaults.Acquisition);
-    document.getElementById('atcPurchaseDate').value = btn.dataset.tcgDate || '';
+    setPickerDate('atcPurchaseDate', btn.dataset.tcgDate || null);
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
 

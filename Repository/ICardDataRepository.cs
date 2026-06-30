@@ -41,5 +41,11 @@ namespace CardCollector.Repository
         /// Returns a dictionary mapping full card code (e.g. "LOB-EN001") to canonical set name (e.g. "Legend of Blue Eyes White Dragon").
         /// </summary>
         IReadOnlyDictionary<string, string> GetSetNamesByCode();
+
+        /// <summary>
+        /// Forces a redownload of card data from yaml-yugi and images from YGOProDeck,
+        /// then replaces the in-memory state immediately.
+        /// </summary>
+        Task RefreshAsync();
     }
 }

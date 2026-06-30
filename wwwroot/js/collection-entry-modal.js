@@ -18,9 +18,7 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     document.getElementById('atcEdition').value = CardDefaults.Edition;
     document.getElementById('atcAcquisition').value = CardDefaults.Acquisition;
     document.getElementById('atcQuantity').value = 1;
-    document.getElementById('atcPurchaseDate').value = isOrder
-        ? new Date().toISOString().split('T')[0]
-        : (tcgDate || '');
+    setPickerDate('atcPurchaseDate', isOrder ? new Date() : (tcgDate || null));
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
 

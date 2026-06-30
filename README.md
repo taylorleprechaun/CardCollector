@@ -22,6 +22,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **ORM**: Entity Framework Core 9 + SQLite
 - **JSON parsing**: Newtonsoft.Json 13
 - **UI**: Bootstrap 5 + Chart.js 4 (CDN)
+- **Auth**: BCrypt.Net-Next (cookie authentication)
 
 ## Getting Started
 
@@ -33,7 +34,20 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 1. Clone the repository.
 
-2. Run the app:
+2. Create `appsettings-private.json` in the project root (this file is gitignored):
+
+   ```json
+   {
+     "Auth": {
+       "Username": "your-username",
+       "PasswordHash": "your-bcrypt-hash"
+     }
+   }
+   ```
+
+   Generate a BCrypt hash of your chosen password (cost factor 11) and paste it as the `PasswordHash` value.
+
+3. Run the app:
 
    ```bash
    dotnet run --project CardCollector
@@ -41,7 +55,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
    On first run the app fetches card data from yaml-yugi and card images from the YGO Pro Deck API, caching both locally. The SQLite database (`Data/collection.db`) is created automatically.
 
-3. Open `https://localhost:5001` in your browser.
+4. Open `https://localhost:5001` in your browser and log in.
 
 ## Project Structure
 
