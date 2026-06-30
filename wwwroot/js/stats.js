@@ -343,14 +343,20 @@ async function loadCardPriceHistory() {
     }
 }
 
-if (typeof trackedCardImageMap !== 'undefined') {
-    const dl = document.getElementById('cardHistoryList');
-    if (dl) Object.keys(trackedCardImageMap).forEach(n => {
-        const opt = document.createElement('option');
-        opt.value = n;
-        dl.appendChild(opt);
+(function () {
+    const cardNames = typeof trackedCardImageMap !== 'undefined' ? Object.keys(trackedCardImageMap) : [];
+    const input = document.getElementById('cardHistoryInput');
+    const dropdown = document.getElementById('cardHistoryDropdown');
+    if (!input || !dropdown || !cardNames.length) return;
+
+    const typeahead = buildTypeahead(input, dropdown, loadCardPriceHistory, loadCardPriceHistory);
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        typeahead.show(cardNames.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 20));
     });
-}
+})();
 
 function smartRefresh() {
     const calcBtn = document.getElementById('calcValueBtn');

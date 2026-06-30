@@ -30,30 +30,101 @@ document.querySelectorAll('.cc-date-picker').forEach(function (el) {
     });
 });
 
+function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
+    let highlighted = -1;
+
+    function items() { return Array.from(dropdown.querySelectorAll('[data-ti]')); }
+
+    function setHighlight(idx) {
+        items().forEach((el, i) => el.style.backgroundColor = i === idx ? '#e9ecef' : '');
+        const el = items()[idx];
+        if (el) el.scrollIntoView({ block: 'nearest' });
+        highlighted = idx;
+    }
+
+    function show(names) {
+        dropdown.innerHTML = '';
+        highlighted = -1;
+        if (!names.length) { dropdown.style.display = 'none'; return; }
+        names.forEach(name => {
+            const el = document.createElement('div');
+            el.setAttribute('data-ti', '');
+            el.className = 'px-3 py-2';
+            el.style.cssText = 'cursor:pointer;font-size:.9rem';
+            el.textContent = name;
+            el.addEventListener('mouseover', () => setHighlight(items().indexOf(el)));
+            el.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                input.value = name;
+                dropdown.style.display = 'none';
+                if (onSelect) onSelect(name);
+            });
+            dropdown.appendChild(el);
+        });
+        dropdown.style.display = '';
+    }
+
+    input.addEventListener('keydown', e => {
+        const its = items();
+        if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight(Math.min(highlighted + 1, its.length - 1)); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight(Math.max(highlighted - 1, -1)); }
+        else if (e.key === 'Enter') {
+            if (highlighted >= 0 && its[highlighted]) {
+                e.preventDefault();
+                input.value = its[highlighted].textContent;
+                dropdown.style.display = 'none';
+                if (onSelect) onSelect(input.value);
+            } else {
+                dropdown.style.display = 'none';
+                if (onEnterWithoutSelection) onEnterWithoutSelection();
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; highlighted = -1; }, 150));
+
+    return { show };
+}
+
 (function () {
     'use strict';
     const input = document.querySelector('input[data-autocomplete-url]');
     if (!input) return;
 
     const url = input.dataset.autocompleteUrl;
-    const datalist = document.getElementById('card-suggestions');
-    if (!datalist) return;
+    const dropdown = document.getElementById('card-suggestions-dropdown');
+    if (!dropdown) return;
+
+    const typeahead = buildTypeahead(input, dropdown, null);
 
     let debounceTimer;
     input.addEventListener('input', function () {
         clearTimeout(debounceTimer);
         const q = this.value.trim();
-        if (q.length < 2) { datalist.innerHTML = ''; return; }
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
         debounceTimer = setTimeout(function () {
             fetch(url + '&q=' + encodeURIComponent(q))
                 .then(function (r) { return r.json(); })
-                .then(function (names) {
-                    datalist.innerHTML = names
-                        .map(function (n) {
-                            return '<option value="' + n.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">';
-                        })
-                        .join('');
-                });
+                .then(function (names) { typeahead.show(names); });
         }, 300);
+    });
+})();
+
+(function () {
+    const setInput = document.getElementById('filter-set-input');
+    const setDropdown = document.getElementById('set-filter-dropdown');
+    if (!setInput || !setDropdown) return;
+
+    const setNames = Array.from(document.querySelectorAll('#set-filter-datalist option')).map(o => o.value);
+    if (!setNames.length) return;
+
+    const typeahead = buildTypeahead(setInput, setDropdown, null);
+
+    setInput.addEventListener('input', () => {
+        const q = setInput.value.trim().toLowerCase();
+        if (q.length < 2) { setDropdown.style.display = 'none'; return; }
+        typeahead.show(setNames.filter(n => n.toLowerCase().includes(q)).slice(0, 20));
     });
 })();
