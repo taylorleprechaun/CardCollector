@@ -9,6 +9,13 @@
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+        var isDashboard = currentPage == "/Index";
+        var isCatalog = currentPage is "/Browse" or "/Discover" or "/NewPrintings";
+        var isCollection = currentPage is "/Collection" or "/Wishlist" or "/Orders" or "/CheckedOut";
+        var isStats = currentPage == "/Stats";
+    }
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">Card Collector</a>
@@ -22,15 +29,32 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <div class="navbar-nav me-auto ms-lg-3">
-                        <a class="nav-link" href="/">Dashboard</a>
-                        <a class="nav-link" href="/Browse">Browse</a>
-                        <a class="nav-link" href="/Collection">Collection</a>
-                        <a class="nav-link" href="/Discover">Discover</a>
-                        <a class="nav-link" href="/Wishlist">Wishlist</a>
-                        <a class="nav-link" href="/NewPrintings">New Printings</a>
-                        <a class="nav-link" href="/CheckedOut">Checked Out</a>
-                        <a class="nav-link" href="/Orders">Orders</a>
-                        <a class="nav-link" href="/Stats">Stats</a>
+                        <a class="nav-link @(isDashboard ? "active" : "")" href="/">Dashboard</a>
+
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(isCatalog ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Catalog
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item @(currentPage == "/Browse" ? "active" : "")" href="/Browse">Browse</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/Discover" ? "active" : "")" href="/Discover">Discover</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/NewPrintings" ? "active" : "")" href="/NewPrintings">New Printings</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(isCollection ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Collection
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item @(currentPage == "/Collection" ? "active" : "")" href="/Collection">Collection</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/Wishlist" ? "active" : "")" href="/Wishlist">Wishlist</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/Orders" ? "active" : "")" href="/Orders">Orders</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/CheckedOut" ? "active" : "")" href="/CheckedOut">Checked Out</a></li>
+                            </ul>
+                        </div>
+
+                        <a class="nav-link @(isStats ? "active" : "")" href="/Stats">Stats</a>
                     </div>
                     <div class="navbar-nav mt-2 mt-lg-0">
                         <form method="post" asp-page="/Logout">
