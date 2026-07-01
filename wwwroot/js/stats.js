@@ -184,77 +184,6 @@ function updateTopCards(topCards) {
     wrapper.style.display = '';
 }
 
-function calculateValue() {
-    const btn = document.getElementById('calcValueBtn');
-    const smartBtn = document.getElementById('smartRefreshBtn');
-    const statusDiv = document.getElementById('calcStatus');
-    const progressWrapper = document.getElementById('calcProgressWrapper');
-    const progressBar = document.getElementById('calcProgressBar');
-    const progressText = document.getElementById('calcProgressText');
-    const result = document.getElementById('calcResult');
-    const error = document.getElementById('calcError');
-
-    btn.disabled = true;
-    if (smartBtn) smartBtn.disabled = true;
-    statusDiv.style.display = '';
-    progressWrapper.style.display = '';
-    progressBar.style.width = '0%';
-    progressBar.setAttribute('aria-valuenow', 0);
-    progressText.textContent = 'Fetching prices…';
-    result.style.display = 'none';
-    error.style.display = 'none';
-
-    const source = new EventSource('/api/stats/calculate-value/stream');
-
-    source.addEventListener('progress', e => {
-        const { current, total } = JSON.parse(e.data);
-        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-        progressBar.style.width = pct + '%';
-        progressBar.setAttribute('aria-valuenow', pct);
-        progressText.textContent = `Fetching prices… ${current} / ${total}`;
-    });
-
-    source.addEventListener('complete', e => {
-        source.close();
-        const data = JSON.parse(e.data);
-        const formatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        progressWrapper.style.display = 'none';
-        result.style.display = '';
-        result.textContent = `Current market value: ${formatted} across ${data.cardCount} owned entries.`;
-
-        const today = new Date().toISOString().slice(0, 10);
-        const idx = historyDates.indexOf(today);
-        if (idx >= 0) {
-            historyValues[idx] = data.totalValue;
-            historyCardCounts[idx] = data.cardCount;
-        } else {
-            historyDates.push(today);
-            historyValues.push(data.totalValue);
-            historyCardCounts.push(data.cardCount);
-        }
-        buildValueChart(historyDates, historyValues, historyCardCounts);
-
-        if (data.setValueLabels.length > 0)
-            updateSetValueChart(data.setValueLabels, data.setValueData);
-
-        if (data.topCards && data.topCards.length > 0)
-            updateTopCards(data.topCards);
-
-        btn.disabled = false;
-        if (smartBtn) smartBtn.disabled = false;
-    });
-
-    source.addEventListener('error', () => {
-        source.close();
-        progressWrapper.style.display = 'none';
-        error.style.display = '';
-        error.textContent = 'Failed to calculate market value. Please try again.';
-        btn.disabled = false;
-        if (smartBtn) smartBtn.disabled = false;
-    });
-}
-
 if (setLabels.length > 0) buildHorizontalBar('setChart', setLabels, setCounts);
 if (setValueLabels.length > 0) setValueChart = buildValueBar('setValueChart', setValueLabels, setValueData);
 if (historyDates.length > 0) buildValueChart(historyDates, historyValues, historyCardCounts);
@@ -358,78 +287,6 @@ async function loadCardPriceHistory() {
     });
 })();
 
-function smartRefresh() {
-    const calcBtn = document.getElementById('calcValueBtn');
-    const smartBtn = document.getElementById('smartRefreshBtn');
-    const statusDiv = document.getElementById('calcStatus');
-    const progressWrapper = document.getElementById('calcProgressWrapper');
-    const progressBar = document.getElementById('calcProgressBar');
-    const progressText = document.getElementById('calcProgressText');
-    const result = document.getElementById('calcResult');
-    const error = document.getElementById('calcError');
-
-    calcBtn.disabled = true;
-    smartBtn.disabled = true;
-    statusDiv.style.display = '';
-    progressWrapper.style.display = '';
-    progressBar.style.width = '0%';
-    progressBar.setAttribute('aria-valuenow', 0);
-    progressText.textContent = 'Smart refresh: fetching prices…';
-    result.style.display = 'none';
-    error.style.display = 'none';
-
-    const source = new EventSource('/api/stats/smart-refresh/stream');
-
-    source.addEventListener('progress', e => {
-        const { current, total } = JSON.parse(e.data);
-        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-        progressBar.style.width = pct + '%';
-        progressBar.setAttribute('aria-valuenow', pct);
-        progressText.textContent = `Smart refresh: fetching prices… ${current} / ${total}`;
-    });
-
-    source.addEventListener('complete', e => {
-        source.close();
-        const data = JSON.parse(e.data);
-        const formatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        progressWrapper.style.display = 'none';
-        result.style.display = '';
-        const smartFormatted = '$' + data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        result.textContent = `Smart refresh complete: ~${smartFormatted} across ${data.cardCount} owned entries (unrefreshed printings use last known prices).`;
-
-        if (data.setValueLabels.length > 0)
-            updateSetValueChart(data.setValueLabels, data.setValueData);
-
-        if (data.topCards && data.topCards.length > 0)
-            updateTopCards(data.topCards);
-
-        const today = new Date().toISOString().slice(0, 10);
-        const idx = historyDates.indexOf(today);
-        if (idx >= 0) {
-            historyValues[idx] = data.totalValue;
-            historyCardCounts[idx] = data.cardCount;
-        } else {
-            historyDates.push(today);
-            historyValues.push(data.totalValue);
-            historyCardCounts.push(data.cardCount);
-        }
-        buildValueChart(historyDates, historyValues, historyCardCounts);
-
-        calcBtn.disabled = false;
-        smartBtn.disabled = false;
-    });
-
-    source.addEventListener('error', () => {
-        source.close();
-        progressWrapper.style.display = 'none';
-        error.style.display = '';
-        error.textContent = 'Smart refresh failed. Please try again.';
-        calcBtn.disabled = false;
-        smartBtn.disabled = false;
-    });
-}
-
 function refreshCardData() {
     if (!confirm('This will redownload all card data from yaml-yugi and YGOProDeck. This may take a minute. Continue?')) return;
 
@@ -469,7 +326,5 @@ function refreshCardData() {
     });
 }
 
-document.getElementById('calcValueBtn')?.addEventListener('click', calculateValue);
-document.getElementById('smartRefreshBtn')?.addEventListener('click', smartRefresh);
 document.getElementById('refreshCardDataBtn')?.addEventListener('click', refreshCardData);
 

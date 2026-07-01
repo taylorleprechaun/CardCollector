@@ -45,6 +45,7 @@ builder.Services.AddScoped<IDismissedNewPrintingRepository, DismissedNewPrinting
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 
 var app = builder.Build();
 
@@ -71,73 +72,6 @@ app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, I
 {
     var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName);
     return Results.Json(new { price });
-});
-
-app.MapPost("/api/stats/calculate-value", async (ICardService cardService) =>
-{
-    var (totalValue, cardCount, setValueBreakdown, topValueCards) = await cardService.CalculateCurrentMarketValueAsync();
-    return Results.Json(new
-    {
-        totalValue,
-        cardCount,
-        setValueLabels = setValueBreakdown.Select(x => x.Label).ToArray(),
-        setValueData = setValueBreakdown.Select(x => x.Value).ToArray(),
-        topCards = topValueCards.Select(x => new { cardName = x.CardName, setName = x.SetName, rarityName = x.RarityName, value = x.Value }).ToArray()
-    });
-});
-
-app.MapGet("/api/stats/calculate-value/stream", async (ICardService cardService, HttpContext ctx, CancellationToken ct) =>
-{
-    ctx.Response.ContentType = "text/event-stream";
-    ctx.Response.Headers.CacheControl = "no-cache";
-    ctx.Response.Headers.Connection = "keep-alive";
-
-    async Task Send(string eventName, string data)
-    {
-        await ctx.Response.WriteAsync($"event: {eventName}\ndata: {data}\n\n", ct);
-        await ctx.Response.Body.FlushAsync(ct);
-    }
-
-    var (totalValue, cardCount, setValueBreakdown, topValueCards) =
-        await cardService.CalculateCurrentMarketValueAsync(async (current, total) =>
-            await Send("progress", $"{{\"current\":{current},\"total\":{total}}}"));
-
-    var completeJson = JsonSerializer.Serialize(new
-    {
-        totalValue,
-        cardCount,
-        setValueLabels = setValueBreakdown.Select(x => x.Label).ToArray(),
-        setValueData = setValueBreakdown.Select(x => x.Value).ToArray(),
-        topCards = topValueCards.Select(x => new { cardName = x.CardName, setName = x.SetName, rarityName = x.RarityName, value = x.Value }).ToArray()
-    });
-    await Send("complete", completeJson);
-});
-
-app.MapGet("/api/stats/smart-refresh/stream", async (ICardService cardService, HttpContext ctx, CancellationToken ct) =>
-{
-    ctx.Response.ContentType = "text/event-stream";
-    ctx.Response.Headers.CacheControl = "no-cache";
-    ctx.Response.Headers.Connection = "keep-alive";
-
-    async Task Send(string eventName, string data)
-    {
-        await ctx.Response.WriteAsync($"event: {eventName}\ndata: {data}\n\n", ct);
-        await ctx.Response.Body.FlushAsync(ct);
-    }
-
-    var (totalValue, cardCount, setValueBreakdown, topValueCards) =
-        await cardService.CalculateSmartMarketValueAsync(async (current, total) =>
-            await Send("progress", $"{{\"current\":{current},\"total\":{total}}}"));
-
-    var completeJson = JsonSerializer.Serialize(new
-    {
-        totalValue,
-        cardCount,
-        setValueLabels = setValueBreakdown.Select(x => x.Label).ToArray(),
-        setValueData = setValueBreakdown.Select(x => x.Value).ToArray(),
-        topCards = topValueCards.Select(x => new { cardName = x.CardName, setName = x.SetName, rarityName = x.RarityName, value = x.Value }).ToArray()
-    });
-    await Send("complete", completeJson);
 });
 
 app.MapGet("/api/stats/card-price-history", async (string cardName, ICardService cardService) =>

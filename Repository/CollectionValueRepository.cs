@@ -24,6 +24,22 @@ namespace CardCollector.Repository
                 .OrderByDescending(s => s.SnapshotDate)
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
+        
+        public async Task PruneSnapshotsAsync()
+        {
+            var cutoffDate = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+            await _context.Database.ExecuteSqlAsync(
+                $"""
+                DELETE FROM CollectionValueSnapshots
+                WHERE SnapshotDate < {cutoffDate}
+                  AND SnapshotDate NOT IN (
+                      SELECT MAX(SnapshotDate)
+                      FROM CollectionValueSnapshots
+                      WHERE SnapshotDate < {cutoffDate}
+                      GROUP BY substr(SnapshotDate, 1, 7)
+                  )
+                """).ConfigureAwait(false);
+        }
 
         public async Task UpsertSnapshotAsync(CollectionValueSnapshot snapshot)
         {

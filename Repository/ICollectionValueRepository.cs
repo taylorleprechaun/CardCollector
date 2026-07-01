@@ -18,6 +18,12 @@ namespace CardCollector.Repository
         Task<CollectionValueSnapshot?> GetLatestSnapshotAsync();
 
         /// <summary>
+        /// Deletes daily snapshots older than 30 days, keeping only the most recent
+        /// snapshot per calendar month for data beyond the 30-day window.
+        /// </summary>
+        Task PruneSnapshotsAsync();
+        
+        /// <summary>
         /// Inserts or updates the daily collection-value snapshot.
         /// </summary>
         Task UpsertSnapshotAsync(CollectionValueSnapshot snapshot);

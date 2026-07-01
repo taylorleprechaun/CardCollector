@@ -23,13 +23,14 @@ namespace CardCollector.Repository
         Task<IEnumerable<CollectionEntryValueSnapshot>> GetLatestSnapshotsAsync();
 
         /// <summary>
+        /// Deletes per-card snapshots older than 30 days, keeping only the rows from the most recent
+        /// snapshot date per calendar month for older data.
+        /// </summary>
+        Task PruneSnapshotsAsync();
+        
+        /// <summary>
         /// Inserts or updates entry-level value snapshots for the given snapshot date.
         /// </summary>
         Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate);
-
-        /// <summary>
-        /// Inserts or updates snapshots only for the supplied entries without touching snapshots for other entries or other dates.
-        /// </summary>
-        Task UpsertSelectiveSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots);
     }
 }

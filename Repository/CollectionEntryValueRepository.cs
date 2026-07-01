@@ -47,6 +47,22 @@ namespace CardCollector.Repository
             ).ToListAsync().ConfigureAwait(false);
         }
 
+        public async Task PruneSnapshotsAsync()
+        {
+            var cutoffDate = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+            await _context.Database.ExecuteSqlAsync(
+                $"""
+                DELETE FROM CollectionEntryValueSnapshots
+                WHERE SnapshotDate < {cutoffDate}
+                  AND SnapshotDate NOT IN (
+                      SELECT MAX(SnapshotDate)
+                      FROM CollectionEntryValueSnapshots
+                      WHERE SnapshotDate < {cutoffDate}
+                      GROUP BY substr(SnapshotDate, 1, 7)
+                  )
+                """).ConfigureAwait(false);
+        }
+        
         public async Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate)
         {
             var existing = await _context.CollectionEntryValueSnapshots
@@ -56,26 +72,6 @@ namespace CardCollector.Repository
 
             _context.CollectionEntryValueSnapshots.RemoveRange(existing);
             _context.CollectionEntryValueSnapshots.AddRange(snapshots);
-
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-        }
-
-        public async Task UpsertSelectiveSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots)
-        {
-            var snapshotList = snapshots.ToList();
-            if (snapshotList.Count == 0)
-                return;
-
-            var snapshotDate = snapshotList[0].SnapshotDate;
-            var entryIDs = snapshotList.Select(s => s.CollectionEntryID).ToHashSet();
-
-            var existing = await _context.CollectionEntryValueSnapshots
-                .Where(s => s.SnapshotDate == snapshotDate && entryIDs.Contains(s.CollectionEntryID))
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            _context.CollectionEntryValueSnapshots.RemoveRange(existing);
-            _context.CollectionEntryValueSnapshots.AddRange(snapshotList);
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }

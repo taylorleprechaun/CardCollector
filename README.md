@@ -13,7 +13,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **New Printings** &mdash; cards where a newer set printing exists for your preferred version; dismiss or upgrade in one click
 - **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
 - **Checked Out** &mdash; cards currently lent out, with check-in/check-out controls on the Collection page
-- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; calculate current market value with a real-time progress bar (Server-Sent Events); track collection value over time with historical snapshots; look up price history for any individual card with a per-card chart
+- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart
 - **Export** &mdash; download your collection or wishlist as a CSV
 
 ## Tech Stack
@@ -79,4 +79,4 @@ CardCollector/
 - Speed Duel sets are excluded from all card data at load time.
 - Card images are loaded from CDN URLs; no images are stored locally.
 - Live pricing data is fetched from the YGO Pro Deck pricing endpoint per card when needed.
-- Collection value is calculated on demand from the Stats page, which streams live price fetch progress via Server-Sent Events and persists the results as dated snapshots. The Dashboard displays the value from the most recent snapshot.
+- Collection value is refreshed automatically each night at midnight US Eastern time by a background service. It fetches live prices for all owned cards, persists the results as dated snapshots, and prunes old snapshot data (keeping daily granularity for the last 30 days and one snapshot per calendar month beyond that). The Dashboard and Stats page display values from the most recent snapshot.
