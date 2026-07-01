@@ -14,6 +14,10 @@ namespace CardCollector.ViewModels
 
         public double PercentCompleted => TotalCards == 0 ? 0 : (double)CompletedCount / TotalCards * 100;
 
+        public double PercentIncompleteCopies => TotalCards == 0 ? 0 : (double)(TotalCardQuantity - CompletedCount * 3) / (TotalCards * 3) * 100;
+
+        public double PercentOrdered => TotalCards == 0 ? 0 : (double)OrderedCount / (TotalCards * 3) * 100;
+
         public int PlaceholderSetCount { get; set; }
 
         public int RemainingCount => TotalCards - CompletedCount - OrderedCount;

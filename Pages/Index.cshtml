@@ -2,6 +2,8 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Dashboard";
+    var totalPossible = Model.Stats.TotalCards * 3;
+    var overallPercent = totalPossible == 0 ? 0 : (Model.Stats.TotalCardQuantity + Model.Stats.OrderedCount) * 100.0 / totalPossible;
 }
 
 <h1 class="mb-4">Dashboard</h1>
@@ -9,17 +11,38 @@
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="card-title">Collection Progress</h5>
+        <div class="d-flex justify-content-between text-muted small">
+            <span>@Model.Stats.CompletedCount.ToString("N0") complete &middot; @Model.Stats.OrderedCount.ToString("N0") ordered &middot; @Model.Stats.IncompleteSetCount.ToString("N0") in progress</span>
+            <span>@overallPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+        </div>
         <div class="d-flex justify-content-between mb-2 text-muted small">
-            <span>@Model.Stats.CompletedCount.ToString("N0") completed of @Model.Stats.TotalCards.ToString("N0")</span>
-            <span>@Model.Stats.PercentCompleted.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+            <span>@Model.Stats.TotalCardQuantity.ToString("N0") copies</span>
+            <span>of @Model.Stats.TotalCards.ToString("N0") cards</span>
         </div>
         <div class="progress" style="height: 20px;">
             <div class="progress-bar bg-success"
                  role="progressbar"
-                 style="width: @Model.Stats.PercentCompleted.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"
+                 style="width: @Model.Stats.PercentCompleted.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)%"
                  aria-valuenow="@Model.Stats.PercentCompleted"
                  aria-valuemin="0"
-                 aria-valuemax="100">
+                 aria-valuemax="100"
+                 title="@Model.Stats.CompletedCount.ToString("N0") complete artworks">
+            </div>
+            <div class="progress-bar bg-warning"
+                 role="progressbar"
+                 style="width: @Model.Stats.PercentOrdered.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)%"
+                 aria-valuenow="@Model.Stats.PercentOrdered"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 title="@Model.Stats.OrderedCount.ToString("N0") ordered">
+            </div>
+            <div class="progress-bar bg-info"
+                 role="progressbar"
+                 style="width: @Model.Stats.PercentIncompleteCopies.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)%"
+                 aria-valuenow="@Model.Stats.PercentIncompleteCopies"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 title="@Model.Stats.IncompleteSetCount.ToString("N0") in progress">
             </div>
         </div>
     </div>
@@ -35,10 +58,37 @@
         </div>
     </div>
     <div class="col">
+        <div class="card text-center border-info h-100">
+            <div class="card-body p-2">
+                <h6 class="card-title text-info text-uppercase small">Incomplete</h6>
+                <p class="card-text fs-4 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
         <div class="card text-center border-warning h-100">
             <div class="card-body p-2">
                 <h6 class="card-title text-warning text-uppercase small">Ordered</h6>
                 <p class="card-text fs-4 fw-bold text-warning">@Model.Stats.OrderedCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col">
+        <div class="card text-center border-primary h-100">
+            <div class="card-body p-2">
+                <h6 class="card-title text-primary text-uppercase small">Wishlisted</h6>
+                <p class="card-text fs-4 fw-bold text-primary">@Model.Stats.WishlistCount.ToString("N0")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center border-danger h-100">
+            <div class="card-body p-2">
+                <h6 class="card-title text-danger text-uppercase small">Placeholders</h6>
+                <p class="card-text fs-4 fw-bold text-danger">@Model.Stats.PlaceholderSetCount.ToString("N0")</p>
             </div>
         </div>
     </div>
@@ -52,73 +102,23 @@
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col">
-        <div class="card text-center border-info h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-info text-uppercase small">Inc. Sets</h6>
-                <p class="card-text fs-4 fw-bold text-info">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
-                <p class="card-text text-muted small d-none d-md-block">Preferred versions with fewer than 3 copies</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center border-danger h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-danger text-uppercase small">Placeholders</h6>
-                <p class="card-text fs-4 fw-bold text-danger">@Model.Stats.PlaceholderSetCount.ToString("N0")</p>
-                <p class="card-text text-muted small d-none d-md-block">Sets with unreplaced placeholders</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center border-primary h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-primary text-uppercase small">Wishlisted</h6>
-                <p class="card-text fs-4 fw-bold text-primary">@Model.Stats.WishlistCount.ToString("N0")</p>
-                <p class="card-text text-muted small d-none d-md-block">Preferred versions not yet owned</p>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row g-3">
     <div class="col">
-        <div class="card text-center h-100">
+        <div class="card text-center h-100" style="border-color: #6f42c1 !important;">
             <div class="card-body p-2">
-                <h6 class="card-title text-muted text-uppercase small">Total Cards</h6>
-                <p class="card-text fs-4 fw-bold">@Model.Stats.TotalCardQuantity.ToString("N0")</p>
-                <p class="card-text text-muted small d-none d-md-block">Physical cards owned</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center border-success h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-success text-uppercase small">Total Spent</h6>
-                <p class="card-text fs-4 fw-bold text-success">
+                <h6 class="card-title text-uppercase small" style="color: #6f42c1;">Total Spent</h6>
+                <p class="card-text fs-4 fw-bold" style="color: #6f42c1;">
                     @(Model.Stats.TotalSpent.HasValue ? Model.Stats.TotalSpent.Value.ToString("C") : "—")
                 </p>
-                <p class="card-text text-muted small d-none d-md-block">Sum of recorded purchase prices</p>
             </div>
         </div>
     </div>
     <div class="col">
-        <div class="card text-center border-info h-100">
+        <div class="card text-center border-dark h-100">
             <div class="card-body p-2">
-                <h6 class="card-title text-info text-uppercase small">Mkt Value</h6>
-                <p class="card-text fs-4 fw-bold text-info">
+                <h6 class="card-title text-dark text-uppercase small">Market Value</h6>
+                <p class="card-text fs-4 fw-bold text-dark">
                     @(Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—")
-                </p>
-                <p class="card-text text-muted small d-none d-md-block">
-                    @if (Model.Stats.CurrentMarketValueDate is not null)
-                    {
-                        <text>As of @Model.Stats.CurrentMarketValueDate</text>
-                    }
-                    else
-                    {
-                        <text>Calculate on the <a href="/Stats">Stats page</a></text>
-                    }
                 </p>
             </div>
         </div>
