@@ -3,7 +3,6 @@ using CardCollector.DTO;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.ViewModels;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace CardCollector.Services
@@ -22,7 +21,6 @@ namespace CardCollector.Services
         private readonly IDismissedNewPrintingRepository _dismissedNewPrintingRepository;
         private readonly ILogger<CardService> _logger;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
-        private readonly int _pricingDelayMs;
         private readonly IPricingService _pricingService;
 
         public CardService(
@@ -35,8 +33,7 @@ namespace CardCollector.Services
             IDismissedNewPrintingRepository dismissedNewPrintingRepository,
             ILogger<CardService> logger,
             IPreferredVersionRepository preferredVersionRepository,
-            IPricingService pricingService,
-            IConfiguration config)
+            IPricingService pricingService)
         {
             _cardDataRepository = cardDataRepository;
             _cardSetRepository = cardSetRepository;
@@ -47,7 +44,6 @@ namespace CardCollector.Services
             _dismissedNewPrintingRepository = dismissedNewPrintingRepository;
             _logger = logger;
             _preferredVersionRepository = preferredVersionRepository;
-            _pricingDelayMs = config.GetValue<int>("CardDataSettings:PricingDelayMs", 100);
             _pricingService = pricingService;
         }
 
@@ -115,18 +111,17 @@ namespace CardCollector.Services
 
             var uniquePrintingKeys = entries
                 .Where(e => !string.IsNullOrWhiteSpace(e.RarityName))
-                .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName!))
+                .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName!, e.Edition))
                 .Select(g => g.Key)
                 .ToList();
 
-            var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName), decimal?>();
+            var priceCache = new Dictionary<(int CardID, string SetCode, string RarityName, CardEdition? Edition), decimal?>();
             var totalPrintings = uniquePrintingKeys.Count;
             var processedPrintings = 0;
             foreach (var key in uniquePrintingKeys)
             {
-                var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName).ConfigureAwait(false);
+                var price = await _pricingService.GetPrintingPriceAsync(key.CardID, key.SetCode, key.RarityName, key.Edition).ConfigureAwait(false);
                 priceCache[key] = price;
-                await Task.Delay(_pricingDelayMs).ConfigureAwait(false);
                 if (onProgress is not null)
                     await onProgress(++processedPrintings, totalPrintings).ConfigureAwait(false);
             }
@@ -142,7 +137,7 @@ namespace CardCollector.Services
 
             foreach (var entry in entries.Where(e => !string.IsNullOrWhiteSpace(e.RarityName)))
             {
-                var key = (entry.CardID, entry.SetCode, entry.RarityName!);
+                var key = (entry.CardID, entry.SetCode, entry.RarityName!, entry.Edition);
                 priceCache.TryGetValue(key, out var price);
 
                 decimal entryValue;
@@ -168,6 +163,7 @@ namespace CardCollector.Services
                     CardName = cardNames[entry.CardID],
                     CollectionEntryID = entry.ID,
                     DateCreated = DateTime.UtcNow,
+                    Edition = entry.Edition,
                     MarketValue = entryValue,
                     RarityName = entry.RarityName!,
                     SetCode = entry.SetCode,
@@ -204,6 +200,13 @@ namespace CardCollector.Services
                 .ToList();
 
             return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
+        }
+
+        public async Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition)
+        {
+            var editionMap = await _pricingService.GetCardEditionMapAsync(cardID).ConfigureAwait(false);
+            var (category, _) = CategorizeEdition(editionMap, setCode, rarityName, edition);
+            return category;
         }
 
         public async Task CheckInCardAsync(int imageID, string setCode)
@@ -259,19 +262,21 @@ namespace CardCollector.Services
             var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
 
             return snapshots
-                .GroupBy(s => (s.SetCode, s.RarityName))
+                .GroupBy(s => s.CollectionEntryID)
                 .Select(g =>
                 {
                     var byDate = g.GroupBy(s => s.SnapshotDate).OrderBy(dg => dg.Key).ToList();
+                    var latest = g.OrderBy(s => s.SnapshotDate).Last();
+                    var editionSuffix = latest.Edition is null ? string.Empty : $" — {latest.Edition.Value.GetDisplayName()}";
                     return new CardPriceHistorySeries
                     {
-                        Label = $"{g.Key.SetCode} — {g.Key.RarityName}",
+                        Label = $"{latest.SetCode} — {latest.RarityName}{editionSuffix}",
                         Dates = byDate.Select(dg => dg.Key).ToList(),
                         Values = byDate.Select(dg =>
                         {
                             var totalValue = dg.Sum(s => s.MarketValue);
-                            var totalQty = dg.Sum(s => quantityByEntryID.TryGetValue(s.CollectionEntryID, out var q) && q > 0 ? q : 1);
-                            return totalValue / totalQty;
+                            var qty = quantityByEntryID.TryGetValue(g.Key, out var q) && q > 0 ? q : 1;
+                            return totalValue / qty;
                         }).ToList()
                     };
                 })
@@ -707,6 +712,34 @@ namespace CardCollector.Services
             };
         }
 
+        public async Task<PagedResult<EditionAuditResult>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria)
+        {
+            var allResults = await GetEditionAuditResultsAsync().ConfigureAwait(false);
+
+            var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
+            var filtered = ApplyCommonPrintingFilters(
+                allResults,
+                criteria.Query,
+                criteria.CardType,
+                setPrefix,
+                criteria.RarityName);
+
+            if (criteria.Category.HasValue)
+                filtered = filtered.Where(r => r.Category == criteria.Category.Value);
+
+            var filteredList = filtered.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
+            var totalCount = filteredList.Count;
+            var items = filteredList.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
+
+            return new PagedResult<EditionAuditResult>
+            {
+                Items = items,
+                Page = criteria.Page,
+                PageSize = criteria.PageSize,
+                TotalCount = totalCount
+            };
+        }
+
         public async Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(CollectionSearchCriteria criteria)
         {
             var allGroups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).ToList();
@@ -888,6 +921,25 @@ namespace CardCollector.Services
                     .ConfigureAwait(false);
         }
 
+        private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions) CategorizeEdition(
+            IReadOnlyDictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>> editionMap,
+            string setCode,
+            string rarityName,
+            CardEdition recordedEdition)
+        {
+            var key = (SetCode: setCode.ToUpperInvariant(), RarityName: rarityName.ToUpperInvariant());
+
+            if (!editionMap.TryGetValue(key, out var availableEditions) || availableEditions.Count == 0)
+                return (EditionAuditCategory.Unverifiable, []);
+
+            var orderedEditions = availableEditions.OrderBy(e => e).ToList();
+
+            if (!availableEditions.Contains(recordedEdition))
+                return (EditionAuditCategory.EditionMismatch, orderedEditions);
+
+            return (null, orderedEditions);
+        }
+
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
         {
             var card = _cardDataRepository.GetCardByID(cardID);
@@ -917,6 +969,37 @@ namespace CardCollector.Services
                 SetCode = setCode,
                 SetName = set?.Name ?? setCode
             };
+        }
+
+        private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync()
+        {
+            var owned = await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
+            var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+
+            var entries = owned.Concat(ordered)
+                .Where(e => !string.IsNullOrWhiteSpace(e.RarityName) && e.Edition.HasValue)
+                .ToList();
+
+            var results = new List<EditionAuditResult>();
+
+            foreach (var group in entries.GroupBy(e => e.CardID))
+            {
+                var editionMap = await _pricingService.GetCardEditionMapAsync(group.Key).ConfigureAwait(false);
+
+                foreach (var entry in group)
+                {
+                    var recordedEdition = entry.Edition!.Value;
+                    var (category, availableEditions) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName!, recordedEdition);
+
+                    if (category is not null)
+                    {
+                        var printing = BuildCardPrinting(entry.CardID, entry.ImageID, entry.SetCode, entry.RarityName);
+                        results.Add(EditionAuditResult.From(printing, entry.ID, recordedEdition, availableEditions, category.Value));
+                    }
+                }
+            }
+
+            return results;
         }
 
         private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)

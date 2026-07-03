@@ -71,6 +71,19 @@
             </select>
         </div>
     }
+    @if (Model.ShowEditionAuditCategory)
+    {
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-edition-audit-category" class="form-label">Issue Type</label>
+            <select id="filter-edition-audit-category" name="category" class="form-select form-select-sm">
+                <option value="">All</option>
+                @foreach (var cat in Model.AvailableEditionAuditCategories)
+                {
+                    <option value="@cat" selected="@(Model.CurrentEditionAuditCategory == cat.ToString())">@cat.GetDisplayName()</option>
+                }
+            </select>
+        </div>
+    }
     @if (Model.ShowAcquisitionMethod)
     {
         <div class="col-sm-6 col-md-3">

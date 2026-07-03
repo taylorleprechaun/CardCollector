@@ -30,3 +30,5 @@ Thumbs.db
 
 ## Claude Code project context (local only)
 .claude/
+Data/pricingcache.json
+Data/pricingcache.json.timestamp

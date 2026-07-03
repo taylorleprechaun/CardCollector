@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -107,6 +108,8 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
+            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
+
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 quantity, condition, edition,
@@ -125,6 +128,8 @@ namespace CardCollector.Pages
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
             bool setAsPreferred = false, string? rarityName = null)
         {
+            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
+
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 quantity, condition, edition,

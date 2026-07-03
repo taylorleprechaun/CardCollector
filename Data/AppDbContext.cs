@@ -37,6 +37,12 @@ namespace CardCollector.Data
                 entity.Property(e => e.Status).HasConversion<string>();
             });
 
+            modelBuilder.Entity<CollectionEntryValueSnapshot>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.Property(e => e.Edition).HasConversion<string>();
+            });
+
             modelBuilder.Entity<DismissedNewPrinting>(entity =>
             {
                 entity.HasKey(e => e.ID);

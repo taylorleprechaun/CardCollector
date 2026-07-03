@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -134,6 +135,8 @@ namespace CardCollector.Pages
             bool setAsPreferred = false,
             string? rarityName = null)
         {
+            await this.WarnIfEditionMismatchAsync(_cardService, cardID, setCode, rarityName, edition);
+
             await _cardService.AddEntryAsync(
                 cardID, imageID, setCode, CollectionStatus.Owned,
                 quantity, condition, edition,

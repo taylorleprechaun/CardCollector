@@ -1,0 +1,87 @@
+@page
+@model EditionAuditModel
+@using CardCollector.Extensions
+@using CardCollector.ViewModels
+@{
+    ViewData["Title"] = "Edition Audit";
+    var clearFiltersURL = $"/EditionAudit{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Edition Audit</h1>
+    @if (Model.Results.TotalCount > 0)
+    {
+        <span class="badge bg-warning text-dark fs-6">@Model.Results.TotalCount flagged</span>
+    }
+</div>
+
+<p class="text-muted mb-3">Cross-checks every collection entry's recorded printed edition (1st Edition / Limited Edition / Unlimited) against live YGOProDeck data. Entries listed here don't match what TCGPlayer has on record for that exact printing &mdash; double-check them and fix on the card's page.</p>
+
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=Autocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    Filters = new AdvancedFiltersViewModel
+    {
+        AvailableEditionAuditCategories = Enum.GetValues<EditionAuditCategory>(),
+        AvailableRarityNames = Model.AvailableRarityNames,
+        AvailableSetNames = Model.AvailableSetNames,
+        CurrentCardType = Model.CardType,
+        CurrentEditionAuditCategory = Model.Category?.ToString(),
+        CurrentRarityName = Model.RarityName,
+        CurrentSetName = Model.SetName,
+        ShowEditionAuditCategory = true
+    },
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by card name, set, or rarity…",
+    Query = Model.Query
+}' />
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-success text-center py-5">
+        @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
+        {
+            <h4>No issues found</h4>
+            <p class="mb-0">Every recorded edition matches what TCGPlayer has for that printing.</p>
+        }
+        else
+        {
+            <span>No flagged entries match your search or filters.</span>
+        }
+    </div>
+}
+else
+{
+    <div class="list-group mb-4">
+        @foreach (var item in Model.Results.Items)
+        {
+            <a href="/Card?id=@item.CardID" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-2">
+                <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
+                <div class="flex-grow-1 min-width-0">
+                    <div class="fw-semibold">@item.CardName</div>
+                    <div class="text-muted small">
+                        @item.SetName &middot; @item.SetCode &middot; @item.RarityName
+                    </div>
+                    <div class="text-muted small">
+                        Recorded: @item.RecordedEdition.GetDisplayName()
+                        &middot;
+                        Available: @(item.AvailableEditions.Count > 0 ? string.Join(", ", item.AvailableEditions.Select(e => e.GetDisplayName())) : "none found")
+                    </div>
+                </div>
+                @if (item.Category == EditionAuditCategory.EditionMismatch)
+                {
+                    <span class="badge bg-danger flex-shrink-0">Edition Mismatch</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary flex-shrink-0">Unverifiable</span>
+                }
+            </a>
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Edition audit pagination", PageName = "EditionAudit", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}

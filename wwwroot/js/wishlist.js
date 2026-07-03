@@ -35,14 +35,9 @@ async function openWishlistModal(btn, action) {
 
     const cardID = btn.dataset.cardId;
     const setCode = btn.dataset.setCode;
-    if (cardID && setCode && rarity) {
-        try {
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarity)}`);
-            if (resp.ok) {
-                const { price } = await resp.json();
-                if (price) marketPriceEl.value = price.toFixed(2);
-            }
-        } catch (err) { console.warn('Failed to fetch price:', err); }
-    }
+    const editionSelect = document.getElementById('wlEdition');
+
+    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
+    await refreshPrice();
     marketPriceEl.placeholder = '0.00';
 }

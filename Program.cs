@@ -1,4 +1,5 @@
 using CardCollector.Data;
+using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -37,6 +38,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
 builder.Services.AddSingleton<ICardSetRepository, CardSetRepository>();
+builder.Services.AddSingleton<IPricingDataCache, PricingDataCache>();
 builder.Services.AddScoped<ICheckedOutRepository, CheckedOutRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
@@ -68,9 +70,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 
-app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, IPricingService pricingService) =>
+app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, string? edition, IPricingService pricingService) =>
 {
-    var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName);
+    CardEdition? parsedEdition = Enum.TryParse<CardEdition>(edition, out var e) ? e : null;
+    var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName, parsedEdition);
     return Results.Json(new { price });
 });
 
@@ -98,6 +101,12 @@ app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository car
     await cardDataRepository.RefreshAsync();
     var count = cardDataRepository.GetBrowseableCards().Count();
     await Send("complete", JsonSerializer.Serialize(new { cardCount = count }));
+});
+
+app.MapPost("/api/admin/refresh-pricing-data", async (IPricingDataCache pricingDataCache) =>
+{
+    await pricingDataCache.RefreshAsync();
+    return Results.Ok();
 });
 
 app.Run();

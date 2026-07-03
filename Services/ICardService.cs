@@ -26,6 +26,12 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync(Func<int, int, Task>? onProgress = null);
 
         /// <summary>
+        /// Checks whether the given (setCode, rarityName, edition) is a printing the live YGOProDeck data
+        /// actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
+        /// </summary>
+        Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition);
+
+        /// <summary>
         /// Clears the checked-out status for the given (imageID, setCode) group.
         /// </summary>
         Task CheckInCardAsync(int imageID, string setCode);
@@ -129,6 +135,12 @@ namespace CardCollector.Services
         /// Returns a paginated, filtered page of checked-out cards matching the given criteria.
         /// </summary>
         Task<PagedResult<CheckedOutCardViewModel>> SearchCheckedOutAsync(CheckedOutSearchCriteria criteria);
+
+        /// <summary>
+        /// Cross-checks collection entries' recorded Edition against the live YGOProDeck data for that printing,
+        /// returning a paginated, filtered page of the ones that look like data-entry mistakes.
+        /// </summary>
+        Task<PagedResult<EditionAuditResult>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria);
 
         /// <summary>
         /// Returns a paginated, filtered page of owned collection groups matching the given criteria.

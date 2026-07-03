@@ -1,45 +1,60 @@
+using CardCollector.Data.Models;
 using CardCollector.DTO;
-using Newtonsoft.Json;
 
 namespace CardCollector.Services
 {
     public sealed class PricingService : IPricingService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<PricingService> _logger;
+        private readonly IPricingDataCache _pricingDataCache;
 
-        public PricingService(IHttpClientFactory httpClientFactory, ILogger<PricingService> logger)
+        public PricingService(IPricingDataCache pricingDataCache)
         {
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
+            _pricingDataCache = pricingDataCache;
         }
 
-        public async Task<decimal?> GetPrintingPriceAsync(int cardID, string setCode, string rarityName)
+        public Task<IReadOnlyDictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>> GetCardEditionMapAsync(int cardID)
         {
-            try
+            var cardSets = _pricingDataCache.GetCardSets(cardID);
+
+            var map = cardSets
+                .GroupBy(s => (SetCode: s.Code.ToUpperInvariant(), RarityName: s.RarityName.ToUpperInvariant()))
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IReadOnlySet<CardEdition>)g
+                        .Select(s => CardEditionExtensions.TryParseTcgApiEditionName(s.Edition, out var e) ? (CardEdition?)e : null)
+                        .Where(e => e.HasValue)
+                        .Select(e => e!.Value)
+                        .ToHashSet());
+
+            return Task.FromResult<IReadOnlyDictionary<(string, string), IReadOnlySet<CardEdition>>>(map);
+        }
+
+        public Task<decimal?> GetPrintingPriceAsync(int cardID, string setCode, string rarityName, CardEdition? edition = null)
+        {
+            var cardSets = _pricingDataCache.GetCardSets(cardID);
+            var match = FindMatch(cardSets, setCode, rarityName, edition);
+
+            return Task.FromResult(match is null || match.Price == 0m ? (decimal?)null : match.Price);
+        }
+
+        private static TCGPriceSet? FindMatch(IEnumerable<TCGPriceSet> cardSets, string setCode, string rarityName, CardEdition? edition)
+        {
+            bool IsSetRarityMatch(TCGPriceSet s) =>
+                string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(s.RarityName, rarityName, StringComparison.OrdinalIgnoreCase);
+
+            if (edition is not null)
             {
-                var client = _httpClientFactory.CreateClient("YGOProDeck");
-                var json = await client.GetStringAsync($"api/v7/cardinfo.php?id={cardID}&tcgplayer_data=true").ConfigureAwait(false);
+                var editionMatch = cardSets.FirstOrDefault(s =>
+                    IsSetRarityMatch(s) &&
+                    string.Equals(s.Edition, edition.Value.GetTcgApiEditionName(), StringComparison.OrdinalIgnoreCase));
 
-                var result = JsonConvert.DeserializeObject<TCGPriceCardArray>(json);
-                var cardSets = result?.Cards?.FirstOrDefault()?.CardSets;
-                if (cardSets is null)
-                    return null;
-
-                var match = cardSets.FirstOrDefault(s =>
-                    string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(s.RarityName, rarityName, StringComparison.OrdinalIgnoreCase));
-
-                if (match is null || match.Price == 0m)
-                    return null;
-
-                return match.Price;
+                if (editionMatch is not null)
+                    return editionMatch;
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to fetch price for card {CardID} set {SetCode} rarity {Rarity}", cardID, setCode, rarityName);
-                return null;
-            }
+
+            // No exact edition match — fall back to set/rarity only (older sets may not carry set_edition).
+            return cardSets.FirstOrDefault(IsSetRarityMatch);
         }
     }
 }
