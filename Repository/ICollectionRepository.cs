@@ -23,6 +23,11 @@ namespace CardCollector.Repository
         Task<IEnumerable<CollectionEntry>> GetByCardIDAsync(int cardID);
 
         /// <summary>
+        /// Returns the entry with the given ID, or null if no such entry exists.
+        /// </summary>
+        Task<CollectionEntry?> GetByIDAsync(int id);
+
+        /// <summary>
         /// Returns all entries with the given collection status, ordered by date created descending.
         /// </summary>
         Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status);

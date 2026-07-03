@@ -9,6 +9,7 @@ namespace CardCollector.ViewModels
         public IReadOnlyList<AcquisitionMethod> AvailableAcquisitionMethods { get; init; } = [];
         public IReadOnlyList<CardCondition> AvailableConditions { get; init; } = [];
         public IReadOnlyList<CardEdition> AvailableEditions { get; init; } = [];
+        public IReadOnlyList<EditionAuditCategory> AvailableEditionAuditCategories { get; init; } = [];
         public IReadOnlyList<string> AvailableRarityNames { get; init; } = [];
         public IReadOnlyList<string> AvailableSetNames { get; init; } = [];
 
@@ -18,6 +19,7 @@ namespace CardCollector.ViewModels
         public string? CurrentCollectionFilter { get; init; }
         public string? CurrentCondition { get; init; }
         public string? CurrentEdition { get; init; }
+        public string? CurrentEditionAuditCategory { get; init; }
         public string? CurrentOrderedFilter { get; init; }
         public string? CurrentRarityName { get; init; }
         public string? CurrentSetName { get; init; }
@@ -28,5 +30,6 @@ namespace CardCollector.ViewModels
         public bool ShowCollectionFilters { get; init; }
         public bool ShowCondition { get; init; }
         public bool ShowEdition { get; init; }
+        public bool ShowEditionAuditCategory { get; init; }
     }
 }

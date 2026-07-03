@@ -1,22 +1,3 @@
-function setSelect(id, value) {
-    document.getElementById(id).value = value;
-}
-
-function openEditModal(btn) {
-    const ds = btn.dataset;
-    document.getElementById('editEntryID').value = ds.entryId;
-    document.getElementById('editRarityName').value = ds.rarityName || '';
-    document.getElementById('editRarityDisplay').textContent = ds.rarityName || '';
-    document.getElementById('editQuantity').value = ds.quantity;
-    setSelect('editCondition', ds.condition);
-    setSelect('editEdition', ds.edition);
-    setSelect('editAcquisition', ds.acquisitionMethod);
-    setPickerDate('editPurchaseDate', ds.purchaseDate);
-    document.getElementById('editPurchasePrice').value = ds.purchasePrice;
-    document.getElementById('editMarketPrice').value = ds.marketPrice;
-    new bootstrap.Modal(document.getElementById('editModal')).show();
-}
-
 async function openAddModal(btn) {
     document.getElementById('addCardID').value = btn.dataset.cardId;
     document.getElementById('addImageID').value = btn.dataset.imageId;
@@ -34,6 +15,10 @@ async function openAddModal(btn) {
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;
 
+    const addForm = document.getElementById('addForm');
+    const row = btn.closest('[id^="group-row-"]');
+    if (addForm && row) addForm.dataset.ajaxTarget = row.id;
+
     const marketPriceEl = document.getElementById('atcMarketPrice');
     marketPriceEl.value = '';
     marketPriceEl.placeholder = 'Loading…';
@@ -42,14 +27,9 @@ async function openAddModal(btn) {
 
     const cardID = btn.dataset.cardId;
     const setCode = btn.dataset.setCode;
-    if (cardID && setCode && rarity) {
-        try {
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarity)}`);
-            if (resp.ok) {
-                const { price } = await resp.json();
-                if (price) marketPriceEl.value = price.toFixed(2);
-            }
-        } catch (err) { console.warn('Failed to fetch price:', err); }
-    }
+    const editionSelect = document.getElementById('atcEdition');
+
+    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
+    await refreshPrice();
     marketPriceEl.placeholder = '0.00';
 }

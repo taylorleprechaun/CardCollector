@@ -1,0 +1,46 @@
+@model EditionAuditGroupRowViewModel
+@using CardCollector.Extensions
+@using CardCollector.ViewModels
+@{
+    var group = Model.Group;
+    var filterParams = Model.FilterParams;
+    var rowKey = $"{group.ImageID}-{group.SetCode}";
+    var collapseID = "group-" + rowKey;
+}
+
+<div class="list-group-item p-0" id="group-row-@rowKey">
+    <!-- Toggle row -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center">
+        <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
+             role="button"
+             data-bs-toggle="collapse"
+             data-bs-target="#@collapseID"
+             aria-expanded="false"
+             aria-controls="@collapseID">
+            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
+            <div class="flex-grow-1 min-width-0">
+                <div class="fw-semibold">@group.CardName</div>
+                <div class="text-muted small">
+                    @group.SetName &middot; @group.SetCode &middot; @group.RarityName
+                </div>
+                <div class="text-muted small">@group.FlaggedCount flagged</div>
+            </div>
+            @if (group.FlaggedCategory == EditionAuditCategory.EditionMismatch)
+            {
+                <span class="badge bg-danger flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
+            }
+            <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
+        </div>
+    </div>
+
+    <!-- Expanded entries -->
+    <div class="collapse border-top" id="@collapseID">
+        <div class="p-3 ps-4">
+            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = false }' />
+        </div>
+    </div>
+</div>

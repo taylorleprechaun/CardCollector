@@ -1,0 +1,94 @@
+@page
+@model EditionAuditModel
+@using CardCollector.Extensions
+@using CardCollector.ViewModels
+@{
+    ViewData["Title"] = "Edition Audit";
+    var filterParams = Model.GetFilterParams();
+    var clearFiltersURL = $"/EditionAudit{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Edition Audit</h1>
+    @if (Model.Results.TotalCount > 0)
+    {
+        <span class="badge bg-warning text-dark fs-6" id="totalCountBadge" data-suffix="flagged">@Model.Results.TotalCount flagged</span>
+    }
+</div>
+
+<p class="text-muted mb-3">Cross-checks every collection entry's recorded printed edition (1st Edition / Limited Edition / Unlimited) against live YGOProDeck data. Entries listed here don't match what TCGPlayer has on record for that exact printing &mdash; expand a card below to fix it directly.</p>
+
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=Autocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    Filters = new AdvancedFiltersViewModel
+    {
+        AvailableEditionAuditCategories = Enum.GetValues<EditionAuditCategory>(),
+        AvailableRarityNames = Model.AvailableRarityNames,
+        AvailableSetNames = Model.AvailableSetNames,
+        CurrentCardType = Model.CardType,
+        CurrentEditionAuditCategory = Model.Category?.ToString(),
+        CurrentRarityName = Model.RarityName,
+        CurrentSetName = Model.SetName,
+        ShowEditionAuditCategory = true
+    },
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by card name, set, or rarity…",
+    Query = Model.Query
+}' />
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-success text-center py-5">
+        @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
+        {
+            <h4>No issues found</h4>
+            <p class="mb-0">Every recorded edition matches what TCGPlayer has for that printing.</p>
+        }
+        else
+        {
+            <span>No flagged entries match your search or filters.</span>
+        }
+    </div>
+}
+else
+{
+    <div class="list-group mb-4" id="editionAuditList">
+        @foreach (var group in Model.Results.Items)
+        {
+            <partial name="_EditionAuditGroupRow" model='new EditionAuditGroupRowViewModel { Group = group, FilterParams = filterParams }' />
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Edition audit pagination", PageName = "EditionAudit", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <form method="post" action="/EditionAudit?handler=Edit&@filterParams" id="editForm" class="ajax-form">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Entry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="entryID" id="editEntryID" />
+                    <partial name="_CollectionFormFields" model='new CollectionFormFieldsViewModel { Prefix = "edit", AcquisitionVisible = true, MarketPriceEditable = false }' />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
+}

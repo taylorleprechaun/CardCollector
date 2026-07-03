@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -99,6 +100,8 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostOrderAsync()
         {
+            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, RarityName, Edition);
+
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Ordered,
                 Quantity, Condition, Edition,
@@ -110,6 +113,8 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostOwnAsync()
         {
+            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, RarityName, Edition);
+
             await _cardService.AddEntryAsync(
                 CardID, ImageID, SetCode, CollectionStatus.Owned,
                 Quantity, Condition, Edition,

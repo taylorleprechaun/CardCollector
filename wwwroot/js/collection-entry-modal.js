@@ -31,14 +31,9 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     new bootstrap.Modal(document.getElementById('orderModal')).show();
 
     const cardID = document.querySelector('#orderForm [name="CardID"]').value;
-    if (cardID && setCode && rarityName) {
-        try {
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}`);
-            if (resp.ok) {
-                const { price } = await resp.json();
-                if (price) marketPriceEl.value = price.toFixed(2);
-            }
-        } catch (err) { console.warn('Failed to fetch price:', err); }
-    }
+    const editionSelect = document.getElementById('atcEdition');
+
+    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName }));
+    await refreshPrice();
     marketPriceEl.placeholder = '0.00';
 }

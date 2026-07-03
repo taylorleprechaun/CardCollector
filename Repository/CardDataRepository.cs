@@ -1,3 +1,4 @@
+using CardCollector.Data;
 using CardCollector.DTO;
 using CardCollector.DTO.YamlYugi;
 using Microsoft.Extensions.Configuration;
@@ -55,8 +56,8 @@ namespace CardCollector.Repository
         public async Task RefreshAsync()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            TryDeleteFile(Path.Combine(cacheDir, "carddata.json.timestamp"));
-            TryDeleteFile(Path.Combine(cacheDir, "cardcache.json.timestamp"));
+            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "carddata.json.timestamp"));
+            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "cardcache.json.timestamp"));
 
             await Task.Run(() => Initialize(LoadCards(), LoadImages())).ConfigureAwait(false);
         }
@@ -253,25 +254,13 @@ namespace CardCollector.Repository
                 .ToList();
         }
 
-        private static bool IsCacheFresh(string cachePath, string timestampPath, int ttlDays)
-        {
-            if (!File.Exists(cachePath) || !File.Exists(timestampPath))
-                return false;
-
-            var raw = File.ReadAllText(timestampPath);
-            if (!DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var cachedAt))
-                return false;
-
-            return DateTime.UtcNow - cachedAt < TimeSpan.FromDays(ttlDays);
-        }
-
         private IReadOnlyList<Card> LoadCards()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
             var cardDataPath = Path.Combine(cacheDir, "carddata.json");
             var timestampPath = cardDataPath + ".timestamp";
 
-            if (IsCacheFresh(cardDataPath, timestampPath, _cacheTtlDays))
+            if (FileCacheHelper.IsCacheFresh(cardDataPath, timestampPath, TimeSpan.FromDays(_cacheTtlDays)))
             {
                 _logger.LogInformation("Loading card data from cache ({Path})", cardDataPath);
                 return LoadCardsFromJson(cardDataPath);
@@ -285,7 +274,7 @@ namespace CardCollector.Repository
                 var cards = ConvertYamlCards(yamlCards);
                 Directory.CreateDirectory(cacheDir);
                 File.WriteAllText(cardDataPath, JsonConvert.SerializeObject(cards));
-                File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
+                FileCacheHelper.WriteTimestamp(timestampPath);
                 _logger.LogInformation("Card data cached to {Path} ({Count} cards)", cardDataPath, cards.Count);
                 return cards;
             }
@@ -320,7 +309,7 @@ namespace CardCollector.Repository
             var cachePath = Path.Combine(cacheDir, "cardcache.json");
             var timestampPath = cachePath + ".timestamp";
 
-            if (IsCacheFresh(cachePath, timestampPath, _imageCacheTtlDays))
+            if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, TimeSpan.FromDays(_imageCacheTtlDays)))
             {
                 _logger.LogInformation("Loading image data from cache ({Path})", cachePath);
             }
@@ -332,7 +321,7 @@ namespace CardCollector.Repository
                 {
                     Directory.CreateDirectory(cacheDir);
                     File.WriteAllText(cachePath, json);
-                    File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
+                    FileCacheHelper.WriteTimestamp(timestampPath);
                     _logger.LogInformation("Image cache saved to {Path}", cachePath);
                 }
                 else if (File.Exists(cachePath))
@@ -399,11 +388,6 @@ namespace CardCollector.Repository
                 parser.MoveNext();
             if (parser.Current is DocumentEnd)
                 parser.MoveNext();
-        }
-
-        private static void TryDeleteFile(string path)
-        {
-            try { File.Delete(path); } catch { /* ignore */ }
         }
 
         private sealed class ImageCacheRoot

@@ -1,3 +1,23 @@
+function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
+    async function refreshPrice() {
+        const { cardID, setCode, rarityName } = getParams();
+        if (!(cardID && setCode && rarityName)) return;
+        try {
+            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}`);
+            if (resp.ok) {
+                const { price } = await resp.json();
+                if (price) marketPriceEl.value = price.toFixed(2);
+            }
+        } catch (err) { console.warn('Failed to fetch price:', err); }
+    }
+
+    if (editionSelect._priceChangeHandler) editionSelect.removeEventListener('change', editionSelect._priceChangeHandler);
+    editionSelect._priceChangeHandler = refreshPrice;
+    editionSelect.addEventListener('change', refreshPrice);
+
+    return refreshPrice;
+}
+
 function setPickerDate(id, value) {
     var el = document.getElementById(id);
     if (!el) return;

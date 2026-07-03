@@ -8,13 +8,16 @@ namespace CardCollector.Services
             TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
         private readonly ILogger<PriceRefreshBackgroundService> _logger;
+        private readonly IPricingDataCache _pricingDataCache;
         private readonly IServiceScopeFactory _scopeFactory;
 
         public PriceRefreshBackgroundService(
             ILogger<PriceRefreshBackgroundService> logger,
+            IPricingDataCache pricingDataCache,
             IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
+            _pricingDataCache = pricingDataCache;
             _scopeFactory = scopeFactory;
         }
 
@@ -48,6 +51,8 @@ namespace CardCollector.Services
             _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price refresh");
             try
             {
+                await _pricingDataCache.RefreshAsync();
+
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var cardService = scope.ServiceProvider.GetRequiredService<ICardService>();
                 var collectionValueRepo = scope.ServiceProvider.GetRequiredService<ICollectionValueRepository>();

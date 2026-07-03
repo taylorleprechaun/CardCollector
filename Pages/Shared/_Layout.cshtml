@@ -13,7 +13,7 @@
         var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
         var isDashboard = currentPage == "/Index";
         var isCatalog = currentPage is "/Browse" or "/Discover" or "/NewPrintings";
-        var isCollection = currentPage is "/Collection" or "/Wishlist" or "/Orders" or "/CheckedOut";
+        var isCollection = currentPage is "/Collection" or "/Wishlist" or "/Orders" or "/CheckedOut" or "/EditionAudit";
         var isStats = currentPage == "/Stats";
     }
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -51,6 +51,7 @@
                                 <li><a class="dropdown-item @(currentPage == "/Wishlist" ? "active" : "")" href="/Wishlist">Wishlist</a></li>
                                 <li><a class="dropdown-item @(currentPage == "/Orders" ? "active" : "")" href="/Orders">Orders</a></li>
                                 <li><a class="dropdown-item @(currentPage == "/CheckedOut" ? "active" : "")" href="/CheckedOut">Checked Out</a></li>
+                                <li><a class="dropdown-item @(currentPage == "/EditionAudit" ? "active" : "")" href="/EditionAudit">Edition Audit</a></li>
                             </ul>
                         </div>
 
@@ -70,6 +71,13 @@
         {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 @errorMsg
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Warning"] is string warningMsg)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                @warningMsg
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         }
