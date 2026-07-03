@@ -1,0 +1,122 @@
+@model CollectionEntriesTableViewModel
+@using CardCollector.Extensions
+@using CardCollector.ViewModels
+
+<div class="table-responsive">
+<table class="table table-sm mb-3">
+    <thead class="table-light">
+        <tr>
+            <th>Condition</th>
+            <th class="d-none d-md-table-cell">Edition</th>
+            <th class="d-none d-md-table-cell">Acquisition</th>
+            <th class="d-none d-md-table-cell">Purchase Date</th>
+            <th>Qty</th>
+            <th>Purchase Price</th>
+            <th class="d-none d-md-table-cell">Market Price</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Model.Entries)
+        {
+            var auditEntry = entry as EditionAuditEntryViewModel;
+
+            <tr class="@(auditEntry?.Category is not null ? "table-warning" : "")">
+                <td>
+                    @if (entry.Condition.HasValue)
+                    {
+                        @entry.Condition.GetDisplayName()
+                    }
+                    else
+                    {
+                        <span class="text-muted">&mdash;</span>
+                    }
+                </td>
+                <td class="d-none d-md-table-cell">
+                    @if (entry.Edition.HasValue)
+                    {
+                        @entry.Edition.GetDisplayName()
+                    }
+                    else
+                    {
+                        <span class="text-muted">&mdash;</span>
+                    }
+                    @if (auditEntry?.Category == EditionAuditCategory.EditionMismatch)
+                    {
+                        <span class="badge bg-danger ms-1">Mismatch</span>
+                    }
+                    else if (auditEntry?.Category == EditionAuditCategory.Unverifiable)
+                    {
+                        <span class="badge bg-secondary ms-1">Unverifiable</span>
+                    }
+                </td>
+                <td class="d-none d-md-table-cell">
+                    @if (entry.AcquisitionMethod.HasValue)
+                    {
+                        @entry.AcquisitionMethod.GetDisplayName()
+                    }
+                    else
+                    {
+                        <span class="text-muted">&mdash;</span>
+                    }
+                </td>
+                <td class="text-muted small d-none d-md-table-cell">
+                    @if (entry.PurchaseDate.HasValue)
+                    {
+                        @entry.PurchaseDate.Value.ToString("MMM d, yyyy")
+                    }
+                    else
+                    {
+                        <span>&mdash;</span>
+                    }
+                </td>
+                <td>&times;@entry.Quantity</td>
+                <td>
+                    @if (entry.PurchasePrice.HasValue)
+                    {
+                        <span>$@entry.PurchasePrice.Value.ToString("F2")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">&mdash;</span>
+                    }
+                </td>
+                <td class="d-none d-md-table-cell">
+                    @if (entry.MarketPriceAtEntry.HasValue)
+                    {
+                        <span>$@entry.MarketPriceAtEntry.Value.ToString("F2")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">&mdash;</span>
+                    }
+                </td>
+                <td class="text-nowrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-entry-id="@entry.EntryID"
+                            data-quantity="@entry.Quantity"
+                            data-condition="@(entry.Condition.HasValue ? ((int)entry.Condition.Value).ToString() : "")"
+                            data-edition="@(entry.Edition.HasValue ? ((int)entry.Edition.Value).ToString() : "")"
+                            data-acquisition-method="@(entry.AcquisitionMethod.HasValue ? ((int)entry.AcquisitionMethod.Value).ToString() : "")"
+                            data-purchase-date="@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")"
+                            data-purchase-price="@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")"
+                            data-market-price="@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")"
+                            data-rarity-name="@entry.RarityName"
+                            onclick="openEditModal(this)">
+                        Edit
+                    </button>
+                    @if (Model.ShowRemoveButton)
+                    {
+                        <form method="post" action="@Model.DeleteActionUrl" class="d-inline ms-1 ajax-form"
+                              onsubmit="return confirm('Remove this entry from your collection?')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="entryID" value="@entry.EntryID" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+</div>

@@ -4,14 +4,14 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Collection";
-    var filterParams = $"cardType={Uri.EscapeDataString(Model.CardType ?? string.Empty)}&setName={Uri.EscapeDataString(Model.SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(Model.RarityName ?? string.Empty)}&condition={Model.Condition}&edition={Model.Edition}&acquisitionMethod={Model.AcquisitionMethod}&checkedOutFilter={Model.CheckedOutFilter}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}&query={Uri.EscapeDataString(Model.Query ?? string.Empty)}";
+    var filterParams = Model.GetFilterParams();
     var clearFiltersURL = $"/Collection{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Collection</h1>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-success fs-6">@Model.GroupedCards.TotalCount owned</span>
+        <span class="badge bg-success fs-6" id="totalCountBadge" data-suffix="owned">@Model.GroupedCards.TotalCount owned</span>
         <a href="/Export?handler=Collection" class="btn btn-outline-secondary btn-sm">Export CSV</a>
     </div>
 </div>
@@ -63,200 +63,9 @@
 else
 {
     <div class="list-group mb-4" id="collectionList">
-        @{int groupIdx = 0;}
         @foreach (var group in Model.GroupedCards.Items)
         {
-            var collapseID = "group-" + groupIdx;
-            groupIdx++;
-            var status = group.CompletionStatus;
-
-            <div class="list-group-item p-0">
-                <!-- Toggle row -->
-                <div class="d-flex flex-column flex-md-row align-items-md-center">
-                    <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
-                         role="button"
-                         data-bs-toggle="collapse"
-                         data-bs-target="#@collapseID"
-                         aria-expanded="false"
-                         aria-controls="@collapseID">
-                        <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
-                        <div class="flex-grow-1 min-width-0">
-                            <div class="fw-semibold">@group.CardName</div>
-                            <div class="text-muted small">
-                                @group.SetName &middot; @group.SetCode &middot; @group.RarityCode
-                            </div>
-                            <div class="text-muted small">&times;@group.TotalQuantity</div>
-                        </div>
-                        @if (status == CollectionCompletionStatus.Complete)
-                        {
-                            <span class="badge bg-success flex-shrink-0">Complete</span>
-                        }
-                        else if (status == CollectionCompletionStatus.Incomplete)
-                        {
-                            <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
-                        }
-                        else if (status == CollectionCompletionStatus.Owned)
-                        {
-                            <span class="badge bg-info flex-shrink-0">Owned</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
-                        }
-                        <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
-                    </div>
-                    <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="cardID" value="@group.CardID" />
-                        <input type="hidden" name="imageID" value="@group.ImageID" />
-                        <input type="hidden" name="setCode" value="@group.SetCode" />
-                        <div class="d-flex align-items-center gap-1">
-                            <small class="text-muted">Check Out:</small>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
-                                @for (int q = 1; q <= 3; q++)
-                                {
-                                    var isActive = group.CheckedOutQuantity == q;
-                                    var btnClass = isActive ? "btn-warning" : "btn-outline-secondary";
-                                    var isDisabled = isActive || q > group.TotalQuantity;
-                                    <button type="submit" name="quantity" value="@q"
-                                            formaction="/Collection?handler=CheckOut&@filterParams"
-                                            class="btn btn-sm @btnClass"
-                                            @(isDisabled ? "disabled" : "")>@q</button>
-                                }
-                                <button type="submit"
-                                        formaction="/Collection?handler=CheckIn&@filterParams"
-                                        class="btn btn-sm btn-outline-success"
-                                        @(group.CheckedOutQuantity == 0 ? "disabled" : "")>Check In</button>
-                            </div>
-                        </div>
-                        @if (group.IsCheckedOut)
-                        {
-                            <small class="text-muted text-center">since @group.CheckedOutDate!.Value.ToString("MMM d, yyyy")</small>
-                        }
-                    </form>
-                </div>
-
-                <!-- Expanded entries -->
-                <div class="collapse border-top" id="@collapseID">
-                    <div class="p-3 ps-4">
-                        <div class="table-responsive">
-                        <table class="table table-sm mb-3">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Condition</th>
-                                    <th class="d-none d-md-table-cell">Edition</th>
-                                    <th class="d-none d-md-table-cell">Acquisition</th>
-                                    <th class="d-none d-md-table-cell">Purchase Date</th>
-                                    <th>Qty</th>
-                                    <th>Purchase Price</th>
-                                    <th class="d-none d-md-table-cell">Market Price</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var entry in group.Entries)
-                                {
-                                    <tr>
-                                        <td>
-                                            @if (entry.Condition.HasValue)
-                                            {
-                                                @entry.Condition.GetDisplayName()
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">&mdash;</span>
-                                            }
-                                        </td>
-                                        <td class="d-none d-md-table-cell">
-                                            @if (entry.Edition.HasValue)
-                                            {
-                                                @entry.Edition.GetDisplayName()
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">&mdash;</span>
-                                            }
-                                        </td>
-                                        <td class="d-none d-md-table-cell">
-                                            @if (entry.AcquisitionMethod.HasValue)
-                                            {
-                                                @entry.AcquisitionMethod.GetDisplayName()
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">&mdash;</span>
-                                            }
-                                        </td>
-                                        <td class="text-muted small d-none d-md-table-cell">
-                                            @if (entry.PurchaseDate.HasValue)
-                                            {
-                                                @entry.PurchaseDate.Value.ToString("MMM d, yyyy")
-                                            }
-                                            else
-                                            {
-                                                <span>&mdash;</span>
-                                            }
-                                        </td>
-                                        <td>&times;@entry.Quantity</td>
-                                        <td>
-                                            @if (entry.PurchasePrice.HasValue)
-                                            {
-                                                <span>$@entry.PurchasePrice.Value.ToString("F2")</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">&mdash;</span>
-                                            }
-                                        </td>
-                                        <td class="d-none d-md-table-cell">
-                                            @if (entry.MarketPriceAtEntry.HasValue)
-                                            {
-                                                <span>$@entry.MarketPriceAtEntry.Value.ToString("F2")</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">&mdash;</span>
-                                            }
-                                        </td>
-                                        <td class="text-nowrap">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    data-entry-id="@entry.EntryID"
-                                                    data-quantity="@entry.Quantity"
-                                                    data-condition="@(entry.Condition.HasValue ? ((int)entry.Condition.Value).ToString() : "")"
-                                                    data-edition="@(entry.Edition.HasValue ? ((int)entry.Edition.Value).ToString() : "")"
-                                                    data-acquisition-method="@(entry.AcquisitionMethod.HasValue ? ((int)entry.AcquisitionMethod.Value).ToString() : "")"
-                                                    data-purchase-date="@(entry.PurchaseDate.HasValue ? entry.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")"
-                                                    data-purchase-price="@(entry.PurchasePrice.HasValue ? entry.PurchasePrice.Value.ToString("F2") : "")"
-                                                    data-market-price="@(entry.MarketPriceAtEntry.HasValue ? entry.MarketPriceAtEntry.Value.ToString("F2") : "")"
-                                                    data-rarity-name="@entry.RarityName"
-                                                    onclick="openEditModal(this)">
-                                                Edit
-                                            </button>
-                                            <form method="post" action="/Collection?handler=Delete&@filterParams" class="d-inline ms-1"
-                                                  onsubmit="return confirm('Remove this entry from your collection?')">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="entryID" value="@entry.EntryID" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary"
-                                data-card-id="@group.CardID"
-                                data-image-id="@group.ImageID"
-                                data-rarity-name="@group.RarityName"
-                                data-rarities="@string.Join(",", group.AvailableRarities)"
-                                data-set-code="@group.SetCode"
-                                data-tcg-date="@Model.GetTCGDate(group.SetCode)"
-                                onclick="openAddModal(this)">
-                            + Purchase
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <partial name="_CollectionGroupRow" model='new CollectionGroupRowViewModel { Group = group, FilterParams = filterParams, TCGDate = Model.GetTCGDate(group.SetCode) }' />
         }
     </div>
 
@@ -267,7 +76,7 @@ else
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
-            <form method="post" action="/Collection?handler=Edit&@filterParams">
+            <form method="post" action="/Collection?handler=Edit&@filterParams" id="editForm" class="ajax-form">
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Entry</h5>
@@ -290,7 +99,7 @@ else
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen-sm-down">
         <div class="modal-content">
-            <form method="post" action="/Collection?handler=AddPurchase&@filterParams">
+            <form method="post" action="/Collection?handler=AddPurchase&@filterParams" id="addForm" class="ajax-form">
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="addModalLabel">Add Purchase</h5>
@@ -313,5 +122,6 @@ else
 </div>
 
 @section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
     <script src="~/js/collection.js" asp-append-version="true"></script>
 }

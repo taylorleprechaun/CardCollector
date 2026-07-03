@@ -39,6 +39,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();
 builder.Services.AddSingleton<ICardSetRepository, CardSetRepository>();
 builder.Services.AddSingleton<IPricingDataCache, PricingDataCache>();
+builder.Services.AddSingleton<IRazorPartialRenderer, RazorPartialRenderer>();
 builder.Services.AddScoped<ICheckedOutRepository, CheckedOutRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();

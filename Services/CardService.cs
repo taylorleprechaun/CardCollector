@@ -712,26 +712,26 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<PagedResult<EditionAuditResult>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria)
+        public async Task<PagedResult<EditionAuditGroupViewModel>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria)
         {
-            var allResults = await GetEditionAuditResultsAsync().ConfigureAwait(false);
+            var allGroups = await GetGroupedEditionAuditResultsAsync().ConfigureAwait(false);
 
             var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
             var filtered = ApplyCommonPrintingFilters(
-                allResults,
+                allGroups,
                 criteria.Query,
                 criteria.CardType,
                 setPrefix,
                 criteria.RarityName);
 
             if (criteria.Category.HasValue)
-                filtered = filtered.Where(r => r.Category == criteria.Category.Value);
+                filtered = filtered.Where(g => g.Entries.Any(e => e.Category == criteria.Category.Value));
 
-            var filteredList = filtered.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
+            var filteredList = filtered.OrderBy(g => g.CardName).ThenBy(g => g.SetCode).ToList();
             var totalCount = filteredList.Count;
             var items = filteredList.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
 
-            return new PagedResult<EditionAuditResult>
+            return new PagedResult<EditionAuditGroupViewModel>
             {
                 Items = items,
                 Page = criteria.Page,
@@ -1000,6 +1000,45 @@ namespace CardCollector.Services
             }
 
             return results;
+        }
+
+        private async Task<IReadOnlyList<EditionAuditGroupViewModel>> GetGroupedEditionAuditResultsAsync()
+        {
+            var flaggedResults = await GetEditionAuditResultsAsync().ConfigureAwait(false);
+            if (flaggedResults.Count == 0)
+                return [];
+
+            var flaggedByEntryID = flaggedResults.ToDictionary(r => r.CollectionEntryID);
+
+            var groups = new List<EditionAuditGroupViewModel>();
+
+            foreach (var cardID in flaggedResults.Select(r => r.CardID).Distinct())
+            {
+                var cardEntries = await _collectionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
+                var enrichedEntries = cardEntries
+                    .Where(e => e.Status == CollectionStatus.Owned || e.Status == CollectionStatus.Ordered)
+                    .Select(e =>
+                    {
+                        var printing = BuildCardPrinting(e.CardID, e.ImageID, e.SetCode, e.RarityName);
+                        var baseEntry = OrderEntryViewModel.From(printing, e);
+                        var isFlagged = flaggedByEntryID.TryGetValue(e.ID, out var flagged);
+                        return EditionAuditEntryViewModel.From(
+                            baseEntry,
+                            isFlagged ? flagged!.Category : null,
+                            isFlagged ? flagged!.AvailableEditions : []);
+                    })
+                    .ToList();
+
+                foreach (var group in enrichedEntries.GroupBy(e => (e.CardID, e.SetCode, e.RarityCode)))
+                {
+                    if (!group.Any(e => e.Category.HasValue))
+                        continue;
+
+                    groups.Add(EditionAuditGroupViewModel.From(group.First(), group.ToList()));
+                }
+            }
+
+            return groups;
         }
 
         private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)

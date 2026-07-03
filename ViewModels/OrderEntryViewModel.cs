@@ -2,7 +2,7 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public sealed class OrderEntryViewModel : CardPrinting
+    public class OrderEntryViewModel : CardPrinting
     {
         public AcquisitionMethod? AcquisitionMethod { get; init; }
 

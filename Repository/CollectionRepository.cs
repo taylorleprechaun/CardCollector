@@ -37,6 +37,9 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+        public async Task<CollectionEntry?> GetByIDAsync(int id) =>
+            await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);
+
         public async Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status) =>
             await _context.CollectionEntries
                 .Where(e => e.Status == status)

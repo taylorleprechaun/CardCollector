@@ -140,7 +140,7 @@ namespace CardCollector.Services
         /// Cross-checks collection entries' recorded Edition against the live YGOProDeck data for that printing,
         /// returning a paginated, filtered page of the ones that look like data-entry mistakes.
         /// </summary>
-        Task<PagedResult<EditionAuditResult>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria);
+        Task<PagedResult<EditionAuditGroupViewModel>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria);
 
         /// <summary>
         /// Returns a paginated, filtered page of owned collection groups matching the given criteria.

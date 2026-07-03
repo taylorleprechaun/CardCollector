@@ -1,0 +1,94 @@
+@model CollectionGroupRowViewModel
+@using CardCollector.Data.Models
+@using CardCollector.ViewModels
+@{
+    var group = Model.Group;
+    var filterParams = Model.FilterParams;
+    var rowKey = $"{group.ImageID}-{group.SetCode}";
+    var collapseID = "group-" + rowKey;
+    var status = group.CompletionStatus;
+}
+
+<div class="list-group-item p-0" id="group-row-@rowKey">
+    <!-- Toggle row -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center">
+        <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
+             role="button"
+             data-bs-toggle="collapse"
+             data-bs-target="#@collapseID"
+             aria-expanded="false"
+             aria-controls="@collapseID">
+            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(group.ImageURLSmall, group.CardName)' />
+            <div class="flex-grow-1 min-width-0">
+                <div class="fw-semibold">@group.CardName</div>
+                <div class="text-muted small">
+                    @group.SetName &middot; @group.SetCode &middot; @group.RarityCode
+                </div>
+                <div class="text-muted small">&times;@group.TotalQuantity</div>
+            </div>
+            @if (status == CollectionCompletionStatus.Complete)
+            {
+                <span class="badge bg-success flex-shrink-0">Complete</span>
+            }
+            else if (status == CollectionCompletionStatus.Incomplete)
+            {
+                <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
+            }
+            else if (status == CollectionCompletionStatus.Owned)
+            {
+                <span class="badge bg-info flex-shrink-0">Owned</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
+            }
+            <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
+        </div>
+        <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0 ajax-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="cardID" value="@group.CardID" />
+            <input type="hidden" name="imageID" value="@group.ImageID" />
+            <input type="hidden" name="setCode" value="@group.SetCode" />
+            <div class="d-flex align-items-center gap-1">
+                <small class="text-muted">Check Out:</small>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
+                    @for (int q = 1; q <= 3; q++)
+                    {
+                        var isActive = group.CheckedOutQuantity == q;
+                        var btnClass = isActive ? "btn-warning" : "btn-outline-secondary";
+                        var isDisabled = isActive || q > group.TotalQuantity;
+                        <button type="submit" name="quantity" value="@q"
+                                formaction="/Collection?handler=CheckOut&@filterParams"
+                                class="btn btn-sm @btnClass"
+                                @(isDisabled ? "disabled" : "")>@q</button>
+                    }
+                    <button type="submit"
+                            formaction="/Collection?handler=CheckIn&@filterParams"
+                            class="btn btn-sm btn-outline-success"
+                            @(group.CheckedOutQuantity == 0 ? "disabled" : "")>Check In</button>
+                </div>
+            </div>
+            @if (group.IsCheckedOut)
+            {
+                <small class="text-muted text-center">since @group.CheckedOutDate!.Value.ToString("MMM d, yyyy")</small>
+            }
+        </form>
+    </div>
+
+    <!-- Expanded entries -->
+    <div class="collapse border-top" id="@collapseID">
+        <div class="p-3 ps-4">
+            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = true, DeleteActionUrl = $"/Collection?handler=Delete&{filterParams}" }' />
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-card-id="@group.CardID"
+                    data-image-id="@group.ImageID"
+                    data-rarity-name="@group.RarityName"
+                    data-rarities="@string.Join(",", group.AvailableRarities)"
+                    data-set-code="@group.SetCode"
+                    data-tcg-date="@Model.TCGDate"
+                    onclick="openAddModal(this)">
+                + Purchase
+            </button>
+        </div>
+    </div>
+</div>
