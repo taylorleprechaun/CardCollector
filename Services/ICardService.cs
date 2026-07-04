@@ -32,14 +32,14 @@ namespace CardCollector.Services
         Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition);
 
         /// <summary>
-        /// Clears the checked-out status for the given (imageID, setCode) group.
+        /// Clears the checked-out status for the given (imageID, setCode, rarityName) group.
         /// </summary>
-        Task CheckInCardAsync(int imageID, string setCode);
+        Task CheckInCardAsync(int imageID, string setCode, string rarityName);
 
         /// <summary>
         /// Sets the checked-out quantity for the given group. Creates a new record if none exists (recording today as the checkout date); updates quantity on an existing record.
         /// </summary>
-        Task CheckOutCardAsync(int cardID, int imageID, string setCode, int quantity);
+        Task CheckOutCardAsync(int cardID, int imageID, string setCode, string rarityName, int quantity);
 
         /// <summary>
         /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.

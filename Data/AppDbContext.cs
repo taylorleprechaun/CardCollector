@@ -24,7 +24,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<CheckedOutCard>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.ImageID, e.SetCode }).IsUnique();
+                entity.HasIndex(e => new { e.ImageID, e.SetCode, e.RarityName }).IsUnique();
             });
 
             modelBuilder.Entity<CollectionEntry>(entity =>

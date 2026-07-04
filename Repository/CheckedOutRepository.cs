@@ -27,25 +27,25 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<CheckedOutCard?> GetAsync(int imageID, string setCode) =>
+        public async Task<CheckedOutCard?> GetAsync(int imageID, string setCode, string rarityName) =>
             await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode)
+                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
         {
             var records = await _context.CheckedOutCards
-                .Select(c => new { c.ImageID, c.SetCode, c.CheckedOutDate, c.Quantity })
+                .Select(c => new { c.ImageID, c.SetCode, c.RarityName, c.CheckedOutDate, c.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return records.ToDictionary(r => (r.ImageID, r.SetCode), r => (r.CheckedOutDate, r.Quantity));
+            return records.ToDictionary(r => (r.ImageID, r.SetCode, r.RarityName), r => (r.CheckedOutDate, r.Quantity));
         }
 
-        public async Task UpdateAsync(int imageID, string setCode, int quantity)
+        public async Task UpdateAsync(int imageID, string setCode, string rarityName, int quantity)
         {
             var entry = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode)
+                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);
 
             if (entry is null)
@@ -56,10 +56,10 @@ namespace CardCollector.Repository
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        public async Task<bool> RemoveAsync(int imageID, string setCode)
+        public async Task<bool> RemoveAsync(int imageID, string setCode, string rarityName)
         {
             var entry = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode)
+                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);
 
             if (entry is null)

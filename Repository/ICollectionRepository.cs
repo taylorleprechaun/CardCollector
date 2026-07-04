@@ -74,10 +74,10 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<string>> GetDistinctSetCodesAsync();
 
         /// <summary>
-        /// Returns the total owned quantity per (imageID, setCode) pair for the given set of pairs.
-        /// Pairs with no owned entries are omitted from the result.
+        /// Returns the total owned quantity per (imageID, setCode, rarityName) combination for the given set of combinations.
+        /// Combinations with no owned entries are omitted from the result.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs);
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode, string RarityName)> pairs);
 
         /// <summary>
         /// Returns the rarity-aware owned quantity per (imageID, setCode) pair for the given preferred versions.

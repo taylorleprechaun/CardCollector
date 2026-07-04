@@ -18,23 +18,23 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<CheckedOutCard>> GetAllAsync();
 
         /// <summary>
-        /// Returns the checked-out record for the given (imageID, setCode) pair, or null if not found.
+        /// Returns the checked-out record for the given (imageID, setCode, rarityName) combination, or null if not found.
         /// </summary>
-        Task<CheckedOutCard?> GetAsync(int imageID, string setCode);
+        Task<CheckedOutCard?> GetAsync(int imageID, string setCode, string rarityName);
 
         /// <summary>
-        /// Returns a lookup mapping (imageID, setCode) pairs to their checked-out date and quantity.
+        /// Returns a lookup mapping (imageID, setCode, rarityName) combinations to their checked-out date and quantity.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync();
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync();
 
         /// <summary>
-        /// Deletes the checked-out record for the given (imageID, setCode) pair. Returns false if not found.
+        /// Deletes the checked-out record for the given (imageID, setCode, rarityName) combination. Returns false if not found.
         /// </summary>
-        Task<bool> RemoveAsync(int imageID, string setCode);
+        Task<bool> RemoveAsync(int imageID, string setCode, string rarityName);
 
         /// <summary>
         /// Updates the quantity on an existing checked-out record.
         /// </summary>
-        Task UpdateAsync(int imageID, string setCode, int quantity);
+        Task UpdateAsync(int imageID, string setCode, string rarityName, int quantity);
     }
 }

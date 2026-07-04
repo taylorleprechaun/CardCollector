@@ -34,16 +34,16 @@ namespace CardCollector.Pages
             Results = await _cardService.SearchCheckedOutAsync(criteria).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode)
+        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode, string rarityName)
         {
-            await _cardService.CheckInCardAsync(imageID, setCode).ConfigureAwait(false);
+            await _cardService.CheckInCardAsync(imageID, setCode, rarityName).ConfigureAwait(false);
             return RedirectToPage(BuildFilterRedirect());
         }
 
-        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, int quantity)
+        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, string rarityName, int quantity)
         {
             if (quantity >= 1)
-                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, quantity).ConfigureAwait(false);
+                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, rarityName, quantity).ConfigureAwait(false);
             return RedirectToPage(BuildFilterRedirect());
         }
 

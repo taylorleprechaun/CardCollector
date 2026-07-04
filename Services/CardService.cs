@@ -209,21 +209,21 @@ namespace CardCollector.Services
             return category;
         }
 
-        public async Task CheckInCardAsync(int imageID, string setCode)
+        public async Task CheckInCardAsync(int imageID, string setCode, string rarityName)
         {
             if (string.IsNullOrWhiteSpace(setCode)) throw new ArgumentException("setCode is required.", nameof(setCode));
 
-            await _checkedOutRepository.RemoveAsync(imageID, setCode).ConfigureAwait(false);
+            await _checkedOutRepository.RemoveAsync(imageID, setCode, rarityName).ConfigureAwait(false);
         }
 
-        public async Task CheckOutCardAsync(int cardID, int imageID, string setCode, int quantity)
+        public async Task CheckOutCardAsync(int cardID, int imageID, string setCode, string rarityName, int quantity)
         {
             if (string.IsNullOrWhiteSpace(setCode)) throw new ArgumentException("setCode is required.", nameof(setCode));
 
-            var existing = await _checkedOutRepository.GetAsync(imageID, setCode).ConfigureAwait(false);
+            var existing = await _checkedOutRepository.GetAsync(imageID, setCode, rarityName).ConfigureAwait(false);
             if (existing is not null)
             {
-                await _checkedOutRepository.UpdateAsync(imageID, setCode, quantity).ConfigureAwait(false);
+                await _checkedOutRepository.UpdateAsync(imageID, setCode, rarityName, quantity).ConfigureAwait(false);
                 return;
             }
 
@@ -236,6 +236,7 @@ namespace CardCollector.Services
                 DateModified = now,
                 ImageID = imageID,
                 Quantity = quantity,
+                RarityName = rarityName,
                 SetCode = setCode
             }).ConfigureAwait(false);
         }
@@ -387,7 +388,7 @@ namespace CardCollector.Services
 
             // Phase 1: build all groups; non-preferred groups default PreferredVersionIsComplete = false
             var allGroups = entries
-                .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityCode))
+                .GroupBy(e => (e.CardName, e.SetCode, e.SetName, e.RarityName))
                 .Select(g =>
                 {
                     var first = g.First();
@@ -401,7 +402,7 @@ namespace CardCollector.Services
                         && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
                         && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase)));
 
-                    var hasCheckout = checkedOutLookup.TryGetValue((first.ImageID, first.SetCode), out var checkoutInfo);
+                    var hasCheckout = checkedOutLookup.TryGetValue((first.ImageID, first.SetCode, first.RarityName), out var checkoutInfo);
 
                     return CollectionGroupViewModel.From(
                         printing: first,
@@ -667,14 +668,14 @@ namespace CardCollector.Services
         {
             var records = await _checkedOutRepository.GetAllAsync().ConfigureAwait(false);
 
-            var pairs = records.Select(r => (r.ImageID, r.SetCode)).ToList();
+            var pairs = records.Select(r => (r.ImageID, r.SetCode, r.RarityName)).ToList();
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPairsAsync(pairs).ConfigureAwait(false);
 
             var enriched = records
                 .Select(r =>
                 {
-                    var printing = BuildCardPrinting(r.CardID, r.ImageID, r.SetCode, null);
-                    ownedQuantities.TryGetValue((r.ImageID, r.SetCode), out var totalOwned);
+                    var printing = BuildCardPrinting(r.CardID, r.ImageID, r.SetCode, r.RarityName);
+                    ownedQuantities.TryGetValue((r.ImageID, r.SetCode, r.RarityName), out var totalOwned);
                     return CheckedOutCardViewModel.From(printing, r.CheckedOutDate, r.Quantity, totalOwned);
                 })
                 .ToList();
@@ -944,10 +945,11 @@ namespace CardCollector.Services
         {
             var card = _cardDataRepository.GetCardByID(cardID);
             var image = card?.CardImages?.FirstOrDefault(i => i.ID == imageID);
-            var set = rarityNameHint != null
-                ? (card?.CardSets?.FirstOrDefault(s => s.Code == setCode && s.RarityName == rarityNameHint)
-                   ?? card?.CardSets?.FirstOrDefault(s => s.Code == setCode))
-                : card?.CardSets?.FirstOrDefault(s => s.Code == setCode);
+            var set = rarityNameHint is not null
+                ? card?.CardSets?.FirstOrDefault(s =>
+                    string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(s.RarityName, rarityNameHint, StringComparison.OrdinalIgnoreCase))
+                : card?.CardSets?.FirstOrDefault(s => string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase));
             var availableRarities = card?.CardSets?
                 .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
                 .Select(s => s.RarityName!)

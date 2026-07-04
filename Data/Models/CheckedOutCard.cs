@@ -21,6 +21,9 @@ namespace CardCollector.Data.Models
         public int Quantity { get; set; } = 1;
 
         [Required]
+        public string RarityName { get; set; } = string.Empty;
+
+        [Required]
         public string SetCode { get; set; } = string.Empty;
     }
 }

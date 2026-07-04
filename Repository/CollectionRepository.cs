@@ -161,25 +161,25 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode)> pairs)
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode, string RarityName)> pairs)
         {
             var pairList = pairs.ToList();
             if (pairList.Count == 0)
-                return new Dictionary<(int ImageID, string SetCode), int>();
+                return new Dictionary<(int ImageID, string SetCode, string RarityName), int>();
 
             var imageIDs = pairList.Select(p => p.ImageID).ToHashSet();
 
             var entries = await _context.CollectionEntries
                 .Where(e => imageIDs.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.ImageID, e.SetCode, e.Quantity })
+                .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             var pairSet = pairList.ToHashSet();
 
             return entries
-                .Where(e => pairSet.Contains((e.ImageID, e.SetCode)))
-                .GroupBy(e => (e.ImageID, e.SetCode))
+                .Where(e => pairSet.Contains((e.ImageID, e.SetCode, e.RarityName ?? string.Empty)))
+                .GroupBy(e => (e.ImageID, e.SetCode, RarityName: e.RarityName ?? string.Empty))
                 .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
         }
 

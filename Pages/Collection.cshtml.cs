@@ -128,20 +128,20 @@ namespace CardCollector.Pages
             if (setAsPreferred)
                 await _cardService.SavePreferredVersionAsync(cardID, imageID, setCode, rarityName);
 
-            return await RespondAfterMutationAsync(imageID, setCode).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(imageID, setCode, rarityName).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode)
+        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode, string rarityName)
         {
-            await _cardService.CheckInCardAsync(imageID, setCode).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(imageID, setCode).ConfigureAwait(false);
+            await _cardService.CheckInCardAsync(imageID, setCode, rarityName).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(imageID, setCode, rarityName).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, int quantity)
+        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, string rarityName, int quantity)
         {
             if (quantity >= 1)
-                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, quantity).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(imageID, setCode).ConfigureAwait(false);
+                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, rarityName, quantity).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(imageID, setCode, rarityName).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int entryID)
@@ -151,8 +151,8 @@ namespace CardCollector.Pages
             await _collectionRepository.DeleteAsync(entryID);
 
             return existing is null
-                ? await RespondAfterMutationAsync(0, string.Empty).ConfigureAwait(false)
-                : await RespondAfterMutationAsync(existing.ImageID, existing.SetCode).ConfigureAwait(false);
+                ? await RespondAfterMutationAsync(0, string.Empty, null).ConfigureAwait(false)
+                : await RespondAfterMutationAsync(existing.ImageID, existing.SetCode, existing.RarityName).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostEditAsync(
@@ -179,8 +179,8 @@ namespace CardCollector.Pages
             await _collectionRepository.UpdateAsync(entry);
 
             return existing is null
-                ? await RespondAfterMutationAsync(0, string.Empty).ConfigureAwait(false)
-                : await RespondAfterMutationAsync(existing.ImageID, existing.SetCode).ConfigureAwait(false);
+                ? await RespondAfterMutationAsync(0, string.Empty, null).ConfigureAwait(false)
+                : await RespondAfterMutationAsync(existing.ImageID, existing.SetCode, entry.RarityName).ConfigureAwait(false);
         }
 
         private CollectionSearchCriteria BuildCurrentCriteria(int page, int pageSize)
@@ -233,7 +233,7 @@ namespace CardCollector.Pages
         private static bool? ParseFilter(string? value) =>
             value == "yes" ? true : value == "no" ? false : null;
 
-        private async Task<IActionResult> RespondAfterMutationAsync(int imageID, string setCode)
+        private async Task<IActionResult> RespondAfterMutationAsync(int imageID, string setCode, string? rarityName)
         {
             if (!IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
@@ -242,7 +242,8 @@ namespace CardCollector.Pages
             Response.Headers["X-Total-Count"] = groups.TotalCount.ToString();
 
             var match = groups.Items.FirstOrDefault(g =>
-                g.ImageID == imageID && g.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase));
+                g.ImageID == imageID && g.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
+                && (rarityName is null || g.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase)));
             if (match is null)
                 return Content(string.Empty, "text/html");
 
