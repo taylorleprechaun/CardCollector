@@ -2,12 +2,28 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using CardCollector.Data.Models;
 
 namespace CardCollector.Extensions
 {
     public static class EnumExtensions
     {
         private static readonly ConcurrentDictionary<(Type, string), string> _cache = new();
+
+        public static string GetBadgeClass(this CollectionCompletionStatus status) => status switch
+        {
+            CollectionCompletionStatus.Complete => "bg-success",
+            CollectionCompletionStatus.Incomplete => "bg-warning text-dark",
+            CollectionCompletionStatus.Owned => "bg-info",
+            _ => "bg-secondary"
+        };
+
+        public static string GetBadgeClass(this CollectionStatus status) => status switch
+        {
+            CollectionStatus.Ordered => "bg-primary",
+            CollectionStatus.Owned => "bg-info",
+            _ => "bg-secondary"
+        };
 
         public static string GetDisplayName(this Enum value)
         {

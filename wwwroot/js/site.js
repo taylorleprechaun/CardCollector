@@ -56,7 +56,7 @@ function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
     function items() { return Array.from(dropdown.querySelectorAll('[data-ti]')); }
 
     function setHighlight(idx) {
-        items().forEach((el, i) => el.style.backgroundColor = i === idx ? '#e9ecef' : '');
+        items().forEach((el, i) => el.classList.toggle('cc-typeahead-item--active', i === idx));
         const el = items()[idx];
         if (el) el.scrollIntoView({ block: 'nearest' });
         highlighted = idx;
@@ -69,8 +69,7 @@ function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
         names.forEach(name => {
             const el = document.createElement('div');
             el.setAttribute('data-ti', '');
-            el.className = 'px-3 py-2';
-            el.style.cssText = 'cursor:pointer;font-size:.9rem';
+            el.className = 'cc-typeahead-item px-3 py-2';
             el.textContent = name;
             el.addEventListener('mouseover', () => setHighlight(items().indexOf(el)));
             el.addEventListener('pointerdown', e => {
@@ -146,5 +145,18 @@ function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
         const q = setInput.value.trim().toLowerCase();
         if (q.length < 2) { setDropdown.style.display = 'none'; return; }
         typeahead.show(setNames.filter(n => n.toLowerCase().includes(q)).slice(0, 20));
+    });
+})();
+
+(function () {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-bs-theme', next);
+        localStorage.setItem('cc-theme', next);
+        document.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next } }));
     });
 })();

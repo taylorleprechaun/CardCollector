@@ -1,5 +1,6 @@
 @model CollectionGroupRowViewModel
 @using CardCollector.Data.Models
+@using CardCollector.Extensions
 @using CardCollector.ViewModels
 @{
     var group = Model.Group;
@@ -26,22 +27,7 @@
                 </div>
                 <div class="text-muted small">&times;@group.TotalQuantity</div>
             </div>
-            @if (status == CollectionCompletionStatus.Complete)
-            {
-                <span class="badge bg-success flex-shrink-0">Complete</span>
-            }
-            else if (status == CollectionCompletionStatus.Incomplete)
-            {
-                <span class="badge bg-warning text-dark flex-shrink-0">Incomplete</span>
-            }
-            else if (status == CollectionCompletionStatus.Owned)
-            {
-                <span class="badge bg-info flex-shrink-0">Owned</span>
-            }
-            else
-            {
-                <span class="badge bg-secondary flex-shrink-0">Placeholder</span>
-            }
+            <span class="badge @status.GetBadgeClass() flex-shrink-0">@status.GetDisplayName()</span>
             <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
         </div>
         <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0 ajax-form">

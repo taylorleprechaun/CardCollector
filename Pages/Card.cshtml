@@ -1,6 +1,7 @@
 @page
 @model CardModel
 @using CardCollector.Data.Models
+@using CardCollector.Extensions
 @{
     ViewData["Title"] = Model.CurrentCard?.Name ?? "Card";
     var primaryImage = (Model.ImageID != 0
@@ -64,7 +65,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                 <h5 class="mt-4">Available Printings</h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle">
-                        <thead class="table-light">
+                        <thead class="cc-table-head">
                             <tr>
                                 <th class="d-none d-md-table-cell">Set</th>
                                 <th>Code</th>
@@ -95,27 +96,11 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                         }
                                         @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
                                         {
-                                            var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey);
-                                            if (collectionSummary.Status == CollectionStatus.Ordered)
-                                            {
-                                                <span class="badge bg-primary">Ordered &times; @collectionSummary.TotalQuantity</span>
-                                            }
-                                            else if (completionStatus == CollectionCompletionStatus.Complete)
-                                            {
-                                                <span class="badge bg-success">Complete &times; @collectionSummary.TotalQuantity</span>
-                                            }
-                                            else if (completionStatus == CollectionCompletionStatus.Incomplete)
-                                            {
-                                                <span class="badge bg-warning text-dark">Incomplete &times; @collectionSummary.TotalQuantity</span>
-                                            }
-                                            else if (completionStatus == CollectionCompletionStatus.Owned)
-                                            {
-                                                <span class="badge bg-info">Owned &times; @collectionSummary.TotalQuantity</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary">Placeholder &times; @collectionSummary.TotalQuantity</span>
-                                            }
+                                            var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey) ?? CollectionCompletionStatus.Placeholder;
+                                            var isOrdered = collectionSummary.Status == CollectionStatus.Ordered;
+                                            var badgeClass = isOrdered ? CollectionStatus.Ordered.GetBadgeClass() : completionStatus.GetBadgeClass();
+                                            var badgeLabel = isOrdered ? "Ordered" : completionStatus.GetDisplayName();
+                                            <span class="badge @badgeClass">@badgeLabel &times; @collectionSummary.TotalQuantity</span>
                                         }
                                     </td>
                                     <td class="text-nowrap d-none d-md-table-cell">

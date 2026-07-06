@@ -45,3 +45,182 @@
     font-size: 13px;
 }
 .flatpickr-today-btn:hover { background: #e9ecef; }
+
+/* ---------------------------------------------------------------
+   Theme tokens
+   Bootstrap 5.3's utility classes (.bg-primary, .text-primary,
+   .border-primary, .card, .dropdown-menu, etc.) consume --bs-primary-rgb /
+   --bs-body-bg / --bs-border-color at runtime, so overriding them here
+   reskins those automatically in both [data-bs-theme] modes.
+--------------------------------------------------------------- */
+:root,
+[data-bs-theme="light"] {
+    --bs-body-font-family: 'Inter', var(--bs-font-sans-serif);
+
+    --bs-primary: #6f42c1;
+    --bs-primary-rgb: 111, 66, 193;
+    --bs-primary-text-emphasis: #45298a;
+    --bs-primary-bg-subtle: #ece2fa;
+    --bs-primary-border-subtle: #cbb3ec;
+    --bs-link-color: var(--bs-primary);
+    --bs-link-color-rgb: var(--bs-primary-rgb);
+    --bs-link-hover-color: #56348f;
+    --bs-link-hover-color-rgb: 86, 52, 143;
+    --bs-focus-ring-color: rgba(var(--bs-primary-rgb), 0.25);
+
+    --bs-border-radius: 0.6rem;
+    --bs-border-radius-sm: 0.4rem;
+    --bs-border-radius-lg: 0.85rem;
+
+    --cc-btn-primary-hover: #5d36a3;
+    --cc-btn-primary-active: #4f2f8a;
+    --cc-surface-shadow: 0 1px 2px rgba(20, 20, 30, 0.06), 0 4px 12px rgba(20, 20, 30, 0.06);
+
+    --cc-indigo: #6610f2;
+    --cc-teal: #157a68;
+}
+
+[data-bs-theme="dark"] {
+    --bs-primary: #b294f2;
+    --bs-primary-rgb: 178, 148, 242;
+    --bs-primary-text-emphasis: #d7c6fa;
+    --bs-primary-bg-subtle: #2c2350;
+    --bs-primary-border-subtle: #4c3d80;
+    --bs-link-color: var(--bs-primary);
+    --bs-link-color-rgb: var(--bs-primary-rgb);
+    --bs-link-hover-color: #cabbf7;
+    --bs-link-hover-color-rgb: 202, 187, 247;
+    --bs-focus-ring-color: rgba(var(--bs-primary-rgb), 0.3);
+
+    --bs-body-bg: #15141c;
+    --bs-body-bg-rgb: 21, 20, 28;
+    --bs-tertiary-bg: #1e1c28;
+    --bs-tertiary-bg-rgb: 30, 28, 40;
+    --bs-secondary-bg: #211f2c;
+    --bs-secondary-bg-rgb: 33, 31, 44;
+
+    --cc-btn-primary-hover: #c2a8f5;
+    --cc-btn-primary-active: #9678e0;
+    --cc-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.35);
+
+    --cc-indigo: #a08cf5;
+    --cc-teal: #4fd1c5;
+}
+
+/* Bootstrap's compiled .btn-primary/.btn-outline-primary hardcode a literal hex
+   per-class rather than referencing --bs-primary, so they need an explicit override. */
+.btn-primary {
+    --bs-btn-bg: var(--bs-primary);
+    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-hover-bg: var(--cc-btn-primary-hover);
+    --bs-btn-hover-border-color: var(--cc-btn-primary-hover);
+    --bs-btn-active-bg: var(--cc-btn-primary-active);
+    --bs-btn-active-border-color: var(--cc-btn-primary-active);
+    --bs-btn-disabled-bg: var(--bs-primary);
+    --bs-btn-disabled-border-color: var(--bs-primary);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--bs-primary);
+    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-hover-bg: var(--bs-primary);
+    --bs-btn-hover-border-color: var(--bs-primary);
+    --bs-btn-active-bg: var(--bs-primary);
+    --bs-btn-active-border-color: var(--bs-primary);
+    --bs-btn-disabled-color: var(--bs-primary);
+    --bs-btn-disabled-border-color: var(--bs-primary);
+}
+
+/* Two extra accent hues (Bootstrap's own indigo/teal swatches, unaffected by
+   dark mode) for dashboard tiles that need a distinct color beyond the
+   6 semantic theme colors already in use. */
+.text-cc-indigo { color: var(--cc-indigo) !important; }
+.border-cc-indigo { border-color: var(--cc-indigo) !important; }
+.text-cc-teal { color: var(--cc-teal) !important; }
+.border-cc-teal { border-color: var(--cc-teal) !important; }
+
+/* ---------------------------------------------------------------
+   Navbar
+--------------------------------------------------------------- */
+.cc-navbar {
+    background: linear-gradient(180deg, #241b3d, #1a1430);
+    border-bottom: 1px solid rgba(178, 148, 242, 0.25);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.cc-navbar .dropdown-menu-dark {
+    --bs-dropdown-link-active-bg: var(--bs-primary);
+}
+.cc-brand-icon {
+    width: 22px;
+    height: 22px;
+    vertical-align: -0.3em;
+}
+.cc-theme-toggle {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+}
+.cc-theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+.cc-theme-toggle .bi-sun-fill { display: none; }
+[data-bs-theme="dark"] .cc-theme-toggle .bi-moon-stars-fill { display: none; }
+[data-bs-theme="dark"] .cc-theme-toggle .bi-sun-fill { display: inline-block; }
+
+/* ---------------------------------------------------------------
+   Cards, stat tiles, transitions
+--------------------------------------------------------------- */
+.card {
+    box-shadow: var(--cc-surface-shadow);
+}
+.card, .btn, .badge, .list-group-item, .dropdown-item {
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+
+.stat-card {
+    border: 0;
+    border-left-width: 4px;
+    border-left-style: solid;
+}
+
+/* ---------------------------------------------------------------
+   Typeahead dropdowns (shared by _SearchForm, _AdvancedFilters, Stats)
+--------------------------------------------------------------- */
+.cc-typeahead-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    max-height: 250px;
+    overflow-y: auto;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-top: none;
+    border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+    box-shadow: var(--cc-surface-shadow);
+}
+.cc-typeahead-item {
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.cc-typeahead-item--active {
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* ---------------------------------------------------------------
+   Medal rank badges (Stats page: rarity/acquisition breakdown, top cards)
+--------------------------------------------------------------- */
+.medal-badge-gold { background-color: #FFD700; color: #000; }
+.medal-badge-silver { background-color: #C0C0C0; color: #000; }
+.medal-badge-bronze { background-color: #CD7F32; color: #fff; }
+
+/* ---------------------------------------------------------------
+   Table headers: follow the active theme instead of a hardcoded
+   table-light/table-dark class per page.
+--------------------------------------------------------------- */
+.cc-table-head {
+    background-color: var(--bs-tertiary-bg);
+}

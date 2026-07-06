@@ -5,6 +5,13 @@ const CHART_COLORS = [
     '#d37295', '#fabfd2', '#b6992d', '#f1ce63', '#a0cbe8'
 ];
 
+function applyChartTheme() {
+    const styles = getComputedStyle(document.documentElement);
+    Chart.defaults.color = styles.getPropertyValue('--bs-body-color').trim();
+    Chart.defaults.borderColor = styles.getPropertyValue('--bs-border-color-translucent').trim();
+}
+applyChartTheme();
+
 function buildHorizontalBar(id, labels, data) {
     const ctx = document.getElementById(id);
     if (!ctx) return null;
@@ -60,10 +67,13 @@ function buildValueBar(id, labels, data) {
     });
 }
 
+let setChart = null;
 let setValueChart = null;
 let valueChart = null;
+let lastSetValueData = null;
 
 function updateSetValueChart(labels, data) {
+    lastSetValueData = { labels, data };
     if (setValueChart) {
         setValueChart.data.labels = labels;
         setValueChart.data.datasets[0].data = data;
@@ -184,17 +194,22 @@ function updateTopCards(topCards) {
     wrapper.style.display = '';
 }
 
-if (setLabels.length > 0) buildHorizontalBar('setChart', setLabels, setCounts);
-if (setValueLabels.length > 0) setValueChart = buildValueBar('setValueChart', setValueLabels, setValueData);
+if (setLabels.length > 0) setChart = buildHorizontalBar('setChart', setLabels, setCounts);
+if (setValueLabels.length > 0) {
+    lastSetValueData = { labels: setValueLabels, data: setValueData };
+    setValueChart = buildValueBar('setValueChart', setValueLabels, setValueData);
+}
 if (historyDates.length > 0) buildValueChart(historyDates, historyValues, historyCardCounts);
 
 let cardHistoryChart = null;
+let lastCardHistorySeries = null;
 
 function buildPriceHistoryChart(series) {
     const ctx = document.getElementById('cardHistoryChart');
     const wrapper = document.getElementById('cardHistoryChartWrapper');
     if (!ctx || !wrapper) return;
 
+    lastCardHistorySeries = series;
     const datasets = series.map((s, i) => ({
         label: s.label,
         data: s.dates.map((d, j) => ({ x: d, y: s.values[j] })),
@@ -327,4 +342,28 @@ function refreshCardData() {
 }
 
 document.getElementById('refreshCardDataBtn')?.addEventListener('click', refreshCardData);
+
+document.addEventListener('themechange', function () {
+    applyChartTheme();
+
+    if (setChart) {
+        setChart.destroy();
+        setChart = setLabels.length > 0 ? buildHorizontalBar('setChart', setLabels, setCounts) : null;
+    }
+    if (setValueChart) {
+        setValueChart.destroy();
+        setValueChart = null;
+        if (lastSetValueData) setValueChart = buildValueBar('setValueChart', lastSetValueData.labels, lastSetValueData.data);
+    }
+    if (valueChart) {
+        valueChart.destroy();
+        valueChart = null;
+        buildValueChart(historyDates, historyValues, historyCardCounts);
+    }
+    if (cardHistoryChart) {
+        cardHistoryChart.destroy();
+        cardHistoryChart = null;
+        if (lastCardHistorySeries) buildPriceHistoryChart(lastCardHistorySeries);
+    }
+});
 

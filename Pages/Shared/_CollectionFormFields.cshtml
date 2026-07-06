@@ -51,7 +51,7 @@
     <div class="col-12 col-sm-4">
         <label class="form-label d-flex align-items-center gap-1">
             Purchase Date
-            <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
                     onclick="document.getElementById('@(Model.Prefix)PurchaseDate')._flatpickr?.clear()"
                     title="Clear date">&times;</button>
         </label>
@@ -67,7 +67,7 @@
         {
             <label class="form-label d-flex align-items-center gap-1">
                 Market Price ($)
-                <button type="button" class="btn btn-sm btn-link p-0 text-secondary"
+                <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
                         onclick="document.getElementById('@(Model.Prefix)MarketPrice').value = document.getElementById('@(Model.Prefix)PurchasePrice').value"
                         title="Copy from purchase price">&#x2194;</button>
             </label>
