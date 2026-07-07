@@ -1,0 +1,56 @@
+name: Deploy CardCollector
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish
+        run: dotnet publish CardCollector.csproj -c Release -o publish
+
+      - name: Write private appsettings
+        env:
+          APPSETTINGS_PRIVATE_JSON: ${{ secrets.APPSETTINGS_PRIVATE_JSON }}
+        run: printf '%s' "$APPSETTINGS_PRIVATE_JSON" > appsettings-private.json
+
+      - name: Configure SSH
+        env:
+          LINODE_SSH_KEY: ${{ secrets.LINODE_SSH_KEY }}
+          LINODE_KNOWN_HOSTS: ${{ secrets.LINODE_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$LINODE_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$LINODE_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # Never touches Data/ - scp only adds/overwrites files present in the publish output,
+      # it does not delete or sync anything else on the remote (no --delete, no rsync).
+      - name: Deploy application files
+        env:
+          LINODE_USER: ${{ secrets.LINODE_USER }}
+          LINODE_HOST: ${{ secrets.LINODE_HOST }}
+        run: scp -i ~/.ssh/deploy_key -r publish/* "$LINODE_USER@$LINODE_HOST:/var/www/card-collector/"
+
+      - name: Deploy private configuration
+        env:
+          LINODE_USER: ${{ secrets.LINODE_USER }}
+          LINODE_HOST: ${{ secrets.LINODE_HOST }}
+        run: scp -i ~/.ssh/deploy_key appsettings-private.json "$LINODE_USER@$LINODE_HOST:/var/www/card-collector/appsettings-private.json"
+
+      - name: Restart service
+        env:
+          LINODE_USER: ${{ secrets.LINODE_USER }}
+          LINODE_HOST: ${{ secrets.LINODE_HOST }}
+        run: ssh -i ~/.ssh/deploy_key "$LINODE_USER@$LINODE_HOST" "sudo systemctl restart card-collector.service"
