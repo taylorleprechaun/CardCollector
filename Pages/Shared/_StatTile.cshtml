@@ -1,0 +1,17 @@
+@model CardCollector.ViewModels.StatTileViewModel
+@{
+    var statusClass = Model.Status == CardCollector.ViewModels.StatTileStatus.Neutral
+        ? string.Empty
+        : $"stat-tile--{Model.Status.ToString().ToLowerInvariant()}";
+    var accentClass = Model.AccentColor is null ? string.Empty : $"stat-tile--accent-{Model.AccentColor}";
+}
+<div class="stat-tile @statusClass @accentClass">
+    <div class="stat-tile-label">
+        @if (Model.Status != CardCollector.ViewModels.StatTileStatus.Neutral)
+        {
+            <span class="cc-status-dot" aria-hidden="true"></span>
+        }
+        @Model.Label
+    </div>
+    <div class="stat-tile-value">@Model.Value</div>
+</div>

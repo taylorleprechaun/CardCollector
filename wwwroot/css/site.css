@@ -75,9 +75,32 @@
     --cc-btn-primary-hover: #5d36a3;
     --cc-btn-primary-active: #4f2f8a;
     --cc-surface-shadow: 0 1px 2px rgba(20, 20, 30, 0.06), 0 4px 12px rgba(20, 20, 30, 0.06);
+    --cc-surface-shadow-sm: 0 1px 2px rgba(20, 20, 30, 0.05);
+    --cc-surface-shadow-lg: 0 4px 16px rgba(20, 20, 30, 0.07), 0 12px 32px rgba(20, 20, 30, 0.08);
+    --cc-border-color-soft: rgba(20, 20, 30, 0.08);
 
     --cc-indigo: #6610f2;
     --cc-teal: #157a68;
+
+    /* Typography scale */
+    --cc-font-size-xs: 0.75rem;
+    --cc-font-size-sm: 0.875rem;
+    --cc-font-size-base: 1rem;
+    --cc-font-size-lg: 1.125rem;
+    --cc-font-size-xl: 1.5rem;
+    --cc-font-size-2xl: 2rem;
+    --cc-font-size-hero: 3rem;
+    --cc-font-weight-medium: 500;
+    --cc-font-weight-semibold: 600;
+    --cc-font-weight-bold: 700;
+    --cc-line-height-tight: 1.2;
+    --cc-line-height-normal: 1.5;
+
+    /* Status tokens — reserved for genuine state, always paired with an icon/label */
+    --cc-status-good: var(--bs-success);
+    --cc-status-warning: var(--bs-warning);
+    --cc-status-serious: #fd7e14;
+    --cc-status-critical: var(--bs-danger);
 }
 
 [data-bs-theme="dark"] {
@@ -102,6 +125,9 @@
     --cc-btn-primary-hover: #c2a8f5;
     --cc-btn-primary-active: #9678e0;
     --cc-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.35);
+    --cc-surface-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --cc-surface-shadow-lg: 0 4px 18px rgba(0, 0, 0, 0.4), 0 12px 36px rgba(0, 0, 0, 0.45);
+    --cc-border-color-soft: rgba(255, 255, 255, 0.08);
 
     --cc-indigo: #a08cf5;
     --cc-teal: #4fd1c5;
@@ -145,10 +171,13 @@
 .cc-navbar {
     background: linear-gradient(180deg, #241b3d, #1a1430);
     border-bottom: 1px solid rgba(178, 148, 242, 0.25);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--cc-surface-shadow-sm);
 }
 .cc-navbar .dropdown-menu-dark {
     --bs-dropdown-link-active-bg: var(--bs-primary);
+}
+.cc-navbar .nav-link.active {
+    box-shadow: inset 0 -2px 0 var(--bs-primary);
 }
 .cc-brand-icon {
     width: 22px;
@@ -178,10 +207,81 @@
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
-.stat-card {
-    border: 0;
-    border-left-width: 4px;
-    border-left-style: solid;
+/* ---------------------------------------------------------------
+   Stat tile: label (muted, small, sentence case) + a semibold
+   auto-compact value. Neutral surface by default; a status accent
+   only appears when a tile genuinely signals something actionable,
+   and always pairs the color with the dot + label above it.
+--------------------------------------------------------------- */
+.stat-tile {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--cc-surface-shadow-sm);
+    padding: 0.9rem 1rem;
+    height: 100%;
+}
+.stat-tile-label {
+    font-size: var(--cc-font-size-xs);
+    font-weight: var(--cc-font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-bottom: 0.35rem;
+}
+.stat-tile-value {
+    font-size: var(--cc-font-size-xl);
+    font-weight: var(--cc-font-weight-semibold);
+    line-height: var(--cc-line-height-tight);
+    color: var(--bs-body-color);
+}
+.stat-tile--good .stat-tile-label .cc-status-dot { background-color: var(--cc-status-good); }
+.stat-tile--warning .stat-tile-label .cc-status-dot { background-color: var(--cc-status-warning); }
+.stat-tile--serious .stat-tile-label .cc-status-dot { background-color: var(--cc-status-serious); }
+.stat-tile--critical .stat-tile-label .cc-status-dot { background-color: var(--cc-status-critical); }
+
+/* Accent variants: a fully colored tile (border + label/value tint),
+   independent of --status — used where every tile in a row gets its
+   own color rather than color being reserved for genuine state. */
+.stat-tile--accent-success { border-color: var(--bs-success); }
+.stat-tile--accent-success .stat-tile-label,
+.stat-tile--accent-success .stat-tile-value { color: var(--bs-success-text-emphasis); }
+
+.stat-tile--accent-info { border-color: var(--bs-info); }
+.stat-tile--accent-info .stat-tile-label,
+.stat-tile--accent-info .stat-tile-value { color: var(--bs-info-text-emphasis); }
+
+.stat-tile--accent-warning { border-color: var(--bs-warning); }
+.stat-tile--accent-warning .stat-tile-label,
+.stat-tile--accent-warning .stat-tile-value { color: var(--bs-warning-text-emphasis); }
+
+.stat-tile--accent-primary { border-color: var(--bs-primary); }
+.stat-tile--accent-primary .stat-tile-label,
+.stat-tile--accent-primary .stat-tile-value { color: var(--bs-primary-text-emphasis); }
+
+.stat-tile--accent-danger { border-color: var(--bs-danger); }
+.stat-tile--accent-danger .stat-tile-label,
+.stat-tile--accent-danger .stat-tile-value { color: var(--bs-danger-text-emphasis); }
+
+.stat-tile--accent-secondary { border-color: var(--bs-secondary); }
+.stat-tile--accent-secondary .stat-tile-label,
+.stat-tile--accent-secondary .stat-tile-value { color: var(--bs-secondary-text-emphasis); }
+
+.stat-tile--accent-indigo { border-color: var(--cc-indigo); }
+.stat-tile--accent-indigo .stat-tile-label,
+.stat-tile--accent-indigo .stat-tile-value { color: var(--cc-indigo); }
+
+.stat-tile--accent-teal { border-color: var(--cc-teal); }
+.stat-tile--accent-teal .stat-tile-label,
+.stat-tile--accent-teal .stat-tile-value { color: var(--cc-teal); }
+
+.cc-hero-figure {
+    font-size: var(--cc-font-size-hero);
+    font-weight: var(--cc-font-weight-semibold);
+    line-height: var(--cc-line-height-tight);
+    color: var(--bs-body-color);
 }
 
 /* ---------------------------------------------------------------
@@ -222,5 +322,99 @@
    table-light/table-dark class per page.
 --------------------------------------------------------------- */
 .cc-table-head {
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* ---------------------------------------------------------------
+   Status badges: reserved for genuine state (never decoration).
+   Always pairs a colored dot with a text label so identity never
+   rides on color alone.
+--------------------------------------------------------------- */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-weight: var(--cc-font-weight-medium);
+    font-size: var(--cc-font-size-sm);
+    color: var(--bs-body-color);
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm);
+    padding: 0.3em 0.65em;
+}
+/* The dot is a ::before, not a DOM child — some badges (e.g. #totalCountBadge)
+   get their text replaced wholesale via textContent by collection-groups.js;
+   a pseudo-element survives that, a child span would not. */
+.badge-status::before {
+    content: "";
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.cc-status-dot {
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.badge-status--good::before { background-color: var(--cc-status-good); }
+.badge-status--warning::before { background-color: var(--cc-status-warning); }
+.badge-status--serious::before { background-color: var(--cc-status-serious); }
+.badge-status--critical::before { background-color: var(--cc-status-critical); }
+
+/* Pure counts, not state — stops pages reaching for a semantic color
+   just to look "colorful" (e.g. "N needed", "N pending"). */
+.badge-neutral, .badge-count {
+    display: inline-flex;
+    align-items: center;
+    font-weight: var(--cc-font-weight-medium);
+    font-size: var(--cc-font-size-sm);
+    color: var(--bs-body-color);
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm);
+    padding: 0.3em 0.65em;
+}
+
+/* ---------------------------------------------------------------
+   Table framing: a consistent rounded/shadowed frame for
+   .table-responsive wrappers, instead of Bootstrap's bare default.
+--------------------------------------------------------------- */
+.cc-table-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--cc-surface-shadow-sm);
+    overflow: hidden;
+}
+.cc-table-card table {
+    margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------
+   Preferred-printing badge: a singular real state, but "preferred"
+   isn't a warning, so it gets the primary accent instead of
+   Bootstrap's warning-yellow.
+--------------------------------------------------------------- */
+.badge-preferred {
+    display: inline-flex;
+    align-items: center;
+    font-weight: var(--cc-font-weight-medium);
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    border: 1px solid var(--bs-primary-border-subtle);
+}
+
+/* ---------------------------------------------------------------
+   Collapsible group row (Collection, EditionAudit): a subtle hover
+   tint on the whole row. Purely additive — does not touch the
+   id/.collapse structure collection-groups.js depends on.
+--------------------------------------------------------------- */
+.cc-group-row {
+    transition: background-color 0.15s ease;
+}
+.cc-group-row:hover {
     background-color: var(--bs-tertiary-bg);
 }

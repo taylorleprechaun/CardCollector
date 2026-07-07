@@ -1,13 +1,14 @@
 @page
 @model OrdersModel
 @using CardCollector.Data.Models
+@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Orders";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Orders</h1>
-    <span class="badge bg-warning text-dark fs-6">@Model.Orders.Count pending</span>
+    <span class="badge-neutral fs-6">@Model.Orders.Count pending</span>
 </div>
 
 @if (Model.Orders.Count == 0)
@@ -19,7 +20,7 @@
 }
 else
 {
-    <div class="table-responsive">
+    <div class="table-responsive cc-table-card">
         <table class="table table-hover align-middle">
             <thead class="cc-table-head">
                 <tr>
@@ -42,12 +43,7 @@ else
                 {
                     <tr>
                         <td>
-                            @if (!string.IsNullOrEmpty(order.ImageURLSmall))
-                            {
-                                <img src="@order.ImageURLSmall"
-                                     alt="@order.CardName"
-                                     style="width: 44px; height: auto; border-radius: 3px;" />
-                            }
+                            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(order.ImageURLSmall, order.CardName)' />
                         </td>
                         <td class="fw-semibold">
                             @order.CardName

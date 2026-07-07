@@ -10,7 +10,7 @@
     var status = group.CompletionStatus;
 }
 
-<div class="list-group-item p-0" id="group-row-@rowKey">
+<div class="list-group-item p-0 cc-group-row" id="group-row-@rowKey">
     <!-- Toggle row -->
     <div class="d-flex flex-column flex-md-row align-items-md-center">
         <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
@@ -42,7 +42,7 @@
                     @for (int q = 1; q <= 3; q++)
                     {
                         var isActive = group.CheckedOutQuantity == q;
-                        var btnClass = isActive ? "btn-warning" : "btn-outline-secondary";
+                        var btnClass = isActive ? "btn-primary" : "btn-outline-secondary";
                         var isDisabled = isActive || q > group.TotalQuantity;
                         <button type="submit" name="quantity" value="@q"
                                 formaction="/Collection?handler=CheckOut&@filterParams"

@@ -2,8 +2,8 @@
 @using CardCollector.Extensions
 @using CardCollector.ViewModels
 
-<div class="table-responsive">
-<table class="table table-sm mb-3">
+<div class="table-responsive cc-table-card mb-3">
+<table class="table table-sm mb-0">
     <thead class="cc-table-head">
         <tr>
             <th>Condition</th>
@@ -43,11 +43,11 @@
                     }
                     @if (auditEntry?.Category == EditionAuditCategory.EditionMismatch)
                     {
-                        <span class="badge bg-danger ms-1">Mismatch</span>
+                        <span class="badge-status badge-status--critical ms-1">Mismatch</span>
                     }
                     else if (auditEntry?.Category == EditionAuditCategory.Unverifiable)
                     {
-                        <span class="badge bg-secondary ms-1">Unverifiable</span>
+                        <span class="badge-status badge-status--warning ms-1">Unverifiable</span>
                     }
                 </td>
                 <td class="d-none d-md-table-cell">

@@ -8,7 +8,7 @@
     var collapseID = "group-" + rowKey;
 }
 
-<div class="list-group-item p-0" id="group-row-@rowKey">
+<div class="list-group-item p-0 cc-group-row" id="group-row-@rowKey">
     <!-- Toggle row -->
     <div class="d-flex flex-column flex-md-row align-items-md-center">
         <div class="list-group-item-action flex-grow-1 d-flex align-items-center gap-3 py-2 px-3 border-0 list-group-toggle"
@@ -27,11 +27,11 @@
             </div>
             @if (group.FlaggedCategory == EditionAuditCategory.EditionMismatch)
             {
-                <span class="badge bg-danger flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
+                <span class="badge-status badge-status--critical flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
             }
             else
             {
-                <span class="badge bg-secondary flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
+                <span class="badge-status badge-status--warning flex-shrink-0">@group.FlaggedCategory.GetDisplayName()</span>
             }
             <span class="chevron flex-shrink-0 text-muted ms-1">&#9658;</span>
         </div>

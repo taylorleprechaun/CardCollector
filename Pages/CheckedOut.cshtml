@@ -12,8 +12,8 @@
     @if (Model.Results.TotalCount > 0)
     {
         <div class="d-flex flex-column align-items-end gap-1">
-            <span class="badge bg-warning text-dark fs-6">@Model.Results.TotalCount unique</span>
-            <span class="badge bg-warning text-dark fs-6">@Model.Results.TotalQuantitySum individual</span>
+            <span class="badge-neutral fs-6">@Model.Results.TotalCount unique</span>
+            <span class="badge-neutral fs-6">@Model.Results.TotalQuantitySum individual</span>
         </div>
     }
 </div>
@@ -45,7 +45,7 @@
 }
 else
 {
-    <div class="list-group mb-4">
+    <div class="list-group mb-4 cc-table-card">
         @foreach (var item in Model.Results.Items)
         {
             <div class="list-group-item d-flex flex-column flex-md-row align-items-md-center gap-2 py-2">
@@ -77,7 +77,7 @@ else
                                 var isDisabled = isActive || q > item.TotalOwnedQuantity;
                                 <button type="submit" name="quantity" value="@q"
                                         formaction="/CheckedOut?handler=CheckOut&@filterParams"
-                                        class="btn btn-sm @(isActive ? "btn-warning" : "btn-outline-secondary")"
+                                        class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
                                         @(isDisabled ? "disabled" : "")>@q</button>
                             }
                             <button type="submit"
