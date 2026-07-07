@@ -101,8 +101,9 @@
             <p class="text-muted" id="noTopCardsMsg">No market value data yet. Market value is refreshed automatically each night.</p>
         }
         <div id="topCardsWrapper" @(Model.Stats.TopValueCards.Count == 0 ? "style=\"display:none\"" : "")>
+            <div class="table-responsive cc-table-card">
             <table class="table table-sm table-striped mb-0">
-                <thead>
+                <thead class="cc-table-head">
                     <tr>
                         <th class="text-center">#</th>
                         <th>Card</th>
@@ -133,6 +134,7 @@
                     }
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

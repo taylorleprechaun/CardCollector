@@ -1,5 +1,6 @@
 @page
 @model IndexModel
+@using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Dashboard";
     var totalPossible = Model.Stats.TotalCards * 3;
@@ -10,10 +11,14 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <h5 class="card-title">Collection Progress</h5>
-        <div class="d-flex justify-content-between text-muted small">
-            <span>@Model.Stats.CompletedCount.ToString("N0") complete &middot; @Model.Stats.OrderedCount.ToString("N0") ordered &middot; @Model.Stats.IncompleteSetCount.ToString("N0") in progress</span>
-            <span>@overallPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-end mb-2">
+            <div>
+                <h5 class="card-title mb-1">Collection Progress</h5>
+                <div class="text-muted small">
+                    @Model.Stats.CompletedCount.ToString("N0") complete &middot; @Model.Stats.OrderedCount.ToString("N0") ordered &middot; @Model.Stats.IncompleteSetCount.ToString("N0") in progress
+                </div>
+            </div>
+            <div class="cc-hero-figure">@overallPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</div>
         </div>
         <div class="d-flex justify-content-between mb-2 text-muted small">
             <span>@Model.Stats.TotalCardQuantity.ToString("N0") copies</span>
@@ -48,79 +53,40 @@
     </div>
 </div>
 
+@{
+    var tiles = new[]
+    {
+        new StatTileViewModel("Completed", Model.Stats.CompletedCount.ToString("N0"), AccentColor: "success"),
+        new StatTileViewModel("Incomplete", Model.Stats.IncompleteSetCount.ToString("N0"), AccentColor: "info"),
+        new StatTileViewModel("Ordered", Model.Stats.OrderedCount.ToString("N0"), AccentColor: "warning"),
+        new StatTileViewModel("Wishlisted", Model.Stats.WishlistCount.ToString("N0"), AccentColor: "primary"),
+        new StatTileViewModel("Placeholders", Model.Stats.PlaceholderSetCount.ToString("N0"), AccentColor: "danger"),
+        new StatTileViewModel("Remaining", Model.Stats.RemainingCount.ToString("N0"), AccentColor: "secondary"),
+        new StatTileViewModel("Total spent", Model.Stats.TotalSpent.HasValue ? Model.Stats.TotalSpent.Value.ToString("C") : "—", AccentColor: "indigo"),
+        new StatTileViewModel("Market value", Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—", AccentColor: "teal"),
+    };
+}
 <div class="row g-3 mb-3">
-    <div class="col">
-        <div class="card stat-card text-center border-success h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-success-emphasis text-uppercase small">Completed</h6>
-                <p class="card-text fs-4 fw-bold text-success-emphasis">@Model.Stats.CompletedCount.ToString("N0")</p>
-            </div>
+    @foreach (var tile in tiles.Take(3))
+    {
+        <div class="col">
+            <partial name="_StatTile" model="tile" />
         </div>
-    </div>
-    <div class="col">
-        <div class="card stat-card text-center border-info h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-info-emphasis text-uppercase small">Incomplete</h6>
-                <p class="card-text fs-4 fw-bold text-info-emphasis">@Model.Stats.IncompleteSetCount.ToString("N0")</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card stat-card text-center border-warning h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-warning-emphasis text-uppercase small">Ordered</h6>
-                <p class="card-text fs-4 fw-bold text-warning-emphasis">@Model.Stats.OrderedCount.ToString("N0")</p>
-            </div>
-        </div>
-    </div>
+    }
 </div>
-
 <div class="row g-3 mb-3">
-    <div class="col">
-        <div class="card stat-card text-center border-primary h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-primary-emphasis text-uppercase small">Wishlisted</h6>
-                <p class="card-text fs-4 fw-bold text-primary-emphasis">@Model.Stats.WishlistCount.ToString("N0")</p>
-            </div>
+    @foreach (var tile in tiles.Skip(3).Take(3))
+    {
+        <div class="col">
+            <partial name="_StatTile" model="tile" />
         </div>
-    </div>
-    <div class="col">
-        <div class="card stat-card text-center border-danger h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-danger-emphasis text-uppercase small">Placeholders</h6>
-                <p class="card-text fs-4 fw-bold text-danger-emphasis">@Model.Stats.PlaceholderSetCount.ToString("N0")</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card stat-card text-center border-secondary h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-secondary-emphasis text-uppercase small">Remaining</h6>
-                <p class="card-text fs-4 fw-bold text-secondary-emphasis">@Model.Stats.RemainingCount.ToString("N0")</p>
-            </div>
-        </div>
-    </div>
+    }
 </div>
-
 <div class="row g-3">
-    <div class="col">
-        <div class="card stat-card text-center border-cc-indigo h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-cc-indigo text-uppercase small">Total Spent</h6>
-                <p class="card-text fs-4 fw-bold text-cc-indigo">
-                    @(Model.Stats.TotalSpent.HasValue ? Model.Stats.TotalSpent.Value.ToString("C") : "—")
-                </p>
-            </div>
+    @foreach (var tile in tiles.Skip(6))
+    {
+        <div class="col">
+            <partial name="_StatTile" model="tile" />
         </div>
-    </div>
-    <div class="col">
-        <div class="card stat-card text-center border-cc-teal h-100">
-            <div class="card-body p-2">
-                <h6 class="card-title text-cc-teal text-uppercase small">Market Value</h6>
-                <p class="card-text fs-4 fw-bold text-cc-teal">
-                    @(Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—")
-                </p>
-            </div>
-        </div>
-    </div>
+    }
 </div>

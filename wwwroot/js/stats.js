@@ -1,9 +1,22 @@
-const CHART_COLORS = [
-    '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
-    '#edc948', '#b07aa1', '#ff9da7', '#9c755f', '#bab0ac',
-    '#499894', '#86bcb6', '#e15759', '#ff9da7', '#79706e',
-    '#d37295', '#fabfd2', '#b6992d', '#f1ce63', '#a0cbe8'
-];
+// Validated categorical palette (blue, aqua, yellow, green, violet, red, magenta,
+// orange), fixed order — see the dataviz skill's palette validator. Beyond 8
+// series, colors cycle via modulo rather than repeating/forcing more arbitrary hues.
+const CHART_COLORS_LIGHT = ['#2a78d6', '#1baf7a', '#eda100', '#008300', '#4a3aa7', '#e34948', '#e87ba4', '#eb6834'];
+const CHART_COLORS_DARK = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9', '#e66767', '#d55181', '#d95926'];
+
+function getChartColors() {
+    return document.documentElement.getAttribute('data-bs-theme') === 'dark' ? CHART_COLORS_DARK : CHART_COLORS_LIGHT;
+}
+
+function chartColorAt(i) {
+    const colors = getChartColors();
+    return colors[i % colors.length];
+}
+
+function hexToRgba(hex, alpha) {
+    const n = parseInt(hex.replace('#', ''), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
 
 function applyChartTheme() {
     const styles = getComputedStyle(document.documentElement);
@@ -21,7 +34,7 @@ function buildHorizontalBar(id, labels, data) {
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: CHART_COLORS.slice(0, data.length),
+                backgroundColor: data.map((_, i) => chartColorAt(i)),
                 borderWidth: 0
             }]
         },
@@ -47,7 +60,7 @@ function buildValueBar(id, labels, data) {
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: CHART_COLORS.slice(0, data.length),
+                backgroundColor: data.map((_, i) => chartColorAt(i)),
                 borderWidth: 0
             }]
         },
@@ -114,8 +127,8 @@ function buildValueChart(dates, values, cardCounts) {
                     data: valuePoints,
                     yAxisID: 'y',
                     fill: true,
-                    backgroundColor: 'rgba(78,121,167,0.15)',
-                    borderColor: '#4e79a7',
+                    backgroundColor: hexToRgba(chartColorAt(0), 0.1),
+                    borderColor: chartColorAt(0),
                     pointRadius: 4,
                     tension: 0.3
                 },
@@ -124,7 +137,7 @@ function buildValueChart(dates, values, cardCounts) {
                     data: countPoints,
                     yAxisID: 'y2',
                     fill: false,
-                    borderColor: '#f28e2b',
+                    borderColor: chartColorAt(1),
                     pointRadius: 4,
                     tension: 0.3
                 }
@@ -162,15 +175,11 @@ function buildValueChart(dates, values, cardCounts) {
     });
 }
 
-const MEDAL_STYLES = [
-    'background-color:#FFD700;color:#000',
-    'background-color:#C0C0C0;color:#000',
-    'background-color:#CD7F32;color:#fff'
-];
+const MEDAL_CLASSES = ['medal-badge-gold', 'medal-badge-silver', 'medal-badge-bronze'];
 
 function medalBadge(i) {
     if (i < 3)
-        return `<span class="badge rounded-pill" style="${MEDAL_STYLES[i]}">${i + 1}</span>`;
+        return `<span class="badge rounded-pill ${MEDAL_CLASSES[i]}">${i + 1}</span>`;
     return `<span class="text-muted">${i + 1}</span>`;
 }
 
@@ -213,7 +222,7 @@ function buildPriceHistoryChart(series) {
     const datasets = series.map((s, i) => ({
         label: s.label,
         data: s.dates.map((d, j) => ({ x: d, y: s.values[j] })),
-        borderColor: CHART_COLORS[i % CHART_COLORS.length],
+        borderColor: chartColorAt(i),
         backgroundColor: 'transparent',
         pointRadius: 4,
         tension: 0.3,

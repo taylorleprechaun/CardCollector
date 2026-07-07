@@ -63,7 +63,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
             @if (Model.CurrentCard.CardSets?.Any() == true)
             {
                 <h5 class="mt-4">Available Printings</h5>
-                <div class="table-responsive">
+                <div class="table-responsive cc-table-card">
                     <table class="table table-sm table-hover align-middle">
                         <thead class="cc-table-head">
                             <tr>
@@ -111,7 +111,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                         }
                                         @if (isPreferred)
                                         {
-                                            <span class="badge bg-warning text-dark me-1">&#9733; Preferred</span>
+                                            <span class="badge-preferred me-1">&#9733; Preferred</span>
                                             <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
                                                 <input type="hidden" name="ImageID" value="@(Model.PreferredVersion!.ImageID)" />
                                                 <input type="hidden" name="ID" value="@Model.ID" />
@@ -134,7 +134,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                                 {
                                                     <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
                                                 }
-                                                <button type="submit" class="btn btn-sm btn-outline-warning">Set as Preferred</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Set as Preferred</button>
                                             </form>
                                         }
                                     </td>

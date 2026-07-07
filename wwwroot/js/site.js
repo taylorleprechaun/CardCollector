@@ -80,7 +80,7 @@ function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
             });
             dropdown.appendChild(el);
         });
-        dropdown.style.display = '';
+        dropdown.style.display = 'block';
     }
 
     input.addEventListener('keydown', e => {

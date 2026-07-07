@@ -62,7 +62,7 @@
 }
 else
 {
-    <div class="list-group mb-4" id="collectionList">
+    <div class="list-group mb-4 cc-table-card" id="collectionList">
         @foreach (var group in Model.GroupedCards.Items)
         {
             <partial name="_CollectionGroupRow" model='new CollectionGroupRowViewModel { Group = group, FilterParams = filterParams, TCGDate = Model.GetTCGDate(group.SetCode) }' />

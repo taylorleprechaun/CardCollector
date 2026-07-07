@@ -28,7 +28,7 @@
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1>Wishlist</h1>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-primary fs-6">@Model.Results.TotalCount needed</span>
+        <span class="badge-neutral fs-6">@Model.Results.TotalCount needed</span>
         <a href="/Export?handler=Wishlist" class="btn btn-outline-secondary btn-sm">Export CSV</a>
     </div>
 </div>
@@ -76,14 +76,14 @@
 }
 else
 {
-    <div class="table-responsive">
+    <div class="table-responsive cc-table-card">
         <table class="table table-hover align-middle">
             <thead class="cc-table-head">
                 <tr>
                     <th style="width: 60px;"></th>
                     <th>
                         <a href="@SortURL(WishlistSortBy.Name)"
-                           class="text-white text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
+                           class="text-body text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
                             Card @SortIcon(WishlistSortBy.Name)
                         </a>
                     </th>
@@ -109,11 +109,11 @@ else
                         <td>
                             @if (item.QuantityOwned > 0)
                             {
-                                <span class="badge bg-warning text-dark">Need @item.QuantityNeeded <small class="opacity-75">(own @item.QuantityOwned)</small></span>
+                                <span class="badge-status badge-status--warning">Need @item.QuantityNeeded <small class="opacity-75">(own @item.QuantityOwned)</small></span>
                             }
                             else
                             {
-                                <span class="badge bg-secondary">Need @item.QuantityNeeded</span>
+                                <span class="badge-neutral">Need @item.QuantityNeeded</span>
                             }
                         </td>
                         <td>
