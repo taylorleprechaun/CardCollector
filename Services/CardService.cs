@@ -499,6 +499,85 @@ namespace CardCollector.Services
         public async Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID) =>
             await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
 
+        public async Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null)
+        {
+            var candidates = await GetPurchasePriorityCandidatesAsync(asOfUtc, maxPricePerCard).ConfigureAwait(false);
+
+            var items = new List<PurchasePriorityCandidateViewModel>();
+            var remainingBudget = totalBudget;
+
+            foreach (var candidate in candidates)
+            {
+                if (maxCards.HasValue && items.Count >= maxCards.Value)
+                    break;
+
+                // Skip (don't stop) anything that doesn't fit the remaining budget — a cheaper, lower-priority
+                // candidate further down the list may still fit and is worth taking.
+                if (remainingBudget.HasValue && candidate.LineTotal > remainingBudget.Value)
+                    continue;
+
+                items.Add(candidate);
+                if (remainingBudget.HasValue)
+                    remainingBudget -= candidate.LineTotal;
+            }
+
+            return new PurchasePlanViewModel
+            {
+                Items = items,
+                TotalCost = items.Sum(i => i.LineTotal)
+            };
+        }
+
+
+        public async Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null)
+        {
+            var asOf = asOfUtc ?? DateTime.UtcNow;
+            var allPreferred = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
+            var preferredByCardID = allPreferred
+                .GroupBy(pv => pv.CardID)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
+                allPreferred.Select(pv => (pv.ImageID, pv.SetCode, pv.RarityName))).ConfigureAwait(false);
+
+            var results = new List<PurchasePriorityCandidateViewModel>();
+
+            // Only cards already on the wishlist (i.e. with at least one preferred version) are considered —
+            // this is a prioritization tool for what to buy next, not a discovery tool for new cards to want.
+            // If any one of a card's preferred artworks is already fully collected, the whole card is deprioritized.
+            foreach (var (cardID, preferredVersions) in preferredByCardID)
+            {
+                var anyComplete = preferredVersions.Any(pv =>
+                    ownedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode)) >= CardPrinting.CompleteThreshold);
+                if (anyComplete)
+                    continue;
+
+                var card = _cardDataRepository.GetCardByID(cardID);
+                if (card is null)
+                    continue;
+
+                foreach (var preferred in preferredVersions)
+                {
+                    var candidate = PurchasePriorityAnalyzer.Evaluate(
+                        card, preferred.SetCode, preferred.RarityName, _cardSetRepository.GetTCGDateBySetCode, asOf);
+                    if (candidate is null)
+                        continue;
+
+                    var printing = BuildCardPrinting(cardID, preferred.ImageID, preferred.SetCode, preferred.RarityName);
+                    if (maxPrice.HasValue && (!printing.Price.HasValue || printing.Price.Value <= 0 || printing.Price.Value > maxPrice.Value))
+                        continue; // Price of 0 means no pricing data, not a genuinely free card — exclude, don't let it slip under the cap
+
+                    var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
+                    results.Add(PurchasePriorityCandidateViewModel.From(printing, candidate, quantityOwned));
+                }
+            }
+
+            return results
+                .OrderBy(r => r.FoilCount)
+                .ThenBy(r => r.PrintingDate, StringComparer.Ordinal)
+                .ToList();
+        }
+
         public async Task<Card?> GetRandomUncollectedAsync()
         {
             var preferredCardIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);

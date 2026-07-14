@@ -107,6 +107,22 @@ namespace CardCollector.Services
         Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID);
 
         /// <summary>
+        /// Builds a purchase plan by walking the purchase-priority list in order and taking candidates that fit
+        /// within <paramref name="totalBudget"/> and/or <paramref name="maxCards"/>, skipping (not stopping at)
+        /// any candidate too expensive to fit so a cheaper, lower-priority one further down can still be taken.
+        /// Each candidate's cost accounts for the quantity still needed to complete that printing.
+        /// </summary>
+        Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
+
+        /// <summary>
+        /// Returns preferred printings worth prioritizing for purchase — printings that are themselves one of only
+        /// 1-2 scarce foil prints a card has ever had, gone 5+ years without a reprint on a card old enough to judge.
+        /// Excludes cards where any preferred artwork is already fully collected. When <paramref name="maxPrice"/>
+        /// is given, only printings currently priced at or below it are returned.
+        /// </summary>
+        Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null);
+
+        /// <summary>
         /// Returns a random card that has no preferred version set for any of its artworks.
         /// </summary>
         Task<Card?> GetRandomUncollectedAsync();
