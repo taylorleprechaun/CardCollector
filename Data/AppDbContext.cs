@@ -15,6 +15,8 @@ namespace CardCollector.Data
 
         public DbSet<DismissedNewPrinting> DismissedNewPrintings { get; set; }
 
+        public DbSet<IgnoredCard> IgnoredCards { get; set; }
+
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
 
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
@@ -47,6 +49,12 @@ namespace CardCollector.Data
             {
                 entity.HasKey(e => e.ID);
                 entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName }).IsUnique();
+            });
+
+            modelBuilder.Entity<IgnoredCard>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.CardID).IsUnique();
             });
 
             modelBuilder.Entity<PreferredVersion>(entity =>

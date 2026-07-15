@@ -51,6 +51,12 @@ namespace CardCollector.Pages
             CurrentImage = card.CardImages?.FirstOrDefault();
         }
 
+        public async Task<IActionResult> OnPostIgnoreAsync()
+        {
+            await _cardService.IgnoreCardAsync(CardID);
+            return RedirectToPage();
+        }
+
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
             await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);

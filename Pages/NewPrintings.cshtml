@@ -10,7 +10,7 @@
 </div>
 
 <p class="text-muted mb-4">
-    Cards in your preferred versions that have been printed in a newer set.
+    Cards in your preferred versions — or ignored cards — that have a newer printing available.
     Choose a newer printing to move it to your wishlist, or dismiss it to stop seeing it here.
 </p>
 
@@ -34,14 +34,29 @@ else
                             <img src="@opportunity.ImageURLSmall" alt="@opportunity.CardName" style="height: 60px; object-fit: contain;" />
                         }
                         <div>
-                            <h5 class="mb-0">@opportunity.CardName</h5>
-                            <small class="text-muted">
-                                Currently preferred: @opportunity.CurrentSetName
-                                <span class="ms-1 text-muted">(@opportunity.CurrentSetCode)</span>
-                                &mdash; @opportunity.CurrentRarityName
-                                @if (!string.IsNullOrEmpty(opportunity.CurrentReleaseDate))
+                            <h5 class="mb-0">
+                                @opportunity.CardName
+                                @if (opportunity.IsIgnored)
                                 {
-                                    <span class="ms-1">(@opportunity.CurrentReleaseDate)</span>
+                                    <span class="badge bg-secondary ms-1">Ignored</span>
+                                }
+                            </h5>
+                            <small class="text-muted">
+                                @if (string.IsNullOrEmpty(opportunity.CurrentSetCode))
+                                {
+                                    <span>Not yet tracked</span>
+                                }
+                                else
+                                {
+                                    <span>
+                                        Currently preferred: @opportunity.CurrentSetName
+                                        <span class="ms-1 text-muted">(@opportunity.CurrentSetCode)</span>
+                                        &mdash; @opportunity.CurrentRarityName
+                                        @if (!string.IsNullOrEmpty(opportunity.CurrentReleaseDate))
+                                        {
+                                            <span class="ms-1">(@opportunity.CurrentReleaseDate)</span>
+                                        }
+                                    </span>
                                 }
                             </small>
                         </div>

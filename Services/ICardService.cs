@@ -179,6 +179,21 @@ namespace CardCollector.Services
         Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
 
         /// <summary>
+        /// Marks the given card as ignored, excluding it from Dashboard progress tracking. No-ops if already ignored.
+        /// </summary>
+        Task IgnoreCardAsync(int cardID);
+
+        /// <summary>
+        /// Returns true if the given card is currently ignored from Dashboard progress tracking.
+        /// </summary>
+        Task<bool> IsCardIgnoredAsync(int cardID);
+
+        /// <summary>
+        /// Clears the ignored status for the given card, resuming Dashboard progress tracking for it. No-ops if not currently ignored.
+        /// </summary>
+        Task UnignoreCardAsync(int cardID);
+
+        /// <summary>
         /// Updates the preferred version for the given image ID to the specified newer printing.
         /// </summary>
         Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName);

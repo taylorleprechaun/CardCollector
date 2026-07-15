@@ -45,6 +45,7 @@ builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValueRepository>();
 builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
 builder.Services.AddScoped<IDismissedNewPrintingRepository, DismissedNewPrintingRepository>();
+builder.Services.AddScoped<IIgnoredCardRepository, IgnoredCardRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();
@@ -56,6 +57,18 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.EnsureCreated();
+
+    // EnsureCreated() only builds the schema for a brand-new database file, so tables added after the
+    // database already existed (like this one) need to be created here on every startup instead.
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "IgnoredCards" (
+            "ID" INTEGER NOT NULL CONSTRAINT "PK_IgnoredCards" PRIMARY KEY AUTOINCREMENT,
+            "CardID" INTEGER NOT NULL,
+            "DateCreated" TEXT NOT NULL,
+            "DateModified" TEXT NOT NULL,
+            CONSTRAINT "UQ_IgnoredCards_CardID" UNIQUE ("CardID")
+        );
+        """);
 }
 
 if (!app.Environment.IsDevelopment())
