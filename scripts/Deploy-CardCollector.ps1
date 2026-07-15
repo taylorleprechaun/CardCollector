@@ -5,10 +5,11 @@
 .DESCRIPTION
     This script automates the full deployment process:
     1. Builds a release publish of the app
-    2. Copies the published files to the server
-    3. Copies appsettings-private.json to the server
-    4. Optionally copies the SQLite database and card cache files (-SyncData)
-    5. Restarts the card-collector service on the server
+    2. Stops the card-collector service on the server
+    3. Copies the published files to the server
+    4. Copies appsettings-private.json to the server
+    5. Optionally copies the SQLite database and card cache files (-SyncData)
+    6. Starts the card-collector service on the server
 
     The server is the source of truth for the database. Only use -SyncData on the
     first deploy or when intentionally overwriting the server DB with local data.
@@ -98,8 +99,20 @@ else {
     Write-Success "Published to $PublishDir"
 }
 
-# Step 2: Copy application files
-Write-Step "Step 2: Deploy Application Files"
+# Step 2: Stop the service before touching any files on disk. Copying a new build over a running
+# process's files causes it to crash mid-request (BadImageFormatException / core dump) when the
+# runtime tries to JIT a code path from the now half-overwritten assembly, which can hang incoming
+# requests (including login) for up to a minute until systemd kills and restarts it.
+Write-Step "Step 2: Stop Service"
+ssh "${ServerUser}@${ServerIP}" "systemctl stop card-collector"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [ERROR] Failed to stop service" -ForegroundColor Red
+    exit 1
+}
+Write-Success "card-collector service stopped"
+
+# Step 3: Copy application files
+Write-Step "Step 3: Deploy Application Files"
 scp -r "${PublishDir}/*" "${RemoteTarget}/"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [ERROR] Failed to copy application files" -ForegroundColor Red
@@ -107,8 +120,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Success "Application files deployed"
 
-# Step 3: Copy appsettings-private.json
-Write-Step "Step 3: Deploy Private Configuration"
+# Step 4: Copy appsettings-private.json
+Write-Step "Step 4: Deploy Private Configuration"
 if (Test-Path $PrivateConfig) {
     scp "$PrivateConfig" "${RemoteTarget}/appsettings-private.json"
     if ($LASTEXITCODE -ne 0) {
@@ -123,8 +136,8 @@ else {
     exit 1
 }
 
-# Step 4: Sync database and cache files
-Write-Step "Step 4: Sync Data Files"
+# Step 5: Sync database and cache files
+Write-Step "Step 5: Sync Data Files"
 if (-not $SyncData) {
     Write-Skip "Data sync skipped (pass -SyncData to overwrite server database - use with caution)"
 }
@@ -156,14 +169,14 @@ else {
     }
 }
 
-# Step 5: Restart the service
-Write-Step "Step 5: Restart Service"
-ssh "${ServerUser}@${ServerIP}" "systemctl restart card-collector"
+# Step 6: Start the service
+Write-Step "Step 6: Start Service"
+ssh "${ServerUser}@${ServerIP}" "systemctl start card-collector"
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "  [ERROR] Failed to restart service" -ForegroundColor Red
+    Write-Host "  [ERROR] Failed to start service" -ForegroundColor Red
     exit 1
 }
-Write-Success "card-collector service restarted"
+Write-Success "card-collector service started"
 
 # Done
 Write-Step "Deployment Complete"

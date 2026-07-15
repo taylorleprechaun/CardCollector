@@ -11,6 +11,7 @@ namespace CardCollector.Pages
     {
         private readonly ICardService _cardService;
         private readonly ICardSetRepository _cardSetRepository;
+        private readonly IRazorPartialRenderer _razorPartialRenderer;
 
         [BindProperty]
         public AcquisitionMethod? AcquisitionMethod { get; set; }
@@ -56,10 +57,17 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public bool SortDescending { get; set; } = false;
 
-        public WishlistModel(ICardService cardService, ICardSetRepository cardSetRepository)
+        public WishlistModel(ICardService cardService, ICardSetRepository cardSetRepository, IRazorPartialRenderer razorPartialRenderer)
         {
             _cardService = cardService;
             _cardSetRepository = cardSetRepository;
+            _razorPartialRenderer = razorPartialRenderer;
+        }
+
+        public string GetFilterParams()
+        {
+            var rarityName = Request.Query["rarityName"].FirstOrDefault();
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&sortBy={SortBy}&sortDescending={SortDescending}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams()
@@ -108,7 +116,7 @@ namespace CardCollector.Pages
                 AcquisitionMethod,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
 
-            return RedirectToPage(BuildFilterRedirect());
+            return await RespondAfterMutationAsync(ImageID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
@@ -121,15 +129,31 @@ namespace CardCollector.Pages
                 AcquisitionMethod,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
 
-            return RedirectToPage(BuildFilterRedirect());
+            return await RespondAfterMutationAsync(ImageID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostRemoveAsync(int imageID)
         {
             await _cardService.RemoveFromWishlistAsync(imageID);
-            return RedirectToPage(BuildFilterRedirect());
+            return await RespondAfterMutationAsync(imageID).ConfigureAwait(false);
         }
 
+        private WishlistSearchCriteria BuildCurrentCriteria(int page, int pageSize)
+        {
+            var rarityName = Request.Query["rarityName"].FirstOrDefault();
+            return new WishlistSearchCriteria
+            {
+                CardType = CardType,
+                Page = page,
+                PageSize = pageSize,
+                Query = Query,
+                RarityName = rarityName,
+                SetName = SetName,
+                SortBy = SortBy,
+                SortDescending = SortDescending
+            };
+        }
+        
         // Reads filter-state fields from the query string directly because POST body values
         // share names with filter BindProperties and would override the query-string values.
         private object BuildFilterRedirect() => new
@@ -143,5 +167,30 @@ namespace CardCollector.Pages
             sortBy = SortBy,
             sortDescending = SortDescending
         };
+
+        private bool IsAjaxRequest() =>
+            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+        private async Task<IActionResult> RespondAfterMutationAsync(int imageID)
+        {
+            if (!IsAjaxRequest())
+                return RedirectToPage(BuildFilterRedirect());
+
+            var result = await _cardService.SearchWishlistAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
+            Response.Headers["X-Total-Count"] = result.PagedItems.TotalCount.ToString();
+
+            var match = result.PagedItems.Items.FirstOrDefault(i => i.ImageID == imageID);
+            if (match is null)
+                return Content(string.Empty, "text/html");
+
+            var html = await _razorPartialRenderer.RenderPartialAsync(this, "_WishlistRow", new WishlistRowViewModel
+            {
+                FilterParams = GetFilterParams(),
+                Item = match,
+                TCGDate = GetTCGDate(match.SetCode)
+            }).ConfigureAwait(false);
+
+            return Content(html, "text/html");
+        }
     }
 }

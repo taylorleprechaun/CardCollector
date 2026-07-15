@@ -110,6 +110,7 @@
             <select id="filter-collection" name="collectionFilter" class="form-select form-select-sm">
                 <option value="">Any</option>
                 <option value="yes" selected="@(Model.CurrentCollectionFilter == "yes")">In Collection</option>
+                <option value="incomplete" selected="@(Model.CurrentCollectionFilter == "incomplete")">In Collection, Incomplete</option>
                 <option value="no" selected="@(Model.CurrentCollectionFilter == "no")">Not In Collection</option>
             </select>
         </div>

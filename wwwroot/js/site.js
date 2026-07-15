@@ -1,3 +1,24 @@
+function selectQuantity(btn) {
+    const targetId = btn.dataset.qtyTarget;
+    document.getElementById(targetId).value = btn.dataset.qtyValue;
+    btn.parentElement.querySelectorAll('button').forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('btn-primary', active);
+        b.classList.toggle('btn-outline-secondary', !active);
+    });
+}
+
+function setQuantityButtons(targetId, value) {
+    const hidden = document.getElementById(targetId);
+    if (!hidden) return;
+    hidden.value = value;
+    document.querySelectorAll('[data-qty-target="' + targetId + '"]').forEach(btn => {
+        const active = Number(btn.dataset.qtyValue) === Number(value);
+        btn.classList.toggle('btn-primary', active);
+        btn.classList.toggle('btn-outline-secondary', !active);
+    });
+}
+
 function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     async function refreshPrice() {
         const { cardID, setCode, rarityName } = getParams();

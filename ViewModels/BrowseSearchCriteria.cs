@@ -4,6 +4,7 @@ namespace CardCollector.ViewModels
     {
         public bool? InCollection { get; set; }
         public bool? InWishlist { get; set; }
+        public bool? IsIncomplete { get; set; }
         public bool? IsOrdered { get; set; }
     }
 }

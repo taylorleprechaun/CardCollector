@@ -7,7 +7,7 @@ function openEditModal(btn) {
     document.getElementById('editEntryID').value = ds.entryId;
     document.getElementById('editRarityName').value = ds.rarityName || '';
     document.getElementById('editRarityDisplay').textContent = ds.rarityName || '';
-    document.getElementById('editQuantity').value = ds.quantity;
+    setQuantityButtons('editQuantity', ds.quantity);
     setSelect('editCondition', ds.condition);
     setSelect('editEdition', ds.edition);
     setSelect('editAcquisition', ds.acquisitionMethod);
