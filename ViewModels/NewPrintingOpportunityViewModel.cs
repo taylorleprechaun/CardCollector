@@ -18,6 +18,8 @@ namespace CardCollector.ViewModels
 
         public string ImageURLSmall { get; set; } = string.Empty;
 
+        public bool IsIgnored { get; set; }
+
         public IReadOnlyList<NewPrintingOptionViewModel> NewerPrintings { get; set; } = [];
     }
 }

@@ -60,6 +60,34 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
             }
             <p class="mt-2">@Model.CurrentCard.Description</p>
 
+            @if (Model.IsIgnored)
+            {
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge bg-secondary">Ignored from progress tracking</span>
+                    <form method="post" asp-page-handler="Unignore" class="d-inline" onsubmit="return confirm('Stop ignoring @((Model.CurrentCard.Name ?? string.Empty).Replace("'", "\\'"))? It will resume counting toward Dashboard progress tracking.')">
+                        <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
+                        <input type="hidden" name="ID" value="@Model.ID" />
+                        @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                        {
+                            <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                        }
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Unignore</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Ignore" class="d-inline mb-3" onsubmit="return confirm('Ignore @((Model.CurrentCard.Name ?? string.Empty).Replace("'", "\\'"))? It will stop counting toward Dashboard progress tracking.')">
+                    <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
+                    <input type="hidden" name="ID" value="@Model.ID" />
+                    @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                    {
+                        <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                    }
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Ignore this card</button>
+                </form>
+            }
+
             @if (Model.CurrentCard.CardSets?.Any() == true)
             {
                 <h5 class="mt-4">Available Printings</h5>

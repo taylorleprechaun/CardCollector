@@ -30,6 +30,8 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public int ImageID { get; set; }
 
+        public bool IsIgnored { get; private set; }
+
         public PreferredVersion? PreferredVersion { get; private set; }
 
         [BindProperty]
@@ -100,6 +102,13 @@ namespace CardCollector.Pages
                     ));
 
             PreferredVersion = await _cardService.GetPreferredVersionByCardIDAsync(ID);
+            IsIgnored = await _cardService.IsCardIgnoredAsync(ID);
+        }
+
+        public async Task<IActionResult> OnPostIgnoreAsync()
+        {
+            await _cardService.IgnoreCardAsync(CardID);
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostOrderAsync(
@@ -151,6 +160,12 @@ namespace CardCollector.Pages
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
             await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
+        }
+
+        public async Task<IActionResult> OnPostUnignoreAsync()
+        {
+            await _cardService.UnignoreCardAsync(CardID);
             return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
     }

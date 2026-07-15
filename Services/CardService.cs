@@ -19,6 +19,7 @@ namespace CardCollector.Services
         private readonly ICollectionRepository _collectionRepository;
         private readonly ICollectionValueRepository _collectionValueRepository;
         private readonly IDismissedNewPrintingRepository _dismissedNewPrintingRepository;
+        private readonly IIgnoredCardRepository _ignoredCardRepository;
         private readonly ILogger<CardService> _logger;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly IPricingService _pricingService;
@@ -31,6 +32,7 @@ namespace CardCollector.Services
             ICollectionEntryValueRepository collectionEntryValueRepository,
             ICollectionValueRepository collectionValueRepository,
             IDismissedNewPrintingRepository dismissedNewPrintingRepository,
+            IIgnoredCardRepository ignoredCardRepository,
             ILogger<CardService> logger,
             IPreferredVersionRepository preferredVersionRepository,
             IPricingService pricingService)
@@ -42,6 +44,7 @@ namespace CardCollector.Services
             _collectionRepository = collectionRepository;
             _collectionValueRepository = collectionValueRepository;
             _dismissedNewPrintingRepository = dismissedNewPrintingRepository;
+            _ignoredCardRepository = ignoredCardRepository;
             _logger = logger;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingService = pricingService;
@@ -350,8 +353,9 @@ namespace CardCollector.Services
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
-            var totalCards = _cardDataRepository.GetBrowseableCards().Count();
-            var groups = await GetGroupedOwnedAsync().ConfigureAwait(false);
+            var ignoredCardIDs = await _ignoredCardRepository.GetIgnoredCardIDsAsync().ConfigureAwait(false);
+            var totalCards = _cardDataRepository.GetBrowseableCards().Count(c => !ignoredCardIDs.Contains(c.ID));
+            var groups = (await GetGroupedOwnedAsync().ConfigureAwait(false)).Where(g => !ignoredCardIDs.Contains(g.CardID));
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
             var ownedStats = await _collectionRepository.GetOwnedStatsAsync().ConfigureAwait(false);
             var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
@@ -448,6 +452,7 @@ namespace CardCollector.Services
         {
             var preferredVersions = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
             var dismissed = await _dismissedNewPrintingRepository.GetAllAsync().ConfigureAwait(false);
+            var ignoredCards = await _ignoredCardRepository.GetAllAsync().ConfigureAwait(false);
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             var result = new List<NewPrintingOpportunityViewModel>();
             var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
@@ -495,6 +500,54 @@ namespace CardCollector.Services
                     CurrentSetName = setNamesByCode.TryGetValue(pv.SetCode, out var csn) ? csn : pv.SetCode,
                     ImageID = pv.ImageID,
                     ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
+                    IsIgnored = ignoredCards.ContainsKey(pv.CardID),
+                    NewerPrintings = newerPrintings
+                });
+            }
+
+            // Ignored cards with no preferred version at all have no set to compare against, so the date
+            // they were ignored on stands in as the baseline for "is this printing new."
+            var preferredCardIDs = preferredVersions.Select(pv => pv.CardID).ToHashSet();
+            foreach (var (cardID, ignoredSince) in ignoredCards.Where(kvp => !preferredCardIDs.Contains(kvp.Key)))
+            {
+                var card = _cardDataRepository.GetCardByID(cardID);
+                if (card?.CardSets is null || card.CardImages is null)
+                    continue;
+
+                var baselineDate = ignoredSince.ToString(SnapshotDateFormat);
+                var image = card.CardImages.FirstOrDefault();
+
+                var newerPrintings = card.CardSets
+                    .Select(s => (Set: s, Date: _cardSetRepository.GetTCGDateBySetCode(s.Code ?? string.Empty)))
+                    .Where(x => x.Date is not null
+                                && string.Compare(x.Date, baselineDate, StringComparison.Ordinal) > 0
+                                && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
+                                && !dismissed.Contains((cardID, x.Set.Code ?? string.Empty, x.Set.RarityName ?? string.Empty)))
+                    .Select(x => new NewPrintingOptionViewModel
+                    {
+                        RarityName = x.Set.RarityName ?? string.Empty,
+                        ReleaseDate = x.Date,
+                        SetCode = x.Set.Code ?? string.Empty,
+                        SetName = setNamesByCode.TryGetValue(x.Set.Code ?? string.Empty, out var sn) ? sn : x.Set.Name ?? string.Empty
+                    })
+                    .OrderBy(o => o.ReleaseDate)
+                    .ThenBy(o => o.SetCode)
+                    .ToList();
+
+                if (newerPrintings.Count == 0)
+                    continue;
+
+                result.Add(new NewPrintingOpportunityViewModel
+                {
+                    CardID = cardID,
+                    CardName = card.Name ?? string.Empty,
+                    CurrentRarityName = string.Empty,
+                    CurrentReleaseDate = null,
+                    CurrentSetCode = string.Empty,
+                    CurrentSetName = "Not yet tracked",
+                    ImageID = image?.ID ?? 0,
+                    ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
+                    IsIgnored = true,
                     NewerPrintings = newerPrintings
                 });
             }
@@ -587,9 +640,19 @@ namespace CardCollector.Services
         public async Task<Card?> GetRandomUncollectedAsync()
         {
             var preferredCardIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);
+            var ignoredCardIDs = await _ignoredCardRepository.GetIgnoredCardIDsAsync().ConfigureAwait(false);
+
+            // An ignored card with an unresolved new-printing opportunity gets a chance to resurface here
+            // rather than staying excluded forever.
+            var opportunities = await GetNewPrintingOpportunitiesAsync().ConfigureAwait(false);
+            var resurfacedIgnoredCardIDs = opportunities.Where(o => o.IsIgnored).Select(o => o.CardID).ToHashSet();
+
+            var excludedCardIDs = preferredCardIDs
+                .Union(ignoredCardIDs.Except(resurfacedIgnoredCardIDs))
+                .ToHashSet();
 
             var uncollected = _cardDataRepository.GetBrowseableCards()
-                .Where(c => !preferredCardIDs.Contains(c.ID))
+                .Where(c => !excludedCardIDs.Contains(c.ID))
                 .ToList();
 
             if (uncollected.Count == 0)
@@ -649,6 +712,7 @@ namespace CardCollector.Services
         public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null)
         {
             await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName).ConfigureAwait(false);
+            await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
         }
 
@@ -928,9 +992,19 @@ namespace CardCollector.Services
                 .ToList();
         }
 
+        public async Task IgnoreCardAsync(int cardID) =>
+            await _ignoredCardRepository.AddAsync(cardID).ConfigureAwait(false);
+
+        public async Task<bool> IsCardIgnoredAsync(int cardID) =>
+            await _ignoredCardRepository.IsIgnoredAsync(cardID).ConfigureAwait(false);
+
+        public async Task UnignoreCardAsync(int cardID) =>
+            await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
+
         public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName)
         {
             await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, newSetCode, newRarityName).ConfigureAwait(false);
+            await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(cardID, newSetCode).ConfigureAwait(false);
         }
 

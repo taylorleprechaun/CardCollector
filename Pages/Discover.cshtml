@@ -6,9 +6,15 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Discover</h1>
-    @if (!Model.IsComplete)
+    @if (!Model.IsComplete && Model.CurrentCard is not null)
     {
-        <a href="/Discover" class="btn btn-outline-secondary">Skip &rarr;</a>
+        <div class="d-flex gap-2">
+            <form method="post" asp-page-handler="Ignore" class="d-inline" onsubmit="return confirm('Ignore @((Model.CurrentCard.Name ?? string.Empty).Replace("'", "\\'"))? It will stop appearing on Discover and won\'t count toward Dashboard progress tracking, unless it gets a new printing.')">
+                <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
+                <button type="submit" class="btn btn-outline-danger">Ignore</button>
+            </form>
+            <a href="/Discover" class="btn btn-outline-secondary">Skip &rarr;</a>
+        </div>
     }
 </div>
 
