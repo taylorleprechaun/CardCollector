@@ -161,6 +161,24 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+        public async Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByCardIDsForSetPrefixAsync(IEnumerable<int> cardIDs, string setPrefix)
+        {
+            var ids = cardIDs.ToHashSet();
+            if (ids.Count == 0 || string.IsNullOrWhiteSpace(setPrefix))
+                return new Dictionary<int, int>();
+
+            var prefixMatch = setPrefix + "-";
+            var entries = await _context.CollectionEntries
+                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned && e.SetCode.StartsWith(prefixMatch))
+                .Select(e => new { e.CardID, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return entries
+                .GroupBy(e => e.CardID)
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+        }
+
         public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode, string RarityName)> pairs)
         {
             var pairList = pairs.ToList();

@@ -110,7 +110,7 @@ else
                                     data-entry-id="@order.EntryID"
                                     data-quantity="@order.Quantity"
                                     onclick="openMarkOwnedModal(this)">
-                                Mark Owned
+                                Add to Collection
                             </button>
                             <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
                                   onsubmit="return confirm('Remove this order?')">
@@ -131,14 +131,22 @@ else
         <div class="modal-content">
             <form method="post" asp-page-handler="MarkOwned">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="markOwnedModalLabel">Mark as Owned</h5>
+                    <h5 class="modal-title" id="markOwnedModalLabel">Add to Collection</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="entryID" id="markOwnedEntryID" />
                     <div class="mb-3">
                         <label class="form-label">Quantity received</label>
-                        <input type="number" name="quantity" id="markOwnedQuantity" min="1" class="form-control" />
+                        <input type="hidden" name="quantity" id="markOwnedQuantity" value="1" />
+                        <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity received">
+                            @for (int q = 1; q <= 3; q++)
+                            {
+                                <button type="button" class="btn @(q == 1 ? "btn-primary" : "btn-outline-secondary")"
+                                        data-qty-target="markOwnedQuantity" data-qty-value="@q"
+                                        onclick="selectQuantity(this)">@q</button>
+                            }
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

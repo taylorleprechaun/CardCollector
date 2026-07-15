@@ -74,7 +74,7 @@ else
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=Edit&@filterParams" id="editForm" class="ajax-form">
                 @Html.AntiForgeryToken()
@@ -97,7 +97,7 @@ else
 
 <!-- Add Purchase Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <form method="post" action="/Collection?handler=AddPurchase&@filterParams" id="addForm" class="ajax-form">
                 @Html.AntiForgeryToken()

@@ -63,97 +63,84 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
             @if (Model.CurrentCard.CardSets?.Any() == true)
             {
                 <h5 class="mt-4">Available Printings</h5>
-                <div class="table-responsive cc-table-card">
-                    <table class="table table-sm table-hover align-middle">
-                        <thead class="cc-table-head">
-                            <tr>
-                                <th class="d-none d-md-table-cell">Set</th>
-                                <th>Code</th>
-                                <th>Rarity</th>
-                                <th>Collection</th>
-                                <th class="d-none d-md-table-cell">Preferred</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @{
-                                var sortedSets = Model.CurrentCard.CardSets
-                                    .OrderBy(s => {
-                                        var d = Model.GetTCGDate(s.Code ?? string.Empty);
-                                        return string.IsNullOrEmpty(d) ? "9999-99-99" : d;
-                                    });
-                            }
-                            @foreach (var set in sortedSets)
-                            {
-                                <tr>
-                                    <td class="d-none d-md-table-cell">@set.Name</td>
-                                    <td><code>@set.Code</code></td>
-                                    <td>@set.RarityName</td>
-                                    <td>
-                                        @{
-                                            var setCodeKey = set.Code ?? string.Empty;
-                                            var rarityKey = set.RarityName ?? string.Empty;
-                                        }
-                                        @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
-                                        {
-                                            var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey) ?? CollectionCompletionStatus.Placeholder;
-                                            var isOrdered = collectionSummary.Status == CollectionStatus.Ordered;
-                                            var badgeClass = isOrdered ? CollectionStatus.Ordered.GetBadgeClass() : completionStatus.GetBadgeClass();
-                                            var badgeLabel = isOrdered ? "Ordered" : completionStatus.GetDisplayName();
-                                            <span class="badge @badgeClass">@badgeLabel &times; @collectionSummary.TotalQuantity</span>
-                                        }
-                                    </td>
-                                    <td class="text-nowrap d-none d-md-table-cell">
-                                        @{
-                                            var isPreferred = Model.PreferredVersion is not null
-                                                && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
-                                                && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, set.RarityName, StringComparison.OrdinalIgnoreCase));
-                                        }
-                                        @if (isPreferred)
-                                        {
-                                            <span class="badge-preferred me-1">&#9733; Preferred</span>
-                                            <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
-                                                <input type="hidden" name="ImageID" value="@(Model.PreferredVersion!.ImageID)" />
-                                                <input type="hidden" name="ID" value="@Model.ID" />
-                                                @if (!string.IsNullOrEmpty(Model.ReturnURL))
-                                                {
-                                                    <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
-                                                }
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Unset</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form method="post" asp-page-handler="SetPreferred" class="d-inline">
-                                                <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
-                                                <input type="hidden" name="ImageID" value="@primaryImage!.ID" />
-                                                <input type="hidden" name="SetCode" value="@set.Code" />
-                                                <input type="hidden" name="RarityName" value="@set.RarityName" />
-                                                <input type="hidden" name="ID" value="@Model.ID" />
-                                                @if (!string.IsNullOrEmpty(Model.ReturnURL))
-                                                {
-                                                    <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
-                                                }
-                                                <button type="submit" class="btn btn-sm btn-outline-primary">Set as Preferred</button>
-                                            </form>
-                                        }
-                                    </td>
-                                    <td class="text-nowrap">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary me-1"
-                                                onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
-                                            Order
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success"
-                                                onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
-                                            Mark as Owned
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <div class="list-group cc-table-card">
+                    @{
+                        var sortedSets = Model.CurrentCard.CardSets
+                            .OrderBy(s => {
+                                var d = Model.GetTCGDate(s.Code ?? string.Empty);
+                                return string.IsNullOrEmpty(d) ? "9999-99-99" : d;
+                            });
+                    }
+                    @foreach (var set in sortedSets)
+                    {
+                        <div class="list-group-item">
+                            <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="fw-semibold">@set.Name</div>
+                                    <div class="text-muted small"><code>@set.Code</code> &middot; @set.RarityName</div>
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    @{
+                                        var setCodeKey = set.Code ?? string.Empty;
+                                        var rarityKey = set.RarityName ?? string.Empty;
+                                    }
+                                    @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
+                                    {
+                                        var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey) ?? CollectionCompletionStatus.Placeholder;
+                                        var isOrdered = collectionSummary.Status == CollectionStatus.Ordered;
+                                        var badgeClass = isOrdered ? CollectionStatus.Ordered.GetBadgeClass() : completionStatus.GetBadgeClass();
+                                        var badgeLabel = isOrdered ? "Ordered" : completionStatus.GetDisplayName();
+                                        <span class="badge @badgeClass">@badgeLabel &times; @collectionSummary.TotalQuantity</span>
+                                    }
+                                    @{
+                                        var isPreferred = Model.PreferredVersion is not null
+                                            && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
+                                            && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, set.RarityName, StringComparison.OrdinalIgnoreCase));
+                                    }
+                                    @if (isPreferred)
+                                    {
+                                        <span class="badge-preferred">&#9733; Preferred</span>
+                                        <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
+                                            <input type="hidden" name="ImageID" value="@(Model.PreferredVersion!.ImageID)" />
+                                            <input type="hidden" name="ID" value="@Model.ID" />
+                                            @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                                            {
+                                                <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                                            }
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Unset</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="SetPreferred" class="d-inline">
+                                            <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
+                                            <input type="hidden" name="ImageID" value="@primaryImage!.ID" />
+                                            <input type="hidden" name="SetCode" value="@set.Code" />
+                                            <input type="hidden" name="RarityName" value="@set.RarityName" />
+                                            <input type="hidden" name="ID" value="@Model.ID" />
+                                            @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                                            {
+                                                <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                                            }
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Set as Preferred</button>
+                                        </form>
+                                    }
+                                </div>
+                                <div class="d-flex gap-1 flex-shrink-0">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary"
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                        Order
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-sm btn-success"
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                        Add to Collection
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             }
             else

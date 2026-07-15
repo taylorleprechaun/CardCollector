@@ -22,13 +22,14 @@
     }
 
     var clearFiltersURL = $"/Wishlist?sortBy={Model.SortBy}&sortDescending={Model.SortDescending}&pageSize={Model.PageSize}{(!string.IsNullOrWhiteSpace(Model.Query) ? $"&query={Uri.EscapeDataString(Model.Query)}" : "")}";
+    var filterParams = Model.GetFilterParams();
 
 }
 
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1>Wishlist</h1>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge-neutral fs-6">@Model.Results.TotalCount needed</span>
+        <span class="badge-neutral fs-6" id="totalCountBadge" data-suffix="needed">@Model.Results.TotalCount needed</span>
         <a href="/Export?handler=Wishlist" class="btn btn-outline-secondary btn-sm">Export CSV</a>
     </div>
 </div>
@@ -96,61 +97,7 @@ else
             <tbody>
                 @foreach (var item in Model.Results.Items)
                 {
-                    <tr>
-                        <td>
-                            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
-                        </td>
-                        <td class="fw-semibold">@item.CardName</td>
-                        <td class="d-none d-md-table-cell">
-                            <span class="d-block">@item.SetName</span>
-                            <code class="text-muted small">@item.SetCode</code>
-                        </td>
-                        <td class="d-none d-md-table-cell">@item.RarityName</td>
-                        <td>
-                            @if (item.QuantityOwned > 0)
-                            {
-                                <span class="badge-status badge-status--warning">Need @item.QuantityNeeded <small class="opacity-75">(own @item.QuantityOwned)</small></span>
-                            }
-                            else
-                            {
-                                <span class="badge-neutral">Need @item.QuantityNeeded</span>
-                            }
-                        </td>
-                        <td>
-                            <div class="d-grid d-sm-flex flex-sm-row gap-2 align-items-sm-start">
-                                <button type="button"
-                                        class="btn btn-sm btn-primary"
-                                        data-set-code="@item.SetCode"
-                                        data-set-name="@item.SetName"
-                                        data-card-id="@item.CardID"
-                                        data-image-id="@item.ImageID"
-                                        data-rarity-name="@item.RarityName"
-                                        data-rarities="@string.Join(",", item.AvailableRarities)"
-                                        data-tcg-date="@Model.GetTCGDate(item.SetCode)"
-                                        onclick="openWishlistModal(this, 'Order')">
-                                    Order
-                                </button>
-                                <button type="button"
-                                        class="btn btn-sm btn-success"
-                                        data-set-code="@item.SetCode"
-                                        data-set-name="@item.SetName"
-                                        data-card-id="@item.CardID"
-                                        data-image-id="@item.ImageID"
-                                        data-rarity-name="@item.RarityName"
-                                        data-rarities="@string.Join(",", item.AvailableRarities)"
-                                        data-tcg-date="@Model.GetTCGDate(item.SetCode)"
-                                        onclick="openWishlistModal(this, 'Own')">
-                                    <span class="d-sm-none">Owned</span>
-                                    <span class="d-none d-sm-inline">Mark as Owned</span>
-                                </button>
-                                <form method="post" asp-page-handler="Remove"
-                                      onsubmit="return confirm('Remove this card from your wishlist?')">
-                                    <input type="hidden" name="imageID" value="@item.ImageID" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">Remove</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                    <partial name="_WishlistRow" model='new WishlistRowViewModel { FilterParams = filterParams, Item = item, TCGDate = Model.GetTCGDate(item.SetCode) }' />
                 }
             </tbody>
         </table>
@@ -161,9 +108,9 @@ else
 
 <!-- Order / Own Modal -->
 <div class="modal fade" id="wishlistModal" tabindex="-1" aria-labelledby="wishlistModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
-            <form id="wishlistForm" method="post">
+            <form id="wishlistForm" method="post" class="ajax-form">
                 <div class="modal-header">
                     <h5 class="modal-title" id="wishlistModalLabel"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -189,5 +136,6 @@ else
 </div>
 
 @section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
     <script src="~/js/wishlist.js" asp-append-version="true"></script>
 }

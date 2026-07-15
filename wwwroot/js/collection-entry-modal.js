@@ -7,7 +7,7 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     document.getElementById('orderModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
 
     const submitBtn = document.getElementById('modalSubmitBtn');
-    submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
+    submitBtn.textContent = isOrder ? 'Confirm Order' : 'Add to Collection';
     submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
     document.getElementById('atcRarityName').value = rarityName || '';
@@ -17,7 +17,7 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     document.getElementById('atcCondition').value = CardDefaults.Condition;
     document.getElementById('atcEdition').value = CardDefaults.Edition;
     document.getElementById('atcAcquisition').value = CardDefaults.Acquisition;
-    document.getElementById('atcQuantity').value = 1;
+    setQuantityButtons('atcQuantity', 1);
     setPickerDate('atcPurchaseDate', isOrder ? new Date() : (tcgDate || null));
     document.getElementById('atcPurchasePrice').value = '';
     document.getElementById('atcSetAsPreferred').checked = true;

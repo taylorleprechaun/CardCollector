@@ -27,7 +27,15 @@
 <div class="row g-2 mb-3 align-items-end">
     <div class="col-12 col-sm-4">
         <label class="form-label">Quantity</label>
-        <input type="number" name="quantity" id="@(Model.Prefix)Quantity" min="1" value="1" class="form-control form-control-sm" />
+        <input type="hidden" name="quantity" id="@(Model.Prefix)Quantity" value="1" />
+        <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity">
+            @for (int q = 1; q <= 3; q++)
+            {
+                <button type="button" class="btn @(q == 1 ? "btn-primary" : "btn-outline-secondary")"
+                        data-qty-target="@(Model.Prefix)Quantity" data-qty-value="@q"
+                        onclick="selectQuantity(this)">@q</button>
+            }
+        </div>
     </div>
     <div class="col-12 col-sm-4" id="@(Model.Prefix)AcquisitionGroup" style="display:@(Model.AcquisitionVisible ? "block" : "none");">
         <label class="form-label">Acquisition</label>
@@ -51,6 +59,9 @@
     <div class="col-12 col-sm-4">
         <label class="form-label d-flex align-items-center gap-1">
             Purchase Date
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
+                    onclick="setPickerDate('@(Model.Prefix)PurchaseDate', new Date())"
+                    title="Set to today">Today</button>
             <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
                     onclick="document.getElementById('@(Model.Prefix)PurchaseDate')._flatpickr?.clear()"
                     title="Clear date">&times;</button>

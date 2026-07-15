@@ -14,14 +14,14 @@ async function openWishlistModal(btn, action) {
     document.getElementById('wishlistModalLabel').textContent = isOrder ? 'Order Printing' : 'Already Own This Printing';
 
     const submitBtn = document.getElementById('wlSubmitBtn');
-    submitBtn.textContent = isOrder ? 'Confirm Order' : 'Mark as Owned';
+    submitBtn.textContent = isOrder ? 'Confirm Order' : 'Add to Collection';
     submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
     document.getElementById('wlAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
     document.getElementById('wlCondition').value = CardDefaults.Condition;
     document.getElementById('wlEdition').value = CardDefaults.Edition;
     document.getElementById('wlAcquisition').value = CardDefaults.Acquisition;
-    document.getElementById('wlQuantity').value = 1;
+    setQuantityButtons('wlQuantity', 1);
     setPickerDate('wlPurchaseDate', isOrder ? new Date() : (btn.dataset.tcgDate || null));
     document.getElementById('wlPurchasePrice').value = '';
 
@@ -29,7 +29,10 @@ async function openWishlistModal(btn, action) {
     marketPriceEl.value = '';
     marketPriceEl.placeholder = 'Loading…';
 
-    form.action = '?handler=' + action;
+    form.action = '?' + (btn.dataset.filterParams || '') + '&handler=' + action;
+
+    const row = btn.closest('tr');
+    if (row) form.dataset.ajaxTarget = row.id;
 
     new bootstrap.Modal(document.getElementById('wishlistModal')).show();
 

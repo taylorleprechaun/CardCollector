@@ -7,7 +7,7 @@ async function openAddModal(btn) {
     document.getElementById('atcRarityName').value = rarity;
     document.getElementById('atcRarityDisplay').textContent = rarity;
     document.getElementById('atcAcquisitionGroup').style.display = 'block';
-    document.getElementById('atcQuantity').value = 1;
+    setQuantityButtons('atcQuantity', 1);
     setSelect('atcCondition', CardDefaults.Condition);
     setSelect('atcEdition', CardDefaults.Edition);
     setSelect('atcAcquisition', CardDefaults.Acquisition);

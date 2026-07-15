@@ -1,0 +1,63 @@
+@model CardCollector.ViewModels.WishlistRowViewModel
+@using CardCollector.ViewModels
+@{
+    var item = Model.Item;
+}
+<tr id="wishlist-row-@item.ImageID">
+    <td>
+        <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
+    </td>
+    <td class="fw-semibold">@item.CardName</td>
+    <td class="d-none d-md-table-cell">
+        <span class="d-block">@item.SetName</span>
+        <code class="text-muted small">@item.SetCode</code>
+    </td>
+    <td class="d-none d-md-table-cell">@item.RarityName</td>
+    <td>
+        @if (item.QuantityOwned > 0)
+        {
+            <span class="badge-status badge-status--warning">Need @item.QuantityNeeded <small class="opacity-75">(own @item.QuantityOwned)</small></span>
+        }
+        else
+        {
+            <span class="badge-neutral">Need @item.QuantityNeeded</span>
+        }
+    </td>
+    <td>
+        <div class="d-grid d-sm-flex flex-sm-row gap-2 align-items-sm-start">
+            <button type="button"
+                    class="btn btn-sm btn-primary"
+                    data-filter-params="@Model.FilterParams"
+                    data-set-code="@item.SetCode"
+                    data-set-name="@item.SetName"
+                    data-card-id="@item.CardID"
+                    data-image-id="@item.ImageID"
+                    data-rarity-name="@item.RarityName"
+                    data-rarities="@string.Join(",", item.AvailableRarities)"
+                    data-tcg-date="@Model.TCGDate"
+                    onclick="openWishlistModal(this, 'Order')">
+                Order
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-success"
+                    data-filter-params="@Model.FilterParams"
+                    data-set-code="@item.SetCode"
+                    data-set-name="@item.SetName"
+                    data-card-id="@item.CardID"
+                    data-image-id="@item.ImageID"
+                    data-rarity-name="@item.RarityName"
+                    data-rarities="@string.Join(",", item.AvailableRarities)"
+                    data-tcg-date="@Model.TCGDate"
+                    onclick="openWishlistModal(this, 'Own')">
+                <span class="d-sm-none">Owned</span>
+                <span class="d-none d-sm-inline">Add to Collection</span>
+            </button>
+            <form method="post" action="/Wishlist?handler=Remove&@Model.FilterParams" class="ajax-form"
+                  data-ajax-target="wishlist-row-@item.ImageID"
+                  onsubmit="return confirm('Remove this card from your wishlist?')">
+                <input type="hidden" name="imageID" value="@item.ImageID" />
+                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Remove</button>
+            </form>
+        </div>
+    </td>
+</tr>

@@ -418,3 +418,15 @@
 .cc-group-row:hover {
     background-color: var(--bs-tertiary-bg);
 }
+
+/* ---------------------------------------------------------------
+   Fullscreen-on-mobile modals: 100vh doesn't account for mobile
+   browser chrome (address bar), so the modal-footer can render
+   below the real visible viewport with body-scroll locked, making
+   it unreachable. 100dvh tracks the actual visible viewport.
+--------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+    .modal.modal-fullscreen-sm-down .modal-dialog {
+        height: 100dvh;
+    }
+}

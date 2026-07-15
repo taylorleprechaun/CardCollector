@@ -35,6 +35,16 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$LINODE_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
+      # Stop the service before touching any files on disk. Copying a new build over a running
+      # process's files causes it to crash mid-request (BadImageFormatException / core dump) when
+      # the runtime tries to JIT a code path from the now half-overwritten assembly, which can hang
+      # incoming requests (including login) for up to a minute until systemd kills and restarts it.
+      - name: Stop service
+        env:
+          LINODE_USER: ${{ secrets.LINODE_USER }}
+          LINODE_HOST: ${{ secrets.LINODE_HOST }}
+        run: ssh -i ~/.ssh/deploy_key "$LINODE_USER@$LINODE_HOST" "sudo systemctl stop card-collector.service"
+
       # Never touches Data/ - scp only adds/overwrites files present in the publish output,
       # it does not delete or sync anything else on the remote (no --delete, no rsync).
       - name: Deploy application files
@@ -49,8 +59,8 @@ jobs:
           LINODE_HOST: ${{ secrets.LINODE_HOST }}
         run: scp -i ~/.ssh/deploy_key appsettings-private.json "$LINODE_USER@$LINODE_HOST:/var/www/card-collector/appsettings-private.json"
 
-      - name: Restart service
+      - name: Start service
         env:
           LINODE_USER: ${{ secrets.LINODE_USER }}
           LINODE_HOST: ${{ secrets.LINODE_HOST }}
-        run: ssh -i ~/.ssh/deploy_key "$LINODE_USER@$LINODE_HOST" "sudo systemctl restart card-collector.service"
+        run: ssh -i ~/.ssh/deploy_key "$LINODE_USER@$LINODE_HOST" "sudo systemctl start card-collector.service"

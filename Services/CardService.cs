@@ -151,6 +151,12 @@ namespace CardCollector.Services
                     _logger.LogWarning("Price unavailable for entry {EntryID} ({SetCode} {RarityName}); using previous snapshot value {Value}",
                         entry.ID, entry.SetCode, entry.RarityName, previousValue);
                 }
+                else if (entry.MarketPriceAtEntry.HasValue)
+                {
+                    entryValue = entry.MarketPriceAtEntry.Value * entry.Quantity;
+                    _logger.LogWarning("Price unavailable for entry {EntryID} ({SetCode} {RarityName}) and no previous snapshot exists; falling back to market price at time of purchase {Value}",
+                        entry.ID, entry.SetCode, entry.RarityName, entryValue);
+                }
                 else
                 {
                     continue;
@@ -299,7 +305,7 @@ namespace CardCollector.Services
 
             var setBreakdown = ownedEntries
                 .GroupBy(e => setNamesByCode.TryGetValue(e.SetCode, out var name) ? name : e.SetCode)
-                .Select(g => (g.Key, g.Count()))
+                .Select(g => (g.Key, g.Select(e => (e.CardID, e.ImageID, e.SetCode)).Distinct().Count()))
                 .OrderByDescending(x => x.Item2)
                 .ToList();
 
@@ -691,6 +697,28 @@ namespace CardCollector.Services
                 }
             }
 
+            if (criteria.IsIncomplete == true)
+            {
+                var candidates = filtered.ToList();
+
+                // When a set filter is active, "incomplete" must mean incomplete *within that set* —
+                // not incomplete on whichever set the card's preferred version happens to point to.
+                // Falls back to the card-wide preferred-version rollup when no set is selected.
+                if (!string.IsNullOrWhiteSpace(setPrefix))
+                {
+                    var ownedQuantitiesInSet = await _collectionRepository
+                        .GetOwnedQuantitiesByCardIDsForSetPrefixAsync(candidates.Select(c => c.ID), setPrefix)
+                        .ConfigureAwait(false);
+                    filtered = candidates.Where(c =>
+                        ownedQuantitiesInSet.TryGetValue(c.ID, out var qty) && qty > 0 && qty < CardPrinting.CompleteThreshold);
+                }
+                else
+                {
+                    var candidateCompletionMap = await BuildCardCompletionMapAsync(candidates).ConfigureAwait(false);
+                    filtered = candidates.Where(c => candidateCompletionMap.TryGetValue(c.ID, out var s) && s == CollectionCompletionStatus.Incomplete);
+                }
+            }
+
             var orderedFiltered = filtered.OrderBy(c => c.Name).ToList();
 
             var totalCount = orderedFiltered.Count;
@@ -700,24 +728,7 @@ namespace CardCollector.Services
             var statusMap = await _collectionRepository.GetStatusByCardIDsAsync(cardIDs).ConfigureAwait(false);
 
             // Roll up completion status from all artworks of each card in the slice.
-            var allImageIDs = slice
-                .SelectMany(c => c.CardImages?.Select(i => i.ID) ?? [])
-                .ToList();
-            var imageCompletionMap = await _collectionRepository.GetCompletionStatusByImageIDsAsync(allImageIDs).ConfigureAwait(false);
-            var cardCompletionMap = slice.ToDictionary(
-                c => c.ID,
-                c =>
-                {
-                    var statuses = (c.CardImages ?? [])
-                        .Select(i => imageCompletionMap.TryGetValue(i.ID, out var s) ? s : (CollectionCompletionStatus?)null)
-                        .Where(s => s.HasValue)
-                        .Select(s => s!.Value)
-                        .ToList();
-                    if (statuses.Count == 0) return (CollectionCompletionStatus?)null;
-                    if (statuses.Contains(CollectionCompletionStatus.Complete)) return CollectionCompletionStatus.Complete;
-                    if (statuses.Contains(CollectionCompletionStatus.Incomplete)) return CollectionCompletionStatus.Incomplete;
-                    return CollectionCompletionStatus.Placeholder;
-                });
+            var cardCompletionMap = await BuildCardCompletionMapAsync(slice).ConfigureAwait(false);
 
             var items = slice.Select(c => new CardListItemViewModel
             {
@@ -999,6 +1010,29 @@ namespace CardCollector.Services
             foreach (var (set, _) in toDismiss)
                 await _dismissedNewPrintingRepository.AddAsync(cardID, set.Code ?? string.Empty, set.RarityName ?? string.Empty)
                     .ConfigureAwait(false);
+        }
+
+        private async Task<IReadOnlyDictionary<int, CollectionCompletionStatus?>> BuildCardCompletionMapAsync(IReadOnlyList<Card> cards)
+        {
+            var allImageIDs = cards
+                .SelectMany(c => c.CardImages?.Select(i => i.ID) ?? [])
+                .ToList();
+            var imageCompletionMap = await _collectionRepository.GetCompletionStatusByImageIDsAsync(allImageIDs).ConfigureAwait(false);
+
+            return cards.ToDictionary(
+                c => c.ID,
+                c =>
+                {
+                    var statuses = (c.CardImages ?? [])
+                        .Select(i => imageCompletionMap.TryGetValue(i.ID, out var s) ? s : (CollectionCompletionStatus?)null)
+                        .Where(s => s.HasValue)
+                        .Select(s => s!.Value)
+                        .ToList();
+                    if (statuses.Count == 0) return (CollectionCompletionStatus?)null;
+                    if (statuses.Contains(CollectionCompletionStatus.Complete)) return CollectionCompletionStatus.Complete;
+                    if (statuses.Contains(CollectionCompletionStatus.Incomplete)) return CollectionCompletionStatus.Incomplete;
+                    return CollectionCompletionStatus.Placeholder;
+                });
         }
 
         private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions) CategorizeEdition(

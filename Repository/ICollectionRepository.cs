@@ -74,6 +74,12 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<string>> GetDistinctSetCodesAsync();
 
         /// <summary>
+        /// Returns the total owned quantity per card ID, scoped to entries whose set code starts with the given
+        /// prefix (e.g. "MP25" matches "MP25-EN001"). Card IDs with no matching owned entries are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByCardIDsForSetPrefixAsync(IEnumerable<int> cardIDs, string setPrefix);
+
+        /// <summary>
         /// Returns the total owned quantity per (imageID, setCode, rarityName) combination for the given set of combinations.
         /// Combinations with no owned entries are omitted from the result.
         /// </summary>

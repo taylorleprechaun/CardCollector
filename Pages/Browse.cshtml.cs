@@ -62,8 +62,9 @@ namespace CardCollector.Pages
             var criteria = new BrowseSearchCriteria
             {
                 CardType = CardType,
-                InCollection = ParseFilter(CollectionFilter),
+                InCollection = CollectionFilter == "incomplete" ? true : ParseFilter(CollectionFilter),
                 InWishlist = ParseFilter(WishlistFilter),
+                IsIncomplete = CollectionFilter == "incomplete" ? true : null,
                 IsOrdered = ParseFilter(OrderedFilter),
                 Page = PageNumber,
                 PageSize = PageSize,
