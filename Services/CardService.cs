@@ -151,6 +151,12 @@ namespace CardCollector.Services
                     _logger.LogWarning("Price unavailable for entry {EntryID} ({SetCode} {RarityName}); using previous snapshot value {Value}",
                         entry.ID, entry.SetCode, entry.RarityName, previousValue);
                 }
+                else if (entry.MarketPriceAtEntry.HasValue)
+                {
+                    entryValue = entry.MarketPriceAtEntry.Value * entry.Quantity;
+                    _logger.LogWarning("Price unavailable for entry {EntryID} ({SetCode} {RarityName}) and no previous snapshot exists; falling back to market price at time of purchase {Value}",
+                        entry.ID, entry.SetCode, entry.RarityName, entryValue);
+                }
                 else
                 {
                     continue;
