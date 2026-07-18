@@ -31,7 +31,7 @@ async function openWishlistModal(btn, action) {
 
     form.action = '?' + (btn.dataset.filterParams || '') + '&handler=' + action;
 
-    const row = btn.closest('tr');
+    const row = btn.closest('[id^="wishlist-row-"]');
     if (row) form.dataset.ajaxTarget = row.id;
 
     new bootstrap.Modal(document.getElementById('wishlistModal')).show();

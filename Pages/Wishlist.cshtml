@@ -77,30 +77,17 @@
 }
 else
 {
-    <div class="table-responsive cc-table-card">
-        <table class="table table-hover align-middle">
-            <thead class="cc-table-head">
-                <tr>
-                    <th style="width: 60px;"></th>
-                    <th>
-                        <a href="@SortURL(WishlistSortBy.Name)"
-                           class="text-body text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
-                            Card @SortIcon(WishlistSortBy.Name)
-                        </a>
-                    </th>
-                    <th class="d-none d-md-table-cell">Set</th>
-                    <th class="d-none d-md-table-cell">Rarity</th>
-                    <th>Need</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Results.Items)
-                {
-                    <partial name="_WishlistRow" model='new WishlistRowViewModel { FilterParams = filterParams, Item = item, TCGDate = Model.GetTCGDate(item.SetCode) }' />
-                }
-            </tbody>
-        </table>
+    <div class="mb-2">
+        <a href="@SortURL(WishlistSortBy.Name)"
+           class="text-body text-decoration-none @(Model.SortBy == WishlistSortBy.Name ? "fw-bold" : "fw-normal")">
+            Card @SortIcon(WishlistSortBy.Name)
+        </a>
+    </div>
+    <div class="list-group cc-table-card">
+        @foreach (var item in Model.Results.Items)
+        {
+            <partial name="_WishlistRow" model='new WishlistRowViewModel { FilterParams = filterParams, Item = item, TCGDate = Model.GetTCGDate(item.SetCode) }' />
+        }
     </div>
 
     <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Wishlist pagination", PageName = "Wishlist", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
@@ -108,7 +95,7 @@ else
 
 <!-- Order / Own Modal -->
 <div class="modal fade" id="wishlistModal" tabindex="-1" aria-labelledby="wishlistModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content">
             <form id="wishlistForm" method="post" class="ajax-form">
                 <div class="modal-header">
