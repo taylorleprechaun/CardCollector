@@ -21,6 +21,7 @@ namespace CardCollector.Services
         private readonly IDismissedNewPrintingRepository _dismissedNewPrintingRepository;
         private readonly IIgnoredCardRepository _ignoredCardRepository;
         private readonly ILogger<CardService> _logger;
+        private readonly IPendingOrderRepository _pendingOrderRepository;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly IPricingService _pricingService;
 
@@ -34,6 +35,7 @@ namespace CardCollector.Services
             IDismissedNewPrintingRepository dismissedNewPrintingRepository,
             IIgnoredCardRepository ignoredCardRepository,
             ILogger<CardService> logger,
+            IPendingOrderRepository pendingOrderRepository,
             IPreferredVersionRepository preferredVersionRepository,
             IPricingService pricingService)
         {
@@ -46,6 +48,7 @@ namespace CardCollector.Services
             _dismissedNewPrintingRepository = dismissedNewPrintingRepository;
             _ignoredCardRepository = ignoredCardRepository;
             _logger = logger;
+            _pendingOrderRepository = pendingOrderRepository;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingService = pricingService;
         }
@@ -293,6 +296,9 @@ namespace CardCollector.Services
                 .OrderBy(s => s.Label)
                 .ToList();
         }
+
+        public async Task<(int Count, decimal Total)> GetCartSummaryAsync() =>
+            await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
 
         public async Task<CollectionStatsViewModel> GetCollectionStatsAsync()
         {
@@ -555,6 +561,20 @@ namespace CardCollector.Services
             return result.OrderBy(r => r.CardName).ToList();
         }
 
+        public async Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync()
+        {
+            var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
+            var viewModels = new List<PendingOrderLineViewModel>();
+
+            foreach (var line in lines)
+            {
+                var printing = BuildCardPrinting(line.CardID, line.ImageID, line.SetCode, line.RarityName);
+                viewModels.Add(PendingOrderLineViewModel.From(printing, line));
+            }
+
+            return viewModels;
+        }
+
         public async Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID) =>
             await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
 
@@ -633,7 +653,10 @@ namespace CardCollector.Services
                     // card_sets[].set_price (printing.Price) is essentially always 0 in the cached YGOProDeck card
                     // data — it's not a maintained field there. Live TCGPlayer pricing (the same source other
                     // features use) lives in the separate pricing cache, keyed by the printing's resolved rarity.
-                    var livePrice = await _pricingService.GetPrintingPriceAsync(cardID, preferred.SetCode, printing.RarityName).ConfigureAwait(false);
+                    // PreferredVersion doesn't track edition, so there's no real signal for which one the user
+                    // wants — default to 1st Edition (the conventional "primary" printing to price) when the
+                    // printing has one, falling back to whatever edition is available otherwise.
+                    var livePrice = await _pricingService.GetPrintingPriceAsync(cardID, preferred.SetCode, printing.RarityName, CardEdition.FirstEdition).ConfigureAwait(false);
                     if (maxPrice.HasValue && (!livePrice.HasValue || livePrice.Value <= 0 || livePrice.Value > maxPrice.Value))
                         continue; // No price data or over the cap — exclude, don't let missing data slip under the cap
 
@@ -1002,6 +1025,25 @@ namespace CardCollector.Services
                     TotalCount = totalCount
                 }
             };
+        }
+
+        public async Task<(int Count, decimal Total)> SubmitCartAsync()
+        {
+            var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
+            var total = 0m;
+
+            foreach (var line in lines)
+            {
+                await AddEntryAsync(
+                    line.CardID, line.ImageID, line.SetCode, CollectionStatus.Ordered,
+                    line.Quantity, line.Condition, line.Edition, line.AcquisitionMethod,
+                    line.PurchaseDate, line.PurchasePrice, marketPriceAtEntry: line.MarketPriceAtEntry,
+                    line.RarityName).ConfigureAwait(false);
+                total += (line.PurchasePrice ?? 0) * line.Quantity;
+            }
+
+            await _pendingOrderRepository.DeleteAllAsync().ConfigureAwait(false);
+            return (lines.Count, total);
         }
 
         public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()

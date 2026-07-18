@@ -46,6 +46,7 @@ builder.Services.AddScoped<ICollectionEntryValueRepository, CollectionEntryValue
 builder.Services.AddScoped<ICollectionValueRepository, CollectionValueRepository>();
 builder.Services.AddScoped<IDismissedNewPrintingRepository, DismissedNewPrintingRepository>();
 builder.Services.AddScoped<IIgnoredCardRepository, IgnoredCardRepository>();
+builder.Services.AddScoped<IPendingOrderRepository, PendingOrderRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<ICardService, CardService>();
@@ -67,6 +68,24 @@ using (var scope = app.Services.CreateScope())
             "DateCreated" TEXT NOT NULL,
             "DateModified" TEXT NOT NULL,
             CONSTRAINT "UQ_IgnoredCards_CardID" UNIQUE ("CardID")
+        );
+        """);
+
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "PendingOrderLines" (
+            "ID" INTEGER NOT NULL CONSTRAINT "PK_PendingOrderLines" PRIMARY KEY AUTOINCREMENT,
+            "CardID" INTEGER NOT NULL,
+            "ImageID" INTEGER NOT NULL,
+            "SetCode" TEXT NOT NULL,
+            "RarityName" TEXT NULL,
+            "Condition" TEXT NULL,
+            "Edition" TEXT NULL,
+            "AcquisitionMethod" TEXT NULL,
+            "PurchaseDate" TEXT NULL,
+            "PurchasePrice" REAL NULL,
+            "MarketPriceAtEntry" REAL NULL,
+            "Quantity" INTEGER NOT NULL DEFAULT 1,
+            "DateCreated" TEXT NOT NULL
         );
         """);
 }

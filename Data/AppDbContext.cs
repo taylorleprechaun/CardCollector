@@ -17,6 +17,8 @@ namespace CardCollector.Data
 
         public DbSet<IgnoredCard> IgnoredCards { get; set; }
 
+        public DbSet<PendingOrderLine> PendingOrderLines { get; set; }
+
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
 
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
@@ -55,6 +57,14 @@ namespace CardCollector.Data
             {
                 entity.HasKey(e => e.ID);
                 entity.HasIndex(e => e.CardID).IsUnique();
+            });
+
+            modelBuilder.Entity<PendingOrderLine>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.Property(e => e.AcquisitionMethod).HasConversion<string>();
+                entity.Property(e => e.Condition).HasConversion<string>();
+                entity.Property(e => e.Edition).HasConversion<string>();
             });
 
             modelBuilder.Entity<PreferredVersion>(entity =>

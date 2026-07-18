@@ -62,6 +62,11 @@ namespace CardCollector.Services
         Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName);
 
         /// <summary>
+        /// Returns the total line count and total cost across every staged (not-yet-submitted) cart line.
+        /// </summary>
+        Task<(int Count, decimal Total)> GetCartSummaryAsync();
+
+        /// <summary>
         /// Returns aggregated collection statistics including rarity, set, acquisition, and value breakdowns.
         /// </summary>
         Task<CollectionStatsViewModel> GetCollectionStatsAsync();
@@ -100,6 +105,11 @@ namespace CardCollector.Services
         /// Returns all cards with a preferred version where a newer set printing exists and has not been dismissed.
         /// </summary>
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
+
+        /// <summary>
+        /// Returns every staged (not-yet-submitted) cart line, enriched with card and set data.
+        /// </summary>
+        Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
 
         /// <summary>
         /// Returns the preferred version for the given card ID (any artwork), or null if none is set.
@@ -169,6 +179,12 @@ namespace CardCollector.Services
         /// Returns a paginated, filtered, and sorted page of wishlist items.
         /// </summary>
         Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
+
+        /// <summary>
+        /// Converts every staged cart line into a real Ordered collection entry, then clears the cart.
+        /// Returns the number of entries created and their total cost.
+        /// </summary>
+        Task<(int Count, decimal Total)> SubmitCartAsync();
 
         /// <summary>
         /// Returns the distinct rarity names present in the current wishlist.

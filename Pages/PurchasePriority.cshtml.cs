@@ -1,13 +1,16 @@
+using CardCollector.Data.Models;
 using CardCollector.Extensions;
+using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CardCollector.Pages;
 
-public sealed class PurchasePriorityModel(ICardService cardService) : SearchablePageModel
+public sealed class PurchasePriorityModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository) : SearchablePageModel
 {
     private readonly ICardService _cardService = cardService;
+    private readonly IPendingOrderRepository _pendingOrderRepository = pendingOrderRepository;
 
     public PurchasePlanViewModel FullPlan { get; private set; } = new();
 
@@ -59,5 +62,29 @@ public sealed class PurchasePriorityModel(ICardService cardService) : Searchable
             PageSize = PageSize,
             TotalCount = filtered.Count
         };
+    }
+
+    public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, IReadOnlyList<PurchaseLineInput> lines)
+    {
+        var entries = lines.Select(l => new PendingOrderLine
+        {
+            CardID = cardID,
+            ImageID = imageID,
+            SetCode = setCode,
+            RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName,
+            Condition = l.Condition,
+            Edition = l.Edition,
+            AcquisitionMethod = AcquisitionMethod.Purchased,
+            MarketPriceAtEntry = l.MarketPriceAtEntry,
+            PurchaseDate = l.PurchaseDate,
+            PurchasePrice = l.PurchasePrice,
+            Quantity = l.Quantity < 1 ? 1 : l.Quantity,
+            DateCreated = DateTime.UtcNow
+        });
+
+        await _pendingOrderRepository.AddRangeAsync(entries).ConfigureAwait(false);
+        var (count, total) = await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
+
+        return new JsonResult(new { count, total });
     }
 }

@@ -49,27 +49,33 @@ function setPickerDate(id, value) {
     }
 }
 
-document.querySelectorAll('.cc-date-picker').forEach(function (el) {
-    flatpickr(el, {
-        dateFormat: 'Y-m-d',
-        altInput: true,
-        altFormat: 'm/d/Y',
-        altInputClass: 'form-control form-control-sm',
-        allowInput: true,
-        disableMobile: true,
-        onReady: function (selectedDates, dateStr, instance) {
-            var todayBtn = document.createElement('button');
-            todayBtn.textContent = 'Today';
-            todayBtn.type = 'button';
-            todayBtn.className = 'flatpickr-today-btn';
-            todayBtn.addEventListener('click', function () {
-                instance.setDate(new Date());
-                instance.close();
-            });
-            instance.calendarContainer.appendChild(todayBtn);
-        }
+function initDatePickers(root) {
+    (root || document).querySelectorAll('.cc-date-picker').forEach(function (el) {
+        if (el._flatpickr) return;
+
+        flatpickr(el, {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'm/d/Y',
+            altInputClass: 'form-control form-control-sm',
+            allowInput: true,
+            disableMobile: true,
+            onReady: function (selectedDates, dateStr, instance) {
+                var todayBtn = document.createElement('button');
+                todayBtn.textContent = 'Today';
+                todayBtn.type = 'button';
+                todayBtn.className = 'flatpickr-today-btn';
+                todayBtn.addEventListener('click', function () {
+                    instance.setDate(new Date());
+                    instance.close();
+                });
+                instance.calendarContainer.appendChild(todayBtn);
+            }
+        });
     });
-});
+}
+
+initDatePickers();
 
 function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
     let highlighted = -1;

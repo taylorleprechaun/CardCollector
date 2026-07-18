@@ -1,0 +1,32 @@
+<div class="modal fade" id="purchaseOrderModal" tabindex="-1" aria-labelledby="purchaseOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="purchaseOrderForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="purchaseOrderModalLabel">Order <span id="poCardName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="CardID" id="poCardID" />
+                    <input type="hidden" name="ImageID" id="poImageID" />
+                    <input type="hidden" name="SetCode" id="poSetCode" />
+                    <input type="hidden" name="RarityName" id="poRarityName" />
+
+                    <p class="text-muted mb-3">
+                        Set: <strong id="poSetNameLabel"></strong> &middot; Rarity: <strong id="poRarityLabel"></strong>
+                    </p>
+
+                    <div id="purchaseLinesContainer"></div>
+                    <template id="purchaseLineTemplate">
+                        <partial name="_PurchaseLineFields" model="0" />
+                    </template>
+                    <button type="button" id="addPurchaseLineBtn" class="btn btn-outline-secondary btn-sm mt-2">+ Add Purchase Line</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="addToCartBtn" class="btn btn-primary">Add to Cart</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

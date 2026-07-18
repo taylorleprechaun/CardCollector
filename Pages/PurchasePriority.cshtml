@@ -116,6 +116,7 @@ else
                         <th class="d-none d-md-table-cell">Qty Needed</th>
                         <th class="d-none d-md-table-cell">Price</th>
                         <th class="d-none d-md-table-cell">Line Total</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,6 +159,20 @@ else
                                 }
                             </td>
                             <td class="d-none d-md-table-cell">$@item.LineTotal.ToString("F2")</td>
+                            <td class="text-nowrap">
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        data-card-id="@item.CardID"
+                                        data-image-id="@item.ImageID"
+                                        data-set-code="@item.SetCode"
+                                        data-rarity-name="@item.RarityName"
+                                        data-card-name="@item.CardName"
+                                        data-set-name="@item.SetName"
+                                        data-quantity-needed="@item.QuantityNeeded"
+                                        data-price="@item.Price"
+                                        onclick="openPurchaseModal(this)">
+                                    Order
+                                </button>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -167,6 +182,8 @@ else
         <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Purchase priority pagination", PageName = "PurchasePriority", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
     }
 }
+
+<partial name="_PurchaseLinesModal" />
 
 @section Scripts {
     <script src="~/js/purchase-priority.js" asp-append-version="true"></script>

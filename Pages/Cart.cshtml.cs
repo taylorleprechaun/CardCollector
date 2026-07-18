@@ -1,0 +1,37 @@
+using CardCollector.Repository;
+using CardCollector.Services;
+using CardCollector.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace CardCollector.Pages;
+
+public sealed class CartModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository) : PageModel
+{
+    private readonly ICardService _cardService = cardService;
+    private readonly IPendingOrderRepository _pendingOrderRepository = pendingOrderRepository;
+
+    public IReadOnlyList<PendingOrderLineViewModel> Lines { get; private set; } = [];
+
+    public async Task OnGetAsync()
+    {
+        Lines = await _cardService.GetPendingCartAsync().ConfigureAwait(false);
+    }
+
+    public async Task<IActionResult> OnPostRemoveAsync(int id)
+    {
+        await _pendingOrderRepository.DeleteAsync(id).ConfigureAwait(false);
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostSubmitAllAsync()
+    {
+        var (count, total) = await _cardService.SubmitCartAsync().ConfigureAwait(false);
+
+        TempData["Success"] = count == 0
+            ? "Your cart is empty — nothing to submit."
+            : $"Added {count} order{(count == 1 ? "" : "s")} for {total:C} to Orders.";
+
+        return RedirectToPage("/Orders");
+    }
+}
