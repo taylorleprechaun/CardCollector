@@ -107,8 +107,8 @@
                     <tr>
                         <th class="text-center">#</th>
                         <th>Card</th>
-                        <th>Set</th>
-                        <th>Rarity</th>
+                        <th class="d-none d-md-table-cell">Set</th>
+                        <th class="d-none d-md-table-cell">Rarity</th>
                         <th class="text-end">Market Value</th>
                     </tr>
                 </thead>
@@ -126,9 +126,12 @@
                             {
                                 <td class="text-center text-muted">@(i + 1)</td>
                             }
-                            <td>@card.CardName</td>
-                            <td>@card.SetName</td>
-                            <td>@card.RarityName</td>
+                            <td>
+                                <div>@card.CardName</div>
+                                <div class="text-muted small d-md-none">@card.SetName &middot; @card.RarityName</div>
+                            </td>
+                            <td class="d-none d-md-table-cell">@card.SetName</td>
+                            <td class="d-none d-md-table-cell">@card.RarityName</td>
                             <td class="text-end">$@card.Value.ToString("F2")</td>
                         </tr>
                     }

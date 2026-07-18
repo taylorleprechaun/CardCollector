@@ -192,9 +192,12 @@ function updateTopCards(topCards) {
     tbody.innerHTML = topCards.map((c, i) =>
         `<tr>
             <td class="text-center">${medalBadge(i)}</td>
-            <td>${c.cardName}</td>
-            <td>${c.setName}</td>
-            <td>${c.rarityName}</td>
+            <td>
+                <div>${c.cardName}</div>
+                <div class="text-muted small d-md-none">${c.setName} &middot; ${c.rarityName}</div>
+            </td>
+            <td class="d-none d-md-table-cell">${c.setName}</td>
+            <td class="d-none d-md-table-cell">${c.rarityName}</td>
             <td class="text-end">$${c.value.toFixed(2)}</td>
         </tr>`
     ).join('');

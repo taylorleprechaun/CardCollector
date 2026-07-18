@@ -419,14 +419,30 @@
     background-color: var(--bs-tertiary-bg);
 }
 
-/* ---------------------------------------------------------------
-   Fullscreen-on-mobile modals: 100vh doesn't account for mobile
-   browser chrome (address bar), so the modal-footer can render
-   below the real visible viewport with body-scroll locked, making
-   it unreachable. 100dvh tracks the actual visible viewport.
---------------------------------------------------------------- */
+/* Fullscreen-on-mobile modals: 100vh ignores mobile browser chrome
+   (address bar), so 100dvh tracks the real visible viewport instead.
+   Targets modal-dialog directly since modal-fullscreen-sm-down lives
+   on that element, not the outer .modal. */
 @media (max-width: 575.98px) {
-    .modal.modal-fullscreen-sm-down .modal-dialog {
+    .modal-dialog.modal-fullscreen-sm-down {
         height: 100dvh;
     }
+}
+
+/* Every modal wraps header/body/footer in one <form> (so Submit/Cancel
+   share it with the fields), which sits between modal-content
+   (flex column) and modal-body, breaking the flex parent-child chain
+   modal-dialog-scrollable needs — modal-body's "flex: 1 1 auto" only
+   works on a direct flex child. Without this, modal-body never shrinks
+   and just grows to its full content height, killing both scroll and
+   footer visibility. Making the form itself a flex column restores the
+   chain. Verified against a standalone repro: without this rule
+   modal-body's clientHeight equals its full unclipped scrollHeight (no
+   scroll); with it, modal-body correctly shrinks and scrollTop moves. */
+.modal-dialog-scrollable .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
