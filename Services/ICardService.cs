@@ -115,10 +115,12 @@ namespace CardCollector.Services
         Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
 
         /// <summary>
-        /// Returns preferred printings worth prioritizing for purchase — printings that are themselves one of only
-        /// 1-2 scarce foil prints a card has ever had, gone 5+ years without a reprint on a card old enough to judge.
-        /// Excludes cards where any preferred artwork is already fully collected. When <paramref name="maxPrice"/>
-        /// is given, only printings currently priced at or below it are returned.
+        /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
+        /// prioritizing come first — printings that are themselves one of only 1-2 foil prints a card has ever
+        /// had, gone 5+ years without a reprint, on a card old enough to judge. Everything else still appears
+        /// afterward so it can still fill out a budget. Excludes cards where any preferred artwork is already
+        /// fully collected. When <paramref name="maxPrice"/> is given, only printings currently priced at or
+        /// below it are returned.
         /// </summary>
         Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null);
 

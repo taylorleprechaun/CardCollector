@@ -601,8 +601,10 @@ namespace CardCollector.Services
 
             var results = new List<PurchasePriorityCandidateViewModel>();
 
-            // Only cards already on the wishlist (i.e. with at least one preferred version) are considered —
-            // this is a prioritization tool for what to buy next, not a discovery tool for new cards to want.
+            // Every card already on the wishlist (i.e. with at least one preferred version) is included — this
+            // surfaces the whole "what to buy next" list, not just a discovery tool for new cards to want.
+            // Printings PurchasePriorityAnalyzer flags (1-2 foil prints ever made, 5+ years since reprint) sort
+            // first; everything else still appears afterward so it can still fill out a budget once those are covered.
             // If any one of a card's preferred artworks is already fully collected, the whole card is deprioritized.
             foreach (var (cardID, preferredVersions) in preferredByCardID)
             {
@@ -618,22 +620,56 @@ namespace CardCollector.Services
                 foreach (var preferred in preferredVersions)
                 {
                     var candidate = PurchasePriorityAnalyzer.Evaluate(
-                        card, preferred.SetCode, preferred.RarityName, _cardSetRepository.GetTCGDateBySetCode, asOf);
-                    if (candidate is null)
-                        continue;
+                        card, preferred.SetCode, preferred.RarityName, _cardSetRepository.GetTCGDateBySetCode, asOf)
+                        ?? new PurchasePriorityCandidate
+                        {
+                            CardID = card.ID,
+                            CardName = card.Name ?? string.Empty,
+                            FoilCount = int.MaxValue // Sorts after every flagged candidate — nothing here to rank by.
+                        };
 
                     var printing = BuildCardPrinting(cardID, preferred.ImageID, preferred.SetCode, preferred.RarityName);
-                    if (maxPrice.HasValue && (!printing.Price.HasValue || printing.Price.Value <= 0 || printing.Price.Value > maxPrice.Value))
-                        continue; // Price of 0 means no pricing data, not a genuinely free card — exclude, don't let it slip under the cap
+
+                    // card_sets[].set_price (printing.Price) is essentially always 0 in the cached YGOProDeck card
+                    // data — it's not a maintained field there. Live TCGPlayer pricing (the same source other
+                    // features use) lives in the separate pricing cache, keyed by the printing's resolved rarity.
+                    var livePrice = await _pricingService.GetPrintingPriceAsync(cardID, preferred.SetCode, printing.RarityName).ConfigureAwait(false);
+                    if (maxPrice.HasValue && (!livePrice.HasValue || livePrice.Value <= 0 || livePrice.Value > maxPrice.Value))
+                        continue; // No price data or over the cap — exclude, don't let missing data slip under the cap
+
+                    var pricedPrinting = new CardPrinting
+                    {
+                        AvailableRarities = printing.AvailableRarities,
+                        CardID = printing.CardID,
+                        CardName = printing.CardName,
+                        CardType = printing.CardType,
+                        ImageID = printing.ImageID,
+                        ImageURLSmall = printing.ImageURLSmall,
+                        Price = livePrice,
+                        RarityCode = printing.RarityCode,
+                        RarityName = printing.RarityName,
+                        SetCode = printing.SetCode,
+                        SetName = printing.SetName
+                    };
+
+                    // TCGPlayer mass entry only matches on card name + this bracketed set prefix, with no rarity
+                    // qualifier — if the card has another printing under the same prefix but a different rarity,
+                    // mass entry can silently resolve to the wrong one. Flag it so the row can be called out on screen.
+                    var tcgSetCode = preferred.SetCode.ToTCGPlayerSetCode();
+                    var hasAmbiguousSetCode = (card.CardSets ?? [])
+                        .Any(s => !string.IsNullOrEmpty(s.Code)
+                            && s.Code.ToTCGPlayerSetCode().Equals(tcgSetCode, StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
 
                     var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    results.Add(PurchasePriorityCandidateViewModel.From(printing, candidate, quantityOwned));
+                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode));
                 }
             }
 
             return results
                 .OrderBy(r => r.FoilCount)
                 .ThenBy(r => r.PrintingDate, StringComparer.Ordinal)
+                .ThenBy(r => r.CardName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 
