@@ -14,12 +14,14 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 **Collection**
 - **Collection** &mdash; owned cards grouped by printing, searchable and paginated
-- **Wishlist** &mdash; preferred versions you haven&rsquo;t ordered or owned yet, with search and sort
-- **Purchase Priority** &mdash; ranks your wishlist by budget and price cap to plan what to buy next, with a copy-to-clipboard export formatted for TCGPlayer's mass entry tool
-- **Cart** &mdash; stage purchases from Purchase Priority across multiple browsing sessions, then submit them all at once to Orders
-- **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
 - **Checked Out** &mdash; cards currently lent out, with check-in/check-out controls on the Collection page
 - **Ignore card** &mdash; exclude a specific card from Dashboard progress tracking (toggle from Card detail, Collection, Discover, or New Printings)
+
+**Shopping**
+- **Wishlist** &mdash; preferred versions you haven&rsquo;t ordered or owned yet, with search and sort, live In Cart / Ordered count badges, and an Order button that stages into the Cart
+- **Buy List** &mdash; ranks your wishlist by budget and price cap to plan what to buy next, with live In Cart / Ordered count badges and a copy-to-clipboard export formatted for TCGPlayer's mass entry tool
+- **Cart** &mdash; stage purchases from Buy List or Wishlist across multiple browsing sessions (just a quantity to start), then fill in condition, edition, and price before submitting them all at once to Orders
+- **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
 
 **Insights**
 - **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart

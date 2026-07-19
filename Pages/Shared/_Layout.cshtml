@@ -92,7 +92,7 @@
                     </div>
                     <div class="navbar-nav mt-2 mt-lg-0 align-items-lg-center">
                         <a href="/Cart" id="navCartBadge" title="@(cartSummary.Total > 0 ? $"${cartSummary.Total:F2} staged" : "")"
-                           class="btn btn-sm btn-outline-light me-lg-2 mb-2 mb-lg-0">
+                           class="btn btn-sm btn-outline-light me-lg-2 mb-2 mb-lg-0 @(cartSummary.Count == 0 ? "d-none" : "")">
                             <i class="bi bi-cart"></i> Cart
                             <span class="badge bg-danger ms-1" id="navCartCount">@cartSummary.Count</span>
                         </a>

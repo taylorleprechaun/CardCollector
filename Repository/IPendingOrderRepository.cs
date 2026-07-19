@@ -13,14 +13,14 @@ namespace CardCollector.Repository
         Task AddRangeAsync(IEnumerable<PendingOrderLine> lines);
 
         /// <summary>
-        /// Deletes every pending order line.
-        /// </summary>
-        Task DeleteAllAsync();
-
-        /// <summary>
         /// Deletes the pending order line with the given ID. Returns false if no such line exists.
         /// </summary>
         Task<bool> DeleteAsync(int id);
+
+        /// <summary>
+        /// Deletes the pending order lines with the given IDs. IDs that don't match an existing line are ignored.
+        /// </summary>
+        Task DeleteRangeAsync(IEnumerable<int> ids);
 
         /// <summary>
         /// Returns every pending order line, ordered by date created descending.
@@ -28,9 +28,16 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<PendingOrderLine>> GetAllAsync();
 
         /// <summary>
-        /// Returns the total staged quantity for every (imageID, setCode) pair, summed across pending order lines.
+        /// Returns the pending order lines with the given IDs. IDs that don't match an existing line are omitted.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetStagedQuantitiesAsync();
+        Task<IReadOnlyList<PendingOrderLine>> GetByIDsAsync(IEnumerable<int> ids);
+
+        /// <summary>
+        /// Returns the total staged quantity for every (imageID, setCode, rarityName) combination, summed
+        /// across pending order lines. RarityName is normalized to an empty string when null, so callers
+        /// should look up with <c>rarityName ?? string.Empty</c>.
+        /// </summary>
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetStagedQuantitiesAsync();
 
         /// <summary>
         /// Returns the total line count and total cost (price * quantity) across all pending order lines.

@@ -30,9 +30,21 @@ namespace CardCollector.Pages
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostSubmitAllAsync(IReadOnlyList<CartLineOverride> lines)
+        public async Task<IActionResult> OnPostSubmitAllAsync(IReadOnlyList<CartLineOverride>? lines)
         {
-            var (count, total) = await _cardService.SubmitCartAsync(lines).ConfigureAwait(false);
+            if (lines is null || lines.Select(l => l.PendingOrderLineID).Distinct().Count() != lines.Count)
+                return BadRequest();
+
+            if (lines.Any(l => !l.PurchasePrice.HasValue))
+            {
+                TempData["Warning"] = "Enter a price for every cart line before submitting.";
+                return RedirectToPage();
+            }
+
+            var (count, total, editionWarnings) = await _cardService.SubmitCartAsync(lines).ConfigureAwait(false);
+
+            if (editionWarnings.Count > 0)
+                TempData["Warning"] = string.Join(" ", editionWarnings);
 
             TempData["Success"] = count == 0
                 ? "Your cart is empty — nothing to submit."

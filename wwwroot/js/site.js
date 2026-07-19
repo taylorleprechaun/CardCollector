@@ -27,7 +27,7 @@ function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
             const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}`);
             if (resp.ok) {
                 const { price } = await resp.json();
-                if (price) marketPriceEl.value = price.toFixed(2);
+                if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);
             }
         } catch (err) { console.warn('Failed to fetch price:', err); }
     }
@@ -58,9 +58,11 @@ function updateCartBadge(rawCount, rawTotal) {
     const countEl = document.getElementById('navCartCount');
     if (!badge || !countEl) return;
 
-    countEl.textContent = rawCount;
+    const count = Number(rawCount) || 0;
+    countEl.textContent = count;
     const total = Number(rawTotal) || 0;
     badge.title = total ? `$${total.toFixed(2)} staged` : '';
+    badge.classList.toggle('d-none', count === 0);
 }
 
 function setPickerDate(id, value) {

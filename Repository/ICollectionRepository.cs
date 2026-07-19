@@ -38,9 +38,11 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
-        /// Returns the total Ordered quantity for every (imageID, setCode) pair, summed across matching entries.
+        /// Returns the total Ordered quantity for every (imageID, setCode, rarityName) combination, summed
+        /// across matching entries. RarityName is normalized to an empty string when null, so callers should
+        /// look up with <c>rarityName ?? string.Empty</c>.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOrderedQuantitiesAsync();
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
 
         /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in Owned entries only.

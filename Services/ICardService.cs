@@ -189,12 +189,12 @@ namespace CardCollector.Services
         Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
 
         /// <summary>
-        /// Converts every staged cart line into a real Ordered collection entry, then clears the cart.
-        /// Each override's Condition/Edition/PurchaseDate/PurchasePrice/MarketPriceAtEntry/Quantity replace
-        /// the staged (mostly-null) values on the matching line by PendingOrderLineID before it's committed.
-        /// Returns the number of entries created and their total cost.
+        /// Converts every reviewed staged cart line into a real Ordered collection entry, then removes
+        /// just those lines from the cart. Lines not covered by <paramref name="overrides"/> are left staged.
+        /// Returns the number of entries created, their total cost, and any edition-mismatch warnings
+        /// raised while committing.
         /// </summary>
-        Task<(int Count, decimal Total)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
+        Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
 
         /// <summary>
         /// Returns the distinct rarity names present in the current wishlist.

@@ -9,6 +9,7 @@ namespace CardCollector.Services
 {
     public sealed class CardService : ICardService
     {
+        private const int MaxCartQuantity = 3;
         private const string SnapshotDateFormat = "yyyy-MM-dd";
         private const int SetBreakdownItemLimit = 20;
 
@@ -94,7 +95,7 @@ namespace CardCollector.Services
                 AcquisitionMethod = AcquisitionMethod.Purchased,
                 Condition = CardCondition.NearMint,
                 Edition = CardEdition.FirstEdition,
-                Quantity = quantity < 1 ? 1 : quantity,
+                Quantity = Math.Clamp(quantity, 1, MaxCartQuantity),
                 PurchaseDate = DateTime.UtcNow.Date,
                 MarketPriceAtEntry = marketPrice,
                 DateCreated = DateTime.UtcNow
@@ -104,7 +105,7 @@ namespace CardCollector.Services
 
             var (count, total) = await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
-            var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode));
+            var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));
 
             return (count, total, cartQuantity);
         }
@@ -692,8 +693,8 @@ namespace CardCollector.Services
                             && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
 
                     var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    var cartQuantity = stagedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    var orderedQuantity = orderedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
+                    var cartQuantity = stagedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
+                    var orderedQuantity = orderedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
                     results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity));
                 }
             }
@@ -769,8 +770,8 @@ namespace CardCollector.Services
                 if (ownedQty >= CardPrinting.CompleteThreshold)
                     continue;
 
-                var cartQuantity = stagedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode));
-                var orderedQuantity = orderedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode));
+                var cartQuantity = stagedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode, pv.RarityName ?? string.Empty));
+                var orderedQuantity = orderedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode, pv.RarityName ?? string.Empty));
 
                 var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
                 results.Add(WishlistItemViewModel.From(printing, ownedQty, cartQuantity, orderedQuantity));
@@ -1041,13 +1042,15 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<(int Count, decimal Total)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides)
+        public async Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides)
         {
-            var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
-            var overridesByLineID = (overrides ?? [])
-                .GroupBy(o => o.PendingOrderLineID)
-                .ToDictionary(g => g.Key, g => g.First());
+            ArgumentNullException.ThrowIfNull(overrides);
+
+            var overridesByLineID = overrides.ToDictionary(o => o.PendingOrderLineID);
+            var lines = await _pendingOrderRepository.GetByIDsAsync(overridesByLineID.Keys).ConfigureAwait(false);
+
             var total = 0m;
+            var editionWarnings = new List<string>();
 
             foreach (var line in lines)
             {
@@ -1065,7 +1068,14 @@ namespace CardCollector.Services
                     purchaseDate = lineOverride.PurchaseDate;
                     purchasePrice = lineOverride.PurchasePrice;
                     marketPriceAtEntry = lineOverride.MarketPriceAtEntry;
-                    quantity = lineOverride.Quantity < 1 ? 1 : lineOverride.Quantity;
+                    quantity = Math.Clamp(lineOverride.Quantity, 1, MaxCartQuantity);
+                }
+
+                if (edition.HasValue && !string.IsNullOrWhiteSpace(line.RarityName))
+                {
+                    var category = await CheckEntryEditionAsync(line.CardID, line.SetCode, line.RarityName, edition.Value).ConfigureAwait(false);
+                    if (category == EditionAuditCategory.EditionMismatch)
+                        editionWarnings.Add(EditionWarningExtensions.BuildEditionMismatchMessage(edition.Value, line.SetCode, line.RarityName));
                 }
 
                 await AddEntryAsync(
@@ -1076,8 +1086,8 @@ namespace CardCollector.Services
                 total += (purchasePrice ?? 0) * quantity;
             }
 
-            await _pendingOrderRepository.DeleteAllAsync().ConfigureAwait(false);
-            return (lines.Count, total);
+            await _pendingOrderRepository.DeleteRangeAsync(lines.Select(l => l.ID)).ConfigureAwait(false);
+            return (lines.Count, total, editionWarnings);
         }
 
         public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
