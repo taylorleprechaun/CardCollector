@@ -20,110 +20,36 @@
 }
 else
 {
-    <div class="table-responsive cc-table-card">
-        <table class="table table-hover align-middle">
-            <thead class="cc-table-head">
-                <tr>
-                    <th style="width: 60px;"></th>
-                    <th>Card</th>
-                    <th>Set</th>
-                    <th>Rarity</th>
-                    <th class="d-none d-md-table-cell">Condition</th>
-                    <th class="d-none d-md-table-cell">Edition</th>
-                    <th class="d-none d-md-table-cell">Acquisition</th>
-                    <th class="d-none d-md-table-cell">Purchase Date</th>
-                    <th class="d-none d-md-table-cell">Qty</th>
-                    <th class="d-none d-md-table-cell">Price</th>
-                    <th class="d-none d-md-table-cell">Ordered</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var order in Model.Orders)
-                {
-                    <tr>
-                        <td>
-                            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(order.ImageURLSmall, order.CardName)' />
-                        </td>
-                        <td class="fw-semibold">
-                            @order.CardName
-                        </td>
-                        <td>
-                            <span class="d-block">@order.SetName</span>
-                            <code class="text-muted small">@order.SetCode</code>
-                        </td>
-                        <td>@order.RarityCode</td>
-                        <td class="d-none d-md-table-cell">
-                            @if (order.Condition.HasValue)
-                            {
-                                @order.Condition.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (order.Edition.HasValue)
-                            {
-                                @order.Edition.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (order.AcquisitionMethod.HasValue)
-                            {
-                                @order.AcquisitionMethod.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (order.PurchaseDate.HasValue)
-                            {
-                                @order.PurchaseDate.Value.ToString("MMM d, yyyy")
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">×@order.Quantity</td>
-                        <td class="d-none d-md-table-cell">
-                            @if (order.PurchasePrice.HasValue)
-                            {
-                                <span>$@order.PurchasePrice.Value.ToString("F2")</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="text-muted small d-none d-md-table-cell">@order.DateCreated.ToString("MMM d, yyyy")</td>
-                        <td class="text-nowrap">
-                            <button type="button" class="btn btn-sm btn-success"
-                                    data-entry-id="@order.EntryID"
-                                    data-quantity="@order.Quantity"
-                                    onclick="openMarkOwnedModal(this)">
-                                Add to Collection
-                            </button>
-                            <form method="post" asp-page-handler="Delete" class="d-inline ms-1"
-                                  onsubmit="return confirm('Remove this order?')">
-                                <input type="hidden" name="entryID" value="@order.EntryID" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="list-group mb-4 cc-table-card" id="ordersList">
+        @foreach (var order in Model.Orders)
+        {
+            <partial name="_OrderRow" model="order" />
+        }
     </div>
 }
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" action="/Orders?handler=Edit" id="editForm" class="ajax-form">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="entryID" id="editEntryID" />
+                    <partial name="_CollectionFormFields" model='new CollectionFormFieldsViewModel { Prefix = "edit", AcquisitionVisible = true, MarketPriceEditable = true }' />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Mark Owned Modal -->
 <div class="modal fade" id="markOwnedModal" tabindex="-1" aria-labelledby="markOwnedModalLabel" aria-hidden="true">
@@ -159,5 +85,6 @@ else
 </div>
 
 @section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
     <script src="~/js/orders.js" asp-append-version="true"></script>
 }

@@ -413,8 +413,31 @@ namespace CardCollector.Services
             };
         }
 
-        public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOrdersAsync()
-            => GetEnrichedByStatusAsync(CollectionStatus.Ordered);
+        public async Task<IEnumerable<EditionAuditEntryViewModel>> GetEnrichedOrdersAsync()
+        {
+            var entries = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+            var viewModels = new List<EditionAuditEntryViewModel>();
+
+            foreach (var group in entries.GroupBy(e => e.CardID))
+            {
+                var editionMap = await _pricingService.GetCardEditionMapAsync(group.Key).ConfigureAwait(false);
+
+                foreach (var entry in group)
+                {
+                    var printing = BuildCardPrinting(entry.CardID, entry.ImageID, entry.SetCode, entry.RarityName);
+                    var baseEntry = OrderEntryViewModel.From(printing, entry);
+
+                    EditionAuditCategory? category = null;
+                    IReadOnlyList<CardEdition> availableEditions = [];
+                    if (!string.IsNullOrWhiteSpace(entry.RarityName) && entry.Edition.HasValue)
+                        (category, availableEditions) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName, entry.Edition.Value);
+
+                    viewModels.Add(EditionAuditEntryViewModel.From(baseEntry, category, availableEditions));
+                }
+            }
+
+            return viewModels;
+        }
 
         public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync()
             => GetEnrichedByStatusAsync(CollectionStatus.Owned);

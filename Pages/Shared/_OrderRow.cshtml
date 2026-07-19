@@ -1,0 +1,69 @@
+@model CardCollector.ViewModels.EditionAuditEntryViewModel
+@using CardCollector.Data.Models
+@using CardCollector.Extensions
+
+<div class="list-group-item" id="group-row-order-@Model.EntryID">
+    <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
+        <div class="d-flex gap-2 flex-grow-1 min-width-0">
+            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(Model.ImageURLSmall, Model.CardName)' />
+            <div class="min-width-0 flex-grow-1">
+                <div class="fw-semibold">@Model.CardName</div>
+                <div class="text-muted small">@Model.SetName &middot; <code>@Model.SetCode</code> &middot; @Model.RarityCode</div>
+                <div class="d-flex flex-wrap gap-2 small text-muted mt-1">
+                    <span>@(Model.Condition.HasValue ? Model.Condition.GetDisplayName() : "—")</span>
+                    <span>
+                        &middot; @(Model.Edition.HasValue ? Model.Edition.GetDisplayName() : "—")
+                        @if (Model.Category == EditionAuditCategory.EditionMismatch && Model.Edition.HasValue && !string.IsNullOrWhiteSpace(Model.RarityName))
+                        {
+                            <span class="badge-status badge-status--critical ms-1" title="@EditionWarningExtensions.BuildEditionMismatchMessage(Model.Edition.Value, Model.SetCode, Model.RarityName)">Mismatch</span>
+                        }
+                        else if (Model.Category == EditionAuditCategory.Unverifiable)
+                        {
+                            <span class="badge-status badge-status--warning ms-1" title="No matching printing found in TCGPlayer's live data for this set/rarity.">Unverifiable</span>
+                        }
+                    </span>
+                    <span>&middot; @(Model.AcquisitionMethod.HasValue ? Model.AcquisitionMethod.GetDisplayName() : "—")</span>
+                    <span>&middot; &times;@Model.Quantity</span>
+                    <span>
+                        &middot; @(Model.PurchasePrice.HasValue ? $"${Model.PurchasePrice.Value.ToString("F2")}" : "—")
+                        @if (Model.MarketPriceAtEntry.HasValue)
+                        {
+                            <text>(mkt $@Model.MarketPriceAtEntry.Value.ToString("F2"))</text>
+                        }
+                    </span>
+                    @if (Model.PurchaseDate.HasValue)
+                    {
+                        <span>&middot; Purchased @Model.PurchaseDate.Value.ToString("MMM d, yyyy")</span>
+                    }
+                    <span>&middot; Ordered @Model.DateCreated.ToString("MMM d, yyyy")</span>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-1 flex-shrink-0">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-entry-id="@Model.EntryID"
+                    data-quantity="@Model.Quantity"
+                    data-condition="@(Model.Condition.HasValue ? ((int)Model.Condition.Value).ToString() : "")"
+                    data-edition="@(Model.Edition.HasValue ? ((int)Model.Edition.Value).ToString() : "")"
+                    data-acquisition-method="@(Model.AcquisitionMethod.HasValue ? ((int)Model.AcquisitionMethod.Value).ToString() : "")"
+                    data-purchase-date="@(Model.PurchaseDate.HasValue ? Model.PurchaseDate.Value.ToString("yyyy-MM-dd") : "")"
+                    data-purchase-price="@(Model.PurchasePrice.HasValue ? Model.PurchasePrice.Value.ToString("F2") : "")"
+                    data-market-price="@(Model.MarketPriceAtEntry.HasValue ? Model.MarketPriceAtEntry.Value.ToString("F2") : "")"
+                    data-rarity-name="@Model.RarityName"
+                    onclick="openEditModal(this)">
+                Edit
+            </button>
+            <button type="button" class="btn btn-sm btn-success"
+                    data-entry-id="@Model.EntryID"
+                    data-quantity="@Model.Quantity"
+                    onclick="openMarkOwnedModal(this)">
+                Add to Collection
+            </button>
+            <form method="post" asp-page-handler="Delete" class="d-inline"
+                  onsubmit="return confirm('Remove this order?')">
+                <input type="hidden" name="entryID" value="@Model.EntryID" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+        </div>
+    </div>
+</div>

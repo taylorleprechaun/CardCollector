@@ -90,9 +90,11 @@ namespace CardCollector.Services
         Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
 
         /// <summary>
-        /// Returns all ordered entries enriched with card and set data.
+        /// Returns all ordered entries enriched with card and set data, annotated with an
+        /// edition-audit category when the recorded Edition doesn't match (or can't be verified
+        /// against) the live API data for that printing.
         /// </summary>
-        Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOrdersAsync();
+        Task<IEnumerable<EditionAuditEntryViewModel>> GetEnrichedOrdersAsync();
 
         /// <summary>
         /// Returns all owned entries enriched with card and set data.

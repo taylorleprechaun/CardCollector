@@ -308,6 +308,7 @@ namespace CardCollector.Repository
             existing.AcquisitionMethod = entry.AcquisitionMethod;
             existing.Condition = entry.Condition;
             existing.Edition = entry.Edition;
+            existing.MarketPriceAtEntry = entry.MarketPriceAtEntry;
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;
