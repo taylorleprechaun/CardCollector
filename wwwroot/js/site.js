@@ -39,6 +39,16 @@ function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     return refreshPrice;
 }
 
+async function initLiveMarketPrice(editionSelect, marketPriceEl, getParams) {
+    marketPriceEl.value = '';
+    marketPriceEl.placeholder = 'Loading…';
+
+    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, getParams);
+    await refreshPrice();
+
+    marketPriceEl.placeholder = '0.00';
+}
+
 function setPickerDate(id, value) {
     var el = document.getElementById(id);
     if (!el) return;

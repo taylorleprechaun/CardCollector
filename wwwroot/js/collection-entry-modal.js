@@ -23,8 +23,6 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     document.getElementById('atcSetAsPreferred').checked = true;
 
     const marketPriceEl = document.getElementById('atcMarketPrice');
-    marketPriceEl.value = '';
-    marketPriceEl.placeholder = 'Loading…';
 
     form.action = form.dataset.pageUrl + '?handler=' + action;
 
@@ -33,7 +31,5 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     const cardID = document.querySelector('#orderForm [name="CardID"]').value;
     const editionSelect = document.getElementById('atcEdition');
 
-    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName }));
-    await refreshPrice();
-    marketPriceEl.placeholder = '0.00';
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName }));
 }

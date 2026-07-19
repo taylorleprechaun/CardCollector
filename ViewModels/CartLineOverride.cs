@@ -2,13 +2,15 @@ using CardCollector.Data.Models;
 
 namespace CardCollector.ViewModels
 {
-    public sealed class PurchaseLineInput
+    public sealed class CartLineOverride
     {
         public CardCondition? Condition { get; set; }
 
         public CardEdition? Edition { get; set; }
 
         public decimal? MarketPriceAtEntry { get; set; }
+
+        public int PendingOrderLineID { get; set; }
 
         public DateTime? PurchaseDate { get; set; }
 

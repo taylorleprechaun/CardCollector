@@ -1009,19 +1009,37 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<(int Count, decimal Total)> SubmitCartAsync()
+        public async Task<(int Count, decimal Total)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides)
         {
             var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
+            var overridesByLineID = overrides.ToDictionary(o => o.PendingOrderLineID);
             var total = 0m;
 
             foreach (var line in lines)
             {
+                var condition = line.Condition;
+                var edition = line.Edition;
+                var purchaseDate = line.PurchaseDate;
+                var purchasePrice = line.PurchasePrice;
+                var marketPriceAtEntry = line.MarketPriceAtEntry;
+                var quantity = line.Quantity;
+
+                if (overridesByLineID.TryGetValue(line.ID, out var lineOverride))
+                {
+                    condition = lineOverride.Condition;
+                    edition = lineOverride.Edition;
+                    purchaseDate = lineOverride.PurchaseDate;
+                    purchasePrice = lineOverride.PurchasePrice;
+                    marketPriceAtEntry = lineOverride.MarketPriceAtEntry;
+                    quantity = lineOverride.Quantity < 1 ? 1 : lineOverride.Quantity;
+                }
+
                 await AddEntryAsync(
                     line.CardID, line.ImageID, line.SetCode, CollectionStatus.Ordered,
-                    line.Quantity, line.Condition, line.Edition, line.AcquisitionMethod,
-                    line.PurchaseDate, line.PurchasePrice, marketPriceAtEntry: line.MarketPriceAtEntry,
+                    quantity, condition, edition, line.AcquisitionMethod,
+                    purchaseDate, purchasePrice, marketPriceAtEntry: marketPriceAtEntry,
                     line.RarityName).ConfigureAwait(false);
-                total += (line.PurchasePrice ?? 0) * line.Quantity;
+                total += (purchasePrice ?? 0) * quantity;
             }
 
             await _pendingOrderRepository.DeleteAllAsync().ConfigureAwait(false);

@@ -1,0 +1,59 @@
+@model CardCollector.ViewModels.PurchasePriorityCandidateViewModel
+@using CardCollector.ViewModels
+@{
+    var item = Model;
+}
+<div class="list-group-item" data-image-id="@item.ImageID" data-set-code="@item.SetCode">
+    <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
+        <div class="d-flex gap-2 align-items-center flex-grow-1 min-width-0">
+            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
+            <div class="min-width-0">
+                <a href="/Card?id=@item.CardID&imageID=@item.ImageID" class="fw-semibold text-body">@item.CardName</a>
+                <div class="text-muted small">@item.SetName &middot; <code>@item.SetCode</code> &middot; @item.RarityName</div>
+            </div>
+        </div>
+        <div class="d-flex gap-1 flex-shrink-0 cart-order-badges">
+            @if (item.HasAmbiguousSetCode)
+            {
+                <span class="badge bg-warning text-dark"
+                      title="This card has another rarity under the same set code. TCGPlayer's mass entry can't tell them apart by name/set alone — double-check the printing it adds matches this rarity.">
+                    Verify rarity
+                </span>
+            }
+            @if (item.IsInCart)
+            {
+                <span class="badge bg-info text-dark badge-in-cart" title="Already staged in your cart">In Cart</span>
+            }
+            @if (item.IsOrdered)
+            {
+                <span class="badge bg-success" title="Already has an active order">Ordered</span>
+            }
+        </div>
+        <div class="d-flex justify-content-between align-items-center gap-2 flex-shrink-0">
+            <div class="text-muted small text-md-end" style="min-width: 150px;">
+                Qty @item.QuantityNeeded &middot;
+                @if (item.Price.HasValue)
+                {
+                    <span>$@item.Price.Value.ToString("F2")</span>
+                }
+                else
+                {
+                    <span>&mdash;</span>
+                }
+                &middot; Total $@item.LineTotal.ToString("F2")
+            </div>
+            <button type="button" class="btn btn-sm btn-primary"
+                    data-card-id="@item.CardID"
+                    data-image-id="@item.ImageID"
+                    data-set-code="@item.SetCode"
+                    data-rarity-name="@item.RarityName"
+                    data-card-name="@item.CardName"
+                    data-set-name="@item.SetName"
+                    data-quantity-needed="@item.QuantityNeeded"
+                    data-price="@item.Price"
+                    onclick="openPurchaseModal(this)">
+                Order
+            </button>
+        </div>
+    </div>
+</div>

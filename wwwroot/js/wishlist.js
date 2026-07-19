@@ -26,8 +26,6 @@ async function openWishlistModal(btn, action) {
     document.getElementById('wlPurchasePrice').value = '';
 
     const marketPriceEl = document.getElementById('wlMarketPrice');
-    marketPriceEl.value = '';
-    marketPriceEl.placeholder = 'Loading…';
 
     form.action = '?' + (btn.dataset.filterParams || '') + '&handler=' + action;
 
@@ -40,7 +38,5 @@ async function openWishlistModal(btn, action) {
     const setCode = btn.dataset.setCode;
     const editionSelect = document.getElementById('wlEdition');
 
-    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
-    await refreshPrice();
-    marketPriceEl.placeholder = '0.00';
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
 }

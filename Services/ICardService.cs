@@ -182,9 +182,11 @@ namespace CardCollector.Services
 
         /// <summary>
         /// Converts every staged cart line into a real Ordered collection entry, then clears the cart.
+        /// Each override's Condition/Edition/PurchaseDate/PurchasePrice/MarketPriceAtEntry/Quantity replace
+        /// the staged (mostly-null) values on the matching line by PendingOrderLineID before it's committed.
         /// Returns the number of entries created and their total cost.
         /// </summary>
-        Task<(int Count, decimal Total)> SubmitCartAsync();
+        Task<(int Count, decimal Total)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
 
         /// <summary>
         /// Returns the distinct rarity names present in the current wishlist.

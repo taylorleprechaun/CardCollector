@@ -429,6 +429,19 @@
     }
 }
 
+/* Cart line rows: the thumbnail/name/set block sizes to its own content by
+   default, so a longer card or set name pushes the field inputs beside it
+   further right on that row than on others. Pinning it to a fixed width at
+   md+ (where rows go side-by-side) keeps the fields column starting at the
+   same x-position on every row regardless of text length. Below md the row
+   stacks (flex-column) so a fixed width isn't wanted there. */
+@media (min-width: 768px) {
+    .cc-cart-line-info {
+        flex: 0 0 240px;
+        width: 240px;
+    }
+}
+
 /* Every modal wraps header/body/footer in one <form> (so Submit/Cancel
    share it with the fields), which sits between modal-content
    (flex column) and modal-body, breaking the flex parent-child chain

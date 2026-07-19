@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CardCollector.Pages
 {
-    public sealed class PurchasePriorityModel : SearchablePageModel
+    public sealed class BuyListModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
         private readonly IPendingOrderRepository _pendingOrderRepository;
@@ -30,7 +30,7 @@ namespace CardCollector.Pages
 
         protected override ICardService CardService => _cardService;
 
-        public PurchasePriorityModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository)
+        public BuyListModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository)
         {
             _cardService = cardService;
             _pendingOrderRepository = pendingOrderRepository;
@@ -71,25 +71,24 @@ namespace CardCollector.Pages
             };
         }
 
-        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, IReadOnlyList<PurchaseLineInput> lines)
+        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
         {
-            var entries = lines.Select(l => new PendingOrderLine
+            var line = new PendingOrderLine
             {
                 CardID = cardID,
                 ImageID = imageID,
                 SetCode = setCode,
                 RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName,
-                Condition = l.Condition,
-                Edition = l.Edition,
                 AcquisitionMethod = AcquisitionMethod.Purchased,
-                MarketPriceAtEntry = l.MarketPriceAtEntry,
-                PurchaseDate = l.PurchaseDate,
-                PurchasePrice = l.PurchasePrice,
-                Quantity = l.Quantity < 1 ? 1 : l.Quantity,
+                Condition = CardCondition.NearMint,
+                Edition = CardEdition.FirstEdition,
+                Quantity = quantity < 1 ? 1 : quantity,
+                PurchaseDate = DateTime.UtcNow.Date,
+                MarketPriceAtEntry = marketPrice,
                 DateCreated = DateTime.UtcNow
-            });
+            };
 
-            await _pendingOrderRepository.AddRangeAsync(entries).ConfigureAwait(false);
+            await _pendingOrderRepository.AddRangeAsync([line]).ConfigureAwait(false);
             var (count, total) = await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
 
             return new JsonResult(new { count, total });

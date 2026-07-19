@@ -1,5 +1,5 @@
 <div class="modal fade" id="purchaseOrderModal" tabindex="-1" aria-labelledby="purchaseOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-fullscreen-sm-down modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <form id="purchaseOrderForm" method="post">
                 <div class="modal-header">
@@ -7,20 +7,27 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="CardID" id="poCardID" />
-                    <input type="hidden" name="ImageID" id="poImageID" />
-                    <input type="hidden" name="SetCode" id="poSetCode" />
-                    <input type="hidden" name="RarityName" id="poRarityName" />
+                    <input type="hidden" name="cardID" id="poCardID" />
+                    <input type="hidden" name="imageID" id="poImageID" />
+                    <input type="hidden" name="setCode" id="poSetCode" />
+                    <input type="hidden" name="rarityName" id="poRarityName" />
+                    <input type="hidden" name="marketPrice" id="poMarketPrice" />
 
                     <p class="text-muted mb-3">
                         Set: <strong id="poSetNameLabel"></strong> &middot; Rarity: <strong id="poRarityLabel"></strong>
                     </p>
 
-                    <div id="purchaseLinesContainer"></div>
-                    <template id="purchaseLineTemplate">
-                        <partial name="_PurchaseLineFields" model="0" />
-                    </template>
-                    <button type="button" id="addPurchaseLineBtn" class="btn btn-outline-secondary btn-sm mt-2">+ Add Purchase Line</button>
+                    <label class="form-label">Quantity</label>
+                    <input type="hidden" name="quantity" id="poQuantity" value="1" />
+                    <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity">
+                        @for (var q = 1; q <= 3; q++)
+                        {
+                            <button type="button" class="btn @(q == 1 ? "btn-primary" : "btn-outline-secondary")"
+                                    data-qty-target="poQuantity" data-qty-value="@q"
+                                    onclick="selectQuantity(this)">@q</button>
+                        }
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">Condition, edition, and price are recorded later in the Cart, once you know what you actually bought.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

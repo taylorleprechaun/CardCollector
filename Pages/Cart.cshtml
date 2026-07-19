@@ -1,6 +1,5 @@
 @page
 @model CartModel
-@using CardCollector.Data.Models
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Cart";
@@ -16,110 +15,28 @@
 {
     <div class="alert alert-info text-center py-5">
         <h4>Your cart is empty</h4>
-        <p class="mb-3">Head to <a href="/PurchasePriority">Purchase Priority</a> and click "Order" on a card to stage a purchase.</p>
+        <p class="mb-3">Head to <a href="/BuyList">Buy List</a> and click "Order" on a card to stage a purchase.</p>
     </div>
 }
 else
 {
-    <div class="table-responsive cc-table-card">
-        <table class="table table-hover align-middle">
-            <thead class="cc-table-head">
-                <tr>
-                    <th style="width: 60px;"></th>
-                    <th>Card</th>
-                    <th>Set</th>
-                    <th>Rarity</th>
-                    <th class="d-none d-md-table-cell">Condition</th>
-                    <th class="d-none d-md-table-cell">Edition</th>
-                    <th class="d-none d-md-table-cell">Acquisition</th>
-                    <th class="d-none d-md-table-cell">Purchase Date</th>
-                    <th class="d-none d-md-table-cell">Qty</th>
-                    <th class="d-none d-md-table-cell">Price</th>
-                    <th class="d-none d-md-table-cell">Line Total</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var line in Model.Lines)
-                {
-                    <tr>
-                        <td>
-                            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(line.ImageURLSmall, line.CardName)' />
-                        </td>
-                        <td class="fw-semibold">@line.CardName</td>
-                        <td>
-                            <span class="d-block">@line.SetName</span>
-                            <code class="text-muted small">@line.SetCode</code>
-                        </td>
-                        <td>@line.RarityName</td>
-                        <td class="d-none d-md-table-cell">
-                            @if (line.Condition.HasValue)
-                            {
-                                @line.Condition.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (line.Edition.HasValue)
-                            {
-                                @line.Edition.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (line.AcquisitionMethod.HasValue)
-                            {
-                                @line.AcquisitionMethod.GetDisplayName()
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">
-                            @if (line.PurchaseDate.HasValue)
-                            {
-                                @line.PurchaseDate.Value.ToString("MMM d, yyyy")
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">&times;@line.Quantity</td>
-                        <td class="d-none d-md-table-cell">
-                            @if (line.PurchasePrice.HasValue)
-                            {
-                                <span>$@line.PurchasePrice.Value.ToString("F2")</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
-                        <td class="d-none d-md-table-cell">$@(((line.PurchasePrice ?? 0) * line.Quantity).ToString("F2"))</td>
-                        <td class="text-nowrap">
-                            <form method="post" asp-page-handler="Remove" class="d-inline">
-                                <input type="hidden" name="id" value="@line.PendingOrderLineID" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <p class="text-muted mb-3">Fill in condition, edition, and price once you know what you actually bought, then submit — these become the permanent record in Orders.</p>
+
+    <div class="list-group cc-table-card mb-3">
+        @for (var i = 0; i < Model.Lines.Count; i++)
+        {
+            <partial name="_CartLineRow" model='new CartLineRowViewModel { Index = i, Line = Model.Lines[i] }' />
+        }
     </div>
 
     <div class="d-flex justify-content-between align-items-center mt-3">
         <span class="fs-5">Total: <strong>$@total.ToString("F2")</strong></span>
-        <form method="post" asp-page-handler="SubmitAll">
+        <form id="cartSubmitForm" method="post" asp-page-handler="SubmitAll">
             <button type="submit" class="btn btn-success">Submit All Orders</button>
         </form>
     </div>
+}
+
+@section Scripts {
+    <script src="~/js/cart.js" asp-append-version="true"></script>
 }

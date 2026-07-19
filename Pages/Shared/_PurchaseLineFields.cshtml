@@ -1,66 +1,72 @@
-@model int
+@model CardCollector.ViewModels.CartLineRowViewModel
 @using CardCollector.Data.Models
 @{
-    var i = Model;
+    var i = Model.Index;
+    var line = Model.Line;
+    var quantity = line.Quantity < 1 ? 1 : line.Quantity;
 }
-<div class="position-relative pe-5 pb-3 mb-3 border-bottom purchase-line" data-line-index="@i">
-    <button type="button" class="btn btn-sm btn-outline-danger rounded-circle position-absolute top-0 end-0 purchase-line-remove"
-            onclick="removePurchaseLine(this)" title="Remove line" aria-label="Remove line">
-        <i class="bi bi-x-lg"></i>
-    </button>
-    <div class="row g-3 mb-3">
-        <div class="col-12 col-sm-4">
-            <label class="form-label">Condition</label>
-            <select name="Lines[@i].Condition" id="lineCondition@(i)"
-                    asp-items="Html.GetEnumSelectList<CardCondition>()"
-                    class="form-select form-select-sm">
-                <option value="">-- Condition --</option>
-            </select>
-        </div>
-        <div class="col-12 col-sm-4">
-            <label class="form-label">Edition</label>
-            <select name="Lines[@i].Edition" id="lineEdition@(i)"
-                    asp-items="Html.GetEnumSelectList<CardEdition>()"
-                    class="form-select form-select-sm">
-                <option value="">-- Edition --</option>
-            </select>
-        </div>
-        <div class="col-12 col-sm-4">
-            <label class="form-label">Quantity</label>
-            <input type="hidden" name="Lines[@i].Quantity" id="lineQuantity@(i)" value="1" />
-            <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity">
-                @for (var q = 1; q <= 3; q++)
-                {
-                    <button type="button" class="btn @(q == 1 ? "btn-primary" : "btn-outline-secondary")"
-                            data-qty-target="lineQuantity@(i)" data-qty-value="@q"
-                            onclick="selectQuantity(this)">@q</button>
-                }
-            </div>
+<div class="row g-2 mb-2">
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Condition</label>
+        <select name="Lines[@i].Condition" id="lineCondition@(i)" form="cartSubmitForm"
+                class="form-select form-select-sm">
+            <option value="">-- Condition --</option>
+            @foreach (var opt in Html.GetEnumSelectList<CardCondition>())
+            {
+                <option value="@opt.Value" selected="@(line.Condition.HasValue && opt.Value == ((int)line.Condition.Value).ToString())">@opt.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Edition</label>
+        <select name="Lines[@i].Edition" id="lineEdition@(i)" form="cartSubmitForm"
+                data-card-id="@line.CardID" data-set-code="@line.SetCode" data-rarity-name="@line.RarityName"
+                data-market-price-target="lineMarketPrice@(i)"
+                class="form-select form-select-sm">
+            <option value="">-- Edition --</option>
+            @foreach (var opt in Html.GetEnumSelectList<CardEdition>())
+            {
+                <option value="@opt.Value" selected="@(line.Edition.HasValue && opt.Value == ((int)line.Edition.Value).ToString())">@opt.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Quantity</label>
+        <input type="hidden" name="Lines[@i].Quantity" id="lineQuantity@(i)" value="@quantity" form="cartSubmitForm" />
+        <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity">
+            @for (var q = 1; q <= 3; q++)
+            {
+                <button type="button" class="btn @(q == quantity ? "btn-primary" : "btn-outline-secondary")"
+                        data-qty-target="lineQuantity@(i)" data-qty-value="@q"
+                        onclick="selectQuantity(this)">@q</button>
+            }
         </div>
     </div>
-    <div class="row g-3">
-        <div class="col-12 col-sm-4">
-            <label class="form-label d-flex align-items-center gap-1">
-                Purchase Date
-                <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
-                        onclick="setPickerDate('linePurchaseDate@(i)', new Date())" title="Set to today">Today</button>
-            </label>
-            <input type="date" name="Lines[@i].PurchaseDate" id="linePurchaseDate@(i)" class="form-control form-control-sm cc-date-picker" />
-        </div>
-        <div class="col-12 col-sm-4">
-            <label class="form-label">Price ($)</label>
-            <input type="number" step="0.01" min="0" name="Lines[@i].PurchasePrice" id="linePrice@(i)"
-                   class="form-control form-control-sm" placeholder="0.00" />
-        </div>
-        <div class="col-12 col-sm-4">
-            <label class="form-label d-flex align-items-center gap-1">
-                Market Price ($)
-                <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
-                        onclick="document.getElementById('lineMarketPrice@(i)').value = document.getElementById('linePrice@(i)').value"
-                        title="Copy from purchase price">&#x2194;</button>
-            </label>
-            <input type="number" step="0.01" min="0" name="Lines[@i].MarketPriceAtEntry" id="lineMarketPrice@(i)"
-                   class="form-control form-control-sm" placeholder="0.00" />
-        </div>
+</div>
+<div class="row g-2">
+    <div class="col-12 col-sm-4">
+        <label class="form-label d-flex align-items-center gap-1">
+            Purchase Date
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
+                    onclick="setPickerDate('linePurchaseDate@(i)', new Date())" title="Set to today">Today</button>
+        </label>
+        <input type="date" name="Lines[@i].PurchaseDate" id="linePurchaseDate@(i)" form="cartSubmitForm" class="form-control form-control-sm cc-date-picker"
+               value="@(line.PurchaseDate?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Price ($)</label>
+        <input type="number" step="0.01" min="0" name="Lines[@i].PurchasePrice" id="linePrice@(i)" form="cartSubmitForm"
+               class="form-control form-control-sm" placeholder="0.00" />
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label d-flex align-items-center gap-1">
+            Market Price ($)
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
+                    onclick="document.getElementById('lineMarketPrice@(i)').value = document.getElementById('linePrice@(i)').value"
+                    title="Copy from purchase price">&#x2194;</button>
+        </label>
+        <input type="number" step="0.01" min="0" name="Lines[@i].MarketPriceAtEntry" id="lineMarketPrice@(i)" form="cartSubmitForm"
+               class="form-control form-control-sm" placeholder="0.00"
+               value="@(line.MarketPriceAtEntry?.ToString("F2"))" />
     </div>
 </div>

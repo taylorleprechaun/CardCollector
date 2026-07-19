@@ -30,9 +30,9 @@ namespace CardCollector.Pages
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostSubmitAllAsync()
+        public async Task<IActionResult> OnPostSubmitAllAsync(IReadOnlyList<CartLineOverride> lines)
         {
-            var (count, total) = await _cardService.SubmitCartAsync().ConfigureAwait(false);
+            var (count, total) = await _cardService.SubmitCartAsync(lines).ConfigureAwait(false);
 
             TempData["Success"] = count == 0
                 ? "Your cart is empty — nothing to submit."

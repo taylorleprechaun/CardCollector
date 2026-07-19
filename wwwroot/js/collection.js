@@ -20,8 +20,6 @@ async function openAddModal(btn) {
     if (addForm && row) addForm.dataset.ajaxTarget = row.id;
 
     const marketPriceEl = document.getElementById('atcMarketPrice');
-    marketPriceEl.value = '';
-    marketPriceEl.placeholder = 'Loading…';
 
     new bootstrap.Modal(document.getElementById('addModal')).show();
 
@@ -29,7 +27,5 @@ async function openAddModal(btn) {
     const setCode = btn.dataset.setCode;
     const editionSelect = document.getElementById('atcEdition');
 
-    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
-    await refreshPrice();
-    marketPriceEl.placeholder = '0.00';
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
 }
