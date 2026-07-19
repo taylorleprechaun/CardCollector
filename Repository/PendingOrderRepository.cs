@@ -42,15 +42,15 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetStagedPairsAsync()
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetStagedQuantitiesAsync()
         {
-            var pairs = await _context.PendingOrderLines
-                .Select(l => new { l.ImageID, l.SetCode })
-                .Distinct()
+            var grouped = await _context.PendingOrderLines
+                .GroupBy(l => new { l.ImageID, l.SetCode })
+                .Select(g => new { g.Key.ImageID, g.Key.SetCode, Quantity = g.Sum(l => l.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+            return grouped.ToDictionary(g => (g.ImageID, g.SetCode), g => g.Quantity);
         }
 
         public async Task<(int Count, decimal Total)> GetSummaryAsync()

@@ -59,7 +59,7 @@ async function submitAddToCart() {
 
         const result = await response.json();
         updateCartBadge(result.count, result.total);
-        markRowInCart(document.getElementById('poImageID').value, document.getElementById('poSetCode').value);
+        markRowInCart(document.getElementById('poImageID').value, document.getElementById('poSetCode').value, result.cartQuantity);
         bootstrap.Modal.getInstance(document.getElementById('purchaseOrderModal'))?.hide();
     } catch (err) {
         console.error('Add to cart failed', err);
@@ -69,25 +69,19 @@ async function submitAddToCart() {
     }
 }
 
-function markRowInCart(imageID, setCode) {
+function markRowInCart(imageID, setCode, cartQuantity) {
     const row = document.querySelector(`.list-group-item[data-image-id="${CSS.escape(imageID)}"][data-set-code="${CSS.escape(setCode)}"]`);
     if (!row) return;
 
     const container = row.querySelector('.cart-order-badges');
-    if (!container || container.querySelector('.badge-in-cart')) return;
+    if (!container) return;
 
-    const badge = document.createElement('span');
-    badge.className = 'badge bg-info text-dark ms-1 badge-in-cart';
-    badge.title = 'Already staged in your cart';
-    badge.textContent = 'In Cart';
-    container.appendChild(badge);
-}
-
-function updateCartBadge(count, total) {
-    const badge = document.getElementById('navCartBadge');
-    const countEl = document.getElementById('navCartCount');
-    if (!badge || !countEl) return;
-
-    countEl.textContent = count;
-    badge.title = total ? `$${Number(total).toFixed(2)} staged` : '';
+    let badge = container.querySelector('.badge-in-cart');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge bg-info text-dark badge-in-cart';
+        badge.title = 'Already staged in your cart';
+        container.appendChild(badge);
+    }
+    badge.textContent = `In Cart (${cartQuantity})`;
 }

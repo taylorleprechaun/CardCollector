@@ -38,9 +38,9 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
-        /// Returns the set of (imageID, setCode) pairs present in Ordered entries only.
+        /// Returns the total Ordered quantity for every (imageID, setCode) pair, summed across matching entries.
         /// </summary>
-        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOrderedPairsAsync();
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOrderedQuantitiesAsync();
 
         /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in Owned entries only.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Extensions;
 using CardCollector.Repository;
@@ -106,17 +107,14 @@ namespace CardCollector.Pages
             Results = result.PagedItems;
         }
 
-        public async Task<IActionResult> OnPostOrderAsync()
+        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
         {
-            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, RarityName, Edition);
+            if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
+                return BadRequest();
 
-            await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Ordered,
-                Quantity, Condition, Edition,
-                AcquisitionMethod,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+            await _cardService.AddToCartAsync(cardID, imageID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
 
-            return await RespondAfterMutationAsync(ImageID).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(imageID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
@@ -178,6 +176,10 @@ namespace CardCollector.Pages
 
             var result = await _cardService.SearchWishlistAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
             Response.Headers["X-Total-Count"] = result.PagedItems.TotalCount.ToString();
+
+            var (cartCount, cartTotal) = await _cardService.GetCartSummaryAsync().ConfigureAwait(false);
+            Response.Headers["X-Cart-Count"] = cartCount.ToString(CultureInfo.InvariantCulture);
+            Response.Headers["X-Cart-Total"] = cartTotal.ToString(CultureInfo.InvariantCulture);
 
             var match = result.PagedItems.Items.FirstOrDefault(i => i.ImageID == imageID);
             if (match is null)

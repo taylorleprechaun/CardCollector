@@ -20,6 +20,14 @@ namespace CardCollector.Services
             string? rarityName = null);
 
         /// <summary>
+        /// Stages a printing into the cart as a pending order line, defaulting Condition to Near Mint,
+        /// Edition to 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page.
+        /// Returns the cart's new total line count and cost, plus the new staged quantity for this printing.
+        /// </summary>
+        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
+            int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
+
+        /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
         /// Calls <paramref name="onProgress"/> with (current, total) after each price is fetched when doing a live calculation.
         /// </summary>

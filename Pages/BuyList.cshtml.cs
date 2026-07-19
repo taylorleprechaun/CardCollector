@@ -1,7 +1,5 @@
 using System.Globalization;
-using CardCollector.Data.Models;
 using CardCollector.Extensions;
-using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +9,6 @@ namespace CardCollector.Pages
     public sealed class BuyListModel : SearchablePageModel
     {
         private readonly ICardService _cardService;
-        private readonly IPendingOrderRepository _pendingOrderRepository;
 
         public PurchasePlanViewModel FullPlan { get; private set; } = new();
 
@@ -30,10 +27,9 @@ namespace CardCollector.Pages
 
         protected override ICardService CardService => _cardService;
 
-        public BuyListModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository)
+        public BuyListModel(ICardService cardService)
         {
             _cardService = cardService;
-            _pendingOrderRepository = pendingOrderRepository;
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams() =>
@@ -76,25 +72,10 @@ namespace CardCollector.Pages
             if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
                 return BadRequest();
 
-            var line = new PendingOrderLine
-            {
-                CardID = cardID,
-                ImageID = imageID,
-                SetCode = setCode,
-                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName,
-                AcquisitionMethod = AcquisitionMethod.Purchased,
-                Condition = CardCondition.NearMint,
-                Edition = CardEdition.FirstEdition,
-                Quantity = quantity < 1 ? 1 : quantity,
-                PurchaseDate = DateTime.UtcNow.Date,
-                MarketPriceAtEntry = marketPrice,
-                DateCreated = DateTime.UtcNow
-            };
+            var (count, total, cartQuantity) = await _cardService.AddToCartAsync(
+                cardID, imageID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
 
-            await _pendingOrderRepository.AddRangeAsync([line]).ConfigureAwait(false);
-            var (count, total) = await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
-
-            return new JsonResult(new { count, total });
+            return new JsonResult(new { count, total, cartQuantity });
         }
     }
 }

@@ -22,11 +22,11 @@
             }
             @if (item.IsInCart)
             {
-                <span class="badge bg-info text-dark badge-in-cart" title="Already staged in your cart">In Cart</span>
+                <span class="badge bg-info text-dark badge-in-cart" title="Already staged in your cart">In Cart (@item.CartQuantity)</span>
             }
             @if (item.IsOrdered)
             {
-                <span class="badge bg-success" title="Already has an active order">Ordered</span>
+                <span class="badge bg-success" title="Already has an active order">Ordered (@item.OrderedQuantity)</span>
             }
         </div>
         <div class="d-flex justify-content-between align-items-center gap-2 flex-shrink-0">

@@ -82,6 +82,33 @@ namespace CardCollector.Services
             await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
         }
 
+        public async Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
+            int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
+        {
+            var line = new PendingOrderLine
+            {
+                CardID = cardID,
+                ImageID = imageID,
+                SetCode = setCode,
+                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName,
+                AcquisitionMethod = AcquisitionMethod.Purchased,
+                Condition = CardCondition.NearMint,
+                Edition = CardEdition.FirstEdition,
+                Quantity = quantity < 1 ? 1 : quantity,
+                PurchaseDate = DateTime.UtcNow.Date,
+                MarketPriceAtEntry = marketPrice,
+                DateCreated = DateTime.UtcNow
+            };
+
+            await _pendingOrderRepository.AddRangeAsync([line]).ConfigureAwait(false);
+
+            var (count, total) = await _pendingOrderRepository.GetSummaryAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
+            var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode));
+
+            return (count, total, cartQuantity);
+        }
+
         public async Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync(Func<int, int, Task>? onProgress = null)
         {
             var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
@@ -617,8 +644,8 @@ namespace CardCollector.Services
 
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
                 allPreferred.Select(pv => (pv.ImageID, pv.SetCode, pv.RarityName))).ConfigureAwait(false);
-            var orderedPairs = await _collectionRepository.GetOrderedPairsAsync().ConfigureAwait(false);
-            var stagedPairs = await _pendingOrderRepository.GetStagedPairsAsync().ConfigureAwait(false);
+            var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
 
             var results = new List<PurchasePriorityCandidateViewModel>();
 
@@ -665,9 +692,9 @@ namespace CardCollector.Services
                             && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
 
                     var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    var isInCart = stagedPairs.Contains((preferred.ImageID, preferred.SetCode));
-                    var isOrdered = orderedPairs.Contains((preferred.ImageID, preferred.SetCode));
-                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, isInCart, isOrdered));
+                    var cartQuantity = stagedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
+                    var orderedQuantity = orderedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
+                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity));
                 }
             }
 
@@ -730,6 +757,8 @@ namespace CardCollector.Services
 
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
                 allPreferred.Select(pv => (pv.ImageID, pv.SetCode, pv.RarityName))).ConfigureAwait(false);
+            var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
 
             var results = new List<WishlistItemViewModel>();
 
@@ -740,8 +769,11 @@ namespace CardCollector.Services
                 if (ownedQty >= CardPrinting.CompleteThreshold)
                     continue;
 
+                var cartQuantity = stagedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode));
+                var orderedQuantity = orderedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode));
+
                 var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
-                results.Add(WishlistItemViewModel.From(printing, ownedQty));
+                results.Add(WishlistItemViewModel.From(printing, ownedQty, cartQuantity, orderedQuantity));
             }
 
             return results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode);

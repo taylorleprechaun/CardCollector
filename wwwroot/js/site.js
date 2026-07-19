@@ -49,6 +49,20 @@ async function initLiveMarketPrice(editionSelect, marketPriceEl, getParams) {
     marketPriceEl.placeholder = '0.00';
 }
 
+// rawCount/rawTotal accept either a number (from a JSON response) or a header string
+// (from response.headers.get(...), which is null when the header wasn't set at all).
+function updateCartBadge(rawCount, rawTotal) {
+    if (rawCount === null || rawCount === undefined) return;
+
+    const badge = document.getElementById('navCartBadge');
+    const countEl = document.getElementById('navCartCount');
+    if (!badge || !countEl) return;
+
+    countEl.textContent = rawCount;
+    const total = Number(rawTotal) || 0;
+    badge.title = total ? `$${total.toFixed(2)} staged` : '';
+}
+
 function setPickerDate(id, value) {
     var el = document.getElementById(id);
     if (!el) return;

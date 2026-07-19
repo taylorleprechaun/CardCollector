@@ -58,16 +58,16 @@ namespace CardCollector.Repository
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
 
-        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOrderedPairsAsync()
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOrderedQuantitiesAsync()
         {
-            var pairs = await _context.CollectionEntries
+            var grouped = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Ordered)
-                .Select(e => new { e.ImageID, e.SetCode })
-                .Distinct()
+                .GroupBy(e => new { e.ImageID, e.SetCode })
+                .Select(g => new { g.Key.ImageID, g.Key.SetCode, Quantity = g.Sum(e => e.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+            return grouped.ToDictionary(g => (g.ImageID, g.SetCode), g => g.Quantity);
         }
 
         public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync()
