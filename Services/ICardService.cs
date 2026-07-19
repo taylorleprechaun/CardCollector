@@ -224,6 +224,12 @@ namespace CardCollector.Services
         Task UnignoreCardAsync(int cardID);
 
         /// <summary>
+        /// Updates the staged quantity for a single cart line, clamped to the valid cart quantity range.
+        /// Returns false if no such line exists.
+        /// </summary>
+        Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
+
+        /// <summary>
         /// Updates the preferred version for the given image ID to the specified newer printing.
         /// </summary>
         Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName);

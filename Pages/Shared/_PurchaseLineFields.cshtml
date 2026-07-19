@@ -40,7 +40,8 @@
             {
                 <button type="button" class="btn @(q == quantity ? "btn-primary" : "btn-outline-secondary")"
                         data-qty-target="lineQuantity@(i)" data-qty-value="@q"
-                        onclick="selectQuantity(this)">@q</button>
+                        data-pending-order-line-id="@line.PendingOrderLineID"
+                        onclick="selectCartLineQuantity(this)">@q</button>
             }
         </div>
     </div>

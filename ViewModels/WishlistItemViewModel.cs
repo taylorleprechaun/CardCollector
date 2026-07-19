@@ -10,7 +10,7 @@ namespace CardCollector.ViewModels
 
         public int OrderedQuantity { get; init; }
 
-        public int QuantityNeeded => CompleteThreshold - QuantityOwned;
+        public int QuantityNeeded => Math.Max(0, CompleteThreshold - QuantityOwned - OrderedQuantity - CartQuantity);
 
         public int QuantityOwned { get; init; } = 0;
 

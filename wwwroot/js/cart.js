@@ -22,6 +22,34 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// The quantity buttons are the one field on a cart line that has a meaning outside the
+// submit-time overrides (it drives the In Cart badges shown on Wishlist/Buy List), so unlike
+// Condition/Edition/Price/Market Price — which only take effect once "Submit All Orders" is
+// clicked — a quantity change is persisted immediately.
+function selectCartLineQuantity(btn) {
+    selectQuantity(btn);
+    persistCartLineQuantity(btn.dataset.pendingOrderLineId, btn.dataset.qtyValue);
+}
+
+async function persistCartLineQuantity(pendingOrderLineID, quantity) {
+    const token = document.querySelector('#cartSubmitForm [name="__RequestVerificationToken"]')?.value;
+    const formData = new FormData();
+    formData.append('id', pendingOrderLineID);
+    formData.append('quantity', quantity);
+    if (token) formData.append('__RequestVerificationToken', token);
+
+    try {
+        const response = await fetch('/Cart?handler=UpdateQuantity', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) console.warn('Failed to save cart line quantity, status', response.status);
+    } catch (err) {
+        console.warn('Failed to save cart line quantity:', err);
+    }
+}
+
 function recomputeCartTotal() {
     const totalEl = document.getElementById('cartTotal');
     if (!totalEl) return;

@@ -25,6 +25,7 @@ namespace CardCollector.Services
         private readonly IPendingOrderRepository _pendingOrderRepository;
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly IPricingService _pricingService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CardService(
             ICardDataRepository cardDataRepository,
@@ -38,7 +39,8 @@ namespace CardCollector.Services
             ILogger<CardService> logger,
             IPendingOrderRepository pendingOrderRepository,
             IPreferredVersionRepository preferredVersionRepository,
-            IPricingService pricingService)
+            IPricingService pricingService,
+            IUnitOfWork unitOfWork)
         {
             _cardDataRepository = cardDataRepository;
             _cardSetRepository = cardSetRepository;
@@ -52,6 +54,7 @@ namespace CardCollector.Services
             _pendingOrderRepository = pendingOrderRepository;
             _preferredVersionRepository = preferredVersionRepository;
             _pricingService = pricingService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task AddEntryAsync(
@@ -718,7 +721,13 @@ namespace CardCollector.Services
                     var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
                     var cartQuantity = stagedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
                     var orderedQuantity = orderedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
-                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity));
+                    var candidateViewModel = PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity);
+
+                    // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
+                    if (candidateViewModel.QuantityNeeded <= 0)
+                        continue;
+
+                    results.Add(candidateViewModel);
                 }
             }
 
@@ -1075,41 +1084,47 @@ namespace CardCollector.Services
             var total = 0m;
             var editionWarnings = new List<string>();
 
-            foreach (var line in lines)
+            // Wrapped in a transaction so a failure partway through (e.g. line 3 of 5 throws) rolls back
+            // every entry created in this submission instead of leaving duplicates to resubmit on retry.
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                var condition = line.Condition;
-                var edition = line.Edition;
-                var purchaseDate = line.PurchaseDate;
-                var purchasePrice = line.PurchasePrice;
-                var marketPriceAtEntry = line.MarketPriceAtEntry;
-                var quantity = line.Quantity;
-
-                if (overridesByLineID.TryGetValue(line.ID, out var lineOverride))
+                foreach (var line in lines)
                 {
-                    condition = lineOverride.Condition;
-                    edition = lineOverride.Edition;
-                    purchaseDate = lineOverride.PurchaseDate;
-                    purchasePrice = lineOverride.PurchasePrice;
-                    marketPriceAtEntry = lineOverride.MarketPriceAtEntry;
-                    quantity = Math.Clamp(lineOverride.Quantity, 1, MaxCartQuantity);
+                    var condition = line.Condition;
+                    var edition = line.Edition;
+                    var purchaseDate = line.PurchaseDate;
+                    var purchasePrice = line.PurchasePrice;
+                    var marketPriceAtEntry = line.MarketPriceAtEntry;
+                    var quantity = line.Quantity;
+
+                    if (overridesByLineID.TryGetValue(line.ID, out var lineOverride))
+                    {
+                        condition = lineOverride.Condition;
+                        edition = lineOverride.Edition;
+                        purchaseDate = lineOverride.PurchaseDate;
+                        purchasePrice = lineOverride.PurchasePrice;
+                        marketPriceAtEntry = lineOverride.MarketPriceAtEntry;
+                        quantity = Math.Clamp(lineOverride.Quantity, 1, MaxCartQuantity);
+                    }
+
+                    if (edition.HasValue && !string.IsNullOrWhiteSpace(line.RarityName))
+                    {
+                        var category = await CheckEntryEditionAsync(line.CardID, line.SetCode, line.RarityName, edition.Value).ConfigureAwait(false);
+                        if (category == EditionAuditCategory.EditionMismatch)
+                            editionWarnings.Add(EditionWarningExtensions.BuildEditionMismatchMessage(edition.Value, line.SetCode, line.RarityName));
+                    }
+
+                    await AddEntryAsync(
+                        line.CardID, line.ImageID, line.SetCode, CollectionStatus.Ordered,
+                        quantity, condition, edition, line.AcquisitionMethod,
+                        purchaseDate, purchasePrice, marketPriceAtEntry: marketPriceAtEntry,
+                        line.RarityName).ConfigureAwait(false);
+                    total += (purchasePrice ?? 0) * quantity;
                 }
 
-                if (edition.HasValue && !string.IsNullOrWhiteSpace(line.RarityName))
-                {
-                    var category = await CheckEntryEditionAsync(line.CardID, line.SetCode, line.RarityName, edition.Value).ConfigureAwait(false);
-                    if (category == EditionAuditCategory.EditionMismatch)
-                        editionWarnings.Add(EditionWarningExtensions.BuildEditionMismatchMessage(edition.Value, line.SetCode, line.RarityName));
-                }
+                await _pendingOrderRepository.DeleteRangeAsync(lines.Select(l => l.ID)).ConfigureAwait(false);
+            }).ConfigureAwait(false);
 
-                await AddEntryAsync(
-                    line.CardID, line.ImageID, line.SetCode, CollectionStatus.Ordered,
-                    quantity, condition, edition, line.AcquisitionMethod,
-                    purchaseDate, purchasePrice, marketPriceAtEntry: marketPriceAtEntry,
-                    line.RarityName).ConfigureAwait(false);
-                total += (purchasePrice ?? 0) * quantity;
-            }
-
-            await _pendingOrderRepository.DeleteRangeAsync(lines.Select(l => l.ID)).ConfigureAwait(false);
             return (lines.Count, total, editionWarnings);
         }
 
@@ -1145,6 +1160,9 @@ namespace CardCollector.Services
 
         public async Task UnignoreCardAsync(int cardID) =>
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
+
+        public async Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity) =>
+            await _pendingOrderRepository.UpdateQuantityAsync(pendingOrderLineID, Math.Clamp(quantity, 1, MaxCartQuantity)).ConfigureAwait(false);
 
         public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName)
         {

@@ -49,6 +49,7 @@ builder.Services.AddScoped<IIgnoredCardRepository, IgnoredCardRepository>();
 builder.Services.AddScoped<IPendingOrderRepository, PendingOrderRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 

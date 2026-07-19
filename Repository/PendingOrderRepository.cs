@@ -85,5 +85,16 @@ namespace CardCollector.Repository
             var total = lines.Sum(l => (l.PurchasePrice ?? 0) * l.Quantity);
             return (lines.Count, total);
         }
+
+        public async Task<bool> UpdateQuantityAsync(int id, int quantity)
+        {
+            var line = await _context.PendingOrderLines.FindAsync(id).ConfigureAwait(false);
+            if (line is null)
+                return false;
+
+            line.Quantity = quantity;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+            return true;
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace CardCollector.ViewModels
 
         public string PrintingDate { get; init; } = string.Empty;
 
-        public int QuantityNeeded => CompleteThreshold - QuantityOwned;
+        public int QuantityNeeded => Math.Max(0, CompleteThreshold - QuantityOwned - OrderedQuantity - CartQuantity);
 
         public int QuantityOwned { get; init; } = 0;
 

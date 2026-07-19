@@ -43,5 +43,10 @@ namespace CardCollector.Repository
         /// Returns the total line count and total cost (price * quantity) across all pending order lines.
         /// </summary>
         Task<(int Count, decimal Total)> GetSummaryAsync();
+
+        /// <summary>
+        /// Updates the Quantity of the pending order line with the given ID. Returns false if no such line exists.
+        /// </summary>
+        Task<bool> UpdateQuantityAsync(int id, int quantity);
     }
 }

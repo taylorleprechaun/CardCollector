@@ -52,5 +52,11 @@ namespace CardCollector.Pages
 
             return RedirectToPage("/Orders");
         }
+
+        public async Task<IActionResult> OnPostUpdateQuantityAsync(int id, int quantity)
+        {
+            var updated = await _cardService.UpdateCartLineQuantityAsync(id, quantity).ConfigureAwait(false);
+            return updated ? new OkResult() : NotFound();
+        }
     }
 }
