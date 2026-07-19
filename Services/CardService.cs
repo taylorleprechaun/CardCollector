@@ -1012,7 +1012,9 @@ namespace CardCollector.Services
         public async Task<(int Count, decimal Total)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides)
         {
             var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
-            var overridesByLineID = overrides.ToDictionary(o => o.PendingOrderLineID);
+            var overridesByLineID = (overrides ?? [])
+                .GroupBy(o => o.PendingOrderLineID)
+                .ToDictionary(g => g.Key, g => g.First());
             var total = 0m;
 
             foreach (var line in lines)

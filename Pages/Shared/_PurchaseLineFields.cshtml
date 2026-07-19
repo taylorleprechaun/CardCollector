@@ -1,20 +1,26 @@
 @model CardCollector.ViewModels.CartLineRowViewModel
 @using CardCollector.Data.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
 @{
     var i = Model.Index;
     var line = Model.Line;
     var quantity = line.Quantity < 1 ? 1 : line.Quantity;
+
+    IEnumerable<SelectListItem> EnumOptions<TEnum>(TEnum? selected) where TEnum : struct, Enum
+    {
+        var items = Html.GetEnumSelectList<TEnum>();
+        var selectedValue = selected.HasValue ? ((int)(object)selected.Value).ToString() : null;
+        foreach (var item in items)
+            item.Selected = item.Value == selectedValue;
+        return items;
+    }
 }
 <div class="row g-2 mb-2">
     <div class="col-12 col-sm-4">
         <label class="form-label">Condition</label>
         <select name="Lines[@i].Condition" id="lineCondition@(i)" form="cartSubmitForm"
-                class="form-select form-select-sm">
+                class="form-select form-select-sm" asp-items="EnumOptions(line.Condition)">
             <option value="">-- Condition --</option>
-            @foreach (var opt in Html.GetEnumSelectList<CardCondition>())
-            {
-                <option value="@opt.Value" selected="@(line.Condition.HasValue && opt.Value == ((int)line.Condition.Value).ToString())">@opt.Text</option>
-            }
         </select>
     </div>
     <div class="col-12 col-sm-4">
@@ -22,12 +28,8 @@
         <select name="Lines[@i].Edition" id="lineEdition@(i)" form="cartSubmitForm"
                 data-card-id="@line.CardID" data-set-code="@line.SetCode" data-rarity-name="@line.RarityName"
                 data-market-price-target="lineMarketPrice@(i)"
-                class="form-select form-select-sm">
+                class="form-select form-select-sm" asp-items="EnumOptions(line.Edition)">
             <option value="">-- Edition --</option>
-            @foreach (var opt in Html.GetEnumSelectList<CardEdition>())
-            {
-                <option value="@opt.Value" selected="@(line.Edition.HasValue && opt.Value == ((int)line.Edition.Value).ToString())">@opt.Text</option>
-            }
         </select>
     </div>
     <div class="col-12 col-sm-4">

@@ -442,6 +442,14 @@
     }
 }
 
+.cc-cart-line-fields {
+    min-width: 320px;
+}
+
+.cc-buylist-row-summary {
+    min-width: 150px;
+}
+
 /* Every modal wraps header/body/footer in one <form> (so Submit/Cancel
    share it with the fields), which sits between modal-content
    (flex column) and modal-body, breaking the flex parent-child chain

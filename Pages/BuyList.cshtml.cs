@@ -73,6 +73,9 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
         {
+            if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
+                return BadRequest();
+
             var line = new PendingOrderLine
             {
                 CardID = cardID,
