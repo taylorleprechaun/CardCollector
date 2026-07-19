@@ -75,10 +75,8 @@ function addPurchaseLine() {
     bindLineMarketPrice(idx);
 }
 
-// Mirrors Wishlist's Order/Own modal: live TCGPlayer price refetched whenever the line's
-// Edition changes, since price varies by edition. CardID/SetCode/RarityName are shared
-// across every line in this modal (all lines are the same printing), so they're read from
-// the modal's hidden fields rather than per-line.
+// Refetches live price whenever this line's Edition changes; CardID/SetCode/RarityName come
+// from the modal's shared hidden fields since every line in the modal is the same printing.
 function bindLineMarketPrice(idx) {
     const editionSelect = document.getElementById(`lineEdition${idx}`);
     const marketPriceEl = document.getElementById(`lineMarketPrice${idx}`);

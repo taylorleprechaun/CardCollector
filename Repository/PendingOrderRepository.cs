@@ -19,6 +19,12 @@ namespace CardCollector.Repository
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
+        public async Task DeleteAllAsync()
+        {
+            _context.PendingOrderLines.RemoveRange(_context.PendingOrderLines);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var line = await _context.PendingOrderLines.FindAsync(id).ConfigureAwait(false);
@@ -28,12 +34,6 @@ namespace CardCollector.Repository
             _context.PendingOrderLines.Remove(line);
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
-        }
-
-        public async Task DeleteAllAsync()
-        {
-            _context.PendingOrderLines.RemoveRange(_context.PendingOrderLines);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public async Task<IReadOnlyList<PendingOrderLine>> GetAllAsync() =>

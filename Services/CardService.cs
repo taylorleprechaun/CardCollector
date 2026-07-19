@@ -590,8 +590,7 @@ namespace CardCollector.Services
                 if (maxCards.HasValue && items.Count >= maxCards.Value)
                     break;
 
-                // Skip (don't stop) anything that doesn't fit the remaining budget — a cheaper, lower-priority
-                // candidate further down the list may still fit and is worth taking.
+                // Skip, don't stop — a cheaper candidate further down may still fit the budget.
                 if (remainingBudget.HasValue && candidate.LineTotal > remainingBudget.Value)
                     continue;
 
@@ -623,11 +622,8 @@ namespace CardCollector.Services
 
             var results = new List<PurchasePriorityCandidateViewModel>();
 
-            // Every card already on the wishlist (i.e. with at least one preferred version) is included — this
-            // surfaces the whole "what to buy next" list, not just a discovery tool for new cards to want.
-            // Printings PurchasePriorityAnalyzer flags (1-2 foil prints ever made, 5+ years since reprint) sort
-            // first; everything else still appears afterward so it can still fill out a budget once those are covered.
-            // If any one of a card's preferred artworks is already fully collected, the whole card is deprioritized.
+            // Every wishlist card appears here; flagged printings (scarce, no reprint in years) sort first and
+            // everything else fills out the budget after. A card is skipped entirely once any preferred artwork is complete.
             foreach (var (cardID, preferredVersions) in preferredByCardID)
             {
                 var anyComplete = preferredVersions.Any(pv =>
@@ -652,34 +648,16 @@ namespace CardCollector.Services
 
                     var printing = BuildCardPrinting(cardID, preferred.ImageID, preferred.SetCode, preferred.RarityName);
 
-                    // card_sets[].set_price (printing.Price) is essentially always 0 in the cached YGOProDeck card
-                    // data — it's not a maintained field there. Live TCGPlayer pricing (the same source other
-                    // features use) lives in the separate pricing cache, keyed by the printing's resolved rarity.
-                    // PreferredVersion doesn't track edition, so there's no real signal for which one the user
-                    // wants — default to 1st Edition (the conventional "primary" printing to price) when the
-                    // printing has one, falling back to whatever edition is available otherwise.
+                    // printing.Price is unmaintained in the cached data — use live TCGPlayer pricing instead,
+                    // defaulting to 1st Edition since PreferredVersion doesn't track which edition the user wants.
                     var livePrice = await _pricingService.GetPrintingPriceAsync(cardID, preferred.SetCode, printing.RarityName, CardEdition.FirstEdition).ConfigureAwait(false);
                     if (maxPrice.HasValue && (!livePrice.HasValue || livePrice.Value <= 0 || livePrice.Value > maxPrice.Value))
                         continue; // No price data or over the cap — exclude, don't let missing data slip under the cap
 
-                    var pricedPrinting = new CardPrinting
-                    {
-                        AvailableRarities = printing.AvailableRarities,
-                        CardID = printing.CardID,
-                        CardName = printing.CardName,
-                        CardType = printing.CardType,
-                        ImageID = printing.ImageID,
-                        ImageURLSmall = printing.ImageURLSmall,
-                        Price = livePrice,
-                        RarityCode = printing.RarityCode,
-                        RarityName = printing.RarityName,
-                        SetCode = printing.SetCode,
-                        SetName = printing.SetName
-                    };
+                    var pricedPrinting = printing.WithPrice(livePrice);
 
-                    // TCGPlayer mass entry only matches on card name + this bracketed set prefix, with no rarity
-                    // qualifier — if the card has another printing under the same prefix but a different rarity,
-                    // mass entry can silently resolve to the wrong one. Flag it so the row can be called out on screen.
+                    // TCGPlayer mass entry matches by name + set prefix only (no rarity) — flag when another
+                    // rarity shares the prefix, since mass entry could silently resolve to the wrong one.
                     var tcgSetCode = preferred.SetCode.ToTCGPlayerSetCode();
                     var hasAmbiguousSetCode = (card.CardSets ?? [])
                         .Any(s => !string.IsNullOrEmpty(s.Code)

@@ -13,14 +13,14 @@ namespace CardCollector.Repository
         Task AddRangeAsync(IEnumerable<PendingOrderLine> lines);
 
         /// <summary>
-        /// Deletes the pending order line with the given ID. Returns false if no such line exists.
-        /// </summary>
-        Task<bool> DeleteAsync(int id);
-
-        /// <summary>
         /// Deletes every pending order line.
         /// </summary>
         Task DeleteAllAsync();
+
+        /// <summary>
+        /// Deletes the pending order line with the given ID. Returns false if no such line exists.
+        /// </summary>
+        Task<bool> DeleteAsync(int id);
 
         /// <summary>
         /// Returns every pending order line, ordered by date created descending.

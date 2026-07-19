@@ -4,10 +4,10 @@ namespace CardCollector.Data.Models
 {
     public class PendingOrderLine
     {
+        public AcquisitionMethod? AcquisitionMethod { get; set; }
+
         [Required]
         public int CardID { get; set; }
-
-        public AcquisitionMethod? AcquisitionMethod { get; set; }
 
         public CardCondition? Condition { get; set; }
 

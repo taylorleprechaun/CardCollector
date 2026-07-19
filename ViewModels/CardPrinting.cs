@@ -25,5 +25,20 @@ namespace CardCollector.ViewModels
         public string SetCode { get; init; } = string.Empty;
 
         public string SetName { get; init; } = string.Empty;
+
+        public CardPrinting WithPrice(decimal? price) => new()
+        {
+            AvailableRarities = AvailableRarities,
+            CardID = CardID,
+            CardName = CardName,
+            CardType = CardType,
+            ImageID = ImageID,
+            ImageURLSmall = ImageURLSmall,
+            Price = price,
+            RarityCode = RarityCode,
+            RarityName = RarityName,
+            SetCode = SetCode,
+            SetName = SetName
+        };
     }
 }

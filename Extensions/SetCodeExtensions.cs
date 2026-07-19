@@ -1,10 +1,11 @@
-namespace CardCollector.Extensions;
-
-public static class SetCodeExtensions
+namespace CardCollector.Extensions
 {
-    public static string ToTCGPlayerSetCode(this string setCode)
+    public static class SetCodeExtensions
     {
-        var hyphenIndex = setCode.IndexOf('-');
-        return hyphenIndex < 0 ? setCode : setCode[..hyphenIndex];
+        public static string ToTCGPlayerSetCode(this string setCode)
+        {
+            var hyphenIndex = setCode.IndexOf('-');
+            return hyphenIndex < 0 ? setCode : setCode[..hyphenIndex];
+        }
     }
 }
