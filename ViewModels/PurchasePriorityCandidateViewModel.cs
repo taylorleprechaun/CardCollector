@@ -10,6 +10,10 @@ namespace CardCollector.ViewModels
 
         public bool HasAmbiguousSetCode { get; init; }
 
+        public bool IsInCart { get; init; }
+
+        public bool IsOrdered { get; init; }
+
         public decimal LineTotal => (Price ?? 0) * QuantityNeeded;
 
         public string PrintingDate { get; init; } = string.Empty;
@@ -18,7 +22,7 @@ namespace CardCollector.ViewModels
 
         public int QuantityOwned { get; init; } = 0;
 
-        public static PurchasePriorityCandidateViewModel From(CardPrinting printing, PurchasePriorityCandidate candidate, int quantityOwned = 0, bool hasAmbiguousSetCode = false) => new()
+        public static PurchasePriorityCandidateViewModel From(CardPrinting printing, PurchasePriorityCandidate candidate, int quantityOwned = 0, bool hasAmbiguousSetCode = false, bool isInCart = false, bool isOrdered = false) => new()
         {
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
@@ -29,6 +33,8 @@ namespace CardCollector.ViewModels
             HasAmbiguousSetCode = hasAmbiguousSetCode,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
+            IsInCart = isInCart,
+            IsOrdered = isOrdered,
             Price = printing.Price,
             PrintingDate = candidate.PrintingDate,
             QuantityOwned = quantityOwned,

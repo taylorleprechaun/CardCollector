@@ -42,6 +42,17 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetStagedPairsAsync()
+        {
+            var pairs = await _context.PendingOrderLines
+                .Select(l => new { l.ImageID, l.SetCode })
+                .Distinct()
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
+
         public async Task<(int Count, decimal Total)> GetSummaryAsync()
         {
             var lines = await _context.PendingOrderLines

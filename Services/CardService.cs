@@ -618,6 +618,8 @@ namespace CardCollector.Services
 
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
                 allPreferred.Select(pv => (pv.ImageID, pv.SetCode, pv.RarityName))).ConfigureAwait(false);
+            var orderedPairs = await _collectionRepository.GetOrderedPairsAsync().ConfigureAwait(false);
+            var stagedPairs = await _pendingOrderRepository.GetStagedPairsAsync().ConfigureAwait(false);
 
             var results = new List<PurchasePriorityCandidateViewModel>();
 
@@ -685,7 +687,9 @@ namespace CardCollector.Services
                             && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
 
                     var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode));
+                    var isInCart = stagedPairs.Contains((preferred.ImageID, preferred.SetCode));
+                    var isOrdered = orderedPairs.Contains((preferred.ImageID, preferred.SetCode));
+                    results.Add(PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, isInCart, isOrdered));
                 }
             }
 

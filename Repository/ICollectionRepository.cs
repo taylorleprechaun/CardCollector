@@ -38,6 +38,11 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
+        /// Returns the set of (imageID, setCode) pairs present in Ordered entries only.
+        /// </summary>
+        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOrderedPairsAsync();
+
+        /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
         /// </summary>
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();

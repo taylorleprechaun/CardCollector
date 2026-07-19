@@ -151,6 +151,7 @@ async function submitAddToCart() {
 
         const result = await response.json();
         updateCartBadge(result.count, result.total);
+        markRowInCart(document.getElementById('poImageID').value, document.getElementById('poSetCode').value);
         bootstrap.Modal.getInstance(document.getElementById('purchaseOrderModal'))?.hide();
     } catch (err) {
         console.error('Add to cart failed', err);
@@ -158,6 +159,20 @@ async function submitAddToCart() {
     } finally {
         addToCartBtn.disabled = false;
     }
+}
+
+function markRowInCart(imageID, setCode) {
+    const row = document.querySelector(`tr[data-image-id="${CSS.escape(imageID)}"][data-set-code="${CSS.escape(setCode)}"]`);
+    if (!row) return;
+
+    const container = row.querySelector('.cart-order-badges');
+    if (!container || container.querySelector('.badge-in-cart')) return;
+
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-info text-dark ms-1 badge-in-cart';
+    badge.title = 'Already staged in your cart';
+    badge.textContent = 'In Cart';
+    container.appendChild(badge);
 }
 
 function updateCartBadge(count, total) {

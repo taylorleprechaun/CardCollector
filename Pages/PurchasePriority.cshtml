@@ -122,7 +122,7 @@ else
                 <tbody>
                     @foreach (var item in Model.Results.Items)
                     {
-                        <tr>
+                        <tr data-image-id="@item.ImageID" data-set-code="@item.SetCode">
                             <td>
                                 <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
                             </td>
@@ -146,6 +146,16 @@ else
                                         Verify rarity
                                     </span>
                                 }
+                                <span class="cart-order-badges">
+                                    @if (item.IsInCart)
+                                    {
+                                        <span class="badge bg-info text-dark ms-1 badge-in-cart" title="Already staged in your cart">In Cart</span>
+                                    }
+                                    @if (item.IsOrdered)
+                                    {
+                                        <span class="badge bg-success ms-1" title="Already has an active order">Ordered</span>
+                                    }
+                                </span>
                             </td>
                             <td class="d-none d-md-table-cell">@item.QuantityNeeded</td>
                             <td class="d-none d-md-table-cell">
