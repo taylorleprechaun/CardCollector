@@ -22,20 +22,33 @@
                 <span class="badge-neutral">Need @item.QuantityNeeded</span>
             }
         </div>
+        <div class="d-flex gap-1 flex-shrink-0 cart-order-badges">
+            @if (item.IsInCart)
+            {
+                <span class="badge bg-info text-dark badge-in-cart" title="Already staged in your cart">In Cart (@item.CartQuantity)</span>
+            }
+            @if (item.IsOrdered)
+            {
+                <span class="badge bg-success" title="Already has an active order">Ordered (@item.OrderedQuantity)</span>
+            }
+        </div>
         <div class="d-flex gap-1 flex-shrink-0">
-            <button type="button"
-                    class="btn btn-sm btn-primary"
-                    data-filter-params="@Model.FilterParams"
-                    data-set-code="@item.SetCode"
-                    data-set-name="@item.SetName"
-                    data-card-id="@item.CardID"
-                    data-image-id="@item.ImageID"
-                    data-rarity-name="@item.RarityName"
-                    data-rarities="@string.Join(",", item.AvailableRarities)"
-                    data-tcg-date="@Model.TCGDate"
-                    onclick="openWishlistModal(this, 'Order')">
-                Order
-            </button>
+            @if (item.QuantityNeeded > 0)
+            {
+                <button type="button"
+                        class="btn btn-sm btn-primary"
+                        data-filter-params="@Model.FilterParams"
+                        data-set-code="@item.SetCode"
+                        data-set-name="@item.SetName"
+                        data-card-id="@item.CardID"
+                        data-image-id="@item.ImageID"
+                        data-rarity-name="@item.RarityName"
+                        data-card-name="@item.CardName"
+                        data-quantity-needed="@item.QuantityNeeded"
+                        onclick="openWishlistOrderModal(this)">
+                    Order
+                </button>
+            }
             <button type="button"
                     class="btn btn-sm btn-success"
                     data-filter-params="@Model.FilterParams"
@@ -46,7 +59,7 @@
                     data-rarity-name="@item.RarityName"
                     data-rarities="@string.Join(",", item.AvailableRarities)"
                     data-tcg-date="@Model.TCGDate"
-                    onclick="openWishlistModal(this, 'Own')">
+                    onclick="openWishlistOwnModal(this)">
                 Add to Collection
             </button>
             <form method="post" action="/Wishlist?handler=Remove&@Model.FilterParams" class="ajax-form"

@@ -1,0 +1,75 @@
+@model CardCollector.ViewModels.CartLineRowViewModel
+@using CardCollector.Data.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var i = Model.Index;
+    var line = Model.Line;
+    var quantity = line.Quantity < 1 ? 1 : line.Quantity;
+
+    IEnumerable<SelectListItem> EnumOptions<TEnum>(TEnum? selected) where TEnum : struct, Enum
+    {
+        var items = Html.GetEnumSelectList<TEnum>();
+        var selectedValue = selected.HasValue ? ((int)(object)selected.Value).ToString() : null;
+        foreach (var item in items)
+            item.Selected = item.Value == selectedValue;
+        return items;
+    }
+}
+<div class="row g-2 mb-2">
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Condition</label>
+        <select name="Lines[@i].Condition" id="lineCondition@(i)" form="cartSubmitForm"
+                class="form-select form-select-sm" asp-items="EnumOptions(line.Condition)">
+            <option value="">-- Condition --</option>
+        </select>
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Edition</label>
+        <select name="Lines[@i].Edition" id="lineEdition@(i)" form="cartSubmitForm"
+                data-card-id="@line.CardID" data-set-code="@line.SetCode" data-rarity-name="@line.RarityName"
+                data-market-price-target="lineMarketPrice@(i)"
+                class="form-select form-select-sm" asp-items="EnumOptions(line.Edition)">
+            <option value="">-- Edition --</option>
+        </select>
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Quantity</label>
+        <input type="hidden" name="Lines[@i].Quantity" id="lineQuantity@(i)" value="@quantity" form="cartSubmitForm" />
+        <div class="btn-group btn-group-sm w-100" role="group" aria-label="Quantity">
+            @for (var q = 1; q <= 3; q++)
+            {
+                <button type="button" class="btn @(q == quantity ? "btn-primary" : "btn-outline-secondary")"
+                        data-qty-target="lineQuantity@(i)" data-qty-value="@q"
+                        data-pending-order-line-id="@line.PendingOrderLineID"
+                        onclick="selectCartLineQuantity(this)">@q</button>
+            }
+        </div>
+    </div>
+</div>
+<div class="row g-2">
+    <div class="col-12 col-sm-4">
+        <label class="form-label d-flex align-items-center gap-1">
+            Purchase Date
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
+                    onclick="setPickerDate('linePurchaseDate@(i)', new Date())" title="Set to today">Today</button>
+        </label>
+        <input type="date" name="Lines[@i].PurchaseDate" id="linePurchaseDate@(i)" form="cartSubmitForm" class="form-control form-control-sm cc-date-picker"
+               value="@(line.PurchaseDate?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label">Price ($)</label>
+        <input type="number" step="0.01" min="0" required name="Lines[@i].PurchasePrice" id="linePrice@(i)" form="cartSubmitForm"
+               class="form-control form-control-sm" placeholder="0.00" />
+    </div>
+    <div class="col-12 col-sm-4">
+        <label class="form-label d-flex align-items-center gap-1">
+            Market Price ($)
+            <button type="button" class="btn btn-sm btn-link p-0 text-secondary-emphasis"
+                    onclick="document.getElementById('lineMarketPrice@(i)').value = document.getElementById('linePrice@(i)').value"
+                    title="Copy from purchase price">&#x2194;</button>
+        </label>
+        <input type="number" step="0.01" min="0" name="Lines[@i].MarketPriceAtEntry" id="lineMarketPrice@(i)" form="cartSubmitForm"
+               class="form-control form-control-sm" placeholder="0.00"
+               value="@(line.MarketPriceAtEntry?.ToString("F2"))" />
+    </div>
+</div>

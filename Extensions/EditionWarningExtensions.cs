@@ -17,8 +17,10 @@ namespace CardCollector.Extensions
 
             var category = await cardService.CheckEntryEditionAsync(cardID, setCode, rarityName, edition.Value).ConfigureAwait(false);
             if (category == EditionAuditCategory.EditionMismatch)
-                page.TempData["Warning"] =
-                    $"TCGPlayer doesn't list a {edition.Value.GetDisplayName()} printing of {setCode} {rarityName} for this card — double-check the edition you selected.";
+                page.TempData["Warning"] = BuildEditionMismatchMessage(edition.Value, setCode, rarityName);
         }
+
+        public static string BuildEditionMismatchMessage(CardEdition edition, string setCode, string rarityName) =>
+            $"TCGPlayer doesn't list a {edition.GetDisplayName()} printing of {setCode} {rarityName} for this card — double-check the edition you selected.";
     }
 }

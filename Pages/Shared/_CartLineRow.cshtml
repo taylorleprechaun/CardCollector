@@ -1,0 +1,26 @@
+@model CardCollector.ViewModels.CartLineRowViewModel
+@using CardCollector.ViewModels
+@{
+    var line = Model.Line;
+}
+<div class="list-group-item" id="cart-row-@line.PendingOrderLineID">
+    <div class="d-flex flex-column flex-md-row gap-3 align-items-md-start py-1">
+        <div class="d-flex gap-2 align-items-center min-width-0 cc-cart-line-info">
+            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(line.ImageURLSmall, line.CardName)' />
+            <div class="min-width-0">
+                <div class="fw-semibold">@line.CardName</div>
+                <div class="text-muted small">@line.SetName &middot; <code>@line.SetCode</code> &middot; @line.RarityName</div>
+            </div>
+        </div>
+        <div class="flex-grow-1 cc-cart-line-fields">
+            <input type="hidden" name="Lines[@Model.Index].PendingOrderLineID" value="@line.PendingOrderLineID" form="cartSubmitForm" />
+            <partial name="_PurchaseLineFields" model="Model" />
+        </div>
+        <div class="flex-shrink-0">
+            <form method="post" asp-page-handler="Remove" class="d-inline">
+                <input type="hidden" name="id" value="@line.PendingOrderLineID" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+        </div>
+    </div>
+</div>

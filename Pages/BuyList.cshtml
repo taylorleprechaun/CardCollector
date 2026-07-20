@@ -1,0 +1,117 @@
+@page
+@model BuyListModel
+@using CardCollector.ViewModels
+@using System.Globalization
+@{
+    ViewData["Title"] = "Buy List";
+    var remainingBudget = Model.TotalBudget.HasValue ? Model.TotalBudget.Value - Model.FullPlan.TotalCost : (decimal?)null;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Buy List</h1>
+</div>
+
+<p class="text-muted mb-4">
+    Wishlist printings ranked by what's worth buying first. Filter by budget, card count, or a per-card price cap.
+</p>
+
+<form method="get" class="mb-4">
+    <input type="hidden" name="pageNumber" value="1" />
+    <div class="row g-2 align-items-end mb-2">
+        <div class="col-auto">
+            <label for="totalBudget" class="form-label small mb-1">Total Budget</label>
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm" style="width: 140px;"
+                   id="totalBudget" name="totalBudget" value="@Model.TotalBudget" />
+        </div>
+        <div class="col-auto">
+            <label for="maxCards" class="form-label small mb-1">Max Cards</label>
+            <input type="number" min="1" class="form-control form-control-sm" style="width: 110px;"
+                   id="maxCards" name="maxCards" value="@Model.MaxCards" />
+        </div>
+        <div class="col-auto">
+            <label for="maxPricePerCard" class="form-label small mb-1">Max Price Per Card</label>
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm" style="width: 140px;"
+                   id="maxPricePerCard" name="maxPricePerCard" value="@Model.MaxPricePerCard" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            <a href="/BuyList" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+    </div>
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-sm">
+            <label for="query" class="form-label small mb-1">Search</label>
+            <input type="search" class="form-control form-control-sm" id="query" name="query"
+                   value="@Model.Query" placeholder="Search by name, set, or rarity…" />
+        </div>
+        <div class="col-auto">
+            <label for="pageSize" class="form-label small mb-1">Page Size</label>
+            <select name="pageSize" id="pageSize" class="form-select form-select-sm">
+                @foreach (var size in new[] { 10, 25, 50, 100 })
+                {
+                    @if (Model.PageSize == size)
+                    {
+                        <option value="@size" selected>@size per page</option>
+                    }
+                    else
+                    {
+                        <option value="@size">@size per page</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        </div>
+    </div>
+</form>
+
+@{
+    var tiles = new[]
+    {
+        new StatTileViewModel("Items", Model.FullPlan.Items.Count.ToString("N0")),
+        new StatTileViewModel("Total Cost", Model.FullPlan.TotalCost.ToString("C")),
+        new StatTileViewModel("Remaining Budget", remainingBudget.HasValue ? remainingBudget.Value.ToString("C") : "—")
+    };
+}
+<div class="row g-3 mb-3">
+    <div class="col" id="buyListStat-items" data-raw-value="@Model.FullPlan.Items.Count">
+        <partial name="_StatTile" model="tiles[0]" />
+    </div>
+    <div class="col" id="buyListStat-totalCost" data-raw-value="@Model.FullPlan.TotalCost.ToString(CultureInfo.InvariantCulture)">
+        <partial name="_StatTile" model="tiles[1]" />
+    </div>
+    <div class="col" id="buyListStat-remainingBudget" data-raw-value="@(Model.TotalBudget?.ToString(CultureInfo.InvariantCulture) ?? "")">
+        <partial name="_StatTile" model="tiles[2]" />
+    </div>
+</div>
+
+@if (Model.FullPlan.Items.Count == 0)
+{
+    <div class="alert alert-info text-center py-5">
+        <h4>No buy list candidates</h4>
+        <p class="mb-3">Add preferred versions via <a href="/Discover">Discover</a>, or loosen your budget/price filters above.</p>
+    </div>
+}
+else
+{
+    <div class="mb-4">
+        <label for="massEntryText" class="form-label small mb-1">TCGPlayer Mass Entry (full plan, not affected by the search box above)</label>
+        <textarea id="massEntryText" class="form-control font-monospace small" rows="8" readonly>@Model.MassEntryText</textarea>
+        <button type="button" id="copyMassEntryBtn" class="btn btn-outline-secondary btn-sm mt-2">Copy for TCGPlayer</button>
+    </div>
+
+    <div id="buyListResults">
+        <partial name="_BuyListResults" model="Model.Results" />
+    </div>
+
+    <div id="buyListPagination">
+        <partial name="_Pagination" model="Model.BuildPaginationViewModel()" />
+    </div>
+}
+
+<partial name="_PurchaseLinesModal" />
+
+@section Scripts {
+    <script src="~/js/buy-list.js" asp-append-version="true"></script>
+}

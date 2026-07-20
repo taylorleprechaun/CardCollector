@@ -20,6 +20,14 @@ namespace CardCollector.Services
             string? rarityName = null);
 
         /// <summary>
+        /// Stages a printing into the cart as a pending order line, defaulting Condition to Near Mint,
+        /// Edition to 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page.
+        /// Returns the cart's new total line count and cost, plus the new staged quantity for this printing.
+        /// </summary>
+        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
+            int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
+
+        /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
         /// Calls <paramref name="onProgress"/> with (current, total) after each price is fetched when doing a live calculation.
         /// </summary>
@@ -62,6 +70,11 @@ namespace CardCollector.Services
         Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName);
 
         /// <summary>
+        /// Returns the total line count and total cost across every staged (not-yet-submitted) cart line.
+        /// </summary>
+        Task<(int Count, decimal Total)> GetCartSummaryAsync();
+
+        /// <summary>
         /// Returns aggregated collection statistics including rarity, set, acquisition, and value breakdowns.
         /// </summary>
         Task<CollectionStatsViewModel> GetCollectionStatsAsync();
@@ -77,9 +90,11 @@ namespace CardCollector.Services
         Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
 
         /// <summary>
-        /// Returns all ordered entries enriched with card and set data.
+        /// Returns all ordered entries enriched with card and set data, annotated with an
+        /// edition-audit category when the recorded Edition doesn't match (or can't be verified
+        /// against) the live API data for that printing.
         /// </summary>
-        Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOrdersAsync();
+        Task<IEnumerable<EditionAuditEntryViewModel>> GetEnrichedOrdersAsync();
 
         /// <summary>
         /// Returns all owned entries enriched with card and set data.
@@ -102,6 +117,11 @@ namespace CardCollector.Services
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
 
         /// <summary>
+        /// Returns every staged (not-yet-submitted) cart line, enriched with card and set data.
+        /// </summary>
+        Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
+
+        /// <summary>
         /// Returns the preferred version for the given card ID (any artwork), or null if none is set.
         /// </summary>
         Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID);
@@ -115,10 +135,19 @@ namespace CardCollector.Services
         Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
 
         /// <summary>
-        /// Returns preferred printings worth prioritizing for purchase — printings that are themselves one of only
-        /// 1-2 scarce foil prints a card has ever had, gone 5+ years without a reprint on a card old enough to judge.
-        /// Excludes cards where any preferred artwork is already fully collected. When <paramref name="maxPrice"/>
-        /// is given, only printings currently priced at or below it are returned.
+        /// Single-item counterpart to <see cref="GetPurchasePriorityCandidatesAsync"/> — no budget-fill, no
+        /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
+        /// </summary>
+        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
+            int cardID, int imageID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
+
+        /// <summary>
+        /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
+        /// prioritizing come first — printings that are themselves one of only 1-2 foil prints a card has ever
+        /// had, gone 5+ years without a reprint, on a card old enough to judge. Everything else still appears
+        /// afterward so it can still fill out a budget. Excludes cards where any preferred artwork is already
+        /// fully collected. When <paramref name="maxPrice"/> is given, only printings currently priced at or
+        /// below it are returned.
         /// </summary>
         Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null);
 
@@ -169,6 +198,14 @@ namespace CardCollector.Services
         Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
 
         /// <summary>
+        /// Converts every reviewed staged cart line into a real Ordered collection entry, then removes
+        /// just those lines from the cart. Lines not covered by <paramref name="overrides"/> are left staged.
+        /// Returns the number of entries created, their total cost, and any edition-mismatch warnings
+        /// raised while committing.
+        /// </summary>
+        Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
+
+        /// <summary>
         /// Returns the distinct rarity names present in the current wishlist.
         /// </summary>
         Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync();
@@ -192,6 +229,12 @@ namespace CardCollector.Services
         /// Clears the ignored status for the given card, resuming Dashboard progress tracking for it. No-ops if not currently ignored.
         /// </summary>
         Task UnignoreCardAsync(int cardID);
+
+        /// <summary>
+        /// Updates the staged quantity for a single cart line, clamped to the valid cart quantity range.
+        /// Returns false if no such line exists.
+        /// </summary>
+        Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
 
         /// <summary>
         /// Updates the preferred version for the given image ID to the specified newer printing.

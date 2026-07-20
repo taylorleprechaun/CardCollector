@@ -27,7 +27,7 @@ function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
             const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}`);
             if (resp.ok) {
                 const { price } = await resp.json();
-                if (price) marketPriceEl.value = price.toFixed(2);
+                if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);
             }
         } catch (err) { console.warn('Failed to fetch price:', err); }
     }
@@ -37,6 +37,32 @@ function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     editionSelect.addEventListener('change', refreshPrice);
 
     return refreshPrice;
+}
+
+async function initLiveMarketPrice(editionSelect, marketPriceEl, getParams) {
+    marketPriceEl.value = '';
+    marketPriceEl.placeholder = 'Loading…';
+
+    const refreshPrice = bindPriceRefresh(editionSelect, marketPriceEl, getParams);
+    await refreshPrice();
+
+    marketPriceEl.placeholder = '0.00';
+}
+
+// rawCount/rawTotal accept either a number (from a JSON response) or a header string
+// (from response.headers.get(...), which is null when the header wasn't set at all).
+function updateCartBadge(rawCount, rawTotal) {
+    if (rawCount === null || rawCount === undefined) return;
+
+    const badge = document.getElementById('navCartBadge');
+    const countEl = document.getElementById('navCartCount');
+    if (!badge || !countEl) return;
+
+    const count = Number(rawCount) || 0;
+    countEl.textContent = count;
+    const total = Number(rawTotal) || 0;
+    badge.title = total ? `$${total.toFixed(2)} staged` : '';
+    badge.classList.toggle('d-none', count === 0);
 }
 
 function setPickerDate(id, value) {
@@ -49,27 +75,33 @@ function setPickerDate(id, value) {
     }
 }
 
-document.querySelectorAll('.cc-date-picker').forEach(function (el) {
-    flatpickr(el, {
-        dateFormat: 'Y-m-d',
-        altInput: true,
-        altFormat: 'm/d/Y',
-        altInputClass: 'form-control form-control-sm',
-        allowInput: true,
-        disableMobile: true,
-        onReady: function (selectedDates, dateStr, instance) {
-            var todayBtn = document.createElement('button');
-            todayBtn.textContent = 'Today';
-            todayBtn.type = 'button';
-            todayBtn.className = 'flatpickr-today-btn';
-            todayBtn.addEventListener('click', function () {
-                instance.setDate(new Date());
-                instance.close();
-            });
-            instance.calendarContainer.appendChild(todayBtn);
-        }
+function initDatePickers(root) {
+    (root || document).querySelectorAll('.cc-date-picker').forEach(function (el) {
+        if (el._flatpickr) return;
+
+        flatpickr(el, {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'm/d/Y',
+            altInputClass: 'form-control form-control-sm',
+            allowInput: true,
+            disableMobile: true,
+            onReady: function (selectedDates, dateStr, instance) {
+                var todayBtn = document.createElement('button');
+                todayBtn.textContent = 'Today';
+                todayBtn.type = 'button';
+                todayBtn.className = 'flatpickr-today-btn';
+                todayBtn.addEventListener('click', function () {
+                    instance.setDate(new Date());
+                    instance.close();
+                });
+                instance.calendarContainer.appendChild(todayBtn);
+            }
+        });
     });
-});
+}
+
+initDatePickers();
 
 function buildTypeahead(input, dropdown, onSelect, onEnterWithoutSelection) {
     let highlighted = -1;

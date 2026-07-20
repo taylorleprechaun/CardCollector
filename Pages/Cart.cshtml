@@ -1,0 +1,42 @@
+@page
+@model CartModel
+@using CardCollector.ViewModels
+@{
+    ViewData["Title"] = "Cart";
+    var total = Model.Lines.Sum(l => (l.PurchasePrice ?? 0) * l.Quantity);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Cart</h1>
+    <span class="badge-neutral fs-6">@Model.Lines.Count staged</span>
+</div>
+
+@if (Model.Lines.Count == 0)
+{
+    <div class="alert alert-info text-center py-5">
+        <h4>Your cart is empty</h4>
+        <p class="mb-3">Head to <a href="/BuyList">Buy List</a> and click "Order" on a card to stage a purchase.</p>
+    </div>
+}
+else
+{
+    <p class="text-muted mb-3">Fill in condition, edition, and price once you know what you actually bought, then submit — these become the permanent record in Orders.</p>
+
+    <div class="list-group cc-table-card mb-3">
+        @for (var i = 0; i < Model.Lines.Count; i++)
+        {
+            <partial name="_CartLineRow" model='new CartLineRowViewModel { Index = i, Line = Model.Lines[i] }' />
+        }
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <span class="fs-5">Total: <strong id="cartTotal">$@total.ToString("F2")</strong></span>
+        <form id="cartSubmitForm" method="post" asp-page-handler="SubmitAll">
+            <button type="submit" class="btn btn-success">Submit All Orders</button>
+        </form>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/cart.js" asp-append-version="true"></script>
+}

@@ -77,7 +77,7 @@ namespace CardCollector.Pages
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice,
-            string? rarityName = null)
+            decimal? marketPriceAtEntry, string? rarityName = null)
         {
             var existing = await _collectionRepository.GetByIDAsync(entryID).ConfigureAwait(false);
 
@@ -87,6 +87,7 @@ namespace CardCollector.Pages
                 AcquisitionMethod = acquisitionMethod,
                 Condition = condition,
                 Edition = edition,
+                MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
                 Quantity = quantity < 1 ? 1 : quantity,

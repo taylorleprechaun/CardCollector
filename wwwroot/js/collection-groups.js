@@ -77,6 +77,7 @@ async function submitAjaxForm(form, submitter) {
 
         const html = await response.text();
         updateTotalCountBadge(Number(response.headers.get('X-Total-Count')));
+        updateCartBadge(response.headers.get('X-Cart-Count'), response.headers.get('X-Cart-Total'));
         applyAjaxGroupResponse(form, html);
     } catch (err) {
         console.error('AJAX form submission failed', err);

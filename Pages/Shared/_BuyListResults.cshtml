@@ -1,0 +1,14 @@
+@model CardCollector.ViewModels.PagedResult<CardCollector.ViewModels.PurchasePriorityCandidateViewModel>
+@if (Model.Items.Count == 0)
+{
+    <partial name="_BuyListEmptyResults" />
+}
+else
+{
+    <div class="list-group cc-table-card">
+        @foreach (var item in Model.Items)
+        {
+            <partial name="_BuyListRow" model="item" />
+        }
+    </div>
+}
