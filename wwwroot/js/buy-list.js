@@ -1,3 +1,9 @@
+const BUY_LIST_EMPTY_RESULTS_HTML = `<div class="alert alert-info text-center py-5">
+    <span>No plan items match your search.</span>
+</div>`;
+
+let buyListState = null;
+
 document.addEventListener('DOMContentLoaded', function () {
     const copyBtn = document.getElementById('copyMassEntryBtn');
     const textarea = document.getElementById('massEntryText');
@@ -19,6 +25,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const addToCartBtn = document.getElementById('addToCartBtn');
     if (addToCartBtn) addToCartBtn.addEventListener('click', submitAddToCart);
+
+    const itemsEl = document.getElementById('buyListStat-items');
+    const totalCostEl = document.getElementById('buyListStat-totalCost');
+    const remainingEl = document.getElementById('buyListStat-remainingBudget');
+    if (itemsEl && totalCostEl) {
+        buyListState = {
+            itemsCount: Number(itemsEl.dataset.rawValue) || 0,
+            totalCost: Number(totalCostEl.dataset.rawValue) || 0,
+            totalBudget: remainingEl && remainingEl.dataset.rawValue !== '' ? Number(remainingEl.dataset.rawValue) : null
+        };
+    }
 });
 
 function openPurchaseModal(btn) {
@@ -42,7 +59,11 @@ async function submitAddToCart() {
     const form = document.getElementById('purchaseOrderForm');
     const addToCartBtn = document.getElementById('addToCartBtn');
     const formData = new FormData(form);
-    const url = window.location.pathname + '?handler=AddToCart';
+
+    // Preserve MaxPricePerCard etc. so the server applies the same per-card cap the page shows.
+    const params = new URLSearchParams(window.location.search);
+    params.set('handler', 'AddToCart');
+    const url = window.location.pathname + '?' + params.toString();
 
     addToCartBtn.disabled = true;
     try {
@@ -59,7 +80,7 @@ async function submitAddToCart() {
 
         const result = await response.json();
         updateCartBadge(result.count, result.total);
-        markRowInCart(document.getElementById('poImageID').value, document.getElementById('poSetCode').value, result.cartQuantity);
+        applyBuyListUpdate(result);
         bootstrap.Modal.getInstance(document.getElementById('purchaseOrderModal'))?.hide();
     } catch (err) {
         console.error('Add to cart failed', err);
@@ -69,19 +90,69 @@ async function submitAddToCart() {
     }
 }
 
-function markRowInCart(imageID, setCode, cartQuantity) {
-    const row = document.querySelector(`.list-group-item[data-image-id="${CSS.escape(imageID)}"][data-set-code="${CSS.escape(setCode)}"]`);
+// Only patches this one row's delta — the plan is never re-run, so nothing else reorders or disappears.
+function applyBuyListUpdate(result) {
+    const imageID = document.getElementById('poImageID').value;
+    const row = document.querySelector(`#buyListResults .list-group-item[data-image-id="${CSS.escape(imageID)}"]`);
     if (!row) return;
 
-    const container = row.querySelector('.cart-order-badges');
-    if (!container) return;
+    const oldLineTotal = Number(row.dataset.lineTotal) || 0;
+    const oldMassEntryLine = row.dataset.massEntryLine || '';
 
-    let badge = container.querySelector('.badge-in-cart');
-    if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'badge bg-info text-dark badge-in-cart';
-        badge.title = 'Already staged in your cart';
-        container.appendChild(badge);
+    if (result.itemRemoved) {
+        row.remove();
+        const resultsContainer = document.getElementById('buyListResults');
+        if (resultsContainer && resultsContainer.querySelectorAll('.list-group-item').length === 0) {
+            resultsContainer.innerHTML = BUY_LIST_EMPTY_RESULTS_HTML;
+        }
+        updateBuyListTotals(true, oldLineTotal, 0);
+        updateMassEntryLine(oldMassEntryLine, null);
+        return;
     }
-    badge.textContent = `In Cart (${cartQuantity})`;
+
+    if (!result.rowHtml) return;
+
+    row.outerHTML = result.rowHtml;
+    const newRow = document.querySelector(`#buyListResults .list-group-item[data-image-id="${CSS.escape(imageID)}"]`);
+    const newLineTotal = newRow ? (Number(newRow.dataset.lineTotal) || 0) : 0;
+    const newMassEntryLine = newRow ? (newRow.dataset.massEntryLine || '') : '';
+
+    updateBuyListTotals(false, oldLineTotal, newLineTotal);
+    updateMassEntryLine(oldMassEntryLine, newMassEntryLine);
+}
+
+function updateBuyListTotals(itemRemoved, oldLineTotal, newLineTotal) {
+    if (!buyListState) return;
+
+    if (itemRemoved) buyListState.itemsCount -= 1;
+    // Round to cents to avoid floating-point drift accumulating over a long session.
+    buyListState.totalCost = Math.round((buyListState.totalCost + (newLineTotal - oldLineTotal)) * 100) / 100;
+
+    const itemsEl = document.querySelector('#buyListStat-items .stat-tile-value');
+    if (itemsEl) itemsEl.textContent = buyListState.itemsCount.toLocaleString('en-US');
+
+    const totalCostEl = document.querySelector('#buyListStat-totalCost .stat-tile-value');
+    if (totalCostEl) totalCostEl.textContent = buyListState.totalCost.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+    const remainingEl = document.querySelector('#buyListStat-remainingBudget .stat-tile-value');
+    if (remainingEl) {
+        remainingEl.textContent = buyListState.totalBudget === null
+            ? '—'
+            : (buyListState.totalBudget - buyListState.totalCost).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    }
+}
+
+// Ambiguous-rarity rows (see "Verify rarity" badge) could share an identical line and mismatch here — accepted, rare, low-severity.
+function updateMassEntryLine(oldLine, newLine) {
+    const textarea = document.getElementById('massEntryText');
+    if (!textarea) return;
+
+    const lines = textarea.value.split('\n');
+    const idx = lines.indexOf(oldLine);
+    if (idx === -1) return;
+
+    if (newLine === null) lines.splice(idx, 1);
+    else lines[idx] = newLine;
+
+    textarea.value = lines.join('\n');
 }

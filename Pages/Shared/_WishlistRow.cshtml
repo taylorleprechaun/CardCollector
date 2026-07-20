@@ -33,19 +33,22 @@
             }
         </div>
         <div class="d-flex gap-1 flex-shrink-0">
-            <button type="button"
-                    class="btn btn-sm btn-primary"
-                    data-filter-params="@Model.FilterParams"
-                    data-set-code="@item.SetCode"
-                    data-set-name="@item.SetName"
-                    data-card-id="@item.CardID"
-                    data-image-id="@item.ImageID"
-                    data-rarity-name="@item.RarityName"
-                    data-card-name="@item.CardName"
-                    data-quantity-needed="@item.QuantityNeeded"
-                    onclick="openWishlistOrderModal(this)">
-                Order
-            </button>
+            @if (item.QuantityNeeded > 0)
+            {
+                <button type="button"
+                        class="btn btn-sm btn-primary"
+                        data-filter-params="@Model.FilterParams"
+                        data-set-code="@item.SetCode"
+                        data-set-name="@item.SetName"
+                        data-card-id="@item.CardID"
+                        data-image-id="@item.ImageID"
+                        data-rarity-name="@item.RarityName"
+                        data-card-name="@item.CardName"
+                        data-quantity-needed="@item.QuantityNeeded"
+                        onclick="openWishlistOrderModal(this)">
+                    Order
+                </button>
+            }
             <button type="button"
                     class="btn btn-sm btn-success"
                     data-filter-params="@Model.FilterParams"

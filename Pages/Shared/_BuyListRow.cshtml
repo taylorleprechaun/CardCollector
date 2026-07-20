@@ -1,9 +1,12 @@
 @model CardCollector.ViewModels.PurchasePriorityCandidateViewModel
 @using CardCollector.ViewModels
+@using System.Globalization
 @{
     var item = Model;
 }
-<div class="list-group-item" data-image-id="@item.ImageID" data-set-code="@item.SetCode">
+<div class="list-group-item" data-image-id="@item.ImageID" data-set-code="@item.SetCode"
+     data-line-total="@item.LineTotal.ToString(CultureInfo.InvariantCulture)"
+     data-mass-entry-line="@($"{item.QuantityNeeded} {item.CardName} [{item.SetCode.ToTCGPlayerSetCode()}]")">
     <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
         <div class="d-flex gap-2 align-items-center flex-grow-1 min-width-0">
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />

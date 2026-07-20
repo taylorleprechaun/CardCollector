@@ -20,6 +20,16 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-qty-target^="lineQuantity"]').forEach(function (btn) {
         btn.addEventListener('click', recomputeCartTotal);
     });
+
+    // Plain POST + redirect, so the button never needs re-enabling — the next page load resets it.
+    const submitForm = document.getElementById('cartSubmitForm');
+    submitForm?.addEventListener('submit', function () {
+        const submitBtn = submitForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting…';
+        }
+    });
 });
 
 // The quantity buttons are the one field on a cart line that has a meaning outside the

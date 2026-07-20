@@ -135,6 +135,13 @@ namespace CardCollector.Services
         Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
 
         /// <summary>
+        /// Single-item counterpart to <see cref="GetPurchasePriorityCandidatesAsync"/> — no budget-fill, no
+        /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
+        /// </summary>
+        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
+            int cardID, int imageID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
+
+        /// <summary>
         /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
         /// prioritizing come first — printings that are themselves one of only 1-2 foil prints a card has ever
         /// had, gone 5+ years without a reprint, on a card old enough to judge. Everything else still appears

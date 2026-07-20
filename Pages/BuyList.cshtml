@@ -1,6 +1,7 @@
 @page
 @model BuyListModel
 @using CardCollector.ViewModels
+@using System.Globalization
 @{
     ViewData["Title"] = "Buy List";
     var remainingBudget = Model.TotalBudget.HasValue ? Model.TotalBudget.Value - Model.FullPlan.TotalCost : (decimal?)null;
@@ -74,12 +75,15 @@
     };
 }
 <div class="row g-3 mb-3">
-    @foreach (var tile in tiles)
-    {
-        <div class="col">
-            <partial name="_StatTile" model="tile" />
-        </div>
-    }
+    <div class="col" id="buyListStat-items" data-raw-value="@Model.FullPlan.Items.Count">
+        <partial name="_StatTile" model="tiles[0]" />
+    </div>
+    <div class="col" id="buyListStat-totalCost" data-raw-value="@Model.FullPlan.TotalCost.ToString(CultureInfo.InvariantCulture)">
+        <partial name="_StatTile" model="tiles[1]" />
+    </div>
+    <div class="col" id="buyListStat-remainingBudget" data-raw-value="@(Model.TotalBudget?.ToString(CultureInfo.InvariantCulture) ?? "")">
+        <partial name="_StatTile" model="tiles[2]" />
+    </div>
 </div>
 
 @if (Model.FullPlan.Items.Count == 0)
@@ -97,23 +101,13 @@ else
         <button type="button" id="copyMassEntryBtn" class="btn btn-outline-secondary btn-sm mt-2">Copy for TCGPlayer</button>
     </div>
 
-    @if (Model.Results.Items.Count == 0)
-    {
-        <div class="alert alert-info text-center py-5">
-            <span>No plan items match your search.</span>
-        </div>
-    }
-    else
-    {
-        <div class="list-group cc-table-card">
-            @foreach (var item in Model.Results.Items)
-            {
-                <partial name="_BuyListRow" model="item" />
-            }
-        </div>
+    <div id="buyListResults">
+        <partial name="_BuyListResults" model="Model.Results" />
+    </div>
 
-        <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Buy list pagination", PageName = "BuyList", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
-    }
+    <div id="buyListPagination">
+        <partial name="_Pagination" model="Model.BuildPaginationViewModel()" />
+    </div>
 }
 
 <partial name="_PurchaseLinesModal" />

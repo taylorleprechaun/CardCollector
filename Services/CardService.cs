@@ -661,6 +661,33 @@ namespace CardCollector.Services
         }
 
 
+        public async Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
+            int cardID, int imageID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null)
+        {
+            var asOf = asOfUtc ?? DateTime.UtcNow;
+
+            var card = _cardDataRepository.GetCardByID(cardID);
+            if (card is null)
+                return null;
+
+            var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
+                [(imageID, setCode, rarityName)]).ConfigureAwait(false);
+
+            // Same "any preferred artwork already complete" exclusion rule as GetPurchasePriorityCandidatesAsync.
+            var preferredVersion = await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
+            var anyComplete = preferredVersion is not null
+                && ownedQuantities.GetValueOrDefault((preferredVersion.ImageID, preferredVersion.SetCode)) >= CardPrinting.CompleteThreshold;
+            if (anyComplete)
+                return null;
+
+            var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
+
+            return await EvaluateCandidateAsync(
+                card, imageID, setCode, rarityName, asOf, maxPrice,
+                ownedQuantities, orderedQuantities, stagedQuantities).ConfigureAwait(false);
+        }
+
         public async Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null)
         {
             var asOf = asOfUtc ?? DateTime.UtcNow;
@@ -691,43 +718,12 @@ namespace CardCollector.Services
 
                 foreach (var preferred in preferredVersions)
                 {
-                    var candidate = PurchasePriorityAnalyzer.Evaluate(
-                        card, preferred.SetCode, preferred.RarityName, _cardSetRepository.GetTCGDateBySetCode, asOf)
-                        ?? new PurchasePriorityCandidate
-                        {
-                            CardID = card.ID,
-                            CardName = card.Name ?? string.Empty,
-                            FoilCount = int.MaxValue // Sorts after every flagged candidate — nothing here to rank by.
-                        };
+                    var candidateViewModel = await EvaluateCandidateAsync(
+                        card, preferred.ImageID, preferred.SetCode, preferred.RarityName, asOf, maxPrice,
+                        ownedQuantities, orderedQuantities, stagedQuantities).ConfigureAwait(false);
 
-                    var printing = BuildCardPrinting(cardID, preferred.ImageID, preferred.SetCode, preferred.RarityName);
-
-                    // printing.Price is unmaintained in the cached data — use live TCGPlayer pricing instead,
-                    // defaulting to 1st Edition since PreferredVersion doesn't track which edition the user wants.
-                    var livePrice = await _pricingService.GetPrintingPriceAsync(cardID, preferred.SetCode, printing.RarityName, CardEdition.FirstEdition).ConfigureAwait(false);
-                    if (maxPrice.HasValue && (!livePrice.HasValue || livePrice.Value <= 0 || livePrice.Value > maxPrice.Value))
-                        continue; // No price data or over the cap — exclude, don't let missing data slip under the cap
-
-                    var pricedPrinting = printing.WithPrice(livePrice);
-
-                    // TCGPlayer mass entry matches by name + set prefix only (no rarity) — flag when another
-                    // rarity shares the prefix, since mass entry could silently resolve to the wrong one.
-                    var tcgSetCode = preferred.SetCode.ToTCGPlayerSetCode();
-                    var hasAmbiguousSetCode = (card.CardSets ?? [])
-                        .Any(s => !string.IsNullOrEmpty(s.Code)
-                            && s.Code.ToTCGPlayerSetCode().Equals(tcgSetCode, StringComparison.OrdinalIgnoreCase)
-                            && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
-
-                    var quantityOwned = ownedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode));
-                    var cartQuantity = stagedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
-                    var orderedQuantity = orderedQuantities.GetValueOrDefault((preferred.ImageID, preferred.SetCode, preferred.RarityName ?? string.Empty));
-                    var candidateViewModel = PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity);
-
-                    // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
-                    if (candidateViewModel.QuantityNeeded <= 0)
-                        continue;
-
-                    results.Add(candidateViewModel);
+                    if (candidateViewModel is not null)
+                        results.Add(candidateViewModel);
                 }
             }
 
@@ -1289,6 +1285,48 @@ namespace CardCollector.Services
                 return (EditionAuditCategory.EditionMismatch, orderedEditions);
 
             return (null, orderedEditions);
+        }
+
+        private async Task<PurchasePriorityCandidateViewModel?> EvaluateCandidateAsync(
+            Card card, int imageID, string setCode, string? rarityName, DateTime asOf, decimal? maxPrice,
+            IReadOnlyDictionary<(int ImageID, string SetCode), int> ownedQuantities,
+            IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> orderedQuantities,
+            IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> stagedQuantities)
+        {
+            var candidate = PurchasePriorityAnalyzer.Evaluate(
+                card, setCode, rarityName, _cardSetRepository.GetTCGDateBySetCode, asOf)
+                ?? new PurchasePriorityCandidate
+                {
+                    CardID = card.ID,
+                    CardName = card.Name ?? string.Empty,
+                    FoilCount = int.MaxValue // Sorts after every flagged candidate — nothing here to rank by.
+                };
+
+            var printing = BuildCardPrinting(card.ID, imageID, setCode, rarityName);
+
+            // printing.Price is unmaintained in the cached data — use live TCGPlayer pricing instead,
+            // defaulting to 1st Edition since PreferredVersion doesn't track which edition the user wants.
+            var livePrice = await _pricingService.GetPrintingPriceAsync(card.ID, setCode, printing.RarityName, CardEdition.FirstEdition).ConfigureAwait(false);
+            if (maxPrice.HasValue && (!livePrice.HasValue || livePrice.Value <= 0 || livePrice.Value > maxPrice.Value))
+                return null; // No price data or over the cap — exclude, don't let missing data slip under the cap
+
+            var pricedPrinting = printing.WithPrice(livePrice);
+
+            // TCGPlayer mass entry matches by name + set prefix only (no rarity) — flag when another
+            // rarity shares the prefix, since mass entry could silently resolve to the wrong one.
+            var tcgSetCode = setCode.ToTCGPlayerSetCode();
+            var hasAmbiguousSetCode = (card.CardSets ?? [])
+                .Any(s => !string.IsNullOrEmpty(s.Code)
+                    && s.Code.ToTCGPlayerSetCode().Equals(tcgSetCode, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
+
+            var quantityOwned = ownedQuantities.GetValueOrDefault((imageID, setCode));
+            var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));
+            var orderedQuantity = orderedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));
+            var candidateViewModel = PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity);
+
+            // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
+            return candidateViewModel.QuantityNeeded <= 0 ? null : candidateViewModel;
         }
 
         private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
