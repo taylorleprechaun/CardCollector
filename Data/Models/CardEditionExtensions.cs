@@ -4,7 +4,7 @@ namespace CardCollector.Data.Models
     {
         // The YGOProDeck API's set_edition values ("Limited", "1st Edition", "Unlimited") don't
         // match the enum's [Display] names (e.g. "Limited Edition"), so they need their own mapping.
-        public static string GetTcgApiEditionName(this CardEdition edition) => edition switch
+        public static string GetTCGAPIEditionName(this CardEdition edition) => edition switch
         {
             CardEdition.FirstEdition => "1st Edition",
             CardEdition.LimitedEdition => "Limited",
@@ -12,7 +12,7 @@ namespace CardCollector.Data.Models
             _ => edition.ToString()
         };
 
-        public static bool TryParseTcgApiEditionName(string? apiEditionName, out CardEdition edition)
+        public static bool TryParseTCGAPIEditionName(string? apiEditionName, out CardEdition edition)
         {
             switch (apiEditionName)
             {

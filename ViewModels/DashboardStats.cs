@@ -22,10 +22,8 @@ namespace CardCollector.ViewModels
 
         public int RemainingCount => TotalCards - CompletedCount - OrderedCount;
 
-        public int TotalCards { get; set; }
-
         public int TotalCardQuantity { get; set; }
-
+        public int TotalCards { get; set; }
         public decimal? TotalSpent { get; set; }
 
         public int WishlistCount { get; set; }

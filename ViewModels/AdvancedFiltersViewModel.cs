@@ -8,8 +8,8 @@ namespace CardCollector.ViewModels
 
         public IReadOnlyList<AcquisitionMethod> AvailableAcquisitionMethods { get; init; } = [];
         public IReadOnlyList<CardCondition> AvailableConditions { get; init; } = [];
-        public IReadOnlyList<CardEdition> AvailableEditions { get; init; } = [];
         public IReadOnlyList<EditionAuditCategory> AvailableEditionAuditCategories { get; init; } = [];
+        public IReadOnlyList<CardEdition> AvailableEditions { get; init; } = [];
         public IReadOnlyList<string> AvailableRarityNames { get; init; } = [];
         public IReadOnlyList<string> AvailableSetNames { get; init; } = [];
 
