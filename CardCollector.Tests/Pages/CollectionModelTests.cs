@@ -108,6 +108,43 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostCheckInAsync_AjaxWithNoMatchingGroup_ReturnsEmptyContent()
+        {
+            _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare") as ContentResult;
+
+            Assert.AreEqual(string.Empty, result!.Content);
+        }
+
+        [TestMethod]
+        public async Task OnPostCheckInAsync_ChecksInCardAndRedirectsWhenNotAjax()
+        {
+            _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
+            var page = CreatePage(isAjax: false);
+
+            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare");
+
+            _cardServiceMock.Verify(s => s.CheckInCardAsync(10, "LOB-EN001", "Ultra Rare"), Times.Once);
+            Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostCheckOutAsync_QuantityIsPositive_ChecksOutCard()
+        {
+            _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
+            var page = CreatePage(isAjax: false);
+
+            await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Ultra Rare", 3);
+
+            _cardServiceMock.Verify(s => s.CheckOutCardAsync(1, 10, "LOB-EN001", "Ultra Rare", 3), Times.Once);
+        }
+
+        [TestMethod]
         public async Task OnPostCheckOutAsync_QuantityIsZero_DoesNotCheckOutCard()
         {
             _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
@@ -153,6 +190,19 @@ namespace CardCollector.Tests.Pages
             var result = await page.OnPostDeleteAsync(999);
 
             _collectionRepositoryMock.Verify(r => r.DeleteAsync(999), Times.Once);
+            Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostEditAsync_NoExistingEntry_StillRespondsWithoutThrowing()
+        {
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(999)).ReturnsAsync((CollectionEntry?)null);
+            _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
+            var page = CreatePage(isAjax: false);
+
+            var result = await page.OnPostEditAsync(999, 1, null, null, null, null, null, null);
+
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

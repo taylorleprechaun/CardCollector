@@ -53,6 +53,16 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostAddToCartAsync_InvalidImageID_ReturnsBadRequest()
+        {
+            var page = CreatePage();
+
+            var result = await page.OnPostAddToCartAsync(1, 0, "LOB-EN001", "Ultra Rare", 1, null);
+
+            Assert.IsInstanceOfType<BadRequestResult>(result);
+        }
+
+        [TestMethod]
         public async Task OnPostAddToCartAsync_ValidParams_CallsAddToCartAndRedirectsWhenNotAjax()
         {
             _cardServiceMock.Setup(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m)).ReturnsAsync((1, 5m, 1));

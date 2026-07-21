@@ -26,6 +26,31 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task DeleteAsync_ExistingLine_RemovesItAndReturnsTrue()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+            var line = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" };
+            await repository.AddRangeAsync([line]);
+
+            var result = await repository.DeleteAsync(line.ID);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(0, (await repository.GetAllAsync()).Count);
+        }
+
+        [TestMethod]
+        public async Task DeleteAsync_NoSuchLine_ReturnsFalse()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+
+            var result = await repository.DeleteAsync(999);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
         public async Task DeleteRangeAsync_EmptyIDs_DoesNothing()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -61,6 +86,27 @@ namespace CardCollector.Tests.Repository
             var result = await repository.GetByIDsAsync([]);
 
             Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetByIDsAsync_MatchingIDs_ReturnsOnlyMatchesOrderedByDateCreatedDescending()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+            await repository.AddRangeAsync(
+            [
+                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Quantity = 1, DateCreated = new DateTime(2026, 1, 1) },
+                new PendingOrderLine { CardID = 2, ImageID = 20, SetCode = "MRD-EN001", Quantity = 1, DateCreated = new DateTime(2026, 2, 1) },
+                new PendingOrderLine { CardID = 3, ImageID = 30, SetCode = "SDK-EN001", Quantity = 1, DateCreated = new DateTime(2026, 3, 1) }
+            ]);
+            var allLines = await repository.GetAllAsync();
+            var matchingIDs = allLines.Where(l => l.CardID != 3).Select(l => l.ID);
+
+            var result = await repository.GetByIDsAsync(matchingIDs);
+
+            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual(2, result[0].CardID);
+            Assert.AreEqual(1, result[1].CardID);
         }
 
         [TestMethod]

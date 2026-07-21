@@ -48,6 +48,20 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetByCardIDAsync_ReturnsOnlyEntriesForThatCard()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned });
+
+            var result = (await repository.GetByCardIDAsync(1)).ToList();
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(10, result[0].ImageID);
+        }
+
+        [TestMethod]
         public async Task GetByStatusAsync_OrdersByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -73,6 +87,20 @@ namespace CardCollector.Tests.Repository
             var result = await repository.GetCardIDsByStatusAsync(CollectionStatus.Owned);
 
             CollectionAssert.AreEquivalent(new[] { 1 }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetCollectedPairsAsync_IncludesEntriesRegardlessOfStatus()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Ordered });
+
+            var result = await repository.GetCollectedPairsAsync();
+
+            Assert.IsTrue(result.Contains((10, "LOB-EN001")));
+            Assert.IsTrue(result.Contains((20, "LOB-EN002")));
         }
 
         [TestMethod]
@@ -154,6 +182,109 @@ namespace CardCollector.Tests.Repository
             var result = await repository.GetCompletionStatusByImageIDsAsync([10]);
 
             Assert.AreEqual(CollectionCompletionStatus.Complete, result[10]);
+        }
+
+        [TestMethod]
+        public async Task GetDistinctAcquisitionMethodsAsync_OwnedOnlyExcludesNullAndOrdersValues()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Traded });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Purchased });
+            await repository.AddAsync(new CollectionEntry { CardID = 3, ImageID = 30, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, AcquisitionMethod = null });
+            await repository.AddAsync(new CollectionEntry { CardID = 4, ImageID = 40, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, AcquisitionMethod = AcquisitionMethod.Pulled });
+
+            var result = await repository.GetDistinctAcquisitionMethodsAsync();
+
+            CollectionAssert.AreEqual(new[] { AcquisitionMethod.Purchased, AcquisitionMethod.Traded }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetDistinctConditionsAsync_OwnedOnlyExcludesNullAndOrdersValues()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Condition = CardCondition.NearMint });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Condition = CardCondition.Damaged });
+            await repository.AddAsync(new CollectionEntry { CardID = 3, ImageID = 30, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, Condition = null });
+            await repository.AddAsync(new CollectionEntry { CardID = 4, ImageID = 40, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, Condition = CardCondition.LightlyPlayed });
+
+            var result = await repository.GetDistinctConditionsAsync();
+
+            CollectionAssert.AreEqual(new[] { CardCondition.Damaged, CardCondition.NearMint }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetDistinctEditionsAsync_OwnedOnlyExcludesNullAndOrdersValues()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Edition = CardEdition.Unlimited });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Edition = CardEdition.FirstEdition });
+            await repository.AddAsync(new CollectionEntry { CardID = 3, ImageID = 30, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, Edition = null });
+            await repository.AddAsync(new CollectionEntry { CardID = 4, ImageID = 40, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, Edition = CardEdition.LimitedEdition });
+
+            var result = await repository.GetDistinctEditionsAsync();
+
+            CollectionAssert.AreEqual(new[] { CardEdition.FirstEdition, CardEdition.Unlimited }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetDistinctRarityNamesAsync_OwnedOnlyExcludesNullAndOrdersValues()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, RarityName = "Ultra Rare" });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, RarityName = "Common" });
+            await repository.AddAsync(new CollectionEntry { CardID = 3, ImageID = 30, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, RarityName = null });
+            await repository.AddAsync(new CollectionEntry { CardID = 4, ImageID = 40, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, RarityName = "Secret Rare" });
+
+            var result = await repository.GetDistinctRarityNamesAsync();
+
+            CollectionAssert.AreEqual(new[] { "Common", "Ultra Rare" }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetDistinctSetCodesAsync_OwnedOnlyOrdersValues()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "ZZZ-EN001", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "AAA-EN001", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 3, ImageID = 30, SetCode = "MMM-EN001", Status = CollectionStatus.Ordered });
+
+            var result = await repository.GetDistinctSetCodesAsync();
+
+            CollectionAssert.AreEqual(new[] { "AAA-EN001", "ZZZ-EN001" }, result.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetOrderedQuantitiesAsync_SumsQuantityByKey_ExcludesOwnedEntries()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = null, Status = CollectionStatus.Ordered, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = null, Status = CollectionStatus.Ordered, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Quantity = 5 });
+
+            var result = await repository.GetOrderedQuantitiesAsync();
+
+            Assert.AreEqual(3, result[(10, "LOB-EN001", "")]);
+            Assert.IsFalse(result.ContainsKey((20, "LOB-EN002", "")));
+        }
+
+        [TestMethod]
+        public async Task GetOwnedPairsAsync_ExcludesOrderedEntries()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Ordered });
+
+            var result = await repository.GetOwnedPairsAsync();
+
+            Assert.IsTrue(result.Contains((10, "LOB-EN001")));
+            Assert.IsFalse(result.Contains((20, "LOB-EN002")));
         }
 
         [TestMethod]

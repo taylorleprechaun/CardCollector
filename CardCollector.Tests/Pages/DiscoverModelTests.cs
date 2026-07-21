@@ -53,6 +53,18 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnGetAsync_UncollectedCardHasNoCardImages_CurrentImageIsNull()
+        {
+            var card = new Card { ID = 1, Name = "Dark Magician", CardImages = null };
+            _cardServiceMock.Setup(s => s.GetRandomUncollectedAsync()).ReturnsAsync(card);
+            var page = CreatePage();
+
+            await page.OnGetAsync();
+
+            Assert.IsNull(page.CurrentImage);
+        }
+
+        [TestMethod]
         public async Task OnPostIgnoreAsync_IgnoresCardAndRedirects()
         {
             var page = CreatePage();

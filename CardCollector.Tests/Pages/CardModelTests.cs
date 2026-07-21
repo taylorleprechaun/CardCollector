@@ -220,6 +220,19 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostOwnAsync_SetAsPreferredTrue_AlsoSavesPreferredVersion()
+        {
+            var page = CreatePage();
+            page.CardID = 1;
+            page.ImageID = 10;
+            page.SetCode = "LOB-EN001";
+
+            await page.OnPostOwnAsync(quantity: 3, setAsPreferred: true);
+
+            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(1, 10, "LOB-EN001", null), Times.Once);
+        }
+
+        [TestMethod]
         public async Task OnPostRemovePreferredAsync_RemovesFromWishlistAndRedirects()
         {
             var page = CreatePage();

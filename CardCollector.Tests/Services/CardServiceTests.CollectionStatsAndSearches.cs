@@ -29,6 +29,20 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task SearchCheckedOutAsync_CardTypeFilter_ExcludesNonMatchingType()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician", CardType = "Normal Monster" });
+            _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new CheckedOutCard { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+            ]);
+
+            var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { CardType = "Spell" });
+
+            Assert.AreEqual(0, result.TotalCount);
+        }
+
+        [TestMethod]
         public async Task SearchCheckedOutAsync_QueryDoesNotMatch_ExcludesResult()
         {
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
@@ -55,6 +69,50 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(1, result.TotalCount);
             Assert.AreEqual(2, result.TotalQuantitySum);
+        }
+
+        [TestMethod]
+        public async Task SearchCheckedOutAsync_RarityNameFilter_ExcludesNonMatchingRarity()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new CheckedOutCard { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+            ]);
+
+            var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { RarityName = "Common" });
+
+            Assert.AreEqual(0, result.TotalCount);
+        }
+
+        [TestMethod]
+        public async Task SearchCheckedOutAsync_SetNameFilter_ExcludesNonMatchingSetPrefix()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Metal Raiders")).Returns("MRD");
+            _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new CheckedOutCard { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+            ]);
+
+            var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { SetName = "Metal Raiders" });
+
+            Assert.AreEqual(0, result.TotalCount);
+        }
+
+        [TestMethod]
+        public async Task SearchCheckedOutAsync_SetNameFilter_UnknownSetName_DoesNotFilter()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Not A Real Set")).Returns((string?)null);
+            _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new CheckedOutCard { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+            ]);
+
+            var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { SetName = "Not A Real Set" });
+
+            Assert.AreEqual(1, result.TotalCount);
         }
 
         [TestMethod]
@@ -89,6 +147,7 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(1, result.TotalCount);
         }
+
         [TestMethod]
         public async Task SearchWishlistAsync_Pagination_SlicesResults()
         {

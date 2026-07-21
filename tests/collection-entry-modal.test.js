@@ -7,27 +7,6 @@ describe('collection-entry-modal.js', () => {
     vi.restoreAllMocks();
   });
 
-  function setupForm() {
-    document.body.innerHTML = `
-      <form id="orderForm" data-page-url="/Card/1">
-        <input name="CardID" value="1" />
-      </form>
-      <input id="atcSetCode" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
-      <button id="modalSubmitBtn"></button>
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
-      <div id="atcAcquisitionGroup"></div>
-      <select id="atcCondition"><option value="4"></option></select>
-      <select id="atcEdition"><option value="0"></option></select>
-      <select id="atcAcquisition"><option value="1"></option></select>
-      <input type="hidden" id="atcQuantity" /><input id="atcPurchaseDate" /><input id="atcPurchasePrice" />
-      <input type="checkbox" id="atcSetAsPreferred" /><input id="atcMarketPrice" />
-      <div id="orderModal"></div>`;
-    loadScript('enums.js');
-    loadScript('site.js');
-    loadScript('collection-entry-modal.js');
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: null }) });
-  }
-
   it('action=Order sets order-specific label, button text/class, and hides the acquisition group', async () => {
     setupForm();
 
@@ -71,4 +50,25 @@ describe('collection-entry-modal.js', () => {
     expect(document.getElementById('atcRarityName').value).toBe('');
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('');
   });
+
+  function setupForm() {
+    document.body.innerHTML = `
+      <form id="orderForm" data-page-url="/Card/1">
+        <input name="CardID" value="1" />
+      </form>
+      <input id="atcSetCode" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
+      <button id="modalSubmitBtn"></button>
+      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <div id="atcAcquisitionGroup"></div>
+      <select id="atcCondition"><option value="4"></option></select>
+      <select id="atcEdition"><option value="0"></option></select>
+      <select id="atcAcquisition"><option value="1"></option></select>
+      <input type="hidden" id="atcQuantity" /><input id="atcPurchaseDate" /><input id="atcPurchasePrice" />
+      <input type="checkbox" id="atcSetAsPreferred" /><input id="atcMarketPrice" />
+      <div id="orderModal"></div>`;
+    loadScript('enums.js');
+    loadScript('site.js');
+    loadScript('collection-entry-modal.js');
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: null }) });
+  }
 });

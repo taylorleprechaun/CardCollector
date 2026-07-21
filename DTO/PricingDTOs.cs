@@ -19,7 +19,7 @@ namespace CardCollector.DTO
         public string RarityName { get; set; } = string.Empty;
     }
 
-    internal class TCGPriceCard
+    public class TCGPriceCard
     {
         [JsonProperty("card_sets")]
         public IEnumerable<TCGPriceSet> CardSets { get; set; } = [];

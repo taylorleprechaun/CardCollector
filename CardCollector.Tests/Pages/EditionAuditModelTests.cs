@@ -31,6 +31,14 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public void ActiveFilterCount_NoCategorySet_ReturnsBaseCount()
+        {
+            var page = CreatePage();
+
+            Assert.AreEqual(0, page.ActiveFilterCount);
+        }
+
+        [TestMethod]
         public void GetFilterParams_IncludesRarityNameFromQueryString()
         {
             var page = CreatePage(rarityNameQuery: "Ultra Rare");
@@ -47,6 +55,14 @@ namespace CardCollector.Tests.Pages
             page.Category = EditionAuditCategory.Unverifiable;
 
             Assert.IsTrue(page.HasActiveFilters);
+        }
+
+        [TestMethod]
+        public void HasActiveFilters_NoFiltersSet_ReturnsFalse()
+        {
+            var page = CreatePage();
+
+            Assert.IsFalse(page.HasActiveFilters);
         }
 
         [TestMethod]

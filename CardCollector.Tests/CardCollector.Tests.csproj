@@ -20,6 +20,16 @@
     </PackageReference>
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- Compiled Razor views are markup rendering, not unit-testable logic; ExcludeByFile matches
+         against the .cshtml paths coverlet finds in PDB sequence points. Program.cs compiles top-level
+         statements into a compiler-generated Main with no method we can attach [ExcludeFromCodeCoverage]
+         to, so it needs a type-level filter instead; exercising it would require a WebApplicationFactory
+         style integration host, which is out of scope for this unit-test-only suite. -->
+    <ExcludeByFile>**/*.cshtml</ExcludeByFile>
+    <Exclude>[CardCollector]Program</Exclude>
+  </PropertyGroup>
+
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

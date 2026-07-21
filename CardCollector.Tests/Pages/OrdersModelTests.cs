@@ -95,6 +95,21 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostEditAsync_RarityNameProvided_StoresRarityName()
+        {
+            CollectionEntry? captured = null;
+            _collectionRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<CollectionEntry>()))
+                .Callback<CollectionEntry>(e => captured = e)
+                .ReturnsAsync(true);
+            var page = CreatePage();
+
+            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null, rarityName: "Ultra Rare");
+
+            Assert.AreEqual("Ultra Rare", captured!.RarityName);
+        }
+
+        [TestMethod]
         public async Task OnPostMarkOwnedAsync_QuantityBelowOne_ClampsToOne()
         {
             var page = CreatePage();

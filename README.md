@@ -87,6 +87,42 @@ CardCollector/
 └── wwwroot/js/              # Page-specific JavaScript
 ```
 
+## Testing
+
+![C# Tests](https://img.shields.io/badge/C%23%20tests-548%20passing-brightgreen)
+![C# Coverage](https://img.shields.io/badge/C%23%20coverage-90%25-brightgreen)
+![JS Tests](https://img.shields.io/badge/JS%20tests-129%20passing-brightgreen)
+![JS Coverage](https://img.shields.io/badge/JS%20coverage-93%25-brightgreen)
+
+```
+CardCollector.Tests/
+├── Pages/          # PageModel tests, one file per page
+├── Repository/     # EF Core repository tests (InMemory provider)
+├── Services/       # CardService, PricingService, background service tests
+├── ViewModels/     # ViewModel logic tests
+├── DTO/            # DTO/enum-extension tests
+├── Data/Models/    # Entity/enum extension tests
+└── TestHelpers/    # InMemoryDbContextFactory, PageContextFactory
+
+tests/              # JS (Vitest) tests, mirroring wwwroot/js/ one-to-one
+```
+
+```bash
+# C# tests
+dotnet test CardCollector.Tests/CardCollector.Tests.csproj
+
+# C# tests with coverage
+dotnet test CardCollector.Tests/CardCollector.Tests.csproj -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./coverage/
+
+# JS tests
+npm test
+
+# JS tests with coverage
+npm run test:coverage
+```
+
+C# coverage excludes compiled Razor views and the `Program.cs` bootstrap (via `[ExcludeFromCodeCoverage]` and coverlet config) since that's markup/bootstrap rather than logic &mdash; the percentage reflects testable application code, not a raw line count across the whole project.
+
 ## Data Notes
 
 - Card data (names, stats, sets, rarities) is fetched from the [yaml-yugi](https://github.com/DawnbrandBots/yaml-yugi) dataset on startup and cached locally for 7 days (configurable via `CardDataSettings:CacheTtlDays`). Card images are fetched separately from the YGO Pro Deck API and cached for 30 days (`CardDataSettings:ImageCacheTtlDays`). Both caches fall back to stale data if the upstream source is unreachable.

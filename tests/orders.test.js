@@ -7,27 +7,6 @@ describe('orders.js', () => {
     vi.restoreAllMocks();
   });
 
-  function loadDeps() {
-    loadScript('site.js');
-    loadScript('orders.js');
-  }
-
-  it('populates the entry ID and quantity buttons, then opens the modal', () => {
-    document.body.innerHTML = `
-      <input id="markOwnedEntryID" />
-      <input type="hidden" id="markOwnedQuantity" />
-      <button data-qty-target="markOwnedQuantity" data-qty-value="2"></button>
-      <div id="markOwnedModal"></div>
-      <button id="btn" data-entry-id="42" data-quantity="2"></button>`;
-    loadDeps();
-
-    openMarkOwnedModal(document.getElementById('btn'));
-
-    expect(document.getElementById('markOwnedEntryID').value).toBe('42');
-    expect(document.getElementById('markOwnedQuantity').value).toBe('2');
-    expect(bootstrap.Modal).toHaveBeenCalledWith(document.getElementById('markOwnedModal'));
-  });
-
   it('clamps quantity above 3 down to 3', () => {
     document.body.innerHTML = `
       <input id="markOwnedEntryID" />
@@ -53,4 +32,25 @@ describe('orders.js', () => {
 
     expect(document.getElementById('markOwnedQuantity').value).toBe('1');
   });
+
+  it('populates the entry ID and quantity buttons, then opens the modal', () => {
+    document.body.innerHTML = `
+      <input id="markOwnedEntryID" />
+      <input type="hidden" id="markOwnedQuantity" />
+      <button data-qty-target="markOwnedQuantity" data-qty-value="2"></button>
+      <div id="markOwnedModal"></div>
+      <button id="btn" data-entry-id="42" data-quantity="2"></button>`;
+    loadDeps();
+
+    openMarkOwnedModal(document.getElementById('btn'));
+
+    expect(document.getElementById('markOwnedEntryID').value).toBe('42');
+    expect(document.getElementById('markOwnedQuantity').value).toBe('2');
+    expect(bootstrap.Modal).toHaveBeenCalledWith(document.getElementById('markOwnedModal'));
+  });
+
+  function loadDeps() {
+    loadScript('site.js');
+    loadScript('orders.js');
+  }
 });

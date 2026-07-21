@@ -44,5 +44,58 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual(0, result.Count);
         }
+
+        [TestMethod]
+        public void Deserialize_MalformedJson_ReturnsEmptyList()
+        {
+            const string json = "{ this is not valid json";
+
+            var result = CardSetRepository.Deserialize(json);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public void Deserialize_ValidJson_ReturnsDeserializedSets()
+        {
+            const string json = /*lang=json,strict*/ """[{"set_code":"LOB","set_name":"Legend of Blue Eyes White Dragon"}]""";
+
+            var result = CardSetRepository.Deserialize(json);
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("LOB", result[0].Code);
+        }
+
+        [TestMethod]
+        public void GetTCGDateBySetCode_KnownPrefix_ReturnsDate()
+        {
+            var dateByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["LOB"] = "2002-03-08" };
+
+            var result = CardSetRepository.GetTCGDateBySetCode(dateByCode, "LOB-EN001");
+
+            Assert.AreEqual("2002-03-08", result);
+        }
+
+        [TestMethod]
+        [DataRow(null, DisplayName = "Null")]
+        [DataRow("", DisplayName = "Empty")]
+        public void GetTCGDateBySetCode_NullOrEmptyFullSetCode_ReturnsNull(string? fullSetCode)
+        {
+            var dateByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["LOB"] = "2002-03-08" };
+
+            var result = CardSetRepository.GetTCGDateBySetCode(dateByCode, fullSetCode!);
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public void GetTCGDateBySetCode_UnknownPrefix_ReturnsNull()
+        {
+            var dateByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["LOB"] = "2002-03-08" };
+
+            var result = CardSetRepository.GetTCGDateBySetCode(dateByCode, "MRD-EN001");
+
+            Assert.IsNull(result);
+        }
     }
 }

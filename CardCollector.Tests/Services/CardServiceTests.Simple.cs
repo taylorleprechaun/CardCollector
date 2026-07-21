@@ -8,6 +8,61 @@ namespace CardCollector.Tests.Services
     public partial class CardServiceTests
     {
         [TestMethod]
+        public async Task AddEntryAsync_CardHasNoCardSets_DoesNotAutoDismissAnything()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, CardSets = null });
+
+            await _service.AddEntryAsync(1, 2, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task AddEntryAsync_EnteredSetCodeHasNoKnownReleaseDate_DoesNotAutoDismissAnything()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                CardSets = [new Set { Code = "SDK-EN001", RarityName = "Ultra Rare" }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns((string?)null);
+
+            await _service.AddEntryAsync(1, 2, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task AddEntryAsync_NewerPrintingsAlreadyReleased_AreAutoDismissed_OlderAndFuturePrintingsAreNot()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                CardSets =
+                [
+                    new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" },
+                    new Set { Code = "SDK-EN001", RarityName = "Common" },
+                    new Set { Code = "FUT-EN001", RarityName = "Secret Rare" },
+                    new Set { Code = "OLD-EN001", RarityName = "Common" },
+                    new Set { Code = "UNK-EN001", RarityName = "Common" }
+                ]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2002-03-08");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("SDK-EN001")).Returns("2020-01-01");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("FUT-EN001")).Returns("2999-01-01");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("OLD-EN001")).Returns("1999-01-01");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("UNK-EN001")).Returns((string?)null);
+
+            await _service.AddEntryAsync(1, 2, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "SDK-EN001", "Common"), Times.Once);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "LOB-EN001", It.IsAny<string>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "FUT-EN001", It.IsAny<string>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "OLD-EN001", It.IsAny<string>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "UNK-EN001", It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
         public async Task AddEntryAsync_QuantityLessThanOne_ClampsToOne()
         {
             CollectionEntry? captured = null;
@@ -261,6 +316,78 @@ namespace CardCollector.Tests.Services
             var result = await _service.GetPreferredVersionByCardIDAsync(1);
 
             Assert.AreSame(pv, result);
+        }
+
+        [TestMethod]
+        public async Task GetRandomUncollectedAsync_CardHasPreferredVersion_IsExcluded()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
+            [
+                new Card { ID = 1, Name = "Dark Magician" },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon" }
+            ]);
+            _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
+
+            var result = await _service.GetRandomUncollectedAsync();
+
+            Assert.AreEqual(2, result!.ID);
+        }
+
+        [TestMethod]
+        public async Task GetRandomUncollectedAsync_IgnoredCardWithNoResurfacingOpportunity_IsExcluded()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
+            [
+                new Card { ID = 1, Name = "Dark Magician" },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon" }
+            ]);
+            _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
+
+            var result = await _service.GetRandomUncollectedAsync();
+
+            Assert.AreEqual(2, result!.ID);
+        }
+
+        [TestMethod]
+        public async Task GetRandomUncollectedAsync_IgnoredCardWithResurfacingOpportunity_IsNotExcluded()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
+            [
+                new Card { ID = 1, Name = "Dark Magician" }
+            ]);
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "SDK-EN001", RarityName = "Ultra Rare" }],
+                CardImages = [new Image { ID = 10 }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("SDK-EN001")).Returns("2020-01-01");
+            _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
+            _ignoredCardRepositoryMock.Setup(r => r.GetAllAsync())
+                .ReturnsAsync(new Dictionary<int, DateTime> { [1] = new DateTime(2015, 1, 1) });
+
+            var result = await _service.GetRandomUncollectedAsync();
+
+            Assert.AreEqual(1, result!.ID);
+        }
+
+        [TestMethod]
+        public async Task GetRandomUncollectedAsync_NoBrowseableCards_ReturnsNull()
+        {
+            var result = await _service.GetRandomUncollectedAsync();
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetRandomUncollectedAsync_SingleUncollectedCard_ReturnsIt()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns([new Card { ID = 5, Name = "Dark Magician" }]);
+
+            var result = await _service.GetRandomUncollectedAsync();
+
+            Assert.AreEqual(5, result!.ID);
         }
 
         [TestMethod]
