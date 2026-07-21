@@ -108,7 +108,7 @@ namespace CardCollector.Tests.Pages
             var result = await _page.OnGetWishlistAsync() as FileContentResult;
 
             var csv = Encoding.UTF8.GetString(result!.FileContents);
-            StringAssert.Contains(csv, "Blue-Eyes White Dragon,LOB-EN001,Legend,Ultra Rare,\r\n");
+            StringAssert.Contains(csv, $"Blue-Eyes White Dragon,LOB-EN001,Legend,Ultra Rare,{Environment.NewLine}");
         }
 
         [TestMethod]
