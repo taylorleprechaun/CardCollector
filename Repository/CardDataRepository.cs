@@ -15,20 +15,16 @@ namespace CardCollector.Repository
     {
         private const string CardInfoApiPath = "api/v7/cardinfo.php";
 
-        private IReadOnlyList<Card> _browseableCards = default!;
         private readonly int _cacheTtlDays;
-        private IReadOnlyDictionary<int, Card> _cardIndex = default!;
-        private IReadOnlyList<Card> _cards = default!;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly int _imageCacheTtlDays;
         private readonly ILogger<CardDataRepository> _logger;
+        private readonly string _yamlYugiUrl;
+        private IReadOnlyList<Card> _browseableCards = default!;
+        private IReadOnlyDictionary<int, Card> _cardIndex = default!;
+        private IReadOnlyList<Card> _cards = default!;
         private IReadOnlyDictionary<string, string> _setNamesByCode = default!;
         private IReadOnlyDictionary<string, string> _setPrefixByName = default!;
-        private readonly string _yamlYugiUrl;
-
-        public IReadOnlyList<string> DistinctRarityNames { get; private set; } = default!;
-        public IReadOnlyList<string> DistinctSetNames { get; private set; } = default!;
-
         public CardDataRepository(ILogger<CardDataRepository> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
@@ -41,6 +37,8 @@ namespace CardCollector.Repository
             Initialize(LoadCards(), LoadImages());
         }
 
+        public IReadOnlyList<string> DistinctRarityNames { get; private set; } = default!;
+        public IReadOnlyList<string> DistinctSetNames { get; private set; } = default!;
         public IEnumerable<Card> GetAllCards() => _cards;
 
         public IEnumerable<Card> GetBrowseableCards() => _browseableCards;
@@ -62,125 +60,12 @@ namespace CardCollector.Repository
             await Task.Run(() => Initialize(LoadCards(), LoadImages())).ConfigureAwait(false);
         }
 
-        private static void AttachImages(IReadOnlyList<Card> cards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
+        private static void SkipToNextDocument(IParser parser)
         {
-            foreach (var card in cards)
-            {
-                if (imagesByCardID.TryGetValue(card.ID, out var images))
-                    card.CardImages = images;
-                else
-                    card.CardImages = [BuildFallbackImage(card.ID)];
-            }
-        }
-
-        private static Image BuildFallbackImage(int cardID) => new()
-        {
-            ID = cardID,
-            ImageURL = $"https://images.ygoprodeck.com/images/cards/{cardID}.jpg",
-            ImageURLSmall = $"https://images.ygoprodeck.com/images/cards_small/{cardID}.jpg"
-        };
-
-        private static (IReadOnlyDictionary<string, string> namesByCode, IReadOnlyDictionary<string, string> prefixByName) BuildSetNameIndex(IReadOnlyList<Card> cards)
-        {
-            // Step 1: prefix → shortest canonical name (shorter names are the base set, not promo variants)
-            var prefixToName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var card in cards)
-                foreach (var set in card.CardSets ?? [])
-                    if (!string.IsNullOrEmpty(set.Code) && !string.IsNullOrEmpty(set.Name))
-                    {
-                        var prefix = GetSetPrefix(set.Code!);
-                        if (!prefixToName.TryGetValue(prefix, out var existing) || set.Name!.Length < existing.Length)
-                            prefixToName[prefix] = set.Name!;
-                    }
-
-            // Step 2: full card code → canonical name
-            var namesByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var card in cards)
-                foreach (var set in card.CardSets ?? [])
-                    if (!string.IsNullOrEmpty(set.Code) && prefixToName.TryGetValue(GetSetPrefix(set.Code!), out var canonicalName))
-                        namesByCode.TryAdd(set.Code!, canonicalName);
-
-            // Step 3: canonical name → prefix (reverse of step 1)
-            var prefixByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (prefix, name) in prefixToName)
-                prefixByName.TryAdd(name, prefix);
-
-            return (namesByCode, prefixByName);
-        }
-
-        private static IReadOnlyList<Set> BuildSets(YamlCard y)
-        {
-            var sets = new List<Set>();
-            foreach (var entry in y.Sets?.En ?? [])
-            {
-                if (entry.SetName?.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase) == true)
-                    continue;
-
-                foreach (var rarity in entry.Rarities ?? [])
-                {
-                    sets.Add(new Set
-                    {
-                        Code = entry.SetNumber,
-                        Name = entry.SetName,
-                        RarityName = rarity,
-                        RarityCode = RarityExtensions.GetRarityCode(rarity),
-                    });
-                }
-            }
-            return sets;
-        }
-
-        private static IReadOnlyList<Card> ConvertYamlCards(IReadOnlyList<YamlCard> yamlCards)
-        {
-            var result = new List<Card>(yamlCards.Count);
-            foreach (var y in yamlCards)
-            {
-                if (y.Password is not int id)
-                    continue;
-
-                var sets = BuildSets(y);
-                result.Add(new Card
-                {
-                    ID = id,
-                    Name = y.Name?.En,
-                    Description = y.Text?.En,
-                    Attribute = y.Attribute,
-                    Level = y.Level ?? y.Rank,
-                    ATK = int.TryParse(y.Atk, out var atk) ? atk : null,
-                    DEF = int.TryParse(y.Def, out var def) ? def : null,
-                    LinkRating = y.LinkArrows?.Count,
-                    CardType = DeriveCardType(y),
-                    Type = DeriveRace(y),
-                    CardSets = sets.Count > 0 ? sets : null,
-                });
-            }
-            return result;
-        }
-
-        private static string DeriveCardType(YamlCard y) => y.CardType switch
-        {
-            "Spell" => "Spell Card",
-            "Trap" => "Trap Card",
-            _ => DeriveMonsterType(y.MonsterTypeLine)
-        };
-
-        private static string DeriveMonsterType(string? typeLine)
-        {
-            if (typeLine is null) return "Normal Monster";
-            if (typeLine.Contains("Fusion")) return "Fusion Monster";
-            if (typeLine.Contains("Synchro")) return "Synchro Monster";
-            if (typeLine.Contains("Xyz")) return "Xyz Monster";
-            if (typeLine.Contains("Link")) return "Link Monster";
-            if (typeLine.Contains("Ritual")) return "Ritual Monster";
-            if (typeLine.Contains("Effect")) return "Effect Monster";
-            return "Normal Monster";
-        }
-
-        private static string? DeriveRace(YamlCard y)
-        {
-            if (y.MonsterTypeLine is not null)
-                return y.MonsterTypeLine.Split(" / ").First();
-            return y.Property;
+            while (parser.Current is not null and not DocumentEnd and not StreamEnd)
+                parser.MoveNext();
+            if (parser.Current is DocumentEnd)
+                parser.MoveNext();
         }
 
         private async Task<IReadOnlyList<YamlCard>?> FetchFromYamlYugiAsync()
@@ -213,21 +98,15 @@ namespace CardCollector.Repository
             }
         }
 
-        private static string GetSetPrefix(string code)
-        {
-            var hyphen = code.IndexOf('-');
-            return hyphen > 0 ? code[..hyphen] : code;
-        }
-
         private void Initialize(IReadOnlyList<Card> rawCards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
         {
-            AttachImages(rawCards, imagesByCardID);
+            CardDataMapper.AttachImages(rawCards, imagesByCardID);
 
             _cards = rawCards;
             _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
             _cardIndex = rawCards.ToDictionary(c => c.ID);
 
-            var (setNamesByCode, setPrefixByName) = BuildSetNameIndex(rawCards);
+            var (setNamesByCode, setPrefixByName) = CardDataMapper.BuildSetNameIndex(rawCards);
             _setNamesByCode = setNamesByCode;
             _setPrefixByName = setPrefixByName;
 
@@ -235,7 +114,7 @@ namespace CardCollector.Repository
                 _browseableCards
                     .SelectMany(c => c.CardSets ?? [])
                     .Where(s => !string.IsNullOrEmpty(s.Code))
-                    .Select(s => GetSetPrefix(s.Code!)),
+                    .Select(s => CardDataMapper.GetSetPrefix(s.Code!)),
                 StringComparer.OrdinalIgnoreCase);
 
             DistinctRarityNames = _browseableCards
@@ -271,7 +150,7 @@ namespace CardCollector.Repository
 
             if (yamlCards is not null)
             {
-                var cards = ConvertYamlCards(yamlCards);
+                var cards = CardDataMapper.ConvertYamlCards(yamlCards);
                 Directory.CreateDirectory(cacheDir);
                 File.WriteAllText(cardDataPath, JsonConvert.SerializeObject(cards));
                 FileCacheHelper.WriteTimestamp(timestampPath);
@@ -381,21 +260,6 @@ namespace CardCollector.Repository
             _logger.LogInformation("Parsed {Count} card documents from yaml-yugi", cards.Count);
             return cards;
         }
-
-        private static void SkipToNextDocument(IParser parser)
-        {
-            while (parser.Current is not null and not DocumentEnd and not StreamEnd)
-                parser.MoveNext();
-            if (parser.Current is DocumentEnd)
-                parser.MoveNext();
-        }
-
-        private sealed class ImageCacheRoot
-        {
-            [JsonProperty("data")]
-            public IEnumerable<ImageCacheCard>? Data { get; set; }
-        }
-
         private sealed class ImageCacheCard
         {
             [JsonProperty("card_images")]
@@ -403,6 +267,12 @@ namespace CardCollector.Repository
 
             [JsonProperty("id")]
             public int ID { get; set; }
+        }
+
+        private sealed class ImageCacheRoot
+        {
+            [JsonProperty("data")]
+            public IEnumerable<ImageCacheCard>? Data { get; set; }
         }
     }
 }

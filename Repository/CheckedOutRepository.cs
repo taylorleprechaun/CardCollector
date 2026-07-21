@@ -42,20 +42,6 @@ namespace CardCollector.Repository
             return records.ToDictionary(r => (r.ImageID, r.SetCode, r.RarityName), r => (r.CheckedOutDate, r.Quantity));
         }
 
-        public async Task UpdateAsync(int imageID, string setCode, string rarityName, int quantity)
-        {
-            var entry = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
-                .ConfigureAwait(false);
-
-            if (entry is null)
-                return;
-
-            entry.Quantity = quantity;
-            entry.DateModified = DateTime.UtcNow;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-        }
-
         public async Task<bool> RemoveAsync(int imageID, string setCode, string rarityName)
         {
             var entry = await _context.CheckedOutCards
@@ -68,6 +54,20 @@ namespace CardCollector.Repository
             _context.CheckedOutCards.Remove(entry);
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
+        }
+
+        public async Task UpdateAsync(int imageID, string setCode, string rarityName, int quantity)
+        {
+            var entry = await _context.CheckedOutCards
+                .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
+                .ConfigureAwait(false);
+
+            if (entry is null)
+                return;
+
+            entry.Quantity = quantity;
+            entry.DateModified = DateTime.UtcNow;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

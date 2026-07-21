@@ -22,16 +22,8 @@ namespace CardCollector.Repository
             _dateByCode = BuildDateIndex(sets);
         }
 
-        public string? GetTCGDateBySetCode(string fullSetCode)
-        {
-            if (string.IsNullOrEmpty(fullSetCode))
-                return null;
-
-            var prefix = fullSetCode.Split('-')[0];
-            return _dateByCode.GetValueOrDefault(prefix);
-        }
-
-        private static IReadOnlyDictionary<string, string> BuildDateIndex(IReadOnlyList<CardSetData> sets)
+        // Public for direct unit testing — pure data transformation, no I/O.
+        public static IReadOnlyDictionary<string, string> BuildDateIndex(IReadOnlyList<CardSetData> sets)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var set in sets)
@@ -48,6 +40,14 @@ namespace CardCollector.Repository
             return dict;
         }
 
+        public string? GetTCGDateBySetCode(string fullSetCode)
+        {
+            if (string.IsNullOrEmpty(fullSetCode))
+                return null;
+
+            var prefix = fullSetCode.Split('-')[0];
+            return _dateByCode.GetValueOrDefault(prefix);
+        }
         private IReadOnlyList<CardSetData> Deserialize(string json)
         {
             try

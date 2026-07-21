@@ -47,33 +47,20 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
+        public async Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status)
         {
-            var pairs = await _context.CollectionEntries
-                .Select(e => new { e.ImageID, e.SetCode })
+            var ids = await _context.CollectionEntries
+                .Where(e => e.Status == status)
+                .Select(e => e.CardID)
                 .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
-
-            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+            return ids.ToHashSet();
         }
 
-        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync()
-        {
-            var grouped = await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Ordered)
-                .GroupBy(e => new { e.ImageID, e.SetCode, RarityName = e.RarityName ?? string.Empty })
-                .Select(g => new { g.Key.ImageID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(e => e.Quantity) })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            return grouped.ToDictionary(g => (g.ImageID, g.SetCode, g.RarityName), g => g.Quantity);
-        }
-
-        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync()
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync()
         {
             var pairs = await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Owned)
                 .Select(e => new { e.ImageID, e.SetCode })
                 .Distinct()
                 .ToListAsync()
@@ -173,6 +160,29 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync()
+        {
+            var grouped = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Ordered)
+                .GroupBy(e => new { e.ImageID, e.SetCode, RarityName = e.RarityName ?? string.Empty })
+                .Select(g => new { g.Key.ImageID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(e => e.Quantity) })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return grouped.ToDictionary(g => (g.ImageID, g.SetCode, g.RarityName), g => g.Quantity);
+        }
+
+        public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync()
+        {
+            var pairs = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.ImageID, e.SetCode })
+                .Distinct()
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
+        }
         public async Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByCardIDsForSetPrefixAsync(IEnumerable<int> cardIDs, string setPrefix)
         {
             var ids = cardIDs.ToHashSet();
@@ -265,18 +275,6 @@ namespace CardCollector.Repository
 
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
         }
-
-        public async Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status)
-        {
-            var ids = await _context.CollectionEntries
-                .Where(e => e.Status == status)
-                .Select(e => e.CardID)
-                .Distinct()
-                .ToListAsync()
-                .ConfigureAwait(false);
-            return ids.ToHashSet();
-        }
-
         public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();

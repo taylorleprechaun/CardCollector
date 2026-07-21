@@ -19,16 +19,15 @@ namespace CardCollector.DTO.YamlYugi
         public YamlLocalizedString? Text { get; set; }
     }
 
-    public sealed class YamlLocalizedString
-    {
-        public string? En { get; set; }
-    }
-
     public sealed class YamlCardSets
     {
         public List<YamlSetEntry>? En { get; set; }
     }
 
+    public sealed class YamlLocalizedString
+    {
+        public string? En { get; set; }
+    }
     public sealed class YamlSetEntry
     {
         public List<string>? Rarities { get; set; }
