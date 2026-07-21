@@ -21,7 +21,7 @@ namespace CardCollector.Services
                 .ToDictionary(
                     g => g.Key,
                     g => (IReadOnlySet<CardEdition>)g
-                        .Select(s => CardEditionExtensions.TryParseTcgApiEditionName(s.Edition, out var e) ? (CardEdition?)e : null)
+                        .Select(s => CardEditionExtensions.TryParseTCGAPIEditionName(s.Edition, out var e) ? (CardEdition?)e : null)
                         .Where(e => e.HasValue)
                         .Select(e => e!.Value)
                         .ToHashSet());
@@ -47,7 +47,7 @@ namespace CardCollector.Services
             {
                 var editionMatch = cardSets.FirstOrDefault(s =>
                     IsSetRarityMatch(s) &&
-                    string.Equals(s.Edition, edition.Value.GetTcgApiEditionName(), StringComparison.OrdinalIgnoreCase));
+                    string.Equals(s.Edition, edition.Value.GetTCGAPIEditionName(), StringComparison.OrdinalIgnoreCase));
 
                 if (editionMatch is not null)
                     return editionMatch;

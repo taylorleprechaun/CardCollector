@@ -46,6 +46,16 @@ namespace CardCollector.Services
             }
         }
 
+        private static TimeSpan GetDelayUntilNextMidnightEastern()
+        {
+            var nowUtc = DateTime.UtcNow;
+            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
+            var nextMidnightEastern = nowEastern.Date.AddDays(1);
+            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
+            var delay = nextMidnightUtc - nowUtc;
+            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
+        }
+
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price refresh");
@@ -72,16 +82,6 @@ namespace CardCollector.Services
                 _logger.LogError(ex,
                     "PriceRefreshBackgroundService: nightly refresh failed; will retry at next midnight");
             }
-        }
-
-        private static TimeSpan GetDelayUntilNextMidnightEastern()
-        {
-            var nowUtc = DateTime.UtcNow;
-            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
-            var nextMidnightEastern = nowEastern.Date.AddDays(1);
-            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
-            var delay = nextMidnightUtc - nowUtc;
-            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
         }
     }
 }

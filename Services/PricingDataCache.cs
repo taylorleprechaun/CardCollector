@@ -10,10 +10,9 @@ namespace CardCollector.Services
         private const int PageSize = 5000;
 
         private readonly TimeSpan _cacheTtl;
-        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _cardSetsByCardID;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<PricingDataCache> _logger;
-
+        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _cardSetsByCardID;
         public PricingDataCache(ILogger<PricingDataCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
@@ -32,6 +31,9 @@ namespace CardCollector.Services
             FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "pricingcache.json.timestamp"));
             _cardSetsByCardID = await Task.Run(LoadCardSets).ConfigureAwait(false);
         }
+
+        private static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> IndexCards(IEnumerable<TCGPriceCard> cards) =>
+            cards.ToDictionary(c => c.ID, c => (IReadOnlyList<TCGPriceSet>)c.CardSets.ToList());
 
         private async Task<List<TCGPriceCard>?> FetchAllCardsAsync()
         {
@@ -65,10 +67,6 @@ namespace CardCollector.Services
                 return null;
             }
         }
-
-        private static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> IndexCards(IEnumerable<TCGPriceCard> cards) =>
-            cards.ToDictionary(c => c.ID, c => (IReadOnlyList<TCGPriceSet>)c.CardSets.ToList());
-
         private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> LoadCardSets()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");

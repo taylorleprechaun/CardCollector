@@ -10,9 +10,8 @@ namespace CardCollector.Services
     public sealed class CardService : ICardService
     {
         private const int MaxCartQuantity = 3;
-        private const string SnapshotDateFormat = "yyyy-MM-dd";
         private const int SetBreakdownItemLimit = 20;
-
+        private const string SnapshotDateFormat = "yyyy-MM-dd";
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardSetRepository _cardSetRepository;
         private readonly ICheckedOutRepository _checkedOutRepository;
@@ -808,8 +807,38 @@ namespace CardCollector.Services
             return results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode);
         }
 
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
+        {
+            var items = await GetWishlistAsync().ConfigureAwait(false);
+            return items
+                .Select(i => i.RarityName)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList();
+        }
+
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync()
+        {
+            var items = await GetWishlistAsync().ConfigureAwait(false);
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+            return items
+                .Where(i => !string.IsNullOrEmpty(i.SetCode))
+                .Select(i => setNamesByCode.TryGetValue(i.SetCode, out var name) ? name : i.SetName)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+        }
+
+        public async Task IgnoreCardAsync(int cardID) =>
+            await _ignoredCardRepository.AddAsync(cardID).ConfigureAwait(false);
+
+        public async Task<bool> IsCardIgnoredAsync(int cardID) =>
+            await _ignoredCardRepository.IsIgnoredAsync(cardID).ConfigureAwait(false);
+
         public async Task RemoveFromWishlistAsync(int imageID) =>
-            await _preferredVersionRepository.DeleteAsync(imageID).ConfigureAwait(false);
+                                            await _preferredVersionRepository.DeleteAsync(imageID).ConfigureAwait(false);
 
         public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null)
         {
@@ -1123,37 +1152,6 @@ namespace CardCollector.Services
 
             return (lines.Count, total, editionWarnings);
         }
-
-        public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
-        {
-            var items = await GetWishlistAsync().ConfigureAwait(false);
-            return items
-                .Select(i => i.RarityName)
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Distinct()
-                .OrderBy(r => r)
-                .ToList();
-        }
-
-        public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync()
-        {
-            var items = await GetWishlistAsync().ConfigureAwait(false);
-            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
-            return items
-                .Where(i => !string.IsNullOrEmpty(i.SetCode))
-                .Select(i => setNamesByCode.TryGetValue(i.SetCode, out var name) ? name : i.SetName)
-                .Where(n => !string.IsNullOrEmpty(n))
-                .Distinct()
-                .OrderBy(n => n)
-                .ToList();
-        }
-
-        public async Task IgnoreCardAsync(int cardID) =>
-            await _ignoredCardRepository.AddAsync(cardID).ConfigureAwait(false);
-
-        public async Task<bool> IsCardIgnoredAsync(int cardID) =>
-            await _ignoredCardRepository.IsIgnoredAsync(cardID).ConfigureAwait(false);
-
         public async Task UnignoreCardAsync(int cardID) =>
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
 
@@ -1215,6 +1213,25 @@ namespace CardCollector.Services
             return items;
         }
 
+        private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions) CategorizeEdition(
+            IReadOnlyDictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>> editionMap,
+            string setCode,
+            string rarityName,
+            CardEdition recordedEdition)
+        {
+            var key = (SetCode: setCode.ToUpperInvariant(), RarityName: rarityName.ToUpperInvariant());
+
+            if (!editionMap.TryGetValue(key, out var availableEditions) || availableEditions.Count == 0)
+                return (EditionAuditCategory.Unverifiable, []);
+
+            var orderedEditions = availableEditions.OrderBy(e => e).ToList();
+
+            if (!availableEditions.Contains(recordedEdition))
+                return (EditionAuditCategory.EditionMismatch, orderedEditions);
+
+            return (null, orderedEditions);
+        }
+
         private static string GetSetPrefix(string code)
         {
             var hyphen = code.IndexOf('-');
@@ -1267,28 +1284,40 @@ namespace CardCollector.Services
                     return CollectionCompletionStatus.Placeholder;
                 });
         }
-
-        private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions) CategorizeEdition(
-            IReadOnlyDictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>> editionMap,
-            string setCode,
-            string rarityName,
-            CardEdition recordedEdition)
+        private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
         {
-            var key = (SetCode: setCode.ToUpperInvariant(), RarityName: rarityName.ToUpperInvariant());
+            var card = _cardDataRepository.GetCardByID(cardID);
+            var image = card?.CardImages?.FirstOrDefault(i => i.ID == imageID);
+            var set = rarityNameHint is not null
+                ? card?.CardSets?.FirstOrDefault(s =>
+                    string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(s.RarityName, rarityNameHint, StringComparison.OrdinalIgnoreCase))
+                : card?.CardSets?.FirstOrDefault(s => string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase));
+            var availableRarities = card?.CardSets?
+                .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
+                .Select(s => s.RarityName!)
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList() ?? [];
 
-            if (!editionMap.TryGetValue(key, out var availableEditions) || availableEditions.Count == 0)
-                return (EditionAuditCategory.Unverifiable, []);
-
-            var orderedEditions = availableEditions.OrderBy(e => e).ToList();
-
-            if (!availableEditions.Contains(recordedEdition))
-                return (EditionAuditCategory.EditionMismatch, orderedEditions);
-
-            return (null, orderedEditions);
+            return new CardPrinting
+            {
+                AvailableRarities = availableRarities,
+                CardID = cardID,
+                CardName = card?.Name ?? "Unknown",
+                CardType = card?.CardType ?? string.Empty,
+                ImageID = imageID,
+                ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
+                Price = set?.Price,
+                RarityCode = set?.RarityCode ?? string.Empty,
+                RarityName = rarityNameHint ?? set?.RarityName ?? string.Empty,
+                SetCode = setCode,
+                SetName = set?.Name ?? setCode
+            };
         }
 
         private async Task<PurchasePriorityCandidateViewModel?> EvaluateCandidateAsync(
-            Card card, int imageID, string setCode, string? rarityName, DateTime asOf, decimal? maxPrice,
+                    Card card, int imageID, string setCode, string? rarityName, DateTime asOf, decimal? maxPrice,
             IReadOnlyDictionary<(int ImageID, string SetCode), int> ownedQuantities,
             IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> orderedQuantities,
             IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> stagedQuantities)
@@ -1328,39 +1357,6 @@ namespace CardCollector.Services
             // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
             return candidateViewModel.QuantityNeeded <= 0 ? null : candidateViewModel;
         }
-
-        private CardPrinting BuildCardPrinting(int cardID, int imageID, string setCode, string? rarityNameHint)
-        {
-            var card = _cardDataRepository.GetCardByID(cardID);
-            var image = card?.CardImages?.FirstOrDefault(i => i.ID == imageID);
-            var set = rarityNameHint is not null
-                ? card?.CardSets?.FirstOrDefault(s =>
-                    string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(s.RarityName, rarityNameHint, StringComparison.OrdinalIgnoreCase))
-                : card?.CardSets?.FirstOrDefault(s => string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase));
-            var availableRarities = card?.CardSets?
-                .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
-                .Select(s => s.RarityName!)
-                .Distinct()
-                .OrderBy(r => r)
-                .ToList() ?? [];
-
-            return new CardPrinting
-            {
-                AvailableRarities = availableRarities,
-                CardID = cardID,
-                CardName = card?.Name ?? "Unknown",
-                CardType = card?.CardType ?? string.Empty,
-                ImageID = imageID,
-                ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
-                Price = set?.Price,
-                RarityCode = set?.RarityCode ?? string.Empty,
-                RarityName = rarityNameHint ?? set?.RarityName ?? string.Empty,
-                SetCode = setCode,
-                SetName = set?.Name ?? setCode
-            };
-        }
-
         private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync()
         {
             var owned = await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
@@ -1390,6 +1386,20 @@ namespace CardCollector.Services
             }
 
             return results;
+        }
+
+        private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)
+        {
+            var entries = await _collectionRepository.GetByStatusAsync(status).ConfigureAwait(false);
+            var viewModels = new List<OrderEntryViewModel>();
+
+            foreach (var entry in entries)
+            {
+                var printing = BuildCardPrinting(entry.CardID, entry.ImageID, entry.SetCode, entry.RarityName);
+                viewModels.Add(OrderEntryViewModel.From(printing, entry));
+            }
+
+            return viewModels;
         }
 
         private async Task<IReadOnlyList<EditionAuditGroupViewModel>> GetGroupedEditionAuditResultsAsync()
@@ -1429,20 +1439,6 @@ namespace CardCollector.Services
             }
 
             return groups;
-        }
-
-        private async Task<IEnumerable<OrderEntryViewModel>> GetEnrichedByStatusAsync(CollectionStatus status)
-        {
-            var entries = await _collectionRepository.GetByStatusAsync(status).ConfigureAwait(false);
-            var viewModels = new List<OrderEntryViewModel>();
-
-            foreach (var entry in entries)
-            {
-                var printing = BuildCardPrinting(entry.CardID, entry.ImageID, entry.SetCode, entry.RarityName);
-                viewModels.Add(OrderEntryViewModel.From(printing, entry));
-            }
-
-            return viewModels;
         }
     }
 }
