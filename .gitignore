@@ -3,6 +3,11 @@ bin/
 obj/
 publish/
 
+## Test tooling output
+coverage/
+node_modules/
+TestResults/
+
 ## Visual Studio
 .vs/
 *.user

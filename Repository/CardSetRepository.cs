@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CardCollector.DTO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ namespace CardCollector.Repository
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CardSetRepository> _logger;
 
+        [ExcludeFromCodeCoverage(Justification = "Loads cached/live set data from disk and HTTP on construction; I/O orchestration, not testable logic.")]
         public CardSetRepository(ILogger<CardSetRepository> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
@@ -22,16 +24,8 @@ namespace CardCollector.Repository
             _dateByCode = BuildDateIndex(sets);
         }
 
-        public string? GetTCGDateBySetCode(string fullSetCode)
-        {
-            if (string.IsNullOrEmpty(fullSetCode))
-                return null;
-
-            var prefix = fullSetCode.Split('-')[0];
-            return _dateByCode.GetValueOrDefault(prefix);
-        }
-
-        private static IReadOnlyDictionary<string, string> BuildDateIndex(IReadOnlyList<CardSetData> sets)
+        // Public for direct unit testing — pure data transformation, no I/O.
+        public static IReadOnlyDictionary<string, string> BuildDateIndex(IReadOnlyList<CardSetData> sets)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var set in sets)
@@ -48,7 +42,9 @@ namespace CardCollector.Repository
             return dict;
         }
 
-        private IReadOnlyList<CardSetData> Deserialize(string json)
+        // Public for direct unit testing — pure JSON parsing with fallback, no I/O. logger is optional
+        // so tests can exercise the malformed-JSON path without needing a real ILogger.
+        public static IReadOnlyList<CardSetData> Deserialize(string json, ILogger? logger = null)
         {
             try
             {
@@ -56,17 +52,31 @@ namespace CardCollector.Repository
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to deserialize card set data");
+                logger?.LogError(ex, "Failed to deserialize card set data");
                 return [];
             }
         }
 
+        public string? GetTCGDateBySetCode(string fullSetCode) => GetTCGDateBySetCode(_dateByCode, fullSetCode);
+
+        // Public for direct unit testing — pure prefix-lookup logic, no I/O.
+        public static string? GetTCGDateBySetCode(IReadOnlyDictionary<string, string> dateByCode, string fullSetCode)
+        {
+            if (string.IsNullOrEmpty(fullSetCode))
+                return null;
+
+            var prefix = fullSetCode.Split('-')[0];
+            return dateByCode.GetValueOrDefault(prefix);
+        }
+
+        [ExcludeFromCodeCoverage(Justification = "Reads set-cache JSON from disk; I/O, not testable logic.")]
         private IReadOnlyList<CardSetData> DeserializeFromFile(string path)
         {
             var json = File.ReadAllText(path);
-            return Deserialize(json);
+            return Deserialize(json, _logger);
         }
 
+        [ExcludeFromCodeCoverage(Justification = "HTTP fetch of card set data; I/O, not testable logic.")]
         private async Task<string?> FetchFromAPIAsync()
         {
             try
@@ -81,6 +91,7 @@ namespace CardCollector.Repository
             }
         }
 
+        [ExcludeFromCodeCoverage(Justification = "Checks cache-file timestamps on disk; I/O, not testable logic.")]
         private bool IsCacheFresh(string cachePath, string timestampPath)
         {
             if (!File.Exists(cachePath) || !File.Exists(timestampPath))
@@ -93,6 +104,7 @@ namespace CardCollector.Repository
             return DateTime.UtcNow - cachedAt < TimeSpan.FromDays(_cacheTtlDays);
         }
 
+        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus file/HTTP fallback orchestration; I/O, not testable logic.")]
         private IReadOnlyList<CardSetData> LoadSets()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
@@ -114,7 +126,7 @@ namespace CardCollector.Repository
                 File.WriteAllText(cachePath, json);
                 File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
                 _logger.LogInformation("Card set data cached to {Path}", cachePath);
-                return Deserialize(json);
+                return Deserialize(json, _logger);
             }
 
             if (File.Exists(cachePath))

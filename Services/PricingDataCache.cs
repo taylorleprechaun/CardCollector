@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CardCollector.Data;
 using CardCollector.DTO;
 using Newtonsoft.Json;
@@ -10,10 +11,11 @@ namespace CardCollector.Services
         private const int PageSize = 5000;
 
         private readonly TimeSpan _cacheTtl;
-        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _cardSetsByCardID;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<PricingDataCache> _logger;
+        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _cardSetsByCardID;
 
+        [ExcludeFromCodeCoverage(Justification = "Loads cached/live pricing data from disk and HTTP on construction; I/O orchestration, not testable logic.")]
         public PricingDataCache(ILogger<PricingDataCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
@@ -23,9 +25,15 @@ namespace CardCollector.Services
             _cardSetsByCardID = LoadCardSets();
         }
 
+        [ExcludeFromCodeCoverage(Justification = "Trivial dictionary lookup, but constructing this class always triggers the eager I/O in LoadCardSets; not unit-testable without a real cache file or HTTP call.")]
         public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
             _cardSetsByCardID.TryGetValue(cardID, out var sets) ? sets : [];
 
+        // Public for direct unit testing — pure dictionary-building logic, no I/O.
+        public static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> IndexCards(IEnumerable<TCGPriceCard> cards) =>
+            cards.ToDictionary(c => c.ID, c => (IReadOnlyList<TCGPriceSet>)c.CardSets.ToList());
+
+        [ExcludeFromCodeCoverage(Justification = "Re-fetches and re-caches pricing data from disk and HTTP; I/O orchestration, not testable logic.")]
         public async Task RefreshAsync()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
@@ -33,6 +41,7 @@ namespace CardCollector.Services
             _cardSetsByCardID = await Task.Run(LoadCardSets).ConfigureAwait(false);
         }
 
+        [ExcludeFromCodeCoverage(Justification = "HTTP fetch orchestration with pagination; I/O, not testable logic.")]
         private async Task<List<TCGPriceCard>?> FetchAllCardsAsync()
         {
             try
@@ -65,10 +74,7 @@ namespace CardCollector.Services
                 return null;
             }
         }
-
-        private static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> IndexCards(IEnumerable<TCGPriceCard> cards) =>
-            cards.ToDictionary(c => c.ID, c => (IReadOnlyList<TCGPriceSet>)c.CardSets.ToList());
-
+        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus file/HTTP fallback orchestration; I/O, not testable logic.")]
         private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> LoadCardSets()
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
@@ -103,6 +109,7 @@ namespace CardCollector.Services
             return new Dictionary<int, IReadOnlyList<TCGPriceSet>>();
         }
 
+        [ExcludeFromCodeCoverage(Justification = "Reads pricing JSON from disk; I/O, not testable logic.")]
         private List<TCGPriceCard> LoadCardsFromJson(string path)
         {
             try

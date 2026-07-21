@@ -5,6 +5,8 @@ namespace CardCollector.Data
 {
     public class AppDBContext : DbContext
     {
+        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
+
         public DbSet<CheckedOutCard> CheckedOutCards { get; set; }
 
         public DbSet<CollectionEntry> CollectionEntries { get; set; }
@@ -20,9 +22,6 @@ namespace CardCollector.Data
         public DbSet<PendingOrderLine> PendingOrderLines { get; set; }
 
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
-
-        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<CheckedOutCard>(entity =>

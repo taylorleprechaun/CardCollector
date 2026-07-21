@@ -55,14 +55,13 @@ namespace CardCollector.Repository
             }
         }
 
-        public async Task<PreferredVersion?> GetByCardIDAsync(int cardID) =>
-            await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID)
-                .ConfigureAwait(false);
-
         public async Task<IEnumerable<PreferredVersion>> GetAllAsync() =>
             await _context.PreferredVersions.ToListAsync().ConfigureAwait(false);
 
+        public async Task<PreferredVersion?> GetByCardIDAsync(int cardID) =>
+                    await _context.PreferredVersions
+                .FirstOrDefaultAsync(pv => pv.CardID == cardID)
+                .ConfigureAwait(false);
         public async Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();

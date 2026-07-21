@@ -85,11 +85,6 @@ namespace CardCollector.Services
         Task<DashboardStats> GetDashboardStatsAsync();
 
         /// <summary>
-        /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
-        /// </summary>
-        Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
-
-        /// <summary>
         /// Returns all ordered entries enriched with card and set data, annotated with an
         /// edition-audit category when the recorded Edition doesn't match (or can't be verified
         /// against) the live API data for that printing.
@@ -157,9 +152,33 @@ namespace CardCollector.Services
         Task<Card?> GetRandomUncollectedAsync();
 
         /// <summary>
+        /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
+        /// </summary>
+        Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
+        /// <summary>
         /// Returns all preferred versions that have not yet been ordered or owned.
         /// </summary>
         Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync();
+
+        /// <summary>
+        /// Returns the distinct rarity names present in the current wishlist.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync();
+
+        /// <summary>
+        /// Returns the distinct set names present in the current wishlist.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
+
+        /// <summary>
+        /// Marks the given card as ignored, excluding it from Dashboard progress tracking. No-ops if already ignored.
+        /// </summary>
+        Task IgnoreCardAsync(int cardID);
+
+        /// <summary>
+        /// Returns true if the given card is currently ignored from Dashboard progress tracking.
+        /// </summary>
+        Task<bool> IsCardIgnoredAsync(int cardID);
 
         /// <summary>
         /// Deletes the preferred version for the given image ID, removing the card from the wishlist.
@@ -204,27 +223,6 @@ namespace CardCollector.Services
         /// raised while committing.
         /// </summary>
         Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
-
-        /// <summary>
-        /// Returns the distinct rarity names present in the current wishlist.
-        /// </summary>
-        Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync();
-
-        /// <summary>
-        /// Returns the distinct set names present in the current wishlist.
-        /// </summary>
-        Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
-
-        /// <summary>
-        /// Marks the given card as ignored, excluding it from Dashboard progress tracking. No-ops if already ignored.
-        /// </summary>
-        Task IgnoreCardAsync(int cardID);
-
-        /// <summary>
-        /// Returns true if the given card is currently ignored from Dashboard progress tracking.
-        /// </summary>
-        Task<bool> IsCardIgnoredAsync(int cardID);
-
         /// <summary>
         /// Clears the ignored status for the given card, resuming Dashboard progress tracking for it. No-ops if not currently ignored.
         /// </summary>

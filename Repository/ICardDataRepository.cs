@@ -33,15 +33,14 @@ namespace CardCollector.Repository
         Card? GetCardByID(int cardID);
 
         /// <summary>
-        /// Returns the set code prefix (e.g. "POTE") for the given canonical set name, or null if not found.
-        /// </summary>
-        string? GetSetPrefixByName(string canonicalName);
-
-        /// <summary>
         /// Returns a dictionary mapping full card code (e.g. "LOB-EN001") to canonical set name (e.g. "Legend of Blue Eyes White Dragon").
         /// </summary>
         IReadOnlyDictionary<string, string> GetSetNamesByCode();
 
+        /// <summary>
+        /// Returns the set code prefix (e.g. "POTE") for the given canonical set name, or null if not found.
+        /// </summary>
+        string? GetSetPrefixByName(string canonicalName);
         /// <summary>
         /// Forces a redownload of card data from yaml-yugi and images from YGOProDeck,
         /// then replaces the in-memory state immediately.

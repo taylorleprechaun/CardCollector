@@ -1,10 +1,8 @@
 using CardCollector.Data;
-using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,20 +102,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 
-app.MapGet("/api/price", async (int cardID, string setCode, string rarityName, string? edition, IPricingService pricingService) =>
-{
-    CardEdition? parsedEdition = Enum.TryParse<CardEdition>(edition, out var e) ? e : null;
-    var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName, parsedEdition);
-    return Results.Json(new { price });
-});
+app.MapGet("/api/price", CardCollector.APIEndpoints.GetPriceAsync);
 
-app.MapGet("/api/stats/card-price-history", async (string cardName, ICardService cardService) =>
-{
-    if (string.IsNullOrWhiteSpace(cardName))
-        return Results.BadRequest("cardName is required.");
-    var history = await cardService.GetCardPriceHistoryAsync(cardName);
-    return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
-});
+app.MapGet("/api/stats/card-price-history", CardCollector.APIEndpoints.GetCardPriceHistoryAsync);
 
 app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository cardDataRepository, HttpContext ctx, CancellationToken ct) =>
 {
@@ -131,16 +118,9 @@ app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository car
         await ctx.Response.Body.FlushAsync(ct);
     }
 
-    await Send("start", "{}");
-    await cardDataRepository.RefreshAsync();
-    var count = cardDataRepository.GetBrowseableCards().Count();
-    await Send("complete", JsonSerializer.Serialize(new { cardCount = count }));
+    await CardCollector.APIEndpoints.RefreshCardDataStreamAsync(cardDataRepository, Send, ct);
 });
 
-app.MapPost("/api/admin/refresh-pricing-data", async (IPricingDataCache pricingDataCache) =>
-{
-    await pricingDataCache.RefreshAsync();
-    return Results.Ok();
-});
+app.MapPost("/api/admin/refresh-pricing-data", CardCollector.APIEndpoints.RefreshPricingDataAsync);
 
 app.Run();

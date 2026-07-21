@@ -33,21 +33,14 @@ namespace CardCollector.Repository
         Task<IEnumerable<CollectionEntry>> GetByStatusAsync(CollectionStatus status);
 
         /// <summary>
+        /// Returns distinct card IDs that have at least one entry with the given status.
+        /// </summary>
+        Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status);
+
+        /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in the collection regardless of status.
         /// </summary>
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
-
-        /// <summary>
-        /// Returns the total Ordered quantity for every (imageID, setCode, rarityName) combination, summed
-        /// across matching entries. RarityName is normalized to an empty string when null, so callers should
-        /// look up with <c>rarityName ?? string.Empty</c>.
-        /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
-
-        /// <summary>
-        /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
-        /// </summary>
-        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();
 
         /// <summary>
         /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
@@ -81,6 +74,17 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<string>> GetDistinctSetCodesAsync();
 
         /// <summary>
+        /// Returns the total Ordered quantity for every (imageID, setCode, rarityName) combination, summed
+        /// across matching entries. RarityName is normalized to an empty string when null, so callers should
+        /// look up with <c>rarityName ?? string.Empty</c>.
+        /// </summary>
+        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
+
+        /// <summary>
+        /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
+        /// </summary>
+        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();
+        /// <summary>
         /// Returns the total owned quantity per card ID, scoped to entries whose set code starts with the given
         /// prefix (e.g. "MP25" matches "MP25-EN001"). Card IDs with no matching owned entries are omitted from the result.
         /// </summary>
@@ -103,12 +107,6 @@ namespace CardCollector.Repository
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.
         /// </summary>
         Task<OwnedCollectionStats> GetOwnedStatsAsync();
-
-        /// <summary>
-        /// Returns distinct card IDs that have at least one entry with the given status.
-        /// </summary>
-        Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status);
-
         /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per card ID for the given set of card IDs.
         /// </summary>

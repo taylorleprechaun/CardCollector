@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CardCollector.Repository;
 
 namespace CardCollector.Services
@@ -21,11 +22,12 @@ namespace CardCollector.Services
             _scopeFactory = scopeFactory;
         }
 
+        [ExcludeFromCodeCoverage(Justification = "BackgroundService polling loop; the scheduling decision it calls is tested separately via GetDelayUntilNextMidnightEastern.")]
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var delay = GetDelayUntilNextMidnightEastern();
+                var delay = GetDelayUntilNextMidnightEastern(DateTime.UtcNow);
                 _logger.LogInformation(
                     "PriceRefreshBackgroundService: next run in {Hours:F1} hours",
                     delay.TotalHours);
@@ -46,6 +48,18 @@ namespace CardCollector.Services
             }
         }
 
+        // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
+        // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
+        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUtc)
+        {
+            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
+            var nextMidnightEastern = nowEastern.Date.AddDays(1);
+            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
+            var delay = nextMidnightUtc - nowUtc;
+            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
+        }
+
+        [ExcludeFromCodeCoverage(Justification = "Orchestrates a real DI scope and downstream services; a mocked-scope test would only re-assert the mock setup, not real behavior.")]
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price refresh");
@@ -72,16 +86,6 @@ namespace CardCollector.Services
                 _logger.LogError(ex,
                     "PriceRefreshBackgroundService: nightly refresh failed; will retry at next midnight");
             }
-        }
-
-        private static TimeSpan GetDelayUntilNextMidnightEastern()
-        {
-            var nowUtc = DateTime.UtcNow;
-            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
-            var nextMidnightEastern = nowEastern.Date.AddDays(1);
-            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
-            var delay = nextMidnightUtc - nowUtc;
-            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
         }
     }
 }

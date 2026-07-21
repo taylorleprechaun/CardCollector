@@ -48,7 +48,7 @@ namespace CardCollector.Pages
 
             TempData["Success"] = count == 0
                 ? "Your cart is empty — nothing to submit."
-                : $"Added {count} order{(count == 1 ? "" : "s")} for {total:C} to Orders.";
+                : $"Added {count} order{(count == 1 ? "" : "s")} for ${total:F2} to Orders.";
 
             return RedirectToPage("/Orders");
         }

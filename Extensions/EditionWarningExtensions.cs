@@ -7,6 +7,9 @@ namespace CardCollector.Extensions
 {
     public static class EditionWarningExtensions
     {
+        public static string BuildEditionMismatchMessage(CardEdition edition, string setCode, string rarityName) =>
+                    $"TCGPlayer doesn't list a {edition.GetDisplayName()} printing of {setCode} {rarityName} for this card — double-check the edition you selected.";
+
         // Non-blocking nudge: the live pricing dataset can legitimately be missing obscure/promo
         // printings that are still real, so this warns instead of rejecting the entry.
         public static async Task WarnIfEditionMismatchAsync(
@@ -19,8 +22,5 @@ namespace CardCollector.Extensions
             if (category == EditionAuditCategory.EditionMismatch)
                 page.TempData["Warning"] = BuildEditionMismatchMessage(edition.Value, setCode, rarityName);
         }
-
-        public static string BuildEditionMismatchMessage(CardEdition edition, string setCode, string rarityName) =>
-            $"TCGPlayer doesn't list a {edition.GetDisplayName()} printing of {setCode} {rarityName} for this card — double-check the edition you selected.";
     }
 }
