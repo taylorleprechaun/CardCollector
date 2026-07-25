@@ -230,22 +230,36 @@ namespace CardCollector.Repository
             if (pvList.Count == 0)
                 return new Dictionary<(int ImageID, string SetCode), int>();
 
-            var imageIDs = pvList.Select(p => p.ImageID).ToHashSet();
-
+            // No ID filter here: preferredVersions can cover the entire card catalog (thousands of rows),
+            // which would otherwise translate into a SQL IN clause with one parameter per ID. The owned
+            // collection itself is small, so pulling all Owned rows and matching in memory is far cheaper.
             var entries = await _context.CollectionEntries
-                .Where(e => imageIDs.Contains(e.ImageID) && e.Status == CollectionStatus.Owned)
+                .Where(e => e.Status == CollectionStatus.Owned)
                 .Select(e => new { e.ImageID, e.SetCode, e.RarityName, e.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+            var totalsByPair = new Dictionary<(int ImageID, string SetCodeUpper), int>();
+            var totalsByPairAndRarity = new Dictionary<(int ImageID, string SetCodeUpper, string RarityNameUpper), int>();
+
+            foreach (var e in entries)
+            {
+                var setCodeUpper = e.SetCode.ToUpperInvariant();
+
+                var pairKey = (e.ImageID, setCodeUpper);
+                totalsByPair[pairKey] = totalsByPair.GetValueOrDefault(pairKey) + e.Quantity;
+
+                var rarityKey = (e.ImageID, setCodeUpper, (e.RarityName ?? string.Empty).ToUpperInvariant());
+                totalsByPairAndRarity[rarityKey] = totalsByPairAndRarity.GetValueOrDefault(rarityKey) + e.Quantity;
+            }
+
             var result = new Dictionary<(int ImageID, string SetCode), int>();
             foreach (var pv in pvList)
             {
-                var qty = entries
-                    .Where(e => e.ImageID == pv.ImageID
-                        && e.SetCode.Equals(pv.SetCode, StringComparison.OrdinalIgnoreCase)
-                        && (pv.RarityName is null || pv.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
-                    .Sum(e => e.Quantity);
+                var setCodeUpper = pv.SetCode.ToUpperInvariant();
+                var qty = pv.RarityName is null
+                    ? totalsByPair.GetValueOrDefault((pv.ImageID, setCodeUpper))
+                    : totalsByPairAndRarity.GetValueOrDefault((pv.ImageID, setCodeUpper, pv.RarityName.ToUpperInvariant()));
 
                 if (qty > 0)
                     result[(pv.ImageID, pv.SetCode)] = qty;

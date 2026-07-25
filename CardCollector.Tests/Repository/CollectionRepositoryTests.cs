@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -336,6 +335,25 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetOwnedQuantitiesForPreferredVersionsAsync_MultiplePreferredVersionsResolveIndependently()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 4 });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "MRD-EN002", RarityName = "Common", Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "MRD-EN002", RarityName = "Rare", Status = CollectionStatus.Owned, Quantity = 6 });
+
+            var result = await repository.GetOwnedQuantitiesForPreferredVersionsAsync(
+            [
+                (10, "LOB-EN001", "Ultra Rare"),
+                (20, "MRD-EN002", null)
+            ]);
+
+            Assert.AreEqual(4, result[(10, "LOB-EN001")]);
+            Assert.AreEqual(7, result[(20, "MRD-EN002")]);
+        }
+
+        [TestMethod]
         public async Task GetOwnedQuantitiesForPreferredVersionsAsync_NoMatchingEntries_OmitsPair()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -358,6 +376,31 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(1, result[(10, "LOB-EN001")]);
         }
 
+        [TestMethod]
+        public async Task GetOwnedQuantitiesForPreferredVersionsAsync_NullRarityNameSumsAcrossMultipleRarities()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common", Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 3 });
+
+            var result = await repository.GetOwnedQuantitiesForPreferredVersionsAsync([(10, "LOB-EN001", null)]);
+
+            Assert.AreEqual(5, result[(10, "LOB-EN001")]);
+        }
+
+        [TestMethod]
+        public async Task GetOwnedQuantitiesForPreferredVersionsAsync_SpecificRarityOnlySumsMatchingRarityAmongMixedRarities()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common", Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 3 });
+
+            var result = await repository.GetOwnedQuantitiesForPreferredVersionsAsync([(10, "LOB-EN001", "Ultra Rare")]);
+
+            Assert.AreEqual(3, result[(10, "LOB-EN001")]);
+        }
         [TestMethod]
         public async Task GetOwnedStatsAsync_MixOfEntriesWithAndWithoutPrices_SumsOnlyPricedOnes()
         {

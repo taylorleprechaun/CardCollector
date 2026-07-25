@@ -1,0 +1,47 @@
+@model CheckedOutRowViewModel
+@using CardCollector.ViewModels
+@{
+    var item = Model.Item;
+    var filterParams = Model.FilterParams;
+    var rowId = $"checkedout-row-{item.ImageID}-{item.SetCode}";
+}
+<div class="list-group-item d-flex flex-column flex-md-row align-items-md-center gap-2 py-2" id="@rowId">
+    <div class="d-flex align-items-center gap-3 flex-grow-1 min-width-0">
+        <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
+        <div class="flex-grow-1 min-width-0">
+            <div class="fw-semibold">@item.CardName</div>
+            <div class="text-muted small">
+                @item.SetName &middot; @item.SetCode
+                @if (!string.IsNullOrEmpty(item.RarityName))
+                {
+                    <span>&middot; @item.RarityName</span>
+                }
+            </div>
+        </div>
+    </div>
+    <form method="post" class="d-flex flex-column flex-shrink-0 ajax-form" data-ajax-target="@rowId">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="cardID"  value="@item.CardID"  />
+        <input type="hidden" name="imageID" value="@item.ImageID" />
+        <input type="hidden" name="setCode" value="@item.SetCode" />
+        <input type="hidden" name="rarityName" value="@item.RarityName" />
+        <div class="d-flex align-items-center gap-1">
+            <small class="text-muted">Check Out:</small>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
+                @for (int q = 1; q <= 3; q++)
+                {
+                    var isActive = item.CheckedOutQuantity == q;
+                    var isDisabled = isActive || q > item.TotalOwnedQuantity;
+                    <button type="submit" name="quantity" value="@q"
+                            formaction="/CheckedOut?handler=CheckOut&@filterParams"
+                            class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
+                            @(isDisabled ? "disabled" : "")>@q</button>
+                }
+                <button type="submit"
+                        formaction="/CheckedOut?handler=CheckIn&@filterParams"
+                        class="btn btn-sm btn-outline-success">Check In</button>
+            </div>
+        </div>
+        <small class="text-muted text-center">since @item.CheckedOutDate.ToString("MMM d, yyyy")</small>
+    </form>
+</div>

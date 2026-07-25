@@ -26,6 +26,10 @@ namespace CardCollector.Services
         private readonly IPricingService _pricingService;
         private readonly IUnitOfWork _unitOfWork;
 
+        // Memoized per instance: CardService is Scoped (one instance per request) and no request
+        // mutates PreferredVersion/collection state and then re-reads the wishlist within the same request.
+        private IReadOnlyList<WishlistItemViewModel>? _wishlistCache;
+
         public CardService(
             ICardDataRepository cardDataRepository,
             ICardSetRepository cardSetRepository,
@@ -779,9 +783,15 @@ namespace CardCollector.Services
 
         public async Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync()
         {
+            if (_wishlistCache is not null)
+                return _wishlistCache;
+
             var allPreferred = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
             if (allPreferred.Count == 0)
-                return [];
+            {
+                _wishlistCache = [];
+                return _wishlistCache;
+            }
 
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
                 allPreferred.Select(pv => (pv.ImageID, pv.SetCode, pv.RarityName))).ConfigureAwait(false);
@@ -804,7 +814,8 @@ namespace CardCollector.Services
                 results.Add(WishlistItemViewModel.From(printing, ownedQty, cartQuantity, orderedQuantity));
             }
 
-            return results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode);
+            _wishlistCache = results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
+            return _wishlistCache;
         }
 
         public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
@@ -981,7 +992,7 @@ namespace CardCollector.Services
             }
 
             if (!string.IsNullOrWhiteSpace(criteria.RarityName))
-                filtered = filtered.Where(c => c.RarityName == criteria.RarityName);
+                filtered = filtered.Where(c => c.RarityName.Equals(criteria.RarityName, StringComparison.OrdinalIgnoreCase));
 
             var filteredList = filtered.OrderBy(c => c.CardName).ThenBy(c => c.SetCode).ToList();
             var totalCount = filteredList.Count;

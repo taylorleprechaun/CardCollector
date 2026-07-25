@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = "Checked Out";
     var clearFiltersURL = $"/CheckedOut{(!string.IsNullOrWhiteSpace(Model.Query) ? $"?query={Uri.EscapeDataString(Model.Query)}" : "")}";
-    var filterParams = $"query={Uri.EscapeDataString(Model.Query ?? string.Empty)}&pageNumber={Model.PageNumber}&pageSize={Model.PageSize}";
+    var filterParams = Model.GetFilterParams();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -48,48 +48,13 @@ else
     <div class="list-group mb-4 cc-table-card">
         @foreach (var item in Model.Results.Items)
         {
-            <div class="list-group-item d-flex flex-column flex-md-row align-items-md-center gap-2 py-2">
-                <div class="d-flex align-items-center gap-3 flex-grow-1 min-width-0">
-                    <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="fw-semibold">@item.CardName</div>
-                        <div class="text-muted small">
-                            @item.SetName &middot; @item.SetCode
-                            @if (!string.IsNullOrEmpty(item.RarityName))
-                            {
-                                <span>&middot; @item.RarityName</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <form method="post" class="d-flex flex-column flex-shrink-0">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="cardID"  value="@item.CardID"  />
-                    <input type="hidden" name="imageID" value="@item.ImageID" />
-                    <input type="hidden" name="setCode" value="@item.SetCode" />
-                    <input type="hidden" name="rarityName" value="@item.RarityName" />
-                    <div class="d-flex align-items-center gap-1">
-                        <small class="text-muted">Check Out:</small>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
-                            @for (int q = 1; q <= 3; q++)
-                            {
-                                var isActive = item.CheckedOutQuantity == q;
-                                var isDisabled = isActive || q > item.TotalOwnedQuantity;
-                                <button type="submit" name="quantity" value="@q"
-                                        formaction="/CheckedOut?handler=CheckOut&@filterParams"
-                                        class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
-                                        @(isDisabled ? "disabled" : "")>@q</button>
-                            }
-                            <button type="submit"
-                                    formaction="/CheckedOut?handler=CheckIn&@filterParams"
-                                    class="btn btn-sm btn-outline-success">Check In</button>
-                        </div>
-                    </div>
-                    <small class="text-muted text-center">since @item.CheckedOutDate.ToString("MMM d, yyyy")</small>
-                </form>
-            </div>
+            <partial name="_CheckedOutRow" model='new CheckedOutRowViewModel { FilterParams = filterParams, Item = item }' />
         }
     </div>
 
     <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Checked out pagination", PageName = "CheckedOut", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}
+
+@section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
 }
