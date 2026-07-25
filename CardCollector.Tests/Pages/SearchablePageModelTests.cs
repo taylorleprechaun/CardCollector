@@ -2,7 +2,6 @@ using CardCollector.Pages;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -45,6 +44,33 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public void NormalizeSearchParameters_FiltersHaveLeadingAndTrailingWhitespace_TrimsAll()
+        {
+            _page.Query = "  pikachu  ";
+            _page.CardType = " Monster ";
+            _page.RarityName = " Ultra Rare ";
+            _page.SetName = " Legend of Blue Eyes White Dragon ";
+
+            _page.CallNormalizeSearchParameters();
+
+            Assert.AreEqual("pikachu", _page.Query);
+            Assert.AreEqual("Monster", _page.CardType);
+            Assert.AreEqual("Ultra Rare", _page.RarityName);
+            Assert.AreEqual("Legend of Blue Eyes White Dragon", _page.SetName);
+        }
+
+        [TestMethod]
+        public void NormalizeSearchParameters_NullFilters_RemainNull()
+        {
+            _page.CallNormalizeSearchParameters();
+
+            Assert.IsNull(_page.Query);
+            Assert.IsNull(_page.CardType);
+            Assert.IsNull(_page.RarityName);
+            Assert.IsNull(_page.SetName);
+        }
+
+        [TestMethod]
         [DataRow(0, 1, DisplayName = "Zero clamps to one")]
         [DataRow(-5, 1, DisplayName = "Negative clamps to one")]
         [DataRow(3, 3, DisplayName = "Valid value passes through")]
@@ -68,7 +94,6 @@ namespace CardCollector.Tests.Pages
 
             Assert.AreEqual(expected, _page.PageSize);
         }
-
         [TestMethod]
         public void OnGetAutocomplete_BlankQuery_ReturnsEmptyArrayWithoutCallingCardService()
         {

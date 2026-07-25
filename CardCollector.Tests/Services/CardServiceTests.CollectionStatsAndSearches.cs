@@ -86,6 +86,20 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task SearchCheckedOutAsync_RarityNameFilterDiffersOnlyByCase_StillMatches()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new CheckedOutCard { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+            ]);
+
+            var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { RarityName = "ultra rare" });
+
+            Assert.AreEqual(1, result.TotalCount);
+        }
+
+        [TestMethod]
         public async Task SearchCheckedOutAsync_SetNameFilter_ExcludesNonMatchingSetPrefix()
         {
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });

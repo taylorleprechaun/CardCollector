@@ -1,12 +1,36 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
 {
     public partial class CardServiceTests
     {
+        [TestMethod]
+        public async Task GetWishlistAsync_CalledMultipleTimes_OnlyQueriesRepositoriesOnce()
+        {
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+            ]);
+            _collectionRepositoryMock
+                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
+                .ReturnsAsync(new Dictionary<(int, string), int>());
+            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
+                .ReturnsAsync(new Dictionary<(int, string, string), int>());
+            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())
+                .ReturnsAsync(new Dictionary<(int, string, string), int>());
+
+            await _service.GetWishlistAsync();
+            await _service.GetWishlistAsync();
+
+            _preferredVersionRepositoryMock.Verify(r => r.GetAllAsync(), Times.Once());
+            _collectionRepositoryMock.Verify(
+                r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()), Times.Once());
+            _collectionRepositoryMock.Verify(r => r.GetOrderedQuantitiesAsync(), Times.Once());
+            _pendingOrderRepositoryMock.Verify(r => r.GetStagedQuantitiesAsync(), Times.Once());
+        }
+
         [TestMethod]
         public async Task GetWishlistAsync_MultipleItems_OrdersByCardNameThenSetCode()
         {
@@ -22,6 +46,15 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Alpha Card", result[0].CardName);
             Assert.AreEqual("Zeta Card", result[1].CardName);
+        }
+
+        [TestMethod]
+        public async Task GetWishlistAsync_NoPreferredVersions_CachesEmptyResult()
+        {
+            await _service.GetWishlistAsync();
+            await _service.GetWishlistAsync();
+
+            _preferredVersionRepositoryMock.Verify(r => r.GetAllAsync(), Times.Once());
         }
 
         [TestMethod]

@@ -3,7 +3,7 @@ using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -12,6 +12,7 @@ namespace CardCollector.Tests.Pages
     public sealed class CheckedOutModelTests
     {
         private Mock<ICardService> _cardServiceMock = null!;
+        private Mock<IRazorPartialRenderer> _razorPartialRendererMock = null!;
 
         [TestMethod]
         public async Task OnGetAsync_PopulatesResultsFromCardService()
@@ -26,9 +27,43 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public async Task OnPostCheckInAsync_ChecksInAndRedirects()
+        public async Task OnPostCheckInAsync_AjaxWithMatch_ReturnsRenderedPartialAndSetsHeader()
         {
-            var page = CreatePage();
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>
+                {
+                    TotalCount = 1,
+                    Items = [new CheckedOutCardViewModel { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]
+                });
+            _razorPartialRendererMock
+                .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_CheckedOutRow", It.IsAny<CheckedOutRowViewModel>()))
+                .ReturnsAsync("<div>row</div>");
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare") as ContentResult;
+
+            Assert.AreEqual("<div>row</div>", result!.Content);
+            Assert.AreEqual("1", (string?)page.HttpContext.Response.Headers["X-Total-Count"]);
+        }
+
+        [TestMethod]
+        public async Task OnPostCheckInAsync_AjaxWithNoMatchingRow_ReturnsEmptyContent()
+        {
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare") as ContentResult;
+
+            Assert.AreEqual(string.Empty, result!.Content);
+        }
+
+        [TestMethod]
+        public async Task OnPostCheckInAsync_ChecksInAndRedirectsWhenNotAjax()
+        {
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
+            var page = CreatePage(isAjax: false);
 
             var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare");
 
@@ -39,7 +74,9 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostCheckOutAsync_QuantityAtLeastOne_ChecksOutCard()
         {
-            var page = CreatePage();
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
+            var page = CreatePage(isAjax: false);
 
             await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Ultra Rare", 2);
 
@@ -49,7 +86,9 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostCheckOutAsync_QuantityIsZero_DoesNotCheckOutCard()
         {
-            var page = CreatePage();
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
+            var page = CreatePage(isAjax: false);
 
             await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Ultra Rare", 0);
 
@@ -57,13 +96,35 @@ namespace CardCollector.Tests.Pages
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never);
         }
 
-        [TestInitialize]
-        public void Setup() => _cardServiceMock = new Mock<ICardService>();
-
-        private CheckedOutModel CreatePage()
+        [TestMethod]
+        public async Task OnPostCheckOutAsync_RarityFilterActiveAndRowRarityDiffers_FilterSurvivesRedirect()
         {
-            var page = new CheckedOutModel(_cardServiceMock.Object);
-            PageContextFactory.Attach(page);
+            _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
+            var page = CreatePage(isAjax: false, queryString: "?rarityName=Ultra%20Rare");
+
+            var result = await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Secret Rare", 2) as RedirectToPageResult;
+
+            Assert.AreEqual("Ultra Rare", result!.RouteValues!["rarityName"]);
+        }
+
+        [TestInitialize]
+        public void Setup()
+        {
+            _cardServiceMock = new Mock<ICardService>();
+            _razorPartialRendererMock = new Mock<IRazorPartialRenderer>();
+        }
+
+        private CheckedOutModel CreatePage(bool isAjax = false, string? queryString = null)
+        {
+            var page = new CheckedOutModel(_cardServiceMock.Object, _razorPartialRendererMock.Object);
+            PageContextFactory.Attach(page, httpContext =>
+            {
+                if (isAjax)
+                    httpContext.Request.Headers["X-Requested-With"] = "XMLHttpRequest";
+                if (queryString is not null)
+                    httpContext.Request.QueryString = new Microsoft.AspNetCore.Http.QueryString(queryString);
+            });
             return page;
         }
     }
