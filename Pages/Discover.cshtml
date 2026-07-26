@@ -1,4 +1,5 @@
 @page
+@using CardCollector.DTO
 @model DiscoverModel
 @{
     ViewData["Title"] = "Discover";
@@ -90,16 +91,17 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                             }
                             @foreach (var set in sortedSets)
                             {
+                                var rarityKey = RarityExtensions.NormalizeRarityName(set.RarityName) ?? string.Empty;
                                 <tr>
                                     <td>@set.Name</td>
                                     <td><code>@set.Code</code></td>
-                                    <td>@set.RarityName</td>
+                                    <td>@rarityKey</td>
                                     <td>
                                         <form method="post" asp-page-handler="SetPreferred">
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
                                             <input type="hidden" name="ImageID" value="@Model.CurrentImage.ID" />
                                             <input type="hidden" name="SetCode" value="@set.Code" />
-                                            <input type="hidden" name="RarityName" value="@set.RarityName" />
+                                            <input type="hidden" name="RarityName" value="@rarityKey" />
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 Set as Preferred
                                             </button>

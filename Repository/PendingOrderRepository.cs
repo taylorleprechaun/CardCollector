@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -15,7 +16,11 @@ namespace CardCollector.Repository
 
         public async Task AddRangeAsync(IEnumerable<PendingOrderLine> lines)
         {
-            _context.PendingOrderLines.AddRange(lines);
+            var lineList = lines.ToList();
+            foreach (var line in lineList)
+                line.RarityName = RarityExtensions.NormalizeRarityName(line.RarityName);
+
+            _context.PendingOrderLines.AddRange(lineList);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 

@@ -24,6 +24,19 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task AddOrUpdateAsync_ExistingRecordShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare");
+
+            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Super Short Print");
+
+            var result = await repository.GetByCardIDAsync(1);
+            Assert.AreEqual("Common", result!.RarityName);
+        }
+
+        [TestMethod]
         public async Task AddOrUpdateAsync_NoExistingRecord_CreatesNew()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -34,6 +47,18 @@ namespace CardCollector.Tests.Repository
             var result = await repository.GetByCardIDAsync(1);
             Assert.IsNotNull(result);
             Assert.AreEqual("LOB-EN001", result!.SetCode);
+        }
+
+        [TestMethod]
+        public async Task AddOrUpdateAsync_NoExistingRecordShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+
+            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Short Print");
+
+            var result = await repository.GetByCardIDAsync(1);
+            Assert.AreEqual("Common", result!.RarityName);
         }
         [TestMethod]
         public async Task DeleteAsync_ExistingImageID_RemovesRecord()

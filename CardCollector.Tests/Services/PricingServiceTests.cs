@@ -13,6 +13,19 @@ namespace CardCollector.Tests.Services
         private PricingService _service = null!;
 
         [TestMethod]
+        public async Task GetCardEditionMapAsync_FeedRarityIsShortPrint_GroupsUnderCommonKey()
+        {
+            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
+                MakeSet("LOB-EN001", "Short Print", "Unlimited", "5")
+            ]);
+
+            var map = await _service.GetCardEditionMapAsync(1);
+
+            Assert.AreEqual(1, map.Count);
+            CollectionAssert.AreEquivalent(new[] { CardEdition.Unlimited }, map[("LOB-EN001", "COMMON")].ToArray());
+        }
+
+        [TestMethod]
         public async Task GetCardEditionMapAsync_GroupsByUppercasedSetCodeAndRarityName()
         {
             _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
@@ -96,6 +109,18 @@ namespace CardCollector.Tests.Services
             var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare");
 
             Assert.AreEqual(12.50m, price);
+        }
+
+        [TestMethod]
+        public async Task GetPrintingPriceAsync_StoredRarityIsCommonButFeedStillSaysShortPrint_ReturnsPrice()
+        {
+            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
+                MakeSet("LOB-EN001", "Short Print", "Unlimited", "5.00")
+            ]);
+
+            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Common");
+
+            Assert.AreEqual(5.00m, price);
         }
 
         [TestInitialize]

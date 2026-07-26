@@ -62,6 +62,29 @@ namespace CardCollector.Tests.DTO
         [TestMethod]
         [DataRow(null, DisplayName = "Null")]
         [DataRow("", DisplayName = "Empty")]
+        [DataRow("Common", DisplayName = "Already Common")]
+        [DataRow("Ultra Rare", DisplayName = "Unrelated rarity")]
+        public void NormalizeRarityName_NotAShortPrintVariant_ReturnsUnchanged(string? rarityName)
+        {
+            var result = RarityExtensions.NormalizeRarityName(rarityName);
+
+            Assert.AreEqual(rarityName, result);
+        }
+        
+        [TestMethod]
+        [DataRow("Short Print", DisplayName = "Short Print")]
+        [DataRow("Super Short Print", DisplayName = "Super Short Print")]
+        [DataRow("short print", DisplayName = "Case-insensitive match")]
+        public void NormalizeRarityName_ShortPrintVariant_ReturnsCommon(string rarityName)
+        {
+            var result = RarityExtensions.NormalizeRarityName(rarityName);
+
+            Assert.AreEqual("Common", result);
+        }
+
+        [TestMethod]
+        [DataRow(null, DisplayName = "Null")]
+        [DataRow("", DisplayName = "Empty")]
         [DataRow("   ", DisplayName = "Whitespace")]
         [DataRow("2", DisplayName = "Garbage numeric string")]
         [DataRow("Not A Real Rarity", DisplayName = "Unmapped string")]
