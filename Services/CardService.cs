@@ -533,15 +533,15 @@ namespace CardCollector.Services
                 var image = card.CardImages.FirstOrDefault(i => i.ID == pv.ImageID);
 
                 var newerPrintings = card.CardSets
-                    .Where(s => s.Code != pv.SetCode || s.RarityName != pv.RarityName)
+                    .Where(s => s.Code != pv.SetCode || RarityExtensions.NormalizeRarityName(s.RarityName) != pv.RarityName)
                     .Select(s => (Set: s, Date: _cardSetRepository.GetTCGDateBySetCode(s.Code ?? string.Empty)))
                     .Where(x => x.Date is not null
                                 && string.Compare(x.Date, preferredDate, StringComparison.Ordinal) > 0
                                 && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
-                                && !dismissed.Contains((pv.CardID, x.Set.Code ?? string.Empty, x.Set.RarityName ?? string.Empty)))
+                                && !dismissed.Contains((pv.CardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty)))
                     .Select(x => new NewPrintingOptionViewModel
                     {
-                        RarityName = x.Set.RarityName ?? string.Empty,
+                        RarityName = RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty,
                         ReleaseDate = x.Date,
                         SetCode = x.Set.Code ?? string.Empty,
                         SetName = setNamesByCode.TryGetValue(x.Set.Code ?? string.Empty, out var sn) ? sn : x.Set.Name ?? string.Empty
@@ -585,10 +585,10 @@ namespace CardCollector.Services
                     .Where(x => x.Date is not null
                                 && string.Compare(x.Date, baselineDate, StringComparison.Ordinal) > 0
                                 && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
-                                && !dismissed.Contains((cardID, x.Set.Code ?? string.Empty, x.Set.RarityName ?? string.Empty)))
+                                && !dismissed.Contains((cardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty)))
                     .Select(x => new NewPrintingOptionViewModel
                     {
-                        RarityName = x.Set.RarityName ?? string.Empty,
+                        RarityName = RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty,
                         ReleaseDate = x.Date,
                         SetCode = x.Set.Code ?? string.Empty,
                         SetName = setNamesByCode.TryGetValue(x.Set.Code ?? string.Empty, out var sn) ? sn : x.Set.Name ?? string.Empty
@@ -1192,7 +1192,7 @@ namespace CardCollector.Services
             if (!string.IsNullOrWhiteSpace(setPrefix) || !string.IsNullOrWhiteSpace(rarityName))
                 cards = cards.Where(c => c.CardSets?.Any(s =>
                     (string.IsNullOrWhiteSpace(setPrefix) || (s.Code != null && GetSetPrefix(s.Code).Equals(setPrefix, StringComparison.OrdinalIgnoreCase))) &&
-                    (string.IsNullOrWhiteSpace(rarityName) || s.RarityName == rarityName)) == true);
+                    (string.IsNullOrWhiteSpace(rarityName) || RarityExtensions.NormalizeRarityName(s.RarityName) == rarityName)) == true);
 
             return cards;
         }
@@ -1299,17 +1299,19 @@ namespace CardCollector.Services
         {
             var card = _cardDataRepository.GetCardByID(cardID);
             var image = card?.CardImages?.FirstOrDefault(i => i.ID == imageID);
-            var set = rarityNameHint is not null
+            var normalizedHint = RarityExtensions.NormalizeRarityName(rarityNameHint);
+            var set = normalizedHint is not null
                 ? card?.CardSets?.FirstOrDefault(s =>
                     string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(s.RarityName, rarityNameHint, StringComparison.OrdinalIgnoreCase))
+                    && string.Equals(RarityExtensions.NormalizeRarityName(s.RarityName), normalizedHint, StringComparison.OrdinalIgnoreCase))
                 : card?.CardSets?.FirstOrDefault(s => string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase));
             var availableRarities = card?.CardSets?
                 .Where(s => s.Code == setCode && !string.IsNullOrEmpty(s.RarityName))
-                .Select(s => s.RarityName!)
+                .Select(s => RarityExtensions.NormalizeRarityName(s.RarityName)!)
                 .Distinct()
                 .OrderBy(r => r)
                 .ToList() ?? [];
+            var rarityName = normalizedHint ?? RarityExtensions.NormalizeRarityName(set?.RarityName) ?? string.Empty;
 
             return new CardPrinting
             {
@@ -1320,8 +1322,8 @@ namespace CardCollector.Services
                 ImageID = imageID,
                 ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
                 Price = set?.Price,
-                RarityCode = set?.RarityCode ?? string.Empty,
-                RarityName = rarityNameHint ?? set?.RarityName ?? string.Empty,
+                RarityCode = RarityExtensions.GetRarityCode(rarityName) ?? string.Empty,
+                RarityName = rarityName,
                 SetCode = setCode,
                 SetName = set?.Name ?? setCode
             };
@@ -1358,7 +1360,7 @@ namespace CardCollector.Services
             var hasAmbiguousSetCode = (card.CardSets ?? [])
                 .Any(s => !string.IsNullOrEmpty(s.Code)
                     && s.Code.ToTCGPlayerSetCode().Equals(tcgSetCode, StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(s.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase));
+                    && !string.Equals(RarityExtensions.NormalizeRarityName(s.RarityName), printing.RarityName, StringComparison.OrdinalIgnoreCase));
 
             var quantityOwned = ownedQuantities.GetValueOrDefault((imageID, setCode));
             var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));

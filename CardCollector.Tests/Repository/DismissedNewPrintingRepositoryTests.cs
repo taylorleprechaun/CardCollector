@@ -21,6 +21,30 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task AddAsync_AlreadyDismissedAsCommonButRequestedAsShortPrint_DoesNotAddDuplicate()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new DismissedNewPrintingRepository(context);
+            await repository.AddAsync(1, "LOB-EN001", "Common");
+
+            await repository.AddAsync(1, "LOB-EN001", "Short Print");
+
+            var result = await repository.GetAllAsync();
+            Assert.AreEqual(1, result.Count);
+        }
+
+        [TestMethod]
+        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new DismissedNewPrintingRepository(context);
+
+            await repository.AddAsync(1, "LOB-EN001", "Short Print");
+
+            var result = await repository.GetAllAsync();
+            Assert.IsTrue(result.Contains((1, "LOB-EN001", "Common")));
+        }
+        [TestMethod]
         public async Task AddAsync_ThenGetAllAsync_ContainsRecord()
         {
             using var context = InMemoryDbContextFactory.Create();

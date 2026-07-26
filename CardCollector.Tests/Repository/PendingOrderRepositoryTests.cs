@@ -9,6 +9,19 @@ namespace CardCollector.Tests.Repository
     public sealed class PendingOrderRepositoryTests
     {
         [TestMethod]
+        public async Task AddRangeAsync_ShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+            var line = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Short Print" };
+
+            await repository.AddRangeAsync([line]);
+
+            var result = await repository.GetAllAsync();
+            Assert.AreEqual("Common", result[0].RarityName);
+        }
+
+        [TestMethod]
         public async Task AddRangeAsync_ThenGetAllAsync_OrdersByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -24,7 +37,6 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual("NEW-EN001", result[0].SetCode);
             Assert.AreEqual("OLD-EN001", result[1].SetCode);
         }
-
         [TestMethod]
         public async Task DeleteAsync_ExistingLine_RemovesItAndReturnsTrue()
         {

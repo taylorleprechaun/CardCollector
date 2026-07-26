@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -17,6 +18,7 @@ namespace CardCollector.Repository
         {
             if (entry is null) throw new ArgumentNullException(nameof(entry));
 
+            entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName) ?? entry.RarityName;
             _context.CheckedOutCards.Add(entry);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -27,10 +29,13 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<CheckedOutCard?> GetAsync(int imageID, string setCode, string rarityName) =>
-            await _context.CheckedOutCards
+        public async Task<CheckedOutCard?> GetAsync(int imageID, string setCode, string rarityName)
+        {
+            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
+            return await _context.CheckedOutCards
                 .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);
+        }
 
         public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
         {
@@ -44,6 +49,7 @@ namespace CardCollector.Repository
 
         public async Task<bool> RemoveAsync(int imageID, string setCode, string rarityName)
         {
+            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
             var entry = await _context.CheckedOutCards
                 .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);
@@ -58,6 +64,7 @@ namespace CardCollector.Repository
 
         public async Task UpdateAsync(int imageID, string setCode, string rarityName, int quantity)
         {
+            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
             var entry = await _context.CheckedOutCards
                 .FirstOrDefaultAsync(c => c.ImageID == imageID && c.SetCode == setCode && c.RarityName == rarityName)
                 .ConfigureAwait(false);

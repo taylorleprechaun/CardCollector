@@ -17,7 +17,7 @@ namespace CardCollector.Services
             var cardSets = _pricingDataCache.GetCardSets(cardID);
 
             var map = cardSets
-                .GroupBy(s => (SetCode: s.Code.ToUpperInvariant(), RarityName: s.RarityName.ToUpperInvariant()))
+                .GroupBy(s => (SetCode: s.Code.ToUpperInvariant(), RarityName: (RarityExtensions.NormalizeRarityName(s.RarityName) ?? s.RarityName).ToUpperInvariant()))
                 .ToDictionary(
                     g => g.Key,
                     g => (IReadOnlySet<CardEdition>)g
@@ -41,7 +41,7 @@ namespace CardCollector.Services
         {
             bool IsSetRarityMatch(TCGPriceSet s) =>
                 string.Equals(s.Code, setCode, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(s.RarityName, rarityName, StringComparison.OrdinalIgnoreCase);
+                string.Equals(RarityExtensions.NormalizeRarityName(s.RarityName), RarityExtensions.NormalizeRarityName(rarityName), StringComparison.OrdinalIgnoreCase);
 
             if (edition is not null)
             {

@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace CardCollector.Repository
 
         public async Task AddAsync(CollectionEntry entry)
         {
+            entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
             _context.CollectionEntries.Add(entry);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -324,7 +326,7 @@ namespace CardCollector.Repository
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;
-            existing.RarityName = entry.RarityName;
+            existing.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
             existing.DateModified = DateTime.UtcNow;
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;

@@ -164,6 +164,19 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task SearchCardsAsync_RarityNameFilterCommon_MatchesCardsWithRawShortPrintRarity()
+        {
+            SetUpBrowseableCards(
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", RarityName = "Short Print" }] },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002", RarityName = "Ultra Rare" }] });
+
+            var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { RarityName = "Common" });
+
+            Assert.AreEqual(1, result.TotalCount);
+            Assert.AreEqual("Dark Magician", result.Items[0].Name);
+        }
+
+        [TestMethod]
         public async Task SearchCardsAsync_SetNameFilter_ResolvesPrefixAndMatchesCards()
         {
             SetUpBrowseableCards(

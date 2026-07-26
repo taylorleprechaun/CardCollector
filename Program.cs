@@ -1,4 +1,5 @@
 using CardCollector.Data;
+using CardCollector.DTO;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -87,6 +88,57 @@ using (var scope = app.Services.CreateScope())
             "DateCreated" TEXT NOT NULL
         );
         """);
+
+    // Some providers label plain Common cards as "Short Print"/"Super Short Print" instead
+    // (see RarityExtensions.NormalizeRarityName). Collapse any historical data written before
+    // the override existed. Idempotent: rows already normalized are left untouched on every
+    // subsequent startup.
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    foreach (var entry in db.CollectionEntries.Where(e => e.RarityName != null))
+        entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
+
+    foreach (var preferredVersion in db.PreferredVersions.Where(p => p.RarityName != null))
+        preferredVersion.RarityName = RarityExtensions.NormalizeRarityName(preferredVersion.RarityName);
+
+    foreach (var line in db.PendingOrderLines.Where(l => l.RarityName != null))
+        line.RarityName = RarityExtensions.NormalizeRarityName(line.RarityName);
+
+    foreach (var snapshot in db.CollectionEntryValueSnapshots.Where(s => s.RarityName != null))
+        snapshot.RarityName = RarityExtensions.NormalizeRarityName(snapshot.RarityName) ?? snapshot.RarityName;
+
+    // CheckedOutCards and DismissedNewPrintings both have a unique index that includes RarityName,
+    // so normalizing a row can collide with an existing row that's already "Common" for the same
+    // key. When that happens, keep the existing row and drop the now-redundant duplicate.
+    foreach (var group in db.CheckedOutCards.ToList()
+        .GroupBy(c => (c.ImageID, c.SetCode, Normalized: RarityExtensions.NormalizeRarityName(c.RarityName))))
+    {
+        var winner = group.OrderBy(c => c.RarityName == group.Key.Normalized ? 0 : 1).First();
+        winner.RarityName = group.Key.Normalized ?? winner.RarityName;
+
+        var duplicates = group.Where(c => c.ID != winner.ID).ToList();
+        foreach (var duplicate in duplicates)
+            logger.LogWarning(
+                "Removing duplicate CheckedOutCards row {ID} (ImageID={ImageID}, SetCode={SetCode}, RarityName={RarityName}) — superseded by row {WinnerID} after rarity normalization.",
+                duplicate.ID, duplicate.ImageID, duplicate.SetCode, duplicate.RarityName, winner.ID);
+        db.CheckedOutCards.RemoveRange(duplicates);
+    }
+
+    foreach (var group in db.DismissedNewPrintings.ToList()
+        .GroupBy(d => (d.CardID, d.SetCode, Normalized: RarityExtensions.NormalizeRarityName(d.RarityName))))
+    {
+        var winner = group.OrderBy(d => d.RarityName == group.Key.Normalized ? 0 : 1).First();
+        winner.RarityName = group.Key.Normalized ?? winner.RarityName;
+
+        var duplicates = group.Where(d => d.ID != winner.ID).ToList();
+        foreach (var duplicate in duplicates)
+            logger.LogWarning(
+                "Removing duplicate DismissedNewPrintings row {ID} (CardID={CardID}, SetCode={SetCode}, RarityName={RarityName}) — superseded by row {WinnerID} after rarity normalization.",
+                duplicate.ID, duplicate.CardID, duplicate.SetCode, duplicate.RarityName, winner.ID);
+        db.DismissedNewPrintings.RemoveRange(duplicates);
+    }
+
+    db.SaveChanges();
 }
 
 if (!app.Environment.IsDevelopment())

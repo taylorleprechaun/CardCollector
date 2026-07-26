@@ -7,6 +7,15 @@ namespace CardCollector.DTO
     {
         private static readonly IReadOnlyDictionary<string, Rarity> _map = BuildMap();
 
+        // Some providers label plain Common cards as "Short Print"/"Super Short Print" instead.
+        // Program.cs's startup migration calls NormalizeRarityName directly to fix historical data,
+        // so this is the single place to add a newly discovered bad variant string.
+        private static readonly IReadOnlySet<string> _shortPrintVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Short Print",
+            "Super Short Print"
+        };
+
         public static string? GetRarityCode(string? rarityName) => rarityName switch
         {
             "Common" => "(C)",
@@ -46,6 +55,9 @@ namespace CardCollector.DTO
             "Duel Terminal Ultra Parallel Rare" => "(DTUPR)",
             _ => null
         };
+
+        public static string? NormalizeRarityName(string? rarityName) =>
+            rarityName is not null && _shortPrintVariants.Contains(rarityName) ? "Common" : rarityName;
 
         public static Rarity ParseRarity(string? value)
         {

@@ -103,6 +103,29 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result[0].OrderedQuantity);
             Assert.AreEqual(1, result[0].CartQuantity);
         }
+
+        [TestMethod]
+        public async Task GetWishlistAsync_PreferredVersionIsCommonButCatalogRarityIsShortPrint_ResolvesPriceAndSetName()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Short Print", Price = 5m, Name = "Legend of Blue Eyes White Dragon" }]
+            });
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common" }
+            ]);
+
+            var result = (await _service.GetWishlistAsync()).ToList();
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("Common", result[0].RarityName);
+            Assert.AreEqual("(C)", result[0].RarityCode);
+            Assert.AreEqual("Legend of Blue Eyes White Dragon", result[0].SetName);
+            Assert.AreEqual(5m, result[0].Price);
+        }
         [TestMethod]
         public async Task GetWishlistDistinctRarityNamesAsync_ReturnsSortedDistinctNonEmptyNames()
         {

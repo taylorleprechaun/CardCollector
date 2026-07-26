@@ -17,6 +17,18 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CheckedOutRepository(context);
+            await repository.AddAsync(new CheckedOutCard { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Short Print", Quantity = 1 });
+
+            var result = await repository.GetAsync(10, "LOB-EN001", "Common");
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
         public async Task AddAsync_ThenGetAsync_RoundTrips()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -28,7 +40,6 @@ namespace CardCollector.Tests.Repository
             Assert.IsNotNull(result);
             Assert.AreEqual(2, result!.Quantity);
         }
-
         [TestMethod]
         public async Task GetAllAsync_OrdersByCheckedOutDateDescending()
         {
@@ -42,6 +53,18 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual("NEW-EN001", result[0].SetCode);
         }
 
+        [TestMethod]
+        public async Task GetAsync_LookupByRawShortPrintRarityName_FindsNormalizedStoredRow()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CheckedOutRepository(context);
+            await repository.AddAsync(new CheckedOutCard { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Short Print", Quantity = 1 });
+
+            var result = await repository.GetAsync(10, "LOB-EN001", "Short Print");
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Common", result!.RarityName);
+        }
         [TestMethod]
         public async Task GetCheckedOutLookupAsync_KeyedByImageSetRarity()
         {

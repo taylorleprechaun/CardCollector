@@ -77,6 +77,53 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetNewPrintingOpportunitiesAsync_NewerPrintingCatalogRarityIsShortPrint_DisplaysAsCommon()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" }, new Set { Code = "NEW-EN001", RarityName = "Short Print" }],
+                CardImages = [new Image { ID = 10 }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2015-01-01");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+            ]);
+
+            var result = await _service.GetNewPrintingOpportunitiesAsync();
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("Common", result[0].NewerPrintings[0].RarityName);
+        }
+
+        [TestMethod]
+        public async Task GetNewPrintingOpportunitiesAsync_NewerPrintingDismissedAsCommonButCatalogRarityIsShortPrint_ExcludesOpportunity()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" }, new Set { Code = "NEW-EN001", RarityName = "Short Print" }],
+                CardImages = [new Image { ID = 10 }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2015-01-01");
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+            ]);
+            _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
+                .ReturnsAsync(new HashSet<(int, string, string)> { (1, "NEW-EN001", "Common") });
+
+            var result = await _service.GetNewPrintingOpportunitiesAsync();
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
         public async Task GetNewPrintingOpportunitiesAsync_NewerPrintingExists_IsIncluded()
         {
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
@@ -139,6 +186,27 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
                 new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+            ]);
+
+            var result = await _service.GetNewPrintingOpportunitiesAsync();
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetNewPrintingOpportunitiesAsync_PreferredVersionIsCommonAndCatalogRarityIsShortPrintForSameSet_NotFlaggedAsNewerPrinting()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Short Print" }],
+                CardImages = [new Image { ID = 10 }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2015-01-01");
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();

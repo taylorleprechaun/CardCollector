@@ -119,7 +119,7 @@ namespace CardCollector.Repository
 
             DistinctRarityNames = _browseableCards
                 .SelectMany(c => c.CardSets ?? [])
-                .Select(s => s.RarityName)
+                .Select(s => RarityExtensions.NormalizeRarityName(s.RarityName))
                 .Where(r => !string.IsNullOrEmpty(r))
                 .Select(r => r!)
                 .Distinct()

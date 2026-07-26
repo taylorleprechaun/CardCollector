@@ -1,6 +1,7 @@
 @page
 @model CardModel
 @using CardCollector.Data.Models
+@using CardCollector.DTO
 @using CardCollector.Extensions
 @{
     ViewData["Title"] = Model.CurrentCard?.Name ?? "Card";
@@ -105,12 +106,12 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                             <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
                                 <div class="flex-grow-1 min-width-0">
                                     <div class="fw-semibold">@set.Name</div>
-                                    <div class="text-muted small"><code>@set.Code</code> &middot; @set.RarityName</div>
+                                    <div class="text-muted small"><code>@set.Code</code> &middot; @(RarityExtensions.NormalizeRarityName(set.RarityName))</div>
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2">
                                     @{
                                         var setCodeKey = set.Code ?? string.Empty;
-                                        var rarityKey = set.RarityName ?? string.Empty;
+                                        var rarityKey = RarityExtensions.NormalizeRarityName(set.RarityName) ?? string.Empty;
                                     }
                                     @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
                                     {
@@ -123,7 +124,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     @{
                                         var isPreferred = Model.PreferredVersion is not null
                                             && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
-                                            && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, set.RarityName, StringComparison.OrdinalIgnoreCase));
+                                            && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase));
                                     }
                                     @if (isPreferred)
                                     {
@@ -144,7 +145,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
                                             <input type="hidden" name="ImageID" value="@primaryImage!.ID" />
                                             <input type="hidden" name="SetCode" value="@set.Code" />
-                                            <input type="hidden" name="RarityName" value="@set.RarityName" />
+                                            <input type="hidden" name="RarityName" value="@rarityKey" />
                                             <input type="hidden" name="ID" value="@Model.ID" />
                                             @if (!string.IsNullOrEmpty(Model.ReturnURL))
                                             {
@@ -157,12 +158,12 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                 <div class="d-flex gap-1 flex-shrink-0">
                                     <button type="button"
                                             class="btn btn-sm btn-primary"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
                                         Order
                                     </button>
                                     <button type="button"
                                             class="btn btn-sm btn-success"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@((set.RarityName ?? string.Empty).Replace("'", "\\'"))', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
                                         Add to Collection
                                     </button>
                                 </div>

@@ -8,6 +8,19 @@ namespace CardCollector.Tests.Repository
     public sealed class CollectionRepositoryTests
     {
         [TestMethod]
+        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            var entry = new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Short Print", Status = CollectionStatus.Owned };
+
+            await repository.AddAsync(entry);
+            var result = await repository.GetByIDAsync(entry.ID);
+
+            Assert.AreEqual("Common", result!.RarityName);
+        }
+
+        [TestMethod]
         public async Task AddAsync_ThenGetByIDAsync_RoundTripsEntry()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -20,7 +33,6 @@ namespace CardCollector.Tests.Repository
             Assert.IsNotNull(result);
             Assert.AreEqual("LOB-EN001", result!.SetCode);
         }
-
         [TestMethod]
         public async Task DeleteAsync_ExistingEntry_RemovesItAndReturnsTrue()
         {
@@ -490,6 +502,19 @@ namespace CardCollector.Tests.Repository
             Assert.IsFalse(result);
         }
 
+        [TestMethod]
+        public async Task UpdateAsync_ShortPrintRarityName_NormalizesToCommon()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            var entry = new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Quantity = 1 };
+            await repository.AddAsync(entry);
+
+            await repository.UpdateAsync(new CollectionEntry { ID = entry.ID, Quantity = 1, RarityName = "Super Short Print" });
+
+            var updated = await repository.GetByIDAsync(entry.ID);
+            Assert.AreEqual("Common", updated!.RarityName);
+        }
         [TestMethod]
         public async Task UpdateStatusAsync_ExistingEntryWithQuantity_UpdatesBothFields()
         {

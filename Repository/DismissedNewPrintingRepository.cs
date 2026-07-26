@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -15,6 +16,8 @@ namespace CardCollector.Repository
 
         public async Task AddAsync(int cardID, string setCode, string rarityName)
         {
+            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
+
             var exists = await _context.DismissedNewPrintings
                 .AnyAsync(d => d.CardID == cardID && d.SetCode == setCode && d.RarityName == rarityName)
                 .ConfigureAwait(false);
