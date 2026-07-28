@@ -1,4 +1,3 @@
-using CardCollector.Data.Models;
 using System.Text.Json;
 
 namespace CardCollector.ViewModels
@@ -14,9 +13,13 @@ namespace CardCollector.ViewModels
         public string SetValueDataJson => JsonSerializer.Serialize(SetValueBreakdown.Select(x => x.Value));
         public string SetValueLabelsJson => JsonSerializer.Serialize(SetValueBreakdown.Select(x => x.Label));
         public IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards { get; set; } = [];
-        public IReadOnlyList<CollectionValueSnapshot> ValueHistory { get; set; } = [];
-        public string ValueHistoryCardCountsJson => JsonSerializer.Serialize(ValueHistory.Select(x => x.CardCount));
+        public IReadOnlyList<ValueSnapshotPoint> ValueHistory { get; set; } = [];
+        public string ValueHistoryCardCountsJson => JsonSerializer.Serialize(ValueHistory.Select(x => x.Count));
         public string ValueHistoryDatesJson => JsonSerializer.Serialize(ValueHistory.Select(x => x.SnapshotDate));
         public string ValueHistoryValuesJson => JsonSerializer.Serialize(ValueHistory.Select(x => x.TotalValue));
+        public IReadOnlyList<ValueSnapshotPoint> WishlistValueHistory { get; set; } = [];
+        public string WishlistValueHistoryCountsJson => JsonSerializer.Serialize(WishlistValueHistory.Select(x => x.Count));
+        public string WishlistValueHistoryDatesJson => JsonSerializer.Serialize(WishlistValueHistory.Select(x => x.SnapshotDate));
+        public string WishlistValueHistoryValuesJson => JsonSerializer.Serialize(WishlistValueHistory.Select(x => x.TotalValue));
     }
 }

@@ -154,6 +154,17 @@
 </div>
 
 <div class="card mb-4">
+    <div class="card-header fw-semibold">Wishlist Value Over Time</div>
+    <div class="card-body">
+        @if (Model.Stats.WishlistValueHistory.Count == 0)
+        {
+            <p class="text-muted" id="noWishlistHistoryMsg">No wishlist value snapshots yet. Wishlist value is refreshed automatically each night.</p>
+        }
+        <canvas id="wishlistValueChart" @(Model.Stats.WishlistValueHistory.Count == 0 ? "style=\"display:none\"" : "")></canvas>
+    </div>
+</div>
+
+<div class="card mb-4">
     <div class="card-header fw-semibold">Card Price History</div>
     <div class="card-body">
         <div class="d-flex gap-2 mb-3 align-items-center">
@@ -207,6 +218,9 @@
         const historyDates = @Html.Raw(Model.Stats.ValueHistoryDatesJson);
         const historyValues = @Html.Raw(Model.Stats.ValueHistoryValuesJson);
         const historyCardCounts = @Html.Raw(Model.Stats.ValueHistoryCardCountsJson);
+        const wishlistHistoryDates = @Html.Raw(Model.Stats.WishlistValueHistoryDatesJson);
+        const wishlistHistoryValues = @Html.Raw(Model.Stats.WishlistValueHistoryValuesJson);
+        const wishlistHistoryCounts = @Html.Raw(Model.Stats.WishlistValueHistoryCountsJson);
         const trackedCardImageMap = @Html.Raw(Model.TrackedCardImageMapJson);
     </script>
     <script src="~/js/stats.js" asp-append-version="true"></script>

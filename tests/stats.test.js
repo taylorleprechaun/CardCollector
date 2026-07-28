@@ -13,6 +13,9 @@ function setPageGlobals(overrides = {}) {
     historyDates: [],
     historyValues: [],
     historyCardCounts: [],
+    wishlistHistoryDates: [],
+    wishlistHistoryValues: [],
+    wishlistHistoryCounts: [],
     ...overrides
   });
 }
@@ -25,7 +28,7 @@ describe('stats.js', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     vi.restoreAllMocks();
-    for (const key of ['setLabels', 'setCounts', 'setValueLabels', 'setValueData', 'historyDates', 'historyValues', 'historyCardCounts', 'trackedCardImageMap']) {
+    for (const key of ['setLabels', 'setCounts', 'setValueLabels', 'setValueData', 'historyDates', 'historyValues', 'historyCardCounts', 'wishlistHistoryDates', 'wishlistHistoryValues', 'wishlistHistoryCounts', 'trackedCardImageMap']) {
       delete globalThis[key];
     }
   });
@@ -113,6 +116,31 @@ describe('stats.js', () => {
       globalThis.Chart.mockClear();
 
       buildValueChart(['2026-01-02'], [20], [6]);
+
+      expect(globalThis.Chart).not.toHaveBeenCalled();
+    });
+
+    it('drives a second, independent chart via the canvasId/noMsgId/label overrides', () => {
+      document.body.innerHTML = '<canvas id="valueChart"></canvas><canvas id="wishlistValueChart"></canvas>';
+      setPageGlobals();
+      loadScript('stats.js');
+      buildValueChart(['2026-01-01'], [10], [5]);
+      globalThis.Chart.mockClear();
+
+      buildValueChart(['2026-01-01'], [100], [7], 'wishlistValueChart', 'noWishlistHistoryMsg', 'Wishlist Value (USD)', 'Copies Needed');
+
+      expect(globalThis.Chart).toHaveBeenCalledTimes(1);
+      expect(document.getElementById('wishlistValueChart').style.display).toBe('');
+    });
+
+    it('updates the wishlist chart in place on a second call without recreating it', () => {
+      document.body.innerHTML = '<canvas id="wishlistValueChart"></canvas>';
+      setPageGlobals();
+      loadScript('stats.js');
+      buildValueChart(['2026-01-01'], [100], [7], 'wishlistValueChart', 'noWishlistHistoryMsg', 'Wishlist Value (USD)', 'Copies Needed');
+      globalThis.Chart.mockClear();
+
+      buildValueChart(['2026-01-02'], [90], [6], 'wishlistValueChart', 'noWishlistHistoryMsg', 'Wishlist Value (USD)', 'Copies Needed');
 
       expect(globalThis.Chart).not.toHaveBeenCalled();
     });
@@ -387,6 +415,17 @@ describe('stats.js', () => {
 
       expect(globalThis.Chart).toHaveBeenCalled();
     });
+
+    it('rebuilds an existing wishlist value-history chart by destroying and reconstructing it', () => {
+      document.body.innerHTML = '<canvas id="wishlistValueChart"></canvas>';
+      setPageGlobals({ wishlistHistoryDates: ['2026-01-01'], wishlistHistoryValues: [100], wishlistHistoryCounts: [7] });
+      loadScript('stats.js');
+      globalThis.Chart.mockClear();
+
+      document.dispatchEvent(new CustomEvent('themechange'));
+
+      expect(globalThis.Chart).toHaveBeenCalled();
+    });
   });
 
   describe('top-level initialization', () => {
@@ -415,6 +454,15 @@ describe('stats.js', () => {
       loadScript('stats.js');
 
       expect(globalThis.Chart).not.toHaveBeenCalled();
+    });
+
+    it('builds the wishlist value-history chart immediately when wishlistHistoryDates is non-empty', () => {
+      document.body.innerHTML = '<canvas id="wishlistValueChart" style="display: none;"></canvas>';
+      setPageGlobals({ wishlistHistoryDates: ['2026-01-01'], wishlistHistoryValues: [100], wishlistHistoryCounts: [7] });
+
+      loadScript('stats.js');
+
+      expect(document.getElementById('wishlistValueChart').style.display).toBe('');
     });
   });
 

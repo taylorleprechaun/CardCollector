@@ -64,6 +64,7 @@
         new StatTileViewModel("Remaining", Model.Stats.RemainingCount.ToString("N0"), AccentColor: "secondary"),
         new StatTileViewModel("Total spent", Model.Stats.TotalSpent.HasValue ? Model.Stats.TotalSpent.Value.ToString("C") : "—", AccentColor: "indigo"),
         new StatTileViewModel("Market value", Model.Stats.CurrentMarketValue.HasValue ? Model.Stats.CurrentMarketValue.Value.ToString("C") : "—", AccentColor: "teal"),
+        new StatTileViewModel("Wishlist remaining", Model.Stats.WishlistRemainingValue.HasValue ? Model.Stats.WishlistRemainingValue.Value.ToString("C") : "—", AccentColor: "rose"),
     };
 }
 <div class="row g-3 mb-3">

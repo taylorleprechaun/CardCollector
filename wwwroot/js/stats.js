@@ -82,8 +82,8 @@ function buildValueBar(id, labels, data) {
 
 let setChart = null;
 let setValueChart = null;
-let valueChart = null;
 let lastSetValueData = null;
+const valueChartsByCanvasId = {};
 
 function updateSetValueChart(labels, data) {
     lastSetValueData = { labels, data };
@@ -100,30 +100,31 @@ function updateSetValueChart(labels, data) {
     setValueChart = buildValueBar('setValueChart', labels, data);
 }
 
-function buildValueChart(dates, values, cardCounts) {
-    const ctx = document.getElementById('valueChart');
+function buildValueChart(dates, values, counts, canvasId = 'valueChart', noMsgId = 'noHistoryMsg', valueLabel = 'Market Value (USD)', countLabel = 'Cards Owned') {
+    const ctx = document.getElementById(canvasId);
     if (!ctx) return;
 
     ctx.style.display = '';
-    const noMsg = document.getElementById('noHistoryMsg');
+    const noMsg = document.getElementById(noMsgId);
     if (noMsg) noMsg.style.display = 'none';
 
     const valuePoints = dates.map((d, i) => ({ x: d, y: values[i] }));
-    const countPoints = dates.map((d, i) => ({ x: d, y: cardCounts[i] }));
+    const countPoints = dates.map((d, i) => ({ x: d, y: counts[i] }));
 
-    if (valueChart) {
-        valueChart.data.datasets[0].data = valuePoints;
-        valueChart.data.datasets[1].data = countPoints;
-        valueChart.update();
+    const existing = valueChartsByCanvasId[canvasId];
+    if (existing) {
+        existing.data.datasets[0].data = valuePoints;
+        existing.data.datasets[1].data = countPoints;
+        existing.update();
         return;
     }
 
-    valueChart = new Chart(ctx, {
+    valueChartsByCanvasId[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [
                 {
-                    label: 'Market Value (USD)',
+                    label: valueLabel,
                     data: valuePoints,
                     yAxisID: 'y',
                     fill: true,
@@ -133,7 +134,7 @@ function buildValueChart(dates, values, cardCounts) {
                     tension: 0.3
                 },
                 {
-                    label: 'Cards Owned',
+                    label: countLabel,
                     data: countPoints,
                     yAxisID: 'y2',
                     fill: false,
@@ -212,6 +213,7 @@ if (setValueLabels.length > 0) {
     setValueChart = buildValueBar('setValueChart', setValueLabels, setValueData);
 }
 if (historyDates.length > 0) buildValueChart(historyDates, historyValues, historyCardCounts);
+if (wishlistHistoryDates.length > 0) buildValueChart(wishlistHistoryDates, wishlistHistoryValues, wishlistHistoryCounts, 'wishlistValueChart', 'noWishlistHistoryMsg', 'Wishlist Value (USD)', 'Copies Needed');
 
 let cardHistoryChart = null;
 let lastCardHistorySeries = null;
@@ -367,10 +369,15 @@ document.addEventListener('themechange', function () {
         setValueChart = null;
         if (lastSetValueData) setValueChart = buildValueBar('setValueChart', lastSetValueData.labels, lastSetValueData.data);
     }
-    if (valueChart) {
-        valueChart.destroy();
-        valueChart = null;
+    if (valueChartsByCanvasId['valueChart']) {
+        valueChartsByCanvasId['valueChart'].destroy();
+        delete valueChartsByCanvasId['valueChart'];
         buildValueChart(historyDates, historyValues, historyCardCounts);
+    }
+    if (valueChartsByCanvasId['wishlistValueChart']) {
+        valueChartsByCanvasId['wishlistValueChart'].destroy();
+        delete valueChartsByCanvasId['wishlistValueChart'];
+        buildValueChart(wishlistHistoryDates, wishlistHistoryValues, wishlistHistoryCounts, 'wishlistValueChart', 'noWishlistHistoryMsg', 'Wishlist Value (USD)', 'Copies Needed');
     }
     if (cardHistoryChart) {
         cardHistoryChart.destroy();

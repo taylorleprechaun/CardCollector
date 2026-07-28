@@ -3,7 +3,6 @@ using CardCollector.DTO;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -24,6 +23,7 @@ namespace CardCollector.Tests.Services
         private Mock<IPricingService> _pricingServiceMock = null!;
         private CardService _service = null!;
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+        private Mock<IWishlistValueRepository> _wishlistValueRepositoryMock = null!;
         [TestInitialize]
         public void Setup()
         {
@@ -39,6 +39,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock = new Mock<IPreferredVersionRepository>();
             _pricingServiceMock = new Mock<IPricingService>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _wishlistValueRepositoryMock = new Mock<IWishlistValueRepository>();
 
             // Safe defaults so tests that don't care about these still don't NRE on null.
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode()).Returns(new Dictionary<string, string>());
@@ -74,6 +75,8 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>());
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPairsAsync(It.IsAny<IEnumerable<(int ImageID, string SetCode, string RarityName)>>()))
                 .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), int>());
+            _wishlistValueRepositoryMock.Setup(r => r.GetAllSnapshotsAsync()).ReturnsAsync(new List<WishlistValueSnapshot>());
+            _wishlistValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((WishlistValueSnapshot?)null);
 
             _service = new CardService(
                 _cardDataRepositoryMock.Object,
@@ -88,7 +91,8 @@ namespace CardCollector.Tests.Services
                 _pendingOrderRepositoryMock.Object,
                 _preferredVersionRepositoryMock.Object,
                 _pricingServiceMock.Object,
-                _unitOfWorkMock.Object);
+                _unitOfWorkMock.Object,
+                _wishlistValueRepositoryMock.Object);
         }
     }
 }

@@ -34,6 +34,12 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CardCount, IReadOnlyList<(string Label, decimal Value)> SetValueBreakdown, IReadOnlyList<(string CardName, string SetName, string RarityName, decimal Value)> TopValueCards)> CalculateCurrentMarketValueAsync(Func<int, int, Task>? onProgress = null);
 
         /// <summary>
+        /// Computes and persists today's wishlist cost-to-complete snapshot (sum of live printing price *
+        /// QuantityNeeded across every wishlist item), or returns today's already-persisted snapshot if one exists.
+        /// </summary>
+        Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync();
+
+        /// <summary>
         /// Checks whether the given (setCode, rarityName, edition) is a printing the live YGOProDeck data
         /// actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
         /// </summary>
