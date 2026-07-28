@@ -24,6 +24,7 @@ namespace CardCollector.Data
         public DbSet<PreferredVersion> PreferredVersions { get; set; }
 
         public DbSet<WishlistValueSnapshot> WishlistValueSnapshots { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<CheckedOutCard>(entity =>

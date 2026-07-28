@@ -4,7 +4,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 ## Features
 
-- **Dashboard** &mdash; collection progress overview with stats, including current market value from the most recent snapshot
+- **Dashboard** &mdash; collection progress overview with stats, including current market value and wishlist remaining cost-to-complete from the most recent snapshots
 
 **Catalog**
 - **Browse** &mdash; search and filter all ~12,000+ cards; link through to individual card detail
@@ -24,7 +24,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **Orders** &mdash; manage cards you&rsquo;ve ordered and mark them as received
 
 **Insights**
-- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart
+- **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value and wishlist cost-to-complete over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart
 - **Edition Audit** &mdash; flags owned entries whose recorded edition doesn&rsquo;t match (or can&rsquo;t be verified against) the live API data, with inline editing to correct them
 
 **Export**
@@ -89,9 +89,9 @@ CardCollector/
 
 ## Testing
 
-![C# Tests](https://img.shields.io/badge/C%23%20tests-582%20passing-brightgreen)
-![C# Coverage](https://img.shields.io/badge/C%23%20coverage-90%25-brightgreen)
-![JS Tests](https://img.shields.io/badge/JS%20tests-129%20passing-brightgreen)
+![C# Tests](https://img.shields.io/badge/C%23%20tests-597%20passing-brightgreen)
+![C# Coverage](https://img.shields.io/badge/C%23%20coverage-91%25-brightgreen)
+![JS Tests](https://img.shields.io/badge/JS%20tests-133%20passing-brightgreen)
 ![JS Coverage](https://img.shields.io/badge/JS%20coverage-93%25-brightgreen)
 
 ```
@@ -129,4 +129,4 @@ C# coverage excludes compiled Razor views and the `Program.cs` bootstrap (via `[
 - Speed Duel sets are excluded from all card data at load time.
 - Card images are loaded from CDN URLs; no images are stored locally.
 - Live pricing data is fetched from the YGO Pro Deck pricing endpoint per card when needed.
-- Collection value is refreshed automatically each night at midnight US Eastern time by a background service. It fetches live prices for all owned cards, persists the results as dated snapshots, and prunes old snapshot data (keeping daily granularity for the last 30 days and one snapshot per calendar month beyond that). The Dashboard and Stats page display values from the most recent snapshot.
+- Collection value and wishlist cost-to-complete are both refreshed automatically each night at midnight US Eastern time by the same background service. It fetches live prices for all owned and wishlisted cards, persists the results as dated snapshots for each, and prunes old snapshot data (keeping daily granularity for the last 30 days and one snapshot per calendar month beyond that). The Dashboard and Stats page display values from the most recent snapshots.

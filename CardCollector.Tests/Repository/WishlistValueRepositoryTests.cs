@@ -47,6 +47,46 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual(20m, result!.TotalValue);
         }
+
+        [TestMethod]
+        public async Task PruneSnapshotsAsync_KeepsRecentAndOnePerMonth_DeletesRest()
+        {
+            var (context, connection) = InMemoryDbContextFactory.CreateSqlite();
+            using (connection)
+            using (context)
+            {
+                var repository = new WishlistValueRepository(context);
+                var now = DateTime.UtcNow;
+
+                // Well within the 30-day cutoff — always kept regardless of month grouping.
+                var recentDate = now.AddDays(-5).ToString("yyyy-MM-dd");
+
+                // Two snapshots in the same calendar month, both beyond the cutoff — only the later one
+                // (the month's max) should survive pruning. Anchored to day-of-month 1 so adding a few
+                // days never rolls into a different month.
+                var oldMonth = new DateTime(now.AddMonths(-2).Year, now.AddMonths(-2).Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var oldMonthLaterDate = oldMonth.AddDays(19).ToString("yyyy-MM-dd");
+                var oldMonthEarlierDate = oldMonth.AddDays(9).ToString("yyyy-MM-dd");
+
+                // A different calendar month, further back — its single snapshot is that month's max, so it survives.
+                var differentOldMonthDate = oldMonth.AddMonths(-2).ToString("yyyy-MM-dd");
+
+                context.WishlistValueSnapshots.AddRange(
+                    new WishlistValueSnapshot { SnapshotDate = recentDate, TotalValue = 1m, RemainingCount = 1 },
+                    new WishlistValueSnapshot { SnapshotDate = oldMonthLaterDate, TotalValue = 2m, RemainingCount = 2 },
+                    new WishlistValueSnapshot { SnapshotDate = oldMonthEarlierDate, TotalValue = 3m, RemainingCount = 3 },
+                    new WishlistValueSnapshot { SnapshotDate = differentOldMonthDate, TotalValue = 4m, RemainingCount = 4 });
+                await context.SaveChangesAsync();
+
+                await repository.PruneSnapshotsAsync();
+
+                var remainingDates = (await repository.GetAllSnapshotsAsync()).Select(s => s.SnapshotDate).ToList();
+                CollectionAssert.AreEquivalent(
+                    new[] { recentDate, oldMonthLaterDate, differentOldMonthDate },
+                    remainingDates);
+            }
+        }
+
         [TestMethod]
         public async Task UpsertSnapshotAsync_ExistingSnapshotForDate_UpdatesInPlace()
         {
