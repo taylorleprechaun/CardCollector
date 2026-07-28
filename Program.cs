@@ -49,6 +49,7 @@ builder.Services.AddScoped<IPendingOrderRepository, PendingOrderRepository>();
 builder.Services.AddScoped<IPreferredVersionRepository, PreferredVersionRepository>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IWishlistValueRepository, WishlistValueRepository>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 
@@ -86,6 +87,17 @@ using (var scope = app.Services.CreateScope())
             "MarketPriceAtEntry" REAL NULL,
             "Quantity" INTEGER NOT NULL DEFAULT 1,
             "DateCreated" TEXT NOT NULL
+        );
+        """);
+
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "WishlistValueSnapshots" (
+            "ID" INTEGER NOT NULL CONSTRAINT "PK_WishlistValueSnapshots" PRIMARY KEY AUTOINCREMENT,
+            "DateCreated" TEXT NOT NULL,
+            "RemainingCount" INTEGER NOT NULL,
+            "SnapshotDate" TEXT NOT NULL,
+            "TotalValue" REAL NOT NULL,
+            CONSTRAINT "UQ_WishlistValueSnapshots_SnapshotDate" UNIQUE ("SnapshotDate")
         );
         """);
 

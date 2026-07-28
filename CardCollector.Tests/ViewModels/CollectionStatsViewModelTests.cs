@@ -1,7 +1,5 @@
-using System.Text.Json;
-using CardCollector.Data.Models;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.Json;
 
 namespace CardCollector.Tests.ViewModels
 {
@@ -48,12 +46,51 @@ namespace CardCollector.Tests.ViewModels
         {
             var stats = new CollectionStatsViewModel
             {
-                ValueHistory = [new CollectionValueSnapshot { SnapshotDate = "2026-01-01", CardCount = 5, TotalValue = 100m }]
+                ValueHistory = [new ValueSnapshotPoint("2026-01-01", 100m, 5)]
             };
 
             var dates = JsonSerializer.Deserialize<string[]>(stats.ValueHistoryDatesJson);
 
             CollectionAssert.AreEqual(new[] { "2026-01-01" }, dates);
+        }
+
+        [TestMethod]
+        public void WishlistValueHistoryCountsJson_SerializesCounts()
+        {
+            var stats = new CollectionStatsViewModel
+            {
+                WishlistValueHistory = [new ValueSnapshotPoint("2026-01-01", 50m, 7)]
+            };
+
+            var counts = JsonSerializer.Deserialize<int[]>(stats.WishlistValueHistoryCountsJson);
+
+            CollectionAssert.AreEqual(new[] { 7 }, counts);
+        }
+
+        [TestMethod]
+        public void WishlistValueHistoryDatesJson_SerializesSnapshotDates()
+        {
+            var stats = new CollectionStatsViewModel
+            {
+                WishlistValueHistory = [new ValueSnapshotPoint("2026-01-01", 50m, 7)]
+            };
+
+            var dates = JsonSerializer.Deserialize<string[]>(stats.WishlistValueHistoryDatesJson);
+
+            CollectionAssert.AreEqual(new[] { "2026-01-01" }, dates);
+        }
+
+        [TestMethod]
+        public void WishlistValueHistoryValuesJson_SerializesTotalValues()
+        {
+            var stats = new CollectionStatsViewModel
+            {
+                WishlistValueHistory = [new ValueSnapshotPoint("2026-01-01", 50m, 7)]
+            };
+
+            var values = JsonSerializer.Deserialize<decimal[]>(stats.WishlistValueHistoryValuesJson);
+
+            CollectionAssert.AreEqual(new[] { 50m }, values);
         }
     }
 }

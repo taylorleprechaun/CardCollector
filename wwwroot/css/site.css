@@ -81,6 +81,7 @@
 
     --cc-indigo: #6610f2;
     --cc-teal: #157a68;
+    --cc-rose: #c2255c;
 
     /* Typography scale */
     --cc-font-size-xs: 0.75rem;
@@ -131,6 +132,7 @@
 
     --cc-indigo: #a08cf5;
     --cc-teal: #4fd1c5;
+    --cc-rose: #f28cb1;
 }
 
 /* Bootstrap's compiled .btn-primary/.btn-outline-primary hardcode a literal hex
@@ -157,13 +159,15 @@
     --bs-btn-disabled-border-color: var(--bs-primary);
 }
 
-/* Two extra accent hues (Bootstrap's own indigo/teal swatches, unaffected by
+/* Extra accent hues (Bootstrap's own indigo/teal/rose swatches, unaffected by
    dark mode) for dashboard tiles that need a distinct color beyond the
    6 semantic theme colors already in use. */
 .text-cc-indigo { color: var(--cc-indigo) !important; }
 .border-cc-indigo { border-color: var(--cc-indigo) !important; }
 .text-cc-teal { color: var(--cc-teal) !important; }
 .border-cc-teal { border-color: var(--cc-teal) !important; }
+.text-cc-rose { color: var(--cc-rose) !important; }
+.border-cc-rose { border-color: var(--cc-rose) !important; }
 
 /* ---------------------------------------------------------------
    Navbar
@@ -276,6 +280,10 @@
 .stat-tile--accent-teal { border-color: var(--cc-teal); }
 .stat-tile--accent-teal .stat-tile-label,
 .stat-tile--accent-teal .stat-tile-value { color: var(--cc-teal); }
+
+.stat-tile--accent-rose { border-color: var(--cc-rose); }
+.stat-tile--accent-rose .stat-tile-label,
+.stat-tile--accent-rose .stat-tile-value { color: var(--cc-rose); }
 
 .cc-hero-figure {
     font-size: var(--cc-font-size-hero);

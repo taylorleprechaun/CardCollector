@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Repository;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Services
 {
@@ -20,6 +20,17 @@ namespace CardCollector.Services
             _logger = logger;
             _pricingDataCache = pricingDataCache;
             _scopeFactory = scopeFactory;
+        }
+
+        // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
+        // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
+        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUtc)
+        {
+            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
+            var nextMidnightEastern = nowEastern.Date.AddDays(1);
+            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
+            var delay = nextMidnightUtc - nowUtc;
+            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
         }
 
         [ExcludeFromCodeCoverage(Justification = "BackgroundService polling loop; the scheduling decision it calls is tested separately via GetDelayUntilNextMidnightEastern.")]
@@ -47,18 +58,6 @@ namespace CardCollector.Services
                 await RunNightlyRefreshAsync(stoppingToken);
             }
         }
-
-        // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
-        // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
-        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUtc)
-        {
-            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
-            var nextMidnightEastern = nowEastern.Date.AddDays(1);
-            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
-            var delay = nextMidnightUtc - nowUtc;
-            return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
-        }
-
         [ExcludeFromCodeCoverage(Justification = "Orchestrates a real DI scope and downstream services; a mocked-scope test would only re-assert the mock setup, not real behavior.")]
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {
@@ -71,13 +70,16 @@ namespace CardCollector.Services
                 var cardService = scope.ServiceProvider.GetRequiredService<ICardService>();
                 var collectionValueRepo = scope.ServiceProvider.GetRequiredService<ICollectionValueRepository>();
                 var collectionEntryValueRepo = scope.ServiceProvider.GetRequiredService<ICollectionEntryValueRepository>();
+                var wishlistValueRepo = scope.ServiceProvider.GetRequiredService<IWishlistValueRepository>();
 
                 await cardService.CalculateCurrentMarketValueAsync();
+                await cardService.CalculateWishlistRemainingValueAsync();
 
                 _logger.LogInformation("PriceRefreshBackgroundService: price refresh complete, pruning snapshots");
 
                 await collectionValueRepo.PruneSnapshotsAsync();
                 await collectionEntryValueRepo.PruneSnapshotsAsync();
+                await wishlistValueRepo.PruneSnapshotsAsync();
 
                 _logger.LogInformation("PriceRefreshBackgroundService: pruning complete");
             }

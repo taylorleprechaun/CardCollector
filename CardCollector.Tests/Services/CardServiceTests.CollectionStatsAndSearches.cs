@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -26,6 +25,31 @@ namespace CardCollector.Tests.Services
             Assert.IsTrue(stats.AcquisitionBreakdown.Any(x => x.Label == "Purchased" && x.Count == 2));
             Assert.IsTrue(stats.AcquisitionBreakdown.Any(x => x.Label == "Unknown" && x.Count == 1));
             Assert.IsTrue(stats.SetBreakdown.Any(x => x.Label == "Legend of Blue Eyes White Dragon"));
+        }
+
+        [TestMethod]
+        public async Task GetCollectionStatsAsync_MapsCollectionAndWishlistSnapshotsToValueHistory()
+        {
+            _collectionValueRepositoryMock.Setup(r => r.GetAllSnapshotsAsync()).ReturnsAsync(
+            [
+                new CollectionValueSnapshot { SnapshotDate = "2026-01-01", TotalValue = 100m, CardCount = 5 }
+            ]);
+            _wishlistValueRepositoryMock.Setup(r => r.GetAllSnapshotsAsync()).ReturnsAsync(
+            [
+                new WishlistValueSnapshot { SnapshotDate = "2026-01-01", TotalValue = 50m, RemainingCount = 7 }
+            ]);
+
+            var stats = await _service.GetCollectionStatsAsync();
+
+            Assert.AreEqual(1, stats.ValueHistory.Count);
+            Assert.AreEqual("2026-01-01", stats.ValueHistory[0].SnapshotDate);
+            Assert.AreEqual(100m, stats.ValueHistory[0].TotalValue);
+            Assert.AreEqual(5, stats.ValueHistory[0].Count);
+
+            Assert.AreEqual(1, stats.WishlistValueHistory.Count);
+            Assert.AreEqual("2026-01-01", stats.WishlistValueHistory[0].SnapshotDate);
+            Assert.AreEqual(50m, stats.WishlistValueHistory[0].TotalValue);
+            Assert.AreEqual(7, stats.WishlistValueHistory[0].Count);
         }
 
         [TestMethod]

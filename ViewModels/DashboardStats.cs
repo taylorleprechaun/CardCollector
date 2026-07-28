@@ -27,5 +27,9 @@ namespace CardCollector.ViewModels
         public decimal? TotalSpent { get; set; }
 
         public int WishlistCount { get; set; }
+
+        public decimal? WishlistRemainingValue { get; set; }
+
+        public string? WishlistRemainingValueDate { get; set; }
     }
 }

@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.Repository;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -59,6 +58,20 @@ namespace CardCollector.Tests.Services
 
             Assert.IsNull(stats.CurrentMarketValue);
             Assert.IsNull(stats.CurrentMarketValueDate);
+            Assert.IsNull(stats.WishlistRemainingValue);
+            Assert.IsNull(stats.WishlistRemainingValueDate);
+        }
+
+        [TestMethod]
+        public async Task GetDashboardStatsAsync_WishlistSnapshotExists_PopulatesWishlistRemainingValue()
+        {
+            _wishlistValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync())
+                .ReturnsAsync(new WishlistValueSnapshot { TotalValue = 42m, RemainingCount = 7, SnapshotDate = "2026-07-27" });
+
+            var stats = await _service.GetDashboardStatsAsync();
+
+            Assert.AreEqual(42m, stats.WishlistRemainingValue);
+            Assert.AreEqual("2026-07-27", stats.WishlistRemainingValueDate);
         }
     }
 }

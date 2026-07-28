@@ -25,6 +25,7 @@ namespace CardCollector.Services
         private readonly IPreferredVersionRepository _preferredVersionRepository;
         private readonly IPricingService _pricingService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IWishlistValueRepository _wishlistValueRepository;
 
         // Memoized per instance: CardService is Scoped (one instance per request) and no request
         // mutates PreferredVersion/collection state and then re-reads the wishlist within the same request.
@@ -43,7 +44,8 @@ namespace CardCollector.Services
             IPendingOrderRepository pendingOrderRepository,
             IPreferredVersionRepository preferredVersionRepository,
             IPricingService pricingService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IWishlistValueRepository wishlistValueRepository)
         {
             _cardDataRepository = cardDataRepository;
             _cardSetRepository = cardSetRepository;
@@ -58,6 +60,7 @@ namespace CardCollector.Services
             _preferredVersionRepository = preferredVersionRepository;
             _pricingService = pricingService;
             _unitOfWork = unitOfWork;
+            _wishlistValueRepository = wishlistValueRepository;
         }
 
         public async Task AddEntryAsync(
@@ -248,6 +251,36 @@ namespace CardCollector.Services
             return (totalValue, entries.Sum(e => e.Quantity), setValueBreakdown, topValueCards);
         }
 
+        public async Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync()
+        {
+            var today = DateTime.UtcNow.ToString(SnapshotDateFormat);
+
+            var latestSnapshot = await _wishlistValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
+            if (latestSnapshot is not null && latestSnapshot.SnapshotDate == today)
+                return (latestSnapshot.TotalValue, latestSnapshot.RemainingCount);
+
+            var wishlist = (await GetWishlistAsync().ConfigureAwait(false)).ToList();
+
+            var totalValue = 0m;
+            var countRemaining = 0;
+            foreach (var item in wishlist)
+            {
+                var price = await _pricingService.GetPrintingPriceAsync(item.CardID, item.SetCode, item.RarityName).ConfigureAwait(false);
+                totalValue += (price ?? 0m) * item.QuantityNeeded;
+                countRemaining += item.QuantityNeeded;
+            }
+
+            await _wishlistValueRepository.UpsertSnapshotAsync(new WishlistValueSnapshot
+            {
+                DateCreated = DateTime.UtcNow,
+                RemainingCount = countRemaining,
+                SnapshotDate = today,
+                TotalValue = totalValue
+            }).ConfigureAwait(false);
+
+            return (totalValue, countRemaining);
+        }
+
         public async Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition)
         {
             var editionMap = await _pricingService.GetCardEditionMapAsync(cardID).ConfigureAwait(false);
@@ -379,6 +412,7 @@ namespace CardCollector.Services
                 .ToList();
 
             var valueHistory = await _collectionValueRepository.GetAllSnapshotsAsync().ConfigureAwait(false);
+            var wishlistValueHistory = await _wishlistValueRepository.GetAllSnapshotsAsync().ConfigureAwait(false);
 
             return new CollectionStatsViewModel
             {
@@ -387,7 +421,8 @@ namespace CardCollector.Services
                 SetBreakdown = setBreakdown,
                 SetValueBreakdown = setValueBreakdown,
                 TopValueCards = topValueCards,
-                ValueHistory = valueHistory.ToList()
+                ValueHistory = MapValueHistory(valueHistory),
+                WishlistValueHistory = MapValueHistory(wishlistValueHistory)
             };
         }
 
@@ -399,6 +434,7 @@ namespace CardCollector.Services
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
             var ownedStats = await _collectionRepository.GetOwnedStatsAsync().ConfigureAwait(false);
             var latestSnapshot = await _collectionValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
+            var latestWishlistSnapshot = await _wishlistValueRepository.GetLatestSnapshotAsync().ConfigureAwait(false);
 
             var collectedPairs = await _collectionRepository.GetOwnedPairsAsync().ConfigureAwait(false);
             var allPreferred = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
@@ -415,7 +451,9 @@ namespace CardCollector.Services
                 TotalCards = totalCards,
                 TotalCardQuantity = ownedStats.TotalQuantity,
                 TotalSpent = ownedStats.TotalSpent,
-                WishlistCount = wishlistCount
+                WishlistCount = wishlistCount,
+                WishlistRemainingValue = latestWishlistSnapshot?.TotalValue,
+                WishlistRemainingValueDate = latestWishlistSnapshot?.SnapshotDate
             };
         }
 
@@ -1248,6 +1286,9 @@ namespace CardCollector.Services
             var hyphen = code.IndexOf('-');
             return hyphen > 0 ? code[..hyphen] : code;
         }
+
+        private static List<ValueSnapshotPoint> MapValueHistory<T>(IEnumerable<T> snapshots) where T : IValueSnapshotEntity =>
+            snapshots.Select(s => new ValueSnapshotPoint(s.SnapshotDate, s.TotalValue, s.Count)).ToList();
 
         private async Task AutoDismissNewPrintingsForCardAsync(int cardID, string setCode)
         {
