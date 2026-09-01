@@ -15,9 +15,6 @@ namespace CardCollector.Pages
         public int CardID { get; set; }
 
         [BindProperty]
-        public int ImageID { get; set; }
-
-        [BindProperty]
         public string NewRarityName { get; set; } = string.Empty;
 
         [BindProperty]
@@ -30,6 +27,9 @@ namespace CardCollector.Pages
 
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 25;
+
+        [BindProperty]
+        public int PreferredVersionID { get; set; }
 
         [BindProperty]
         public string RarityName { get; set; } = string.Empty;
@@ -78,7 +78,7 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostUpgradeAsync()
         {
-            await _cardService.UpgradePreferredVersionAsync(ImageID, CardID, NewSetCode, NewRarityName);
+            await _cardService.UpgradePreferredVersionAsync(PreferredVersionID, CardID, NewSetCode, NewRarityName);
             return RedirectToPage();
         }
     }

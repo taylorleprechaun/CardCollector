@@ -93,7 +93,7 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostUpgradeAsync_UpgradesPreferredVersionAndRedirects()
         {
-            _page.ImageID = 10;
+            _page.PreferredVersionID = 10;
             _page.CardID = 1;
             _page.NewSetCode = "NEW-EN001";
             _page.NewRarityName = "Secret Rare";

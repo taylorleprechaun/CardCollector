@@ -37,7 +37,7 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(1, 10, "  ", "Ultra Rare", 1, null);
+            var result = await page.OnPostAddToCartAsync(1, 10, "  ", "Ultra Rare", 1, null, 100);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }
@@ -47,7 +47,7 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(0, 10, "LOB-EN001", "Ultra Rare", 1, null);
+            var result = await page.OnPostAddToCartAsync(0, 10, "LOB-EN001", "Ultra Rare", 1, null, 100);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }
@@ -57,7 +57,7 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(1, 0, "LOB-EN001", "Ultra Rare", 1, null);
+            var result = await page.OnPostAddToCartAsync(1, 0, "LOB-EN001", "Ultra Rare", 1, null, 100);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }
@@ -70,7 +70,7 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new WishlistSearchResult { PagedItems = new PagedResult<WishlistItemViewModel>() });
             var page = CreatePage(isAjax: false);
 
-            var result = await page.OnPostAddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m);
+            var result = await page.OnPostAddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m, 100);
 
             _cardServiceMock.Verify(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
@@ -116,7 +116,7 @@ namespace CardCollector.Tests.Pages
                     PagedItems = new PagedResult<WishlistItemViewModel>
                     {
                         TotalCount = 1,
-                        Items = [new WishlistItemViewModel { ImageID = 10, CardName = "Dark Magician" }]
+                        Items = [new WishlistItemViewModel { PreferredVersionID = 10, CardName = "Dark Magician" }]
                     }
                 });
             _razorPartialRendererMock

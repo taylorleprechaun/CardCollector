@@ -10,20 +10,24 @@ namespace CardCollector.ViewModels
 
         public int OrderedQuantity { get; init; }
 
+        public int PreferredVersionID { get; init; }
+
         public int QuantityNeeded => Math.Max(0, CompleteThreshold - QuantityOwned - OrderedQuantity - CartQuantity);
 
         public int QuantityOwned { get; init; } = 0;
 
-        public static WishlistItemViewModel From(CardPrinting printing, int quantityOwned = 0, int cartQuantity = 0, int orderedQuantity = 0) => new()
+        public static WishlistItemViewModel From(CardPrinting printing, int preferredVersionID, int quantityOwned = 0, int cartQuantity = 0, int orderedQuantity = 0, int completeThreshold = 3) => new()
         {
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,
             CartQuantity = cartQuantity,
+            CompleteThreshold = completeThreshold,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             OrderedQuantity = orderedQuantity,
+            PreferredVersionID = preferredVersionID,
             Price = printing.Price,
             QuantityOwned = quantityOwned,
             RarityCode = printing.RarityCode,

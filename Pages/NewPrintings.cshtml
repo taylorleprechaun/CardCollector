@@ -10,7 +10,7 @@
 </div>
 
 <p class="text-muted mb-4">
-    Cards in your preferred versions — or ignored cards — that have a newer printing available.
+    Cards you're tracking — or have ignored — that have a newer printing available.
     Choose a newer printing to move it to your wishlist, or dismiss it to stop seeing it here.
 </p>
 
@@ -18,7 +18,7 @@
 {
     <div class="alert alert-success text-center py-5">
         <h4>All caught up!</h4>
-        <p class="mb-0">No newer printings found for your preferred versions.</p>
+        <p class="mb-0">No newer printings found for your tracked printings.</p>
     </div>
 }
 else
@@ -49,7 +49,7 @@ else
                                 else
                                 {
                                     <span>
-                                        Currently preferred: @opportunity.CurrentSetName
+                                        Currently tracked: @opportunity.CurrentSetName
                                         <span class="ms-1 text-muted">(@opportunity.CurrentSetCode)</span>
                                         &mdash; @opportunity.CurrentRarityName
                                         @if (!string.IsNullOrEmpty(opportunity.CurrentReleaseDate))
@@ -101,7 +101,7 @@ else
                                 <td class="text-end">
                                     <form method="post" asp-page-handler="Upgrade" class="d-inline">
                                         <input type="hidden" name="CardID" value="@opportunity.CardID" />
-                                        <input type="hidden" name="ImageID" value="@opportunity.ImageID" />
+                                        <input type="hidden" name="PreferredVersionID" value="@opportunity.PreferredVersionID" />
                                         <input type="hidden" name="NewSetCode" value="@printing.SetCode" />
                                         <input type="hidden" name="NewRarityName" value="@printing.RarityName" />
                                         <button type="submit" class="btn btn-sm btn-success">Choose This</button>

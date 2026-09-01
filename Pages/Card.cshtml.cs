@@ -32,8 +32,6 @@ namespace CardCollector.Pages
 
         public bool IsIgnored { get; private set; }
 
-        public PreferredVersion? PreferredVersion { get; private set; }
-
         [BindProperty]
         public string? RarityName { get; set; }
 
@@ -42,6 +40,8 @@ namespace CardCollector.Pages
 
         [BindProperty]
         public string SetCode { get; set; } = string.Empty;
+
+        public IReadOnlyList<PreferredVersion> TrackedPrintings { get; private set; } = [];
 
         public CardModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
@@ -53,24 +53,23 @@ namespace CardCollector.Pages
         {
             if (status != CollectionStatus.Owned) return null;
 
-            var isPreferred = PreferredVersion is not null
-                && PreferredVersion.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
-                && (PreferredVersion.RarityName is null || PreferredVersion.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase));
+            var tracked = TrackedPrintings.FirstOrDefault(pv =>
+                pv.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
+                && (pv.RarityName is null || pv.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase)));
 
-            if (isPreferred)
-                return totalQuantity >= CardPrinting.CompleteThreshold
+            if (tracked is not null)
+                return totalQuantity >= tracked.DesiredQuantity
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
 
-            if (PreferredVersion is not null
-                && CollectionEntriesBySetCode.TryGetValue(
-                    (PreferredVersion.SetCode, PreferredVersion.RarityName ?? string.Empty),
-                    out var preferredSummary)
-                && preferredSummary.Status == CollectionStatus.Owned
-                && preferredSummary.TotalQuantity >= CardPrinting.CompleteThreshold)
-                return CollectionCompletionStatus.Owned;
+            // This particular printing isn't one of the tracked ones — if some other tracked printing for
+            // this card is already complete, this copy still counts as "owned," just not the target.
+            var anyOtherTrackedComplete = TrackedPrintings.Any(pv =>
+                CollectionEntriesBySetCode.TryGetValue((pv.SetCode, pv.RarityName ?? string.Empty), out var summary)
+                && summary.Status == CollectionStatus.Owned
+                && summary.TotalQuantity >= pv.DesiredQuantity);
 
-            return CollectionCompletionStatus.Placeholder;
+            return anyOtherTrackedComplete ? CollectionCompletionStatus.Owned : CollectionCompletionStatus.Placeholder;
         }
 
         public string GetTCGDate(string setCode) =>
@@ -101,7 +100,7 @@ namespace CardCollector.Pages
                         TotalQuantity: g.Sum(e => e.Quantity)
                     ));
 
-            PreferredVersion = await _cardService.GetPreferredVersionByCardIDAsync(ID);
+            TrackedPrintings = await _cardService.GetTrackedPrintingsByCardIDAsync(ID);
             IsIgnored = await _cardService.IsCardIgnoredAsync(ID);
         }
 
@@ -151,9 +150,17 @@ namespace CardCollector.Pages
             return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 
-        public async Task<IActionResult> OnPostRemovePreferredAsync()
+        public async Task<IActionResult> OnPostRemovePreferredAsync(int preferredVersionID)
         {
-            await _cardService.RemoveFromWishlistAsync(ImageID);
+            await _cardService.RemoveFromWishlistAsync(preferredVersionID);
+            return RedirectToPage(new { ID, ImageID, ReturnURL });
+        }
+
+        public async Task<IActionResult> OnPostSetDesiredQuantityAsync(int preferredVersionID, int desiredQuantity)
+        {
+            if (preferredVersionID > 0 && desiredQuantity >= 1)
+                await _cardService.SetDesiredQuantityAsync(preferredVersionID, desiredQuantity).ConfigureAwait(false);
+
             return RedirectToPage(new { ID, ImageID, ReturnURL });
         }
 

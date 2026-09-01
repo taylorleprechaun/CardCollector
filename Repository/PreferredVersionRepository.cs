@@ -14,12 +14,12 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null)
+        public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null)
         {
             rarityName = RarityExtensions.NormalizeRarityName(rarityName);
 
             var existing = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID)
+                .FirstOrDefaultAsync(pv => pv.CardID == cardID && pv.SetCode == setCode && pv.RarityName == rarityName)
                 .ConfigureAwait(false);
 
             if (existing is null)
@@ -27,6 +27,7 @@ namespace CardCollector.Repository
                 _context.PreferredVersions.Add(new PreferredVersion
                 {
                     CardID = cardID,
+                    DesiredQuantity = desiredQuantity ?? 3,
                     ImageID = imageID,
                     RarityName = rarityName,
                     SetCode = setCode,
@@ -37,20 +38,17 @@ namespace CardCollector.Repository
             else
             {
                 existing.ImageID = imageID;
-                existing.RarityName = rarityName;
-                existing.SetCode = setCode;
+                if (desiredQuantity.HasValue)
+                    existing.DesiredQuantity = desiredQuantity.Value;
                 existing.DateModified = DateTime.UtcNow;
             }
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        public async Task DeleteAsync(int imageID)
+        public async Task DeleteAsync(int id)
         {
-            var entity = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.ImageID == imageID)
-                .ConfigureAwait(false);
-
+            var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
             if (entity is not null)
             {
                 _context.PreferredVersions.Remove(entity);
@@ -61,22 +59,27 @@ namespace CardCollector.Repository
         public async Task<IEnumerable<PreferredVersion>> GetAllAsync() =>
             await _context.PreferredVersions.ToListAsync().ConfigureAwait(false);
 
-        public async Task<PreferredVersion?> GetByCardIDAsync(int cardID) =>
-                    await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID)
+        public async Task<IReadOnlyList<PreferredVersion>> GetByCardIDAsync(int cardID) =>
+            await _context.PreferredVersions
+                .Where(pv => pv.CardID == cardID)
+                .ToListAsync()
                 .ConfigureAwait(false);
-        public async Task<IReadOnlyDictionary<int, PreferredVersion>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
+
+        public async Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
         {
             var ids = imageIDs.ToHashSet();
             if (ids.Count == 0)
-                return new Dictionary<int, PreferredVersion>();
+                return new Dictionary<int, IReadOnlyList<PreferredVersion>>();
 
             // Filter in memory, not in SQL: imageIDs can cover the whole owned collection (thousands of rows).
             var all = await _context.PreferredVersions
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return all.Where(pv => ids.Contains(pv.ImageID)).ToDictionary(pv => pv.ImageID);
+            return all
+                .Where(pv => ids.Contains(pv.ImageID))
+                .GroupBy(pv => pv.ImageID)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.ToList());
         }
 
         public async Task<IReadOnlySet<int>> GetPreferredCardIDsAsync()
@@ -90,5 +93,29 @@ namespace CardCollector.Repository
             return ids.ToHashSet();
         }
 
+        public async Task<bool> UpdateDesiredQuantityAsync(int id, int desiredQuantity)
+        {
+            var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
+            if (entity is null)
+                return false;
+
+            entity.DesiredQuantity = desiredQuantity;
+            entity.DateModified = DateTime.UtcNow;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+            return true;
+        }
+
+        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName)
+        {
+            var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
+            if (entity is null)
+                return false;
+
+            entity.SetCode = newSetCode;
+            entity.RarityName = RarityExtensions.NormalizeRarityName(newRarityName);
+            entity.DateModified = DateTime.UtcNow;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+            return true;
+        }
     }
 }

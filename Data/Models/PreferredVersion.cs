@@ -11,6 +11,8 @@ namespace CardCollector.Data.Models
 
         public DateTime DateModified { get; set; }
 
+        public int DesiredQuantity { get; set; } = 3;
+
         public int ID { get; set; }
 
         [Required]

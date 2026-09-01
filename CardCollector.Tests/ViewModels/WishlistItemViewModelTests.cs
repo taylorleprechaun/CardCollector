@@ -9,7 +9,7 @@ namespace CardCollector.Tests.ViewModels
         [TestMethod]
         public void IsInCart_CartQuantityIsPositive_ReturnsTrue()
         {
-            var item = WishlistItemViewModel.From(new CardPrinting(), cartQuantity: 1);
+            var item = WishlistItemViewModel.From(new CardPrinting(), 1, cartQuantity: 1);
 
             Assert.IsTrue(item.IsInCart);
         }
@@ -17,7 +17,7 @@ namespace CardCollector.Tests.ViewModels
         [TestMethod]
         public void IsInCart_CartQuantityIsZero_ReturnsFalse()
         {
-            var item = WishlistItemViewModel.From(new CardPrinting(), cartQuantity: 0);
+            var item = WishlistItemViewModel.From(new CardPrinting(), 1, cartQuantity: 0);
 
             Assert.IsFalse(item.IsInCart);
         }
@@ -25,7 +25,7 @@ namespace CardCollector.Tests.ViewModels
         [TestMethod]
         public void IsOrdered_OrderedQuantityIsPositive_ReturnsTrue()
         {
-            var item = WishlistItemViewModel.From(new CardPrinting(), orderedQuantity: 1);
+            var item = WishlistItemViewModel.From(new CardPrinting(), 1, orderedQuantity: 1);
 
             Assert.IsTrue(item.IsOrdered);
         }
@@ -33,7 +33,7 @@ namespace CardCollector.Tests.ViewModels
         [TestMethod]
         public void IsOrdered_OrderedQuantityIsZero_ReturnsFalse()
         {
-            var item = WishlistItemViewModel.From(new CardPrinting(), orderedQuantity: 0);
+            var item = WishlistItemViewModel.From(new CardPrinting(), 1, orderedQuantity: 0);
 
             Assert.IsFalse(item.IsOrdered);
         }
@@ -45,7 +45,7 @@ namespace CardCollector.Tests.ViewModels
         [DataRow(3, 2, 2, 0, DisplayName = "Overshooting threshold clamps to zero instead of going negative")]
         public void QuantityNeeded_ClampsAtZeroAndNeverNegative(int quantityOwned, int orderedQuantity, int cartQuantity, int expected)
         {
-            var item = WishlistItemViewModel.From(new CardPrinting(), quantityOwned, cartQuantity, orderedQuantity);
+            var item = WishlistItemViewModel.From(new CardPrinting(), 1, quantityOwned, cartQuantity, orderedQuantity);
 
             Assert.AreEqual(expected, item.QuantityNeeded);
         }

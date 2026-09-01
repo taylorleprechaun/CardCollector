@@ -21,5 +21,7 @@ namespace CardCollector.ViewModels
         public bool IsIgnored { get; set; }
 
         public IReadOnlyList<NewPrintingOptionViewModel> NewerPrintings { get; set; } = [];
+
+        public int PreferredVersionID { get; set; }
     }
 }

@@ -1,7 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -86,9 +85,9 @@ namespace CardCollector.Repository
             if (ownedEntries.Count == 0)
                 return new Dictionary<int, CollectionCompletionStatus>();
 
-            var preferredVersions = await _context.PreferredVersions
+            var trackedPrintings = await _context.PreferredVersions
                 .Where(pv => ids.Contains(pv.ImageID))
-                .Select(pv => new { pv.ImageID, pv.SetCode, pv.RarityName })
+                .Select(pv => new { pv.ImageID, pv.SetCode, pv.RarityName, pv.DesiredQuantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -96,20 +95,33 @@ namespace CardCollector.Repository
 
             foreach (var group in ownedEntries.GroupBy(e => e.ImageID))
             {
-                var preferred = preferredVersions.FirstOrDefault(pv => pv.ImageID == group.Key);
-                var preferredEntries = preferred is null ? [] : group.Where(e =>
-                    e.SetCode.Equals(preferred.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                    (preferred.RarityName is null || preferred.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
+                // An artwork can have more than one tracked printing (e.g. two different set/rarity
+                // printings of the same card art). Only printings with at least one matching owned entry
+                // count toward the roll-up; if none match, this artwork isn't one of the tracked printings.
+                var trackedForImage = trackedPrintings.Where(pv => pv.ImageID == group.Key).ToList();
+                var statuses = new List<CollectionCompletionStatus>();
 
-                if (preferredEntries.Count == 0)
+                foreach (var tracked in trackedForImage)
+                {
+                    var matchingEntries = group.Where(e =>
+                        e.SetCode.Equals(tracked.SetCode, StringComparison.OrdinalIgnoreCase) &&
+                        (tracked.RarityName is null || tracked.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+
+                    if (matchingEntries.Count == 0)
+                        continue;
+
+                    var qty = matchingEntries.Sum(e => e.Quantity);
+                    statuses.Add(qty >= tracked.DesiredQuantity ? CollectionCompletionStatus.Complete : CollectionCompletionStatus.Incomplete);
+                }
+
+                if (statuses.Count == 0)
                 {
                     result[group.Key] = CollectionCompletionStatus.Placeholder;
                     continue;
                 }
 
-                var qty = preferredEntries.Sum(e => e.Quantity);
-                result[group.Key] = qty >= CardPrinting.CompleteThreshold
+                result[group.Key] = statuses.Contains(CollectionCompletionStatus.Complete)
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
             }

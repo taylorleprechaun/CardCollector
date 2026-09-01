@@ -196,6 +196,22 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetCompletionStatusByImageIDsAsync_TwoTrackedPrintingsShareImageID_RollsUpToCompleteIfEitherIsMet()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", Status = CollectionStatus.Owned, Quantity = 1 });
+            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 });
+            await context.SaveChangesAsync();
+
+            var result = await repository.GetCompletionStatusByImageIDsAsync([10]);
+
+            Assert.AreEqual(CollectionCompletionStatus.Complete, result[10]);
+        }
+
+        [TestMethod]
         public async Task GetDistinctAcquisitionMethodsAsync_OwnedOnlyExcludesNullAndOrdersValues()
         {
             using var context = InMemoryDbContextFactory.Create();

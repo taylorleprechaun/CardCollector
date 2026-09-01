@@ -122,21 +122,37 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                         <span class="badge @badgeClass">@badgeLabel &times; @collectionSummary.TotalQuantity</span>
                                     }
                                     @{
-                                        var isPreferred = Model.PreferredVersion is not null
-                                            && string.Equals(Model.PreferredVersion.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
-                                            && (Model.PreferredVersion.RarityName is null || string.Equals(Model.PreferredVersion.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase));
+                                        var tracked = Model.TrackedPrintings.FirstOrDefault(pv =>
+                                            string.Equals(pv.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
+                                            && (pv.RarityName is null || string.Equals(pv.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase)));
                                     }
-                                    @if (isPreferred)
+                                    @if (tracked is not null)
                                     {
-                                        <span class="badge-preferred">&#9733; Preferred</span>
-                                        <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
-                                            <input type="hidden" name="ImageID" value="@(Model.PreferredVersion!.ImageID)" />
+                                        <span class="badge-preferred">&#9733; Tracked</span>
+                                        <form method="post" asp-page-handler="SetDesiredQuantity" class="d-inline-flex align-items-center gap-1">
+                                            <input type="hidden" name="preferredVersionID" value="@tracked.ID" />
                                             <input type="hidden" name="ID" value="@Model.ID" />
                                             @if (!string.IsNullOrEmpty(Model.ReturnURL))
                                             {
                                                 <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
                                             }
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Unset</button>
+                                            <span class="text-muted small">Target</span>
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Target quantity" title="How many copies of this printing you want to own">
+                                                @for (int q = 1; q <= 3; q++)
+                                                {
+                                                    <button type="submit" name="desiredQuantity" value="@q"
+                                                            class="btn @(q == tracked.DesiredQuantity ? "btn-primary" : "btn-outline-secondary")">@q</button>
+                                                }
+                                            </div>
+                                        </form>
+                                        <form method="post" asp-page-handler="RemovePreferred" class="d-inline">
+                                            <input type="hidden" name="preferredVersionID" value="@tracked.ID" />
+                                            <input type="hidden" name="ID" value="@Model.ID" />
+                                            @if (!string.IsNullOrEmpty(Model.ReturnURL))
+                                            {
+                                                <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
+                                            }
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Untrack</button>
                                         </form>
                                     }
                                     else
@@ -151,7 +167,7 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                             {
                                                 <input type="hidden" name="ReturnURL" value="@Model.ReturnURL" />
                                             }
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">Set as Preferred</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Track This Printing</button>
                                         </form>
                                     }
                                 </div>

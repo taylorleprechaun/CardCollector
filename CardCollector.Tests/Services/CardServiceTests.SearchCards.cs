@@ -109,6 +109,28 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task SearchCardsAsync_IsIncompleteWithSetFilter_UsesEachCardsOwnDesiredQuantityWithinThatSet()
+        {
+            SetUpBrowseableCards(
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001" }] },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002" }] });
+            _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Legend of Blue Eyes White Dragon")).Returns("LOB");
+            _collectionRepositoryMock
+                .Setup(r => r.GetOwnedQuantitiesByCardIDsForSetPrefixAsync(It.IsAny<IEnumerable<int>>(), "LOB"))
+                .ReturnsAsync(new Dictionary<int, int> { [1] = 1, [2] = 1 });
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", DesiredQuantity = 1 },
+                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", DesiredQuantity = 3 }
+            ]);
+
+            var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Legend of Blue Eyes White Dragon", IsIncomplete = true });
+
+            Assert.AreEqual(1, result.TotalCount);
+            Assert.AreEqual("Blue-Eyes White Dragon", result.Items[0].Name);
+        }
+
+        [TestMethod]
         public async Task SearchCardsAsync_IsOrderedTrue_FiltersToOrderedCardIDs()
         {
             SetUpBrowseableCards(
@@ -189,7 +211,6 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.TotalCount);
             Assert.AreEqual("Dark Magician", result.Items[0].Name);
         }
-
         private void SetUpBrowseableCards(params Card[] cards) =>
                                                                                                             _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(cards);
     }

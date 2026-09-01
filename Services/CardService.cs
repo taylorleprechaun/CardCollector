@@ -508,28 +508,32 @@ namespace CardCollector.Services
                         ? withPrice.Sum(e => e.Quantity * e.PurchasePrice!.Value)
                         : null;
 
-                    var isPreferred = g.Select(e => e.ImageID).Distinct().Any(imgID =>
-                        preferredVersions.TryGetValue(imgID, out var pv)
-                        && pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
-                        && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase)));
+                    // An artwork can now have more than one tracked printing — find the one matching this
+                    // group's exact set/rarity, if any.
+                    var matchedPreferred = g.Select(e => e.ImageID).Distinct()
+                        .SelectMany(imgID => preferredVersions.TryGetValue(imgID, out var list) ? list : (IReadOnlyList<PreferredVersion>)[])
+                        .FirstOrDefault(pv =>
+                            pv.SetCode.Equals(first.SetCode, StringComparison.OrdinalIgnoreCase)
+                            && (pv.RarityName is null || pv.RarityName.Equals(first.RarityName, StringComparison.OrdinalIgnoreCase)));
 
                     var hasCheckout = checkedOutLookup.TryGetValue((first.ImageID, first.SetCode, first.RarityName), out var checkoutInfo);
 
                     return CollectionGroupViewModel.From(
                         printing: first,
                         entries: g.ToList(),
-                        isPreferredVersion: isPreferred,
+                        isPreferredVersion: matchedPreferred is not null,
                         preferredVersionIsComplete: false,
                         totalCost: totalCost,
                         totalQuantity: g.Sum(e => e.Quantity),
                         checkedOutQuantity: hasCheckout ? checkoutInfo.Quantity : 0,
-                        checkedOutDate: hasCheckout ? checkoutInfo.Date : null);
+                        checkedOutDate: hasCheckout ? checkoutInfo.Date : null,
+                        completeThreshold: matchedPreferred?.DesiredQuantity ?? 3);
                 })
                 .ToList();
 
             // Phase 2: identify imageIDs where the preferred version group is Complete
             var completePreferredImageIDs = allGroups
-                .Where(g => g.IsPreferredVersion && g.TotalQuantity >= CardPrinting.CompleteThreshold)
+                .Where(g => g.IsPreferredVersion && g.TotalQuantity >= g.CompleteThreshold)
                 .Select(g => g.ImageID)
                 .ToHashSet();
 
@@ -543,7 +547,8 @@ namespace CardCollector.Services
                     totalCost: g.TotalCost,
                     totalQuantity: g.TotalQuantity,
                     checkedOutQuantity: g.CheckedOutQuantity,
-                    checkedOutDate: g.CheckedOutDate))
+                    checkedOutDate: g.CheckedOutDate,
+                    completeThreshold: g.CompleteThreshold))
                 .OrderBy(g => g.CardName)
                 .ThenBy(g => g.SetCode)
                 .ToList();
@@ -602,7 +607,8 @@ namespace CardCollector.Services
                     ImageID = pv.ImageID,
                     ImageURLSmall = image?.ImageURLSmall ?? string.Empty,
                     IsIgnored = ignoredCards.ContainsKey(pv.CardID),
-                    NewerPrintings = newerPrintings
+                    NewerPrintings = newerPrintings,
+                    PreferredVersionID = pv.ID
                 });
             }
 
@@ -670,9 +676,6 @@ namespace CardCollector.Services
             return viewModels;
         }
 
-        public async Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID) =>
-            await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
-
         public async Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null)
         {
             var candidates = await GetPurchasePriorityCandidatesAsync(asOfUtc, maxPricePerCard).ConfigureAwait(false);
@@ -711,22 +714,22 @@ namespace CardCollector.Services
             if (card is null)
                 return null;
 
+            // A card can have several tracked printings now — use this specific printing's own target,
+            // defaulting to 3 if it isn't actually tracked (a candidate can still be evaluated ad hoc).
+            var normalizedRarity = RarityExtensions.NormalizeRarityName(rarityName);
+            var trackedPrintings = await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
+            var matched = trackedPrintings.FirstOrDefault(pv =>
+                pv.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
+                && (pv.RarityName is null || pv.RarityName.Equals(normalizedRarity, StringComparison.OrdinalIgnoreCase)));
+
             var ownedQuantities = await _collectionRepository.GetOwnedQuantitiesForPreferredVersionsAsync(
                 [(imageID, setCode, rarityName)]).ConfigureAwait(false);
-
-            // Same "any preferred artwork already complete" exclusion rule as GetPurchasePriorityCandidatesAsync.
-            var preferredVersion = await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
-            var anyComplete = preferredVersion is not null
-                && ownedQuantities.GetValueOrDefault((preferredVersion.ImageID, preferredVersion.SetCode)) >= CardPrinting.CompleteThreshold;
-            if (anyComplete)
-                return null;
-
             var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
 
             return await EvaluateCandidateAsync(
                 card, imageID, setCode, rarityName, asOf, maxPrice,
-                ownedQuantities, orderedQuantities, stagedQuantities).ConfigureAwait(false);
+                ownedQuantities, orderedQuantities, stagedQuantities, matched?.DesiredQuantity ?? 3).ConfigureAwait(false);
         }
 
         public async Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null)
@@ -744,15 +747,11 @@ namespace CardCollector.Services
 
             var results = new List<PurchasePriorityCandidateViewModel>();
 
-            // Every wishlist card appears here; flagged printings (scarce, no reprint in years) sort first and
-            // everything else fills out the budget after. A card is skipped entirely once any preferred artwork is complete.
+            // Every tracked printing appears here independently; flagged printings (scarce, no reprint in
+            // years) sort first and everything else fills out the budget after. Each printing is evaluated
+            // on its own target — EvaluateCandidateAsync already excludes one whose own target is already met.
             foreach (var (cardID, preferredVersions) in preferredByCardID)
             {
-                var anyComplete = preferredVersions.Any(pv =>
-                    ownedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode)) >= CardPrinting.CompleteThreshold);
-                if (anyComplete)
-                    continue;
-
                 var card = _cardDataRepository.GetCardByID(cardID);
                 if (card is null)
                     continue;
@@ -761,7 +760,7 @@ namespace CardCollector.Services
                 {
                     var candidateViewModel = await EvaluateCandidateAsync(
                         card, preferred.ImageID, preferred.SetCode, preferred.RarityName, asOf, maxPrice,
-                        ownedQuantities, orderedQuantities, stagedQuantities).ConfigureAwait(false);
+                        ownedQuantities, orderedQuantities, stagedQuantities, preferred.DesiredQuantity).ConfigureAwait(false);
 
                     if (candidateViewModel is not null)
                         results.Add(candidateViewModel);
@@ -819,6 +818,9 @@ namespace CardCollector.Services
             return map;
         }
 
+        public async Task<IReadOnlyList<PreferredVersion>> GetTrackedPrintingsByCardIDAsync(int cardID) =>
+            await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
+
         public async Task<IEnumerable<WishlistItemViewModel>> GetWishlistAsync()
         {
             if (_wishlistCache is not null)
@@ -842,14 +844,14 @@ namespace CardCollector.Services
             {
                 ownedQuantities.TryGetValue((pv.ImageID, pv.SetCode), out var ownedQty);
 
-                if (ownedQty >= CardPrinting.CompleteThreshold)
+                if (ownedQty >= pv.DesiredQuantity)
                     continue;
 
                 var cartQuantity = stagedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode, pv.RarityName ?? string.Empty));
                 var orderedQuantity = orderedQuantities.GetValueOrDefault((pv.ImageID, pv.SetCode, pv.RarityName ?? string.Empty));
 
                 var printing = BuildCardPrinting(pv.CardID, pv.ImageID, pv.SetCode, pv.RarityName);
-                results.Add(WishlistItemViewModel.From(printing, ownedQty, cartQuantity, orderedQuantity));
+                results.Add(WishlistItemViewModel.From(printing, pv.ID, ownedQty, cartQuantity, orderedQuantity, pv.DesiredQuantity));
             }
 
             _wishlistCache = results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
@@ -886,12 +888,12 @@ namespace CardCollector.Services
         public async Task<bool> IsCardIgnoredAsync(int cardID) =>
             await _ignoredCardRepository.IsIgnoredAsync(cardID).ConfigureAwait(false);
 
-        public async Task RemoveFromWishlistAsync(int imageID) =>
-                                            await _preferredVersionRepository.DeleteAsync(imageID).ConfigureAwait(false);
+        public async Task RemoveFromWishlistAsync(int preferredVersionID) =>
+            await _preferredVersionRepository.DeleteAsync(preferredVersionID).ConfigureAwait(false);
 
-        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null)
+        public async Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null)
         {
-            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName).ConfigureAwait(false);
+            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, setCode, rarityName, desiredQuantity).ConfigureAwait(false);
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(cardID, setCode).ConfigureAwait(false);
         }
@@ -953,8 +955,18 @@ namespace CardCollector.Services
                     var ownedQuantitiesInSet = await _collectionRepository
                         .GetOwnedQuantitiesByCardIDsForSetPrefixAsync(candidates.Select(c => c.ID), setPrefix)
                         .ConfigureAwait(false);
+
+                    // A card can have more than one tracked printing within the same set prefix now (rare,
+                    // but possible) — use the most demanding target among them for this set.
+                    var allTracked = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
+                    var desiredQuantitiesInSetByCardID = allTracked
+                        .Where(pv => pv.SetCode.StartsWith(setPrefix + "-", StringComparison.OrdinalIgnoreCase))
+                        .GroupBy(pv => pv.CardID)
+                        .ToDictionary(g => g.Key, g => g.Max(pv => pv.DesiredQuantity));
+
                     filtered = candidates.Where(c =>
-                        ownedQuantitiesInSet.TryGetValue(c.ID, out var qty) && qty > 0 && qty < CardPrinting.CompleteThreshold);
+                        ownedQuantitiesInSet.TryGetValue(c.ID, out var qty) && qty > 0
+                        && qty < desiredQuantitiesInSetByCardID.GetValueOrDefault(c.ID, 3));
                 }
                 else
                 {
@@ -1148,6 +1160,9 @@ namespace CardCollector.Services
             };
         }
 
+        public async Task<bool> SetDesiredQuantityAsync(int preferredVersionID, int desiredQuantity) =>
+            await _preferredVersionRepository.UpdateDesiredQuantityAsync(preferredVersionID, Math.Clamp(desiredQuantity, 1, 99)).ConfigureAwait(false);
+
         public async Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides)
         {
             ArgumentNullException.ThrowIfNull(overrides);
@@ -1207,9 +1222,9 @@ namespace CardCollector.Services
         public async Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity) =>
             await _pendingOrderRepository.UpdateQuantityAsync(pendingOrderLineID, Math.Clamp(quantity, 1, MaxCartQuantity)).ConfigureAwait(false);
 
-        public async Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName)
+        public async Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName)
         {
-            await _preferredVersionRepository.AddOrUpdateAsync(cardID, imageID, newSetCode, newRarityName).ConfigureAwait(false);
+            await _preferredVersionRepository.UpgradeAsync(preferredVersionID, newSetCode, newRarityName).ConfigureAwait(false);
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(cardID, newSetCode).ConfigureAwait(false);
         }
@@ -1374,7 +1389,8 @@ namespace CardCollector.Services
                     Card card, int imageID, string setCode, string? rarityName, DateTime asOf, decimal? maxPrice,
             IReadOnlyDictionary<(int ImageID, string SetCode), int> ownedQuantities,
             IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> orderedQuantities,
-            IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> stagedQuantities)
+            IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int> stagedQuantities,
+            int desiredQuantity = 3)
         {
             var candidate = PurchasePriorityAnalyzer.Evaluate(
                 card, setCode, rarityName, _cardSetRepository.GetTCGDateBySetCode, asOf)
@@ -1406,7 +1422,7 @@ namespace CardCollector.Services
             var quantityOwned = ownedQuantities.GetValueOrDefault((imageID, setCode));
             var cartQuantity = stagedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));
             var orderedQuantity = orderedQuantities.GetValueOrDefault((imageID, setCode, rarityName ?? string.Empty));
-            var candidateViewModel = PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity);
+            var candidateViewModel = PurchasePriorityCandidateViewModel.From(pricedPrinting, candidate, quantityOwned, hasAmbiguousSetCode, cartQuantity, orderedQuantity, desiredQuantity);
 
             // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
             return candidateViewModel.QuantityNeeded <= 0 ? null : candidateViewModel;

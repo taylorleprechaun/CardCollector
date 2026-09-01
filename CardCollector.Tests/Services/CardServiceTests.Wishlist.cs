@@ -66,6 +66,22 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetWishlistAsync_OwnedQuantityAtCustomDesiredQuantity_ExcludesItem()
+        {
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 1 }
+            ]);
+            _collectionRepositoryMock
+                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 1 });
+
+            var result = await _service.GetWishlistAsync();
+
+            Assert.AreEqual(0, result.Count());
+        }
+
+        [TestMethod]
         public async Task GetWishlistAsync_OwnedQuantityAtOrAboveThreshold_ExcludesItem()
         {
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
@@ -80,7 +96,6 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(0, result.Count());
         }
-
         [TestMethod]
         public async Task GetWishlistAsync_OwnedQuantityBelowThreshold_IncludesItemWithQuantities()
         {
@@ -125,6 +140,25 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("(C)", result[0].RarityCode);
             Assert.AreEqual("Legend of Blue Eyes White Dragon", result[0].SetName);
             Assert.AreEqual(5m, result[0].Price);
+        }
+
+        [TestMethod]
+        public async Task GetWishlistAsync_TwoTrackedPrintingsForSameCard_BothAppearIndependently()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "A Bao A Qu, the Lightless Shadow" });
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 }
+            ]);
+
+            var result = (await _service.GetWishlistAsync()).ToList();
+
+            Assert.AreEqual(2, result.Count);
+            var suda = result.Single(r => r.SetCode == "SUDA-EN001");
+            var qcsr = result.Single(r => r.SetCode == "RA04-EN001");
+            Assert.AreEqual(3, suda.QuantityNeeded);
+            Assert.AreEqual(1, qcsr.QuantityNeeded);
         }
         [TestMethod]
         public async Task GetWishlistDistinctRarityNamesAsync_ReturnsSortedDistinctNonEmptyNames()

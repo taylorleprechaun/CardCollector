@@ -39,6 +39,9 @@ namespace CardCollector.Pages
         public decimal? MarketPriceAtEntry { get; set; }
 
         [BindProperty]
+        public int PreferredVersionID { get; set; }
+
+        [BindProperty]
         public DateTime? PurchaseDate { get; set; }
 
         [BindProperty]
@@ -107,14 +110,14 @@ namespace CardCollector.Pages
             Results = result.PagedItems;
         }
 
-        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
+        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice, int preferredVersionID)
         {
             if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
                 return BadRequest();
 
             await _cardService.AddToCartAsync(cardID, imageID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
 
-            return await RespondAfterMutationAsync(imageID).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(preferredVersionID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
@@ -127,13 +130,13 @@ namespace CardCollector.Pages
                 AcquisitionMethod,
                 PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
 
-            return await RespondAfterMutationAsync(ImageID).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(PreferredVersionID).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostRemoveAsync(int imageID)
+        public async Task<IActionResult> OnPostRemoveAsync(int preferredVersionID)
         {
-            await _cardService.RemoveFromWishlistAsync(imageID);
-            return await RespondAfterMutationAsync(imageID).ConfigureAwait(false);
+            await _cardService.RemoveFromWishlistAsync(preferredVersionID);
+            return await RespondAfterMutationAsync(preferredVersionID).ConfigureAwait(false);
         }
 
         private WishlistSearchCriteria BuildCurrentCriteria(int page, int pageSize)
@@ -169,7 +172,7 @@ namespace CardCollector.Pages
         private bool IsAjaxRequest() =>
             Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
-        private async Task<IActionResult> RespondAfterMutationAsync(int imageID)
+        private async Task<IActionResult> RespondAfterMutationAsync(int preferredVersionID)
         {
             if (!IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
@@ -181,7 +184,7 @@ namespace CardCollector.Pages
             Response.Headers["X-Cart-Count"] = cartCount.ToString(CultureInfo.InvariantCulture);
             Response.Headers["X-Cart-Total"] = cartTotal.ToString(CultureInfo.InvariantCulture);
 
-            var match = result.PagedItems.Items.FirstOrDefault(i => i.ImageID == imageID);
+            var match = result.PagedItems.Items.FirstOrDefault(i => i.PreferredVersionID == preferredVersionID);
             if (match is null)
                 return Content(string.Empty, "text/html");
 

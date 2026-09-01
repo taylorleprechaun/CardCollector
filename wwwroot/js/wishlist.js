@@ -5,6 +5,7 @@ async function openWishlistOwnModal(btn) {
     document.getElementById('wlImageID').value = btn.dataset.imageId;
     document.getElementById('wlSetCode').value = btn.dataset.setCode;
     document.getElementById('wlSetName').textContent = btn.dataset.setName;
+    document.getElementById('wlPreferredVersionID').value = btn.dataset.preferredVersionId;
 
     const rarity = btn.dataset.rarityName || '';
     document.getElementById('wlRarityName').value = rarity;
@@ -41,6 +42,7 @@ async function openWishlistOrderModal(btn) {
     document.getElementById('woImageID').value = ds.imageId;
     document.getElementById('woSetCode').value = ds.setCode;
     document.getElementById('woRarityName').value = ds.rarityName || '';
+    document.getElementById('woPreferredVersionID').value = ds.preferredVersionId;
     document.getElementById('woCardName').textContent = ds.cardName;
     document.getElementById('woSetNameLabel').textContent = ds.setName;
     document.getElementById('woRarityLabel').textContent = ds.rarityName || '';

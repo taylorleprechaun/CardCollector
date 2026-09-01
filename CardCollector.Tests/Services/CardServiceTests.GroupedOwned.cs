@@ -86,7 +86,7 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 2, CardID = 1, ImageID = 10, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion> { [10] = new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" } });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -105,7 +105,7 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 2, CardID = 1, ImageID = 10, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion> { [10] = new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" } });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -122,7 +122,7 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion> { [10] = new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" } });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -139,11 +139,40 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion> { [10] = new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" } });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
             Assert.AreEqual(CollectionCompletionStatus.Incomplete, groups[0].CompletionStatus);
+        }
+
+        [TestMethod]
+        public async Task GetGroupedOwnedAsync_TwoTrackedPrintingsShareImageID_EachIndependentlyReflectsOwnTarget()
+        {
+            SetUpDarkMagicianCard();
+            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
+            [
+                new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 },
+                new CollectionEntry { ID = 2, CardID = 1, ImageID = 10, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
+            ]);
+            _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>
+                {
+                    [10] =
+                    [
+                        new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 3 },
+                        new() { ImageID = 10, SetCode = "LOB-EN002", RarityName = "Secret Rare", DesiredQuantity = 1 }
+                    ]
+                });
+
+            var groups = (await _service.GetGroupedOwnedAsync()).ToList();
+
+            var ultraRareGroup = groups.Single(g => g.SetCode == "LOB-EN001");
+            var secretRareGroup = groups.Single(g => g.SetCode == "LOB-EN002");
+            Assert.IsTrue(ultraRareGroup.IsPreferredVersion);
+            Assert.AreEqual(CollectionCompletionStatus.Incomplete, ultraRareGroup.CompletionStatus);
+            Assert.IsTrue(secretRareGroup.IsPreferredVersion);
+            Assert.AreEqual(CollectionCompletionStatus.Complete, secretRareGroup.CompletionStatus);
         }
 
         private void SetUpDarkMagicianCard() =>
