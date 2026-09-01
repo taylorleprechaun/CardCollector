@@ -8,7 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['wwwroot/js/**/*.js'],
-      reporter: ['text', 'cobertura', 'html'],
+      reporter: ['text', 'cobertura', 'html', 'json-summary'],
       thresholds: {
         lines: 80,
         statements: 80,
