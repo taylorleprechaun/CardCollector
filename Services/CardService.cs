@@ -904,6 +904,7 @@ namespace CardCollector.Services
             var pageSize = criteria.PageSize;
 
             var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
+            var isPrintingScoped = !string.IsNullOrWhiteSpace(setPrefix) || !string.IsNullOrWhiteSpace(criteria.RarityName);
             var filtered = ApplyCommonCardFilters(
                 _cardDataRepository.GetBrowseableCards(),
                 criteria.Query,
@@ -911,35 +912,80 @@ namespace CardCollector.Services
                 setPrefix,
                 criteria.RarityName);
 
-            if (criteria.InCollection.HasValue || criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue)
+            if (criteria.InCollection.HasValue || criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue || criteria.IsTracked.HasValue)
             {
-                IReadOnlySet<int>? ownedIDs = null;
-                IReadOnlySet<int>? orderedIDs = null;
-                IReadOnlySet<int>? preferredIDs = null;
-
-                if (criteria.InCollection.HasValue || criteria.InWishlist.HasValue)
-                    ownedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
-
-                if (criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue)
-                    orderedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
-
-                if (criteria.InWishlist.HasValue)
-                    preferredIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);
-
-                if (criteria.InCollection == true)  filtered = filtered.Where(c => ownedIDs!.Contains(c.ID));
-                if (criteria.InCollection == false) filtered = filtered.Where(c => !ownedIDs!.Contains(c.ID));
-                if (criteria.IsOrdered == true)     filtered = filtered.Where(c => orderedIDs!.Contains(c.ID));
-                if (criteria.IsOrdered == false)    filtered = filtered.Where(c => !orderedIDs!.Contains(c.ID));
-
-                if (criteria.InWishlist == true)
+                if (isPrintingScoped)
                 {
-                    var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
-                    filtered = filtered.Where(c => preferredIDs!.Contains(c.ID) && !collectedIDs.Contains(c.ID));
+                    var candidates = filtered.ToList();
+                    var needOwned = criteria.InCollection.HasValue || criteria.InWishlist.HasValue;
+                    var needOrdered = criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue;
+                    var needTracked = criteria.InWishlist.HasValue || criteria.IsTracked.HasValue;
+
+                    var scoped = await GetPrintingScopedDataAsync(
+                        candidates.Select(c => c.ID).ToList(), setPrefix, criteria.RarityName, needOwned, needOrdered, needTracked)
+                        .ConfigureAwait(false);
+
+                    if (criteria.InCollection == true)  candidates = candidates.Where(c => scoped.OwnedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
+                    if (criteria.InCollection == false) candidates = candidates.Where(c => scoped.OwnedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
+                    if (criteria.IsOrdered == true)     candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
+                    if (criteria.IsOrdered == false)    candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
+
+                    if (criteria.InWishlist == true)
+                        candidates = candidates.Where(c => scoped.TrackedCardIDs.Contains(c.ID)
+                            && scoped.OwnedQuantities.GetValueOrDefault(c.ID) == 0
+                            && scoped.OrderedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
+                    else if (criteria.InWishlist == false)
+                        candidates = candidates.Where(c => !scoped.TrackedCardIDs.Contains(c.ID)
+                            || scoped.OwnedQuantities.GetValueOrDefault(c.ID) > 0
+                            || scoped.OrderedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
+
+                    if (criteria.IsTracked == true)  candidates = candidates.Where(c => scoped.TrackedCardIDs.Contains(c.ID)).ToList();
+                    if (criteria.IsTracked == false) candidates = candidates.Where(c => !scoped.TrackedCardIDs.Contains(c.ID)).ToList();
+
+                    filtered = candidates;
                 }
-                else if (criteria.InWishlist == false)
+                else
                 {
-                    var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
-                    filtered = filtered.Where(c => !preferredIDs!.Contains(c.ID) || collectedIDs.Contains(c.ID));
+                    IReadOnlySet<int>? ownedIDs = null;
+                    IReadOnlySet<int>? orderedIDs = null;
+                    IReadOnlySet<int>? preferredIDs = null;
+
+                    if (criteria.InCollection.HasValue || criteria.InWishlist.HasValue)
+                        ownedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
+
+                    if (criteria.IsOrdered.HasValue || criteria.InWishlist.HasValue)
+                        orderedIDs = await _collectionRepository.GetCardIDsByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+
+                    if (criteria.InWishlist.HasValue || criteria.IsTracked.HasValue)
+                        preferredIDs = await _preferredVersionRepository.GetPreferredCardIDsAsync().ConfigureAwait(false);
+
+                    IReadOnlySet<int>? untrackedOwnedPrintingCardIDs = criteria.IsTracked.HasValue
+                        ? await GetCardIDsWithUntrackedOwnedPrintingsAsync().ConfigureAwait(false)
+                        : null;
+
+                    if (criteria.InCollection == true)  filtered = filtered.Where(c => ownedIDs!.Contains(c.ID));
+                    if (criteria.InCollection == false) filtered = filtered.Where(c => !ownedIDs!.Contains(c.ID));
+                    if (criteria.IsOrdered == true)     filtered = filtered.Where(c => orderedIDs!.Contains(c.ID));
+                    if (criteria.IsOrdered == false)    filtered = filtered.Where(c => !orderedIDs!.Contains(c.ID));
+
+                    if (criteria.InWishlist == true)
+                    {
+                        var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
+                        filtered = filtered.Where(c => preferredIDs!.Contains(c.ID) && !collectedIDs.Contains(c.ID));
+                    }
+                    else if (criteria.InWishlist == false)
+                    {
+                        var collectedIDs = ownedIDs!.Union(orderedIDs!).ToHashSet();
+                        filtered = filtered.Where(c => !preferredIDs!.Contains(c.ID) || collectedIDs.Contains(c.ID));
+                    }
+
+                    // "Tracked" means every owned printing of the card is matched by a tracked version --
+                    // not just that the card has a tracked printing somewhere. A card can be owned as one
+                    // printing and tracked as a different one; that's still an untracked printing to fix.
+                    if (criteria.IsTracked == true)
+                        filtered = filtered.Where(c => preferredIDs!.Contains(c.ID) && !untrackedOwnedPrintingCardIDs!.Contains(c.ID));
+                    if (criteria.IsTracked == false)
+                        filtered = filtered.Where(c => !preferredIDs!.Contains(c.ID) || untrackedOwnedPrintingCardIDs!.Contains(c.ID));
                 }
             }
 
@@ -947,26 +993,18 @@ namespace CardCollector.Services
             {
                 var candidates = filtered.ToList();
 
-                // When a set filter is active, "incomplete" must mean incomplete *within that set* —
-                // not incomplete on whichever set the card's preferred version happens to point to.
-                // Falls back to the card-wide preferred-version rollup when no set is selected.
-                if (!string.IsNullOrWhiteSpace(setPrefix))
+                // When a set and/or rarity filter is active, "incomplete" must mean incomplete *within that
+                // printing* — not incomplete on whichever printing the card's tracked version happens to point
+                // to. Falls back to the card-wide tracked-version rollup when no set/rarity filter is selected.
+                if (isPrintingScoped)
                 {
-                    var ownedQuantitiesInSet = await _collectionRepository
-                        .GetOwnedQuantitiesByCardIDsForSetPrefixAsync(candidates.Select(c => c.ID), setPrefix)
+                    var scoped = await GetPrintingScopedDataAsync(
+                        candidates.Select(c => c.ID).ToList(), setPrefix, criteria.RarityName, needOwned: true, needOrdered: false, needTracked: true)
                         .ConfigureAwait(false);
 
-                    // A card can have more than one tracked printing within the same set prefix now (rare,
-                    // but possible) — use the most demanding target among them for this set.
-                    var allTracked = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
-                    var desiredQuantitiesInSetByCardID = allTracked
-                        .Where(pv => pv.SetCode.StartsWith(setPrefix + "-", StringComparison.OrdinalIgnoreCase))
-                        .GroupBy(pv => pv.CardID)
-                        .ToDictionary(g => g.Key, g => g.Max(pv => pv.DesiredQuantity));
-
                     filtered = candidates.Where(c =>
-                        ownedQuantitiesInSet.TryGetValue(c.ID, out var qty) && qty > 0
-                        && qty < desiredQuantitiesInSetByCardID.GetValueOrDefault(c.ID, 3));
+                        scoped.OwnedQuantities.TryGetValue(c.ID, out var qty) && qty > 0
+                        && qty < scoped.MaxDesiredQuantities.GetValueOrDefault(c.ID, 3));
                 }
                 else
                 {
@@ -1427,6 +1465,38 @@ namespace CardCollector.Services
             // Already fully covered by what's owned, ordered, and staged — nothing left to recommend buying.
             return candidateViewModel.QuantityNeeded <= 0 ? null : candidateViewModel;
         }
+
+        /// <summary>
+        /// Returns the card IDs that have at least one Owned printing not matched by a tracked version --
+        /// i.e. cards where the specific printing you own isn't the one you've tracked. Used by Browse's
+        /// unscoped Tracked filter, which otherwise couldn't distinguish "never tracked" from "tracked as a
+        /// different printing than what's owned."
+        /// </summary>
+        private async Task<IReadOnlySet<int>> GetCardIDsWithUntrackedOwnedPrintingsAsync()
+        {
+            var ownedPrintings = await _collectionRepository.GetOwnedCardPrintingsAsync().ConfigureAwait(false);
+            if (ownedPrintings.Count == 0)
+                return new HashSet<int>();
+
+            var trackedByCardID = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false))
+                .GroupBy(pv => pv.CardID)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var result = new HashSet<int>();
+            foreach (var printing in ownedPrintings)
+            {
+                var isTracked = trackedByCardID.TryGetValue(printing.CardID, out var trackedForCard)
+                    && trackedForCard.Any(pv =>
+                        pv.SetCode.Equals(printing.SetCode, StringComparison.OrdinalIgnoreCase)
+                        && (pv.RarityName is null || string.Equals(pv.RarityName, printing.RarityName, StringComparison.OrdinalIgnoreCase)));
+
+                if (!isTracked)
+                    result.Add(printing.CardID);
+            }
+
+            return result;
+        }
+
         private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync()
         {
             var owned = await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
@@ -1509,6 +1579,46 @@ namespace CardCollector.Services
             }
 
             return groups;
+        }
+
+        /// <summary>
+        /// Computes owned/ordered quantities and tracked-printing targets per card ID, scoped to a specific
+        /// set prefix and/or rarity name. Used to scope Browse's Collection/Ordered/Wishlist/Tracked/Incomplete
+        /// filters to the exact printing selected by the Set/Rarity filters, rather than the whole card.
+        /// </summary>
+        private async Task<(
+            IReadOnlyDictionary<int, int> OwnedQuantities,
+            IReadOnlyDictionary<int, int> OrderedQuantities,
+            IReadOnlySet<int> TrackedCardIDs,
+            IReadOnlyDictionary<int, int> MaxDesiredQuantities)> GetPrintingScopedDataAsync(
+            IReadOnlyList<int> cardIDs, string? setPrefix, string? rarityName, bool needOwned, bool needOrdered, bool needTracked)
+        {
+            var ownedQuantities = needOwned
+                ? await _collectionRepository.GetQuantitiesByCardIDsForPrintingAsync(cardIDs, CollectionStatus.Owned, setPrefix, rarityName).ConfigureAwait(false)
+                : new Dictionary<int, int>();
+
+            var orderedQuantities = needOrdered
+                ? await _collectionRepository.GetQuantitiesByCardIDsForPrintingAsync(cardIDs, CollectionStatus.Ordered, setPrefix, rarityName).ConfigureAwait(false)
+                : new Dictionary<int, int>();
+
+            var trackedCardIDs = new HashSet<int>();
+            var maxDesiredQuantities = new Dictionary<int, int>();
+
+            if (needTracked)
+            {
+                var allTracked = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
+                var matching = allTracked.Where(pv =>
+                    (string.IsNullOrWhiteSpace(setPrefix) || pv.SetCode.StartsWith(setPrefix + "-", StringComparison.OrdinalIgnoreCase)) &&
+                    (string.IsNullOrWhiteSpace(rarityName) || string.Equals(RarityExtensions.NormalizeRarityName(pv.RarityName), rarityName, StringComparison.OrdinalIgnoreCase)));
+
+                foreach (var group in matching.GroupBy(pv => pv.CardID))
+                {
+                    trackedCardIDs.Add(group.Key);
+                    maxDesiredQuantities[group.Key] = group.Max(pv => pv.DesiredQuantity);
+                }
+            }
+
+            return (ownedQuantities, orderedQuantities, trackedCardIDs, maxDesiredQuantities);
         }
     }
 }

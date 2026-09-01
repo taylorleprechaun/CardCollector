@@ -14,33 +14,36 @@ namespace CardCollector.Tests.Pages
         private Mock<ICardDataRepository> _cardDataRepositoryMock = null!;
         private Mock<ICardService> _cardServiceMock = null!;
         [TestMethod]
-        public void ActiveFilterCount_CollectionOrderedWishlistFiltersSet_AddsToBaseCount()
+        public void ActiveFilterCount_CollectionOrderedTrackedWishlistFiltersSet_AddsToBaseCount()
         {
             var page = CreatePage();
             page.CollectionFilter = "yes";
             page.OrderedFilter = "yes";
+            page.TrackedFilter = "yes";
             page.WishlistFilter = "yes";
 
-            Assert.AreEqual(3, page.ActiveFilterCount);
+            Assert.AreEqual(4, page.ActiveFilterCount);
         }
 
         [TestMethod]
-        public void GetPaginationParams_IncludesAllThreeFilterKeys()
+        public void GetPaginationParams_IncludesAllFourFilterKeys()
         {
             var page = CreatePage();
             page.CollectionFilter = "yes";
             page.OrderedFilter = "no";
+            page.TrackedFilter = "no";
             page.WishlistFilter = "yes";
 
             var result = page.GetPaginationParams();
 
             Assert.AreEqual("yes", result["collectionFilter"]);
             Assert.AreEqual("no", result["orderedFilter"]);
+            Assert.AreEqual("no", result["trackedFilter"]);
             Assert.AreEqual("yes", result["wishlistFilter"]);
         }
 
         [TestMethod]
-        public void HasActiveFilters_AnyOfTheThreeFiltersSet_ReturnsTrue()
+        public void HasActiveFilters_AnyOfTheFourFiltersSet_ReturnsTrue()
         {
             var page = CreatePage();
             page.WishlistFilter = "yes";
@@ -95,6 +98,23 @@ namespace CardCollector.Tests.Pages
             Assert.AreEqual(5, page.Results.TotalCount);
         }
 
+        [TestMethod]
+        [DataRow("yes", true)]
+        [DataRow("no", false)]
+        [DataRow("other", null)]
+        public async Task OnGetAsync_TrackedFilterParsesYesNoOtherwiseNull(string filterValue, bool? expected)
+        {
+            BrowseSearchCriteria? captured = null;
+            _cardServiceMock.Setup(s => s.SearchCardsAsync(It.IsAny<BrowseSearchCriteria>()))
+                .Callback<BrowseSearchCriteria>(c => captured = c)
+                .ReturnsAsync(new PagedResult<CardListItemViewModel>());
+            var page = CreatePage();
+            page.TrackedFilter = filterValue;
+
+            await page.OnGetAsync();
+
+            Assert.AreEqual(expected, captured!.IsTracked);
+        }
         [TestInitialize]
         public void Setup()
         {

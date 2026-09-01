@@ -10,6 +10,19 @@ namespace CardCollector.Pages
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardService _cardService;
 
+        public BrowseModel(ICardService cardService, ICardDataRepository cardDataRepository)
+        {
+            _cardService = cardService;
+            _cardDataRepository = cardDataRepository;
+        }
+
+        public override int ActiveFilterCount =>
+            base.ActiveFilterCount
+            + (string.IsNullOrEmpty(CollectionFilter) ? 0 : 1)
+            + (string.IsNullOrEmpty(OrderedFilter) ? 0 : 1)
+            + (string.IsNullOrEmpty(TrackedFilter) ? 0 : 1)
+            + (string.IsNullOrEmpty(WishlistFilter) ? 0 : 1);
+
         public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
 
         public IReadOnlyList<string> AvailableSetNames { get; private set; } = [];
@@ -17,39 +30,30 @@ namespace CardCollector.Pages
         [BindProperty(SupportsGet = true)]
         public string? CollectionFilter { get; set; }
 
-        [BindProperty(SupportsGet = true)]
-        public string? OrderedFilter { get; set; }
-
-        protected override ICardService CardService => _cardService;
-
-        public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
-
-        [BindProperty(SupportsGet = true)]
-        public string? WishlistFilter { get; set; }
-
-        public override int ActiveFilterCount =>
-            base.ActiveFilterCount
-            + (string.IsNullOrEmpty(CollectionFilter) ? 0 : 1)
-            + (string.IsNullOrEmpty(OrderedFilter) ? 0 : 1)
-            + (string.IsNullOrEmpty(WishlistFilter) ? 0 : 1);
-
         public override bool HasActiveFilters =>
             base.HasActiveFilters
             || !string.IsNullOrEmpty(CollectionFilter)
             || !string.IsNullOrEmpty(OrderedFilter)
+            || !string.IsNullOrEmpty(TrackedFilter)
             || !string.IsNullOrEmpty(WishlistFilter);
 
-        public BrowseModel(ICardService cardService, ICardDataRepository cardDataRepository)
-        {
-            _cardService = cardService;
-            _cardDataRepository = cardDataRepository;
-        }
+        [BindProperty(SupportsGet = true)]
+        public string? OrderedFilter { get; set; }
 
+        public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
+        [BindProperty(SupportsGet = true)]
+        public string? TrackedFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? WishlistFilter { get; set; }
+
+        protected override ICardService CardService => _cardService;
         public override IReadOnlyDictionary<string, string?> GetPaginationParams() =>
             new Dictionary<string, string?>(base.GetPaginationParams())
             {
                 ["collectionFilter"] = CollectionFilter,
                 ["orderedFilter"] = OrderedFilter,
+                ["trackedFilter"] = TrackedFilter,
                 ["wishlistFilter"] = WishlistFilter
             };
 
@@ -66,6 +70,7 @@ namespace CardCollector.Pages
                 InWishlist = ParseFilter(WishlistFilter),
                 IsIncomplete = CollectionFilter == "incomplete" ? true : null,
                 IsOrdered = ParseFilter(OrderedFilter),
+                IsTracked = ParseFilter(TrackedFilter),
                 Page = PageNumber,
                 PageSize = PageSize,
                 Query = Query,
