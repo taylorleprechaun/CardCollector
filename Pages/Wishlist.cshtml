@@ -35,7 +35,7 @@
 </div>
 
 
-<p class="text-muted mb-4">Cards you still need: preferred versions you haven&rsquo;t ordered or owned yet, plus cards you own but haven&rsquo;t completed (@CardPrinting.CompleteThreshold copies). Use <a href="/Discover">Discover</a> to add more.</p>
+<p class="text-muted mb-4">Cards you still need: tracked printings you haven&rsquo;t ordered or owned yet, plus cards you own but haven&rsquo;t reached your target quantity for. Use <a href="/Discover">Discover</a> to add more.</p>
 
 <partial name="_SearchForm" model='new SearchFormViewModel
 {
@@ -67,7 +67,7 @@
         @if (string.IsNullOrEmpty(Model.Query) && !Model.HasActiveFilters)
         {
             <h4>Wishlist is empty</h4>
-            <p class="mb-3">Head to <a href="/Discover">Discover</a> to pick your preferred version for each card.</p>
+            <p class="mb-3">Head to <a href="/Discover">Discover</a> to pick a printing to track for each card.</p>
         }
         else
         {
@@ -106,6 +106,7 @@ else
                     <input type="hidden" name="CardID" id="wlCardID" />
                     <input type="hidden" name="ImageID" id="wlImageID" />
                     <input type="hidden" name="SetCode" id="wlSetCode" />
+                    <input type="hidden" name="PreferredVersionID" id="wlPreferredVersionID" />
 
                     <p class="text-muted mb-3">
                         Set: <strong id="wlSetName"></strong>

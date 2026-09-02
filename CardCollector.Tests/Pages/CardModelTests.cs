@@ -21,8 +21,8 @@ namespace CardCollector.Tests.Pages
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
-            _cardServiceMock.Setup(s => s.GetPreferredVersionByCardIDAsync(1))
-                .ReturnsAsync(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -40,8 +40,8 @@ namespace CardCollector.Tests.Pages
             [
                 new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 3 }
             ]);
-            _cardServiceMock.Setup(s => s.GetPreferredVersionByCardIDAsync(1))
-                .ReturnsAsync(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -56,8 +56,8 @@ namespace CardCollector.Tests.Pages
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
-            _cardServiceMock.Setup(s => s.GetPreferredVersionByCardIDAsync(1))
-                .ReturnsAsync(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -68,12 +68,28 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task GetCompletionStatus_PreferredAtCustomDesiredQuantity_ReturnsComplete()
+        {
+            _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
+            _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 1 }]);
+            var page = CreatePage();
+            page.ID = 1;
+            await page.OnGetAsync();
+
+            var result = page.GetCompletionStatus(CollectionStatus.Owned, 1, "LOB-EN001", "Ultra Rare");
+
+            Assert.AreEqual(CollectionCompletionStatus.Complete, result);
+        }
+
+        [TestMethod]
         public async Task GetCompletionStatus_PreferredBelowThreshold_ReturnsIncomplete()
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
-            _cardServiceMock.Setup(s => s.GetPreferredVersionByCardIDAsync(1))
-                .ReturnsAsync(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -93,6 +109,24 @@ namespace CardCollector.Tests.Pages
             Assert.IsNull(result);
         }
 
+        [TestMethod]
+        public async Task GetCompletionStatus_TwoTrackedPrintingsOnlySecondMatches_ReturnsThatOnesStatus()
+        {
+            _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
+            _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[
+                    new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
+                    new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 }
+                ]);
+            var page = CreatePage();
+            page.ID = 1;
+            await page.OnGetAsync();
+
+            var result = page.GetCompletionStatus(CollectionStatus.Owned, 1, "RA04-EN001", "Quarter Century Secret Rare");
+
+            Assert.AreEqual(CollectionCompletionStatus.Complete, result);
+        }
         [TestMethod]
         public void GetTCGDate_DelegatesToCardSetRepository()
         {
@@ -145,12 +179,12 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public async Task OnGetAsync_ValidCard_PopulatesPreferredVersionAndIsIgnored()
+        public async Task OnGetAsync_ValidCard_PopulatesTrackedPrintingsAndIsIgnored()
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             var pv = new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" };
-            _cardServiceMock.Setup(s => s.GetPreferredVersionByCardIDAsync(1)).ReturnsAsync(pv);
+            _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1)).ReturnsAsync((IReadOnlyList<PreferredVersion>)[pv]);
             _cardServiceMock.Setup(s => s.IsCardIgnoredAsync(1)).ReturnsAsync(true);
             var page = CreatePage();
             page.ID = 1;
@@ -158,7 +192,8 @@ namespace CardCollector.Tests.Pages
             await page.OnGetAsync();
 
             Assert.IsFalse(page.CardNotFound);
-            Assert.AreSame(pv, page.PreferredVersion);
+            Assert.AreEqual(1, page.TrackedPrintings.Count);
+            Assert.AreSame(pv, page.TrackedPrintings[0]);
             Assert.IsTrue(page.IsIgnored);
         }
 
@@ -236,11 +271,43 @@ namespace CardCollector.Tests.Pages
         public async Task OnPostRemovePreferredAsync_RemovesFromWishlistAndRedirects()
         {
             var page = CreatePage();
-            page.ImageID = 10;
 
-            var result = await page.OnPostRemovePreferredAsync();
+            var result = await page.OnPostRemovePreferredAsync(10);
 
             _cardServiceMock.Verify(s => s.RemoveFromWishlistAsync(10), Times.Once);
+            Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostSetDesiredQuantityAsync_InvalidDesiredQuantity_DoesNotCallServiceButStillRedirects()
+        {
+            var page = CreatePage();
+
+            var result = await page.OnPostSetDesiredQuantityAsync(10, 0);
+
+            _cardServiceMock.Verify(s => s.SetDesiredQuantityAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+            Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostSetDesiredQuantityAsync_InvalidPreferredVersionID_DoesNotCallServiceButStillRedirects()
+        {
+            var page = CreatePage();
+
+            var result = await page.OnPostSetDesiredQuantityAsync(0, 1);
+
+            _cardServiceMock.Verify(s => s.SetDesiredQuantityAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+            Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostSetDesiredQuantityAsync_ValidParams_UpdatesAndRedirects()
+        {
+            var page = CreatePage();
+
+            var result = await page.OnPostSetDesiredQuantityAsync(10, 1);
+
+            _cardServiceMock.Verify(s => s.SetDesiredQuantityAsync(10, 1), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

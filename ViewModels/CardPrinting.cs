@@ -2,8 +2,6 @@ namespace CardCollector.ViewModels
 {
     public class CardPrinting
     {
-        public const int CompleteThreshold = 3;
-
         public IReadOnlyList<string> AvailableRarities { get; init; } = [];
 
         public int CardID { get; init; }
@@ -11,6 +9,8 @@ namespace CardCollector.ViewModels
         public string CardName { get; init; } = string.Empty;
 
         public string CardType { get; init; } = string.Empty;
+
+        public int CompleteThreshold { get; init; } = 3;
 
         public int ImageID { get; init; }
 
@@ -32,6 +32,7 @@ namespace CardCollector.ViewModels
             CardID = CardID,
             CardName = CardName,
             CardType = CardType,
+            CompleteThreshold = CompleteThreshold,
             ImageID = ImageID,
             ImageURLSmall = ImageURLSmall,
             Price = price,

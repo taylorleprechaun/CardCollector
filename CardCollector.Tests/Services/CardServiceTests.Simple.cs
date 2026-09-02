@@ -308,17 +308,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetPreferredVersionByCardIDAsync_DelegatesToRepository()
-        {
-            var pv = new PreferredVersion { CardID = 1 };
-            _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(pv);
-
-            var result = await _service.GetPreferredVersionByCardIDAsync(1);
-
-            Assert.AreSame(pv, result);
-        }
-
-        [TestMethod]
         public async Task GetRandomUncollectedAsync_CardHasPreferredVersion_IsExcluded()
         {
             _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
@@ -415,6 +404,16 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetTrackedPrintingsByCardIDAsync_DelegatesToRepository()
+        {
+            var trackedPrintings = (IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1 }];
+            _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(trackedPrintings);
+
+            var result = await _service.GetTrackedPrintingsByCardIDAsync(1);
+
+            Assert.AreSame(trackedPrintings, result);
+        }
+        [TestMethod]
         public async Task IgnoreCardAsync_DelegatesToRepository()
         {
             await _service.IgnoreCardAsync(1);
@@ -477,11 +476,11 @@ namespace CardCollector.Tests.Services
             _pendingOrderRepositoryMock.Verify(r => r.UpdateQuantityAsync(1, 3), Times.Once);
         }
         [TestMethod]
-        public async Task UpgradePreferredVersionAsync_SavesNewVersionAndClearsIgnoredStatus()
+        public async Task UpgradePreferredVersionAsync_UpgradesTrackedPrintingAndClearsIgnoredStatus()
         {
             await _service.UpgradePreferredVersionAsync(2, 1, "NEW-EN001", "Secret Rare");
 
-            _preferredVersionRepositoryMock.Verify(r => r.AddOrUpdateAsync(1, 2, "NEW-EN001", "Secret Rare"), Times.Once);
+            _preferredVersionRepositoryMock.Verify(r => r.UpgradeAsync(2, "NEW-EN001", "Secret Rare"), Times.Once);
             _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
         }
     }

@@ -1,7 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -86,9 +85,9 @@ namespace CardCollector.Repository
             if (ownedEntries.Count == 0)
                 return new Dictionary<int, CollectionCompletionStatus>();
 
-            var preferredVersions = await _context.PreferredVersions
+            var trackedPrintings = await _context.PreferredVersions
                 .Where(pv => ids.Contains(pv.ImageID))
-                .Select(pv => new { pv.ImageID, pv.SetCode, pv.RarityName })
+                .Select(pv => new { pv.ImageID, pv.SetCode, pv.RarityName, pv.DesiredQuantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -96,20 +95,33 @@ namespace CardCollector.Repository
 
             foreach (var group in ownedEntries.GroupBy(e => e.ImageID))
             {
-                var preferred = preferredVersions.FirstOrDefault(pv => pv.ImageID == group.Key);
-                var preferredEntries = preferred is null ? [] : group.Where(e =>
-                    e.SetCode.Equals(preferred.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                    (preferred.RarityName is null || preferred.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
+                // An artwork can have more than one tracked printing (e.g. two different set/rarity
+                // printings of the same card art). Only printings with at least one matching owned entry
+                // count toward the roll-up; if none match, this artwork isn't one of the tracked printings.
+                var trackedForImage = trackedPrintings.Where(pv => pv.ImageID == group.Key).ToList();
+                var statuses = new List<CollectionCompletionStatus>();
 
-                if (preferredEntries.Count == 0)
+                foreach (var tracked in trackedForImage)
+                {
+                    var matchingEntries = group.Where(e =>
+                        e.SetCode.Equals(tracked.SetCode, StringComparison.OrdinalIgnoreCase) &&
+                        (tracked.RarityName is null || tracked.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+
+                    if (matchingEntries.Count == 0)
+                        continue;
+
+                    var qty = matchingEntries.Sum(e => e.Quantity);
+                    statuses.Add(qty >= tracked.DesiredQuantity ? CollectionCompletionStatus.Complete : CollectionCompletionStatus.Incomplete);
+                }
+
+                if (statuses.Count == 0)
                 {
                     result[group.Key] = CollectionCompletionStatus.Placeholder;
                     continue;
                 }
 
-                var qty = preferredEntries.Sum(e => e.Quantity);
-                result[group.Key] = qty >= CardPrinting.CompleteThreshold
+                result[group.Key] = statuses.Contains(CollectionCompletionStatus.Complete)
                     ? CollectionCompletionStatus.Complete
                     : CollectionCompletionStatus.Incomplete;
             }
@@ -174,6 +186,18 @@ namespace CardCollector.Repository
             return grouped.ToDictionary(g => (g.ImageID, g.SetCode, g.RarityName), g => g.Quantity);
         }
 
+        public async Task<IReadOnlyList<(int CardID, string SetCode, string? RarityName)>> GetOwnedCardPrintingsAsync()
+        {
+            var entries = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned)
+                .Select(e => new { e.CardID, e.SetCode, e.RarityName })
+                .Distinct()
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return entries.Select(e => (e.CardID, e.SetCode, e.RarityName)).ToList();
+        }
+
         public async Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync()
         {
             var pairs = await _context.CollectionEntries
@@ -185,24 +209,6 @@ namespace CardCollector.Repository
 
             return pairs.Select(p => (p.ImageID, p.SetCode)).ToHashSet();
         }
-        public async Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByCardIDsForSetPrefixAsync(IEnumerable<int> cardIDs, string setPrefix)
-        {
-            var ids = cardIDs.ToHashSet();
-            if (ids.Count == 0 || string.IsNullOrWhiteSpace(setPrefix))
-                return new Dictionary<int, int>();
-
-            var prefixMatch = setPrefix + "-";
-            var entries = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned && e.SetCode.StartsWith(prefixMatch))
-                .Select(e => new { e.CardID, e.Quantity })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            return entries
-                .GroupBy(e => e.CardID)
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
-        }
-
         public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode, string RarityName)> pairs)
         {
             var pairList = pairs.ToList();
@@ -290,6 +296,34 @@ namespace CardCollector.Repository
                 : null;
 
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
+        }
+
+        public async Task<IReadOnlyDictionary<int, int>> GetQuantitiesByCardIDsForPrintingAsync(
+                                    IEnumerable<int> cardIDs, CollectionStatus status, string? setPrefix, string? rarityName)
+        {
+            var ids = cardIDs.ToHashSet();
+            if (ids.Count == 0)
+                return new Dictionary<int, int>();
+
+            var query = _context.CollectionEntries.Where(e => ids.Contains(e.CardID) && e.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(setPrefix))
+            {
+                var prefixMatch = setPrefix + "-";
+                query = query.Where(e => e.SetCode.StartsWith(prefixMatch));
+            }
+
+            var entries = await query
+                .Select(e => new { e.CardID, e.RarityName, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            if (!string.IsNullOrWhiteSpace(rarityName))
+                entries = entries.Where(e => string.Equals(e.RarityName, rarityName, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            return entries
+                .GroupBy(e => e.CardID)
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
         }
         public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {

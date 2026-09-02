@@ -123,11 +123,6 @@ namespace CardCollector.Services
         Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
 
         /// <summary>
-        /// Returns the preferred version for the given card ID (any artwork), or null if none is set.
-        /// </summary>
-        Task<PreferredVersion?> GetPreferredVersionByCardIDAsync(int cardID);
-
-        /// <summary>
         /// Builds a purchase plan by walking the purchase-priority list in order and taking candidates that fit
         /// within <paramref name="totalBudget"/> and/or <paramref name="maxCards"/>, skipping (not stopping at)
         /// any candidate too expensive to fit so a cheaper, lower-priority one further down can still be taken.
@@ -161,6 +156,13 @@ namespace CardCollector.Services
         /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
         /// </summary>
         Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
+
+        /// <summary>
+        /// Returns every tracked printing for the given card ID. A card can have any number of tracked
+        /// printings at once, each independently targeted.
+        /// </summary>
+        Task<IReadOnlyList<PreferredVersion>> GetTrackedPrintingsByCardIDAsync(int cardID);
+
         /// <summary>
         /// Returns all preferred versions that have not yet been ordered or owned.
         /// </summary>
@@ -187,14 +189,18 @@ namespace CardCollector.Services
         Task<bool> IsCardIgnoredAsync(int cardID);
 
         /// <summary>
-        /// Deletes the preferred version for the given image ID, removing the card from the wishlist.
+        /// Deletes the tracked printing with the given ID, removing it from the wishlist.
         /// </summary>
-        Task RemoveFromWishlistAsync(int imageID);
+        Task RemoveFromWishlistAsync(int preferredVersionID);
 
         /// <summary>
-        /// Saves or updates the preferred printing for the given (cardID, imageID, setCode) combination.
+        /// Tracks the given (cardID, setCode, rarityName) printing, inserting a new tracked printing if
+        /// that exact printing isn't already tracked, or updating it in place if it is. A card can have
+        /// any number of tracked printings at once. When <paramref name="desiredQuantity"/> is null, a
+        /// newly-created tracked printing defaults to wanting 3 copies and an existing one keeps its
+        /// current target.
         /// </summary>
-        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null);
+        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null);
 
         /// <summary>
         /// Returns a paginated, filtered page of browseable cards matching the given criteria.
@@ -223,6 +229,12 @@ namespace CardCollector.Services
         Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
 
         /// <summary>
+        /// Sets how many copies of the given tracked printing the user wants to own, clamped to [1, 99].
+        /// Returns false if no tracked printing exists with the given ID.
+        /// </summary>
+        Task<bool> SetDesiredQuantityAsync(int preferredVersionID, int desiredQuantity);
+
+        /// <summary>
         /// Converts every reviewed staged cart line into a real Ordered collection entry, then removes
         /// just those lines from the cart. Lines not covered by <paramref name="overrides"/> are left staged.
         /// Returns the number of entries created, their total cost, and any edition-mismatch warnings
@@ -241,8 +253,9 @@ namespace CardCollector.Services
         Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
 
         /// <summary>
-        /// Updates the preferred version for the given image ID to the specified newer printing.
+        /// Updates the tracked printing with the given ID to point at the specified newer printing,
+        /// preserving its desired quantity.
         /// </summary>
-        Task UpgradePreferredVersionAsync(int imageID, int cardID, string newSetCode, string newRarityName);
+        Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName);
     }
 }

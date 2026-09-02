@@ -89,10 +89,12 @@ CardCollector/
 
 ## Testing
 
-![C# Tests](https://img.shields.io/badge/C%23%20tests-597%20passing-brightgreen)
-![C# Coverage](https://img.shields.io/badge/C%23%20coverage-91%25-brightgreen)
+<!-- coverage:start -->
+![C# Tests](https://img.shields.io/badge/C%23%20tests-631%20passing-brightgreen)
+![C# Coverage](https://img.shields.io/badge/C%23%20coverage-92%25-brightgreen)
 ![JS Tests](https://img.shields.io/badge/JS%20tests-133%20passing-brightgreen)
-![JS Coverage](https://img.shields.io/badge/JS%20coverage-93%25-brightgreen)
+![JS Coverage](https://img.shields.io/badge/JS%20coverage-94%25-brightgreen)
+<!-- coverage:end -->
 
 ```
 CardCollector.Tests/

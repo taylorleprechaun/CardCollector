@@ -3,12 +3,12 @@
 @{
     var item = Model.Item;
 }
-<div class="list-group-item" id="wishlist-row-@item.ImageID">
+<div class="list-group-item" id="wishlist-row-@item.PreferredVersionID">
     <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
         <div class="d-flex gap-2 align-items-center flex-grow-1 min-width-0">
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
             <div class="min-width-0">
-                <div class="fw-semibold">@item.CardName</div>
+                <a href="/Card?id=@item.CardID&imageID=@item.ImageID&returnURL=%2FWishlist" class="fw-semibold text-body text-decoration-none">@item.CardName</a>
                 <div class="text-muted small">@item.SetName &middot; <code>@item.SetCode</code> &middot; @item.RarityName</div>
             </div>
         </div>
@@ -45,6 +45,7 @@
                         data-rarity-name="@item.RarityName"
                         data-card-name="@item.CardName"
                         data-quantity-needed="@item.QuantityNeeded"
+                        data-preferred-version-id="@item.PreferredVersionID"
                         onclick="openWishlistOrderModal(this)">
                     Order
                 </button>
@@ -59,13 +60,14 @@
                     data-rarity-name="@item.RarityName"
                     data-rarities="@string.Join(",", item.AvailableRarities)"
                     data-tcg-date="@Model.TCGDate"
+                    data-preferred-version-id="@item.PreferredVersionID"
                     onclick="openWishlistOwnModal(this)">
                 Add to Collection
             </button>
             <form method="post" action="/Wishlist?handler=Remove&@Model.FilterParams" class="ajax-form"
-                  data-ajax-target="wishlist-row-@item.ImageID"
+                  data-ajax-target="wishlist-row-@item.PreferredVersionID"
                   onsubmit="return confirm('Remove this card from your wishlist?')">
-                <input type="hidden" name="imageID" value="@item.ImageID" />
+                <input type="hidden" name="preferredVersionID" value="@item.PreferredVersionID" />
                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
             </form>
         </div>

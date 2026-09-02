@@ -101,17 +101,102 @@ using (var scope = app.Services.CreateScope())
         );
         """);
 
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var preferredVersionColumns = await db.Database
+        .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('PreferredVersions')")
+        .ToListAsync();
+    if (!preferredVersionColumns.Contains("DesiredQuantity"))
+    {
+        db.Database.ExecuteSqlRaw("""
+            ALTER TABLE "PreferredVersions" ADD COLUMN "DesiredQuantity" INTEGER NOT NULL DEFAULT 3;
+            """);
+    }
+
+    // The live table was originally created with an inline `ImageID INTEGER NOT NULL UNIQUE` column
+    // constraint (a sqlite_autoindex, not a standalone named index), so `DROP INDEX` can't remove it —
+    // SQLite requires rebuilding the table to drop a UNIQUE column constraint. Detect it by origin='u'
+    // (created by a UNIQUE constraint, as opposed to origin='c' for an explicit CREATE INDEX) rather
+    // than by name, since the exact autoindex name is SQLite-assigned and not something we control.
+    var legacyUniqueConstraintIndexNames = await db.Database
+        .SqlQueryRaw<string>("""SELECT name FROM pragma_index_list('PreferredVersions') WHERE "unique" = 1 AND origin = 'u'""")
+        .ToListAsync();
+    var hasLegacyImageIDUniqueConstraint = false;
+    foreach (var indexName in legacyUniqueConstraintIndexNames)
+    {
+        // indexName comes from pragma_index_list (SQLite's own catalog), never user input.
+#pragma warning disable EF1002
+        var columns = await db.Database
+            .SqlQueryRaw<string>($"SELECT name FROM pragma_index_info('{indexName}')")
+            .ToListAsync();
+#pragma warning restore EF1002
+        if (columns is ["ImageID"])
+        {
+            hasLegacyImageIDUniqueConstraint = true;
+            break;
+        }
+    }
+
+    if (hasLegacyImageIDUniqueConstraint)
+    {
+        using var transaction = db.Database.BeginTransaction();
+        db.Database.ExecuteSqlRaw("""
+            CREATE TABLE "PreferredVersions_new" (
+                "ID" INTEGER NOT NULL CONSTRAINT "PK_PreferredVersions" PRIMARY KEY AUTOINCREMENT,
+                "CardID" INTEGER NOT NULL,
+                "ImageID" INTEGER NOT NULL,
+                "SetCode" TEXT NOT NULL,
+                "DateCreated" TEXT NOT NULL,
+                "DateModified" TEXT NOT NULL,
+                "RarityName" TEXT NULL,
+                "DesiredQuantity" INTEGER NOT NULL DEFAULT 3
+            );
+            """);
+        db.Database.ExecuteSqlRaw("""
+            INSERT INTO "PreferredVersions_new" ("ID", "CardID", "ImageID", "SetCode", "DateCreated", "DateModified", "RarityName", "DesiredQuantity")
+            SELECT "ID", "CardID", "ImageID", "SetCode", "DateCreated", "DateModified", "RarityName", "DesiredQuantity" FROM "PreferredVersions";
+            """);
+        db.Database.ExecuteSqlRaw("""DROP TABLE "PreferredVersions";""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "PreferredVersions_new" RENAME TO "PreferredVersions";""");
+        transaction.Commit();
+    }
+
+    // PreferredVersions used to allow only one tracked printing per card, enforced only at the app
+    // level (AddOrUpdateAsync matched by CardID alone) rather than by the DB, so historical data can
+    // already contain rows that share a (CardID, SetCode, RarityName) — normalize rarity first, then
+    // collapse any resulting duplicates, before the new unique index below is built over this table.
+    foreach (var preferredVersion in db.PreferredVersions.Where(p => p.RarityName != null))
+        preferredVersion.RarityName = RarityExtensions.NormalizeRarityName(preferredVersion.RarityName);
+    db.SaveChanges();
+
+    foreach (var group in db.PreferredVersions.ToList()
+        .GroupBy(p => (p.CardID, p.SetCode, p.RarityName)))
+    {
+        var duplicates = group.OrderBy(p => p.ID).Skip(1).ToList();
+        foreach (var duplicate in duplicates)
+            logger.LogWarning(
+                "Removing duplicate PreferredVersions row {ID} (CardID={CardID}, SetCode={SetCode}, RarityName={RarityName}) — superseded by row {WinnerID}.",
+                duplicate.ID, duplicate.CardID, duplicate.SetCode, duplicate.RarityName, group.OrderBy(p => p.ID).First().ID);
+        db.PreferredVersions.RemoveRange(duplicates);
+    }
+    db.SaveChanges();
+
+    // PreferredVersions used to allow only one tracked printing per card, enforced by a unique index
+    // on ImageID (the artwork, shared across all set/rarity printings of that artwork since the source
+    // data has no per-set artwork mapping). Multiple printings of the same card can now be tracked
+    // independently, so the uniqueness moves to (CardID, SetCode, RarityName) instead.
+    db.Database.ExecuteSqlRaw("""DROP INDEX IF EXISTS "IX_PreferredVersions_ImageID";""");
+    db.Database.ExecuteSqlRaw("""
+        CREATE UNIQUE INDEX IF NOT EXISTS "IX_PreferredVersions_CardID_SetCode_RarityName"
+        ON "PreferredVersions" ("CardID", "SetCode", "RarityName");
+        """);
+
     // Some providers label plain Common cards as "Short Print"/"Super Short Print" instead
     // (see RarityExtensions.NormalizeRarityName). Collapse any historical data written before
     // the override existed. Idempotent: rows already normalized are left untouched on every
     // subsequent startup.
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
     foreach (var entry in db.CollectionEntries.Where(e => e.RarityName != null))
         entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
-
-    foreach (var preferredVersion in db.PreferredVersions.Where(p => p.RarityName != null))
-        preferredVersion.RarityName = RarityExtensions.NormalizeRarityName(preferredVersion.RarityName);
 
     foreach (var line in db.PendingOrderLines.Where(l => l.RarityName != null))
         line.RarityName = RarityExtensions.NormalizeRarityName(line.RarityName);

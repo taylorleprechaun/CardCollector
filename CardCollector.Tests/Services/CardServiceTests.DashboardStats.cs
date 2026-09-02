@@ -21,7 +21,7 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion> { [10] = new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" } });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
                 new CollectionEntry { ID = 2, CardID = 3 },

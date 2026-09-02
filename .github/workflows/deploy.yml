@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -19,7 +21,12 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Run C# tests
+        if: "!(github.ref == 'refs/heads/main' && github.event_name == 'push')"
         run: dotnet test CardCollector.Tests/CardCollector.Tests.csproj --configuration Release
+
+      - name: Run C# tests with coverage
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: dotnet test CardCollector.Tests/CardCollector.Tests.csproj --configuration Release --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./coverage/
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -30,7 +37,30 @@ jobs:
         run: npm ci
 
       - name: Run JS tests
+        if: "!(github.ref == 'refs/heads/main' && github.event_name == 'push')"
         run: npm test
+
+      - name: Run JS tests with coverage
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: npx vitest run --coverage --reporter=default --reporter=json --outputFile.json=coverage/test-report.json
+
+      - name: Update README coverage block
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        shell: pwsh
+        run: ./.github/scripts/Update-ReadmeCoverage.ps1
+
+      - name: Commit README if changed
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "No README changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "docs: update test counts and coverage in README [skip ci]"
+            git push
+          fi
 
   deploy:
     needs: test

@@ -105,7 +105,7 @@ namespace CardCollector.Tests.Services
         {
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1))
-                .ReturnsAsync(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" });
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" }]);
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
                 .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 3 });
@@ -146,7 +146,43 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetPurchasePriorityCandidatesAsync_CardWithAnyPreferredComplete_ExcludesEntireCard()
+        public async Task GetPurchasePriorityCandidatesAsync_NoPreferredVersions_ReturnsEmpty()
+        {
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetPurchasePriorityCandidatesAsync_OneOfTwoTrackedPrintingsComplete_OnlyIncompleteOneIsReturned()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Secret Rare" }, new Set { Code = "LOB-EN002", RarityName = "Ultra Rare" }]
+            });
+            _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode(It.IsAny<string>())).Returns("2015-01-01");
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
+                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN002", RarityName = "Ultra Rare", DesiredQuantity = 1 }
+            ]);
+            _collectionRepositoryMock
+                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 3 });
+            _pricingServiceMock
+                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition))
+                .ReturnsAsync(9.99m);
+
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("LOB-EN002", result[0].SetCode);
+        }
+
+        [TestMethod]
+        public async Task GetPurchasePriorityCandidatesAsync_OnlyTrackedPrintingComplete_ExcludesIt()
         {
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
@@ -161,15 +197,6 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(0, result.Count);
         }
-
-        [TestMethod]
-        public async Task GetPurchasePriorityCandidatesAsync_NoPreferredVersions_ReturnsEmpty()
-        {
-            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
-
-            Assert.AreEqual(0, result.Count);
-        }
-
         [TestMethod]
         public async Task GetPurchasePriorityCandidatesAsync_ValidCandidate_IsReturned()
         {

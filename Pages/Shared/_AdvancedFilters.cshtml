@@ -130,5 +130,13 @@
                 <option value="no" selected="@(Model.CurrentWishlistFilter == "no")">Not In Wishlist</option>
             </select>
         </div>
+        <div class="col-sm-6 col-md-3">
+            <label for="filter-tracked" class="form-label">Tracked</label>
+            <select id="filter-tracked" name="trackedFilter" class="form-select form-select-sm">
+                <option value="">Any</option>
+                <option value="yes" selected="@(Model.CurrentTrackedFilter == "yes")">Tracked</option>
+                <option value="no" selected="@(Model.CurrentTrackedFilter == "no")">Not Tracked</option>
+            </select>
+        </div>
     }
 </div>

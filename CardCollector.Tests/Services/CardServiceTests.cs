@@ -50,8 +50,9 @@ namespace CardCollector.Tests.Services
                 .Returns((Func<Task> op) => op());
 
             _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, PreferredVersion>());
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>());
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<PreferredVersion>());
+            _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(It.IsAny<int>())).ReturnsAsync(new List<PreferredVersion>());
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
                 .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), (DateTime Date, int Quantity)>());

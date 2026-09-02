@@ -64,18 +64,21 @@ describe('wishlist.js', () => {
       expect(document.getElementById('woQuantity').value).toBe('3'); // clamped from 7
       expect(document.getElementById('wishlistOrderForm').dataset.ajaxTarget).toBe('wishlist-row-20');
       expect(document.getElementById('woMarketPrice').value).toBe('12.50');
+      expect(document.getElementById('woPreferredVersionID').value).toBe('20');
     });
 
     function setupForm() {
       document.body.innerHTML = `
         <input id="woCardID" /><input id="woImageID" /><input id="woSetCode" /><input id="woRarityName" />
+        <input id="woPreferredVersionID" />
         <span id="woCardName"></span><span id="woSetNameLabel"></span><span id="woRarityLabel"></span>
         <input type="hidden" id="woQuantity" /><input id="woMarketPrice" />
         <form id="wishlistOrderForm"></form>
         <div id="wishlistOrderModal"></div>
         <div id="wishlist-row-20">
           <button id="btn" data-card-id="1" data-image-id="20" data-set-code="LOB-EN002" data-rarity-name="Secret Rare"
-                  data-card-name="Blue-Eyes" data-set-name="Legend" data-quantity-needed="7" data-filter-params="page=2"></button>
+                  data-card-name="Blue-Eyes" data-set-name="Legend" data-quantity-needed="7" data-filter-params="page=2"
+                  data-preferred-version-id="20"></button>
         </div>`;
       loadDeps();
     }
@@ -86,7 +89,7 @@ describe('wishlist.js', () => {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
         <input id="wlCardID" /><input id="wlImageID" /><input id="wlSetCode" /><span id="wlSetName"></span>
-        <input id="wlRarityName" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
+        <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"></select><select id="wlEdition"></select><select id="wlAcquisition"></select>
         <input type="hidden" id="wlQuantity" /><input id="wlPurchaseDate" /><input id="wlPurchasePrice" /><input id="wlMarketPrice" />
         <div id="wishlistModal"></div>
@@ -111,13 +114,14 @@ describe('wishlist.js', () => {
       expect(document.getElementById('wishlistModalLabel').textContent).toBe('Already Own This Printing');
       expect(document.getElementById('wishlistForm').dataset.ajaxTarget).toBe('wishlist-row-10');
       expect(document.getElementById('wishlistForm').action).toContain('handler=Own');
+      expect(document.getElementById('wlPreferredVersionID').value).toBe('10');
     });
 
     function setupForm() {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
         <input id="wlCardID" /><input id="wlImageID" /><input id="wlSetCode" /><span id="wlSetName"></span>
-        <input id="wlRarityName" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
+        <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"><option value="4"></option></select>
         <select id="wlEdition"><option value="0"></option></select>
         <select id="wlAcquisition"><option value="1"></option></select>
@@ -126,7 +130,7 @@ describe('wishlist.js', () => {
         <div id="wishlistModal"></div>
         <div id="wishlist-row-10">
           <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001" data-rarity-name="Ultra Rare"
-                  data-set-name="Legend" data-filter-params="page=1"></button>
+                  data-set-name="Legend" data-filter-params="page=1" data-preferred-version-id="10"></button>
         </div>`;
       loadDeps();
     }

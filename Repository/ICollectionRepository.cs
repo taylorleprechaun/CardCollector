@@ -81,15 +81,15 @@ namespace CardCollector.Repository
         Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
 
         /// <summary>
+        /// Returns the (cardID, setCode, rarityName) of every Owned entry, for cross-referencing against
+        /// tracked printings at the individual-printing level.
+        /// </summary>
+        Task<IReadOnlyList<(int CardID, string SetCode, string? RarityName)>> GetOwnedCardPrintingsAsync();
+
+        /// <summary>
         /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
         /// </summary>
         Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();
-        /// <summary>
-        /// Returns the total owned quantity per card ID, scoped to entries whose set code starts with the given
-        /// prefix (e.g. "MP25" matches "MP25-EN001"). Card IDs with no matching owned entries are omitted from the result.
-        /// </summary>
-        Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByCardIDsForSetPrefixAsync(IEnumerable<int> cardIDs, string setPrefix);
-
         /// <summary>
         /// Returns the total owned quantity per (imageID, setCode, rarityName) combination for the given set of combinations.
         /// Combinations with no owned entries are omitted from the result.
@@ -107,6 +107,13 @@ namespace CardCollector.Repository
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.
         /// </summary>
         Task<OwnedCollectionStats> GetOwnedStatsAsync();
+
+        /// <summary>
+        /// Returns the total quantity per card ID for entries matching the given status, optionally scoped to
+        /// entries whose set code starts with the given prefix (e.g. "MP25" matches "MP25-EN001") and/or whose
+        /// rarity name matches (case-insensitive). Card IDs with no matching entries are omitted from the result.
+        /// </summary>
+        Task<IReadOnlyDictionary<int, int>> GetQuantitiesByCardIDsForPrintingAsync(IEnumerable<int> cardIDs, CollectionStatus status, string? setPrefix, string? rarityName);
         /// <summary>
         /// Returns the highest-priority status (Owned beats Ordered) per card ID for the given set of card IDs.
         /// </summary>

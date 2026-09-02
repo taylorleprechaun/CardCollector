@@ -72,7 +72,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<PreferredVersion>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => e.ImageID).IsUnique();
+                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName }).IsUnique();
             });
         }
     }

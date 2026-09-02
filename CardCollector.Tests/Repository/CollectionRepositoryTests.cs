@@ -196,6 +196,22 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetCompletionStatusByImageIDsAsync_TwoTrackedPrintingsShareImageID_RollsUpToCompleteIfEitherIsMet()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", Status = CollectionStatus.Owned, Quantity = 1 });
+            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 });
+            await context.SaveChangesAsync();
+
+            var result = await repository.GetCompletionStatusByImageIDsAsync([10]);
+
+            Assert.AreEqual(CollectionCompletionStatus.Complete, result[10]);
+        }
+
+        [TestMethod]
         public async Task GetDistinctAcquisitionMethodsAsync_OwnedOnlyExcludesNullAndOrdersValues()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -285,6 +301,21 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetOwnedCardPrintingsAsync_ExcludesOrderedEntriesAndReturnsDistinctPrintings()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Status = CollectionStatus.Ordered });
+
+            var result = await repository.GetOwnedCardPrintingsAsync();
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual((1, "SUDA-EN001", "Secret Rare"), result[0]);
+        }
+
+        [TestMethod]
         public async Task GetOwnedPairsAsync_ExcludesOrderedEntries()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -296,30 +327,6 @@ namespace CardCollector.Tests.Repository
 
             Assert.IsTrue(result.Contains((10, "LOB-EN001")));
             Assert.IsFalse(result.Contains((20, "LOB-EN002")));
-        }
-
-        [TestMethod]
-        public async Task GetOwnedQuantitiesByCardIDsForSetPrefixAsync_EmptyCardIDs_ReturnsEmpty()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new CollectionRepository(context);
-
-            var result = await repository.GetOwnedQuantitiesByCardIDsForSetPrefixAsync([], "MP25");
-
-            Assert.AreEqual(0, result.Count);
-        }
-
-        [TestMethod]
-        public async Task GetOwnedQuantitiesByCardIDsForSetPrefixAsync_MatchesPrefixBoundary()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "MP25-EN001", Status = CollectionStatus.Owned, Quantity = 2 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 11, SetCode = "MP25X-EN001", Status = CollectionStatus.Owned, Quantity = 5 });
-
-            var result = await repository.GetOwnedQuantitiesByCardIDsForSetPrefixAsync([1], "MP25");
-
-            Assert.AreEqual(2, result[1]);
         }
 
         [TestMethod]
@@ -413,6 +420,7 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual(3, result[(10, "LOB-EN001")]);
         }
+
         [TestMethod]
         public async Task GetOwnedStatsAsync_MixOfEntriesWithAndWithoutPrices_SumsOnlyPricedOnes()
         {
@@ -439,6 +447,68 @@ namespace CardCollector.Tests.Repository
             Assert.IsNull(stats.TotalSpent);
         }
 
+        [TestMethod]
+        public async Task GetQuantitiesByCardIDsForPrintingAsync_EmptyCardIDs_ReturnsEmpty()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+
+            var result = await repository.GetQuantitiesByCardIDsForPrintingAsync([], CollectionStatus.Owned, "MP25", null);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetQuantitiesByCardIDsForPrintingAsync_OrderedStatus_OnlyCountsOrderedEntries()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "MP25-EN001", Status = CollectionStatus.Ordered, Quantity = 3 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "MP25-EN001", Status = CollectionStatus.Owned, Quantity = 9 });
+
+            var result = await repository.GetQuantitiesByCardIDsForPrintingAsync([1], CollectionStatus.Ordered, "MP25", null);
+
+            Assert.AreEqual(3, result[1]);
+        }
+
+        [TestMethod]
+        public async Task GetQuantitiesByCardIDsForPrintingAsync_RarityNameOnly_ScopesAcrossAllSets()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", Status = CollectionStatus.Owned, Quantity = 3 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", Status = CollectionStatus.Owned, Quantity = 1 });
+
+            var result = await repository.GetQuantitiesByCardIDsForPrintingAsync([1], CollectionStatus.Owned, null, "Secret Rare");
+
+            Assert.AreEqual(3, result[1]);
+        }
+
+        [TestMethod]
+        public async Task GetQuantitiesByCardIDsForPrintingAsync_SetPrefixAndRarityName_RequiresBothToMatch()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common", Status = CollectionStatus.Owned, Quantity = 4 });
+
+            var result = await repository.GetQuantitiesByCardIDsForPrintingAsync([1], CollectionStatus.Owned, "LOB", "Ultra Rare");
+
+            Assert.AreEqual(2, result[1]);
+        }
+
+        [TestMethod]
+        public async Task GetQuantitiesByCardIDsForPrintingAsync_SetPrefixOnly_MatchesPrefixBoundary()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 10, SetCode = "MP25-EN001", Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CardID = 1, ImageID = 11, SetCode = "MP25X-EN001", Status = CollectionStatus.Owned, Quantity = 5 });
+
+            var result = await repository.GetQuantitiesByCardIDsForPrintingAsync([1], CollectionStatus.Owned, "MP25", null);
+
+            Assert.AreEqual(2, result[1]);
+        }
         [TestMethod]
         public async Task GetStatusByCardIDsAsync_EmptyCardIDs_ReturnsEmpty()
         {

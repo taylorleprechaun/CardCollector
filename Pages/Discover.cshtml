@@ -23,7 +23,7 @@
 {
     <div class="alert alert-success text-center py-5">
         <h3>All done!</h3>
-        <p class="mb-0">You have set a preferred version for every card in the database.</p>
+        <p class="mb-0">You have tracked a printing for every card in the database.</p>
     </div>
 }
 else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
@@ -103,7 +103,7 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                             <input type="hidden" name="SetCode" value="@set.Code" />
                                             <input type="hidden" name="RarityName" value="@rarityKey" />
                                             <button type="submit" class="btn btn-sm btn-primary">
-                                                Set as Preferred
+                                                Track This Printing
                                             </button>
                                         </form>
                                     </td>

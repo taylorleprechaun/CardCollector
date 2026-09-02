@@ -44,7 +44,8 @@ namespace CardCollector.ViewModels
             decimal? totalCost,
             int totalQuantity,
             int checkedOutQuantity = 0,
-            DateTime? checkedOutDate = null) => new()
+            DateTime? checkedOutDate = null,
+            int completeThreshold = 3) => new()
         {
             AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
@@ -52,6 +53,7 @@ namespace CardCollector.ViewModels
             CardType = printing.CardType,
             CheckedOutDate = checkedOutDate,
             CheckedOutQuantity = checkedOutQuantity,
+            CompleteThreshold = completeThreshold,
             ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,

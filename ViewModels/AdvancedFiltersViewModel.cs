@@ -23,6 +23,7 @@ namespace CardCollector.ViewModels
         public string? CurrentOrderedFilter { get; init; }
         public string? CurrentRarityName { get; init; }
         public string? CurrentSetName { get; init; }
+        public string? CurrentTrackedFilter { get; init; }
         public string? CurrentWishlistFilter { get; init; }
 
         public bool ShowAcquisitionMethod { get; init; }
