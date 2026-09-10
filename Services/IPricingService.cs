@@ -3,7 +3,7 @@ using CardCollector.Data.Models;
 namespace CardCollector.Services
 {
     /// <summary>
-    /// Fetches live TCGPlayer pricing for card printings from the YGOProDeck pricing endpoint.
+    /// Fetches live TCGPlayer pricing for card printings from the cached pricing data.
     /// </summary>
     public interface IPricingService
     {

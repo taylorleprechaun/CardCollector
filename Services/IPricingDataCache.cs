@@ -3,7 +3,7 @@ using CardCollector.DTO;
 namespace CardCollector.Services
 {
     /// <summary>
-    /// Caches the full YGOProDeck TCGPlayer pricing dataset (fetched in bulk, paginated) to disk with a TTL,
+    /// Caches TCGPlayer pricing (crawled from tcgcsv.com's catalog mirror, set by set) to disk with a TTL,
     /// so pricing lookups don't need a live HTTP call per card.
     /// </summary>
     public interface IPricingDataCache

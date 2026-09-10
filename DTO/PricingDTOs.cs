@@ -19,27 +19,55 @@ namespace CardCollector.DTO
         public string RarityName { get; set; } = string.Empty;
     }
 
-    public class TCGPriceCard
+    public class TCGCatalogEnvelope<T>
     {
-        [JsonProperty("card_sets")]
-        public IEnumerable<TCGPriceSet> CardSets { get; set; } = [];
+        [JsonProperty("errors")]
+        public IEnumerable<string> Errors { get; set; } = [];
 
-        [JsonProperty("id")]
-        public int ID { get; set; }
+        [JsonProperty("results")]
+        public IEnumerable<T> Results { get; set; } = [];
+
+        [JsonProperty("success")]
+        public bool Success { get; set; }
     }
 
-    internal class TCGPriceCardArray
+    public class TCGCatalogGroup
     {
-        [JsonProperty("data")]
-        public IEnumerable<TCGPriceCard> Cards { get; set; } = [];
+        [JsonProperty("abbreviation")]
+        public string? Abbreviation { get; set; }
 
-        [JsonProperty("meta")]
-        public TCGPriceMeta? Meta { get; set; }
+        [JsonProperty("groupId")]
+        public int GroupID { get; set; }
     }
 
-    internal class TCGPriceMeta
+    public class TCGCatalogPrice
     {
-        [JsonProperty("rows_remaining")]
-        public int RowsRemaining { get; set; }
+        [JsonProperty("marketPrice")]
+        public decimal? MarketPrice { get; set; }
+
+        [JsonProperty("productId")]
+        public int ProductID { get; set; }
+
+        [JsonProperty("subTypeName")]
+        public string? SubTypeName { get; set; }
     }
+
+    public class TCGCatalogProduct
+    {
+        [JsonProperty("extendedData")]
+        public IEnumerable<TCGCatalogProductField> ExtendedData { get; set; } = [];
+
+        [JsonProperty("productId")]
+        public int ProductID { get; set; }
+    }
+
+    public class TCGCatalogProductField
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonProperty("value")]
+        public string? Value { get; set; }
+    }
+
 }

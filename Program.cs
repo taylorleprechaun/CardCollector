@@ -33,6 +33,12 @@ builder.Services.AddHttpClient("YGOProDeck", client =>
     client.Timeout = TimeSpan.FromSeconds(120);
     client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0");
 });
+builder.Services.AddHttpClient("TcgCsv", client =>
+{
+    client.BaseAddress = new Uri("https://tcgcsv.com/");
+    client.Timeout = TimeSpan.FromSeconds(120);
+    client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0 (personal Yu-Gi-Oh collection tracker)");
+});
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();

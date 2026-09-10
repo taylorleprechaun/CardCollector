@@ -40,7 +40,7 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync();
 
         /// <summary>
-        /// Checks whether the given (setCode, rarityName, edition) is a printing the live YGOProDeck data
+        /// Checks whether the given (setCode, rarityName, edition) is a printing the live pricing data
         /// actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
         /// </summary>
         Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition);
@@ -213,7 +213,7 @@ namespace CardCollector.Services
         Task<PagedResult<CheckedOutCardViewModel>> SearchCheckedOutAsync(CheckedOutSearchCriteria criteria);
 
         /// <summary>
-        /// Cross-checks collection entries' recorded Edition against the live YGOProDeck data for that printing,
+        /// Cross-checks collection entries' recorded Edition against the live pricing data for that printing,
         /// returning a paginated, filtered page of the ones that look like data-entry mistakes.
         /// </summary>
         Task<PagedResult<EditionAuditGroupViewModel>> SearchEditionAuditAsync(EditionAuditSearchCriteria criteria);
