@@ -284,33 +284,13 @@ namespace CardCollector.Tests.Repository
             };
             var catalogPrintings = new List<TCGPriceSet>
             {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = null },
                 new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
             };
 
             CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
 
             Assert.AreEqual(2, cards[0].CardSets!.Count);
-        }
-
-        [TestMethod]
-        public void EnrichWithPrintVariants_MatchingVariantExists_AddsNewSetEntryAlongsideBasePrint()
-        {
-            var cards = new List<Card>
-            {
-                new() { Name = "Dark Magical Curtain", CardSets = [new Set { Code = "MAMO-EN003", Name = "Magnificent Monsters", RarityName = "Ultra Rare" }] }
-            };
-            var catalogPrintings = new List<TCGPriceSet>
-            {
-                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
-            };
-
-            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
-
-            Assert.AreEqual(2, cards[0].CardSets!.Count);
-            Assert.IsNull(cards[0].CardSets![0].PrintVariant);
-            Assert.AreEqual("Extended Art", cards[0].CardSets![1].PrintVariant);
-            Assert.AreEqual("MAMO-EN003", cards[0].CardSets![1].Code);
-            Assert.AreEqual("Ultra Rare", cards[0].CardSets![1].RarityName);
         }
 
         [TestMethod]
@@ -322,6 +302,7 @@ namespace CardCollector.Tests.Repository
             };
             var catalogPrintings = new List<TCGPriceSet>
             {
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = null },
                 new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Extended Art" },
                 new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Alternate Art" }
             };
@@ -351,6 +332,68 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(1, cards[0].CardSets!.Count);
         }
 
+        [TestMethod]
+        public void EnrichWithPrintVariants_NoPlainPrintAndMultipleVariants_RewritesFirstAndAddsRestAsNewEntries()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Some Card", CardSets = [new Set { Code = "ABC-EN001", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Extended Art" },
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Alternate Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(2, cards[0].CardSets!.Count);
+            CollectionAssert.AreEquivalent(
+                new[] { "Extended Art", "Alternate Art" },
+                cards[0].CardSets!.Select(s => s.PrintVariant).ToArray());
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_NoPlainPrintExistsInCatalog_RewritesBaseEntryInPlaceInsteadOfDuplicating()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Dark Magical Curtain", CardSets = [new Set { Code = "MAMO-EN003", Name = "Magnificent Monsters", RarityName = "Starlight Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Starlight Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(1, cards[0].CardSets!.Count);
+            Assert.AreEqual("Extended Art", cards[0].CardSets![0].PrintVariant);
+            Assert.AreEqual("MAMO-EN003", cards[0].CardSets![0].Code);
+            Assert.AreEqual("Starlight Rare", cards[0].CardSets![0].RarityName);
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_PlainPrintAlsoExistsInCatalog_AddsNewSetEntryAlongsideBasePrint()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Dark Magical Curtain", CardSets = [new Set { Code = "MAMO-EN003", Name = "Magnificent Monsters", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = null },
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(2, cards[0].CardSets!.Count);
+            Assert.IsNull(cards[0].CardSets![0].PrintVariant);
+            Assert.AreEqual("Extended Art", cards[0].CardSets![1].PrintVariant);
+            Assert.AreEqual("MAMO-EN003", cards[0].CardSets![1].Code);
+            Assert.AreEqual("Ultra Rare", cards[0].CardSets![1].RarityName);
+        }
         [TestMethod]
         public void EnrichWithPrintVariants_VariantIsForDifferentRarity_IsNotAdded()
         {

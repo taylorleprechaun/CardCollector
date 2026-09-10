@@ -133,14 +133,17 @@ namespace CardCollector.Repository
         /// <summary>
         /// Expands each card's CardSets with print-variant printings found in the tcgcsv catalog (e.g. Extended
         /// Art), which yaml-yugi/YGOProDeck's own set data can't distinguish since they only track rarity, not the
-        /// underlying sellable print variant. Matches by card name + set code; for each variant found for a
-        /// (SetCode, RarityName) pair, a new Set entry is added alongside the original base-print entry (whose
-        /// PrintVariant is left null).
+        /// underlying sellable print variant. Matches by card name + set code. For a (SetCode, RarityName) pair
+        /// where the catalog also lists a plain (non-variant) product, each variant found is added as a new Set
+        /// entry alongside the original base-print entry. Where the catalog has no plain listing for that rarity
+        /// at all — the inherited base entry is a mislabeled variant, not a real standalone print (e.g. a card
+        /// whose "Starlight Rare" print only ever shipped as Extended Art) — the base entry is rewritten in place
+        /// to carry the (first) variant instead of being duplicated alongside a phantom base print.
         /// </summary>
         public static void EnrichWithPrintVariants(IReadOnlyList<Card> cards, IReadOnlyList<TCGPriceSet> catalogPrintings)
         {
-            var variantsByCardAndSetCode = catalogPrintings
-                .Where(p => !string.IsNullOrWhiteSpace(p.CardName) && !string.IsNullOrWhiteSpace(p.Code) && !string.IsNullOrWhiteSpace(p.PrintVariant))
+            var printingsByCardAndSetCode = catalogPrintings
+                .Where(p => !string.IsNullOrWhiteSpace(p.CardName) && !string.IsNullOrWhiteSpace(p.Code))
                 .GroupBy(p => (CardName: p.CardName!.ToUpperInvariant(), Code: p.Code.ToUpperInvariant()))
                 .ToDictionary(
                     g => g.Key,
@@ -160,16 +163,36 @@ namespace CardCollector.Repository
                         continue;
 
                     var lookupKey = (CardName: card.Name.ToUpperInvariant(), Code: set.Code.ToUpperInvariant());
-                    if (!variantsByCardAndSetCode.TryGetValue(lookupKey, out var variants))
+                    if (!printingsByCardAndSetCode.TryGetValue(lookupKey, out var printings))
                         continue;
 
                     var normalizedSetRarity = RarityExtensions.NormalizeRarityName(set.RarityName) ?? set.RarityName;
-                    foreach (var variant in variants.Where(v => string.Equals(v.RarityName, normalizedSetRarity, StringComparison.OrdinalIgnoreCase)))
+                    var rarityPrintings = printings.Where(p => string.Equals(p.RarityName, normalizedSetRarity, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (rarityPrintings.Count == 0)
+                        continue;
+
+                    var distinctVariants = rarityPrintings
+                        .Where(p => !string.IsNullOrWhiteSpace(p.PrintVariant))
+                        .Select(p => p.PrintVariant!)
+                        .Distinct()
+                        .ToList();
+                    if (distinctVariants.Count == 0)
+                        continue;
+
+                    var startIndex = 0;
+                    var hasPlainPrint = rarityPrintings.Any(p => string.IsNullOrWhiteSpace(p.PrintVariant));
+                    if (!hasPlainPrint)
+                    {
+                        set.PrintVariant = distinctVariants[0];
+                        startIndex = 1;
+                    }
+
+                    for (var i = startIndex; i < distinctVariants.Count; i++)
                         additions.Add(new Set
                         {
                             Code = set.Code,
                             Name = set.Name,
-                            PrintVariant = variant.PrintVariant,
+                            PrintVariant = distinctVariants[i],
                             RarityCode = set.RarityCode,
                             RarityName = set.RarityName
                         });
