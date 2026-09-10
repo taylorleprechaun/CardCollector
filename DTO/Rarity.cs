@@ -115,9 +115,17 @@ namespace CardCollector.DTO
         [EnumMember(Value = "Premium Gold Rare")]
         PremiumGoldRare,
 
+        [Description("Prismatic Collector's Rare")]
+        [EnumMember(Value = "Prismatic Collector's Rare")]
+        PrismaticCollectorsRare,
+
         [Description("Prismatic Secret Rare")]
         [EnumMember(Value = "Prismatic Secret Rare")]
         PrismaticSecretRare,
+
+        [Description("Prismatic Ultimate Rare")]
+        [EnumMember(Value = "Prismatic Ultimate Rare")]
+        PrismaticUltimateRare,
 
         [Description("Quarter Century Secret Rare")]
         [EnumMember(Value = "Quarter Century Secret Rare")]

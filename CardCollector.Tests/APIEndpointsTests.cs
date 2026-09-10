@@ -52,7 +52,7 @@ namespace CardCollector.Tests
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
                 .ReturnsAsync(5.00m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "not-a-real-edition", pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "not-a-real-edition", null, pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);
@@ -67,7 +67,7 @@ namespace CardCollector.Tests
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "FirstEdition", pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "FirstEdition", null, pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);

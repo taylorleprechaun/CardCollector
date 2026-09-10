@@ -14,8 +14,6 @@ namespace CardCollector.ViewModels
 
         public string CurrentSetName { get; set; } = string.Empty;
 
-        public int ImageID { get; set; }
-
         public string ImageURLSmall { get; set; } = string.Empty;
 
         public bool IsIgnored { get; set; }

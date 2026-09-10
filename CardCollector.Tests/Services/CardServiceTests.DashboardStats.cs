@@ -18,10 +18,10 @@ namespace CardCollector.Tests.Services
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 2 });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
+                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
             ]);
-            _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [10] = [new() { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+            _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
                 new CollectionEntry { ID = 2, CardID = 3 },
@@ -31,11 +31,11 @@ namespace CardCollector.Tests.Services
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync())
                 .ReturnsAsync(new CollectionValueSnapshot { TotalValue = 123.45m, SnapshotDate = "2026-01-01" });
             _collectionRepositoryMock.Setup(r => r.GetOwnedPairsAsync())
-                .ReturnsAsync(new HashSet<(int, string)> { (10, "LOB-EN001") });
+                .ReturnsAsync(new HashSet<(int, string)> { (1, "LOB-EN001") });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" },
-                new PreferredVersion { CardID = 5, ImageID = 99, SetCode = "XYZ-EN001" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" },
+                new PreferredVersion { CardID = 5, SetCode = "XYZ-EN001" }
             ]);
 
             var stats = await _service.GetDashboardStatsAsync();

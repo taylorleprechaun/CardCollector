@@ -27,8 +27,8 @@ namespace CardCollector.Tests.Services
             SetUpBrowseableCards(new Card { ID = 1, Name = "Dark Magician", CardImages = [new Image { ID = 10 }] });
             _collectionRepositoryMock.Setup(r => r.GetStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, CollectionStatus> { [1] = CollectionStatus.Owned });
-            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus> { [10] = CollectionCompletionStatus.Complete });
+            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus> { [1] = CollectionCompletionStatus.Complete });
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria());
 
@@ -121,7 +121,7 @@ namespace CardCollector.Tests.Services
             // Card 1 is tracked, but only via a SUDA printing -- not the RA04 printing being filtered to.
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock
                 .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CollectionStatus>(), "RA04", null))
@@ -138,8 +138,8 @@ namespace CardCollector.Tests.Services
             SetUpBrowseableCards(
                 new Card { ID = 1, Name = "Dark Magician", CardImages = [new Image { ID = 10 }] },
                 new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardImages = [new Image { ID = 20 }] });
-            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus> { [10] = CollectionCompletionStatus.Incomplete, [20] = CollectionCompletionStatus.Complete });
+            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus> { [1] = CollectionCompletionStatus.Incomplete, [2] = CollectionCompletionStatus.Complete });
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { IsIncomplete = true });
 
@@ -157,7 +157,7 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [1] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { RarityName = "Ultra Rare", IsIncomplete = true });
@@ -178,8 +178,8 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [1] = 1, [2] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", DesiredQuantity = 1 },
-                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", DesiredQuantity = 1 },
+                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Legend of Blue Eyes White Dragon", IsIncomplete = true });
@@ -227,7 +227,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, string SetCode, string? RarityName)> { (1, "RA03-EN116", "Quarter Century Secret Rare") });
@@ -250,7 +250,7 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [1] = 3, [2] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria
@@ -271,7 +271,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, string SetCode, string? RarityName)> { (1, "RA03-EN116", "Quarter Century Secret Rare") });

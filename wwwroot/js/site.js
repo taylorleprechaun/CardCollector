@@ -21,10 +21,11 @@ function setQuantityButtons(targetId, value) {
 
 function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     async function refreshPrice() {
-        const { cardID, setCode, rarityName } = getParams();
+        const { cardID, setCode, rarityName, printVariant } = getParams();
         if (!(cardID && setCode && rarityName)) return;
         try {
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}`);
+            const variantParam = printVariant ? `&printVariant=${encodeURIComponent(printVariant)}` : '';
+            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}${variantParam}`);
             if (resp.ok) {
                 const { price } = await resp.json();
                 if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);

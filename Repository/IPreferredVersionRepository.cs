@@ -4,17 +4,17 @@ namespace CardCollector.Repository
 {
     /// <summary>
     /// Provides data access for the user's tracked-printing selections stored in SQLite. A card can have
-    /// any number of tracked printings at once, each identified by (CardID, SetCode, RarityName).
+    /// any number of tracked printings at once, each identified by (CardID, SetCode, RarityName, PrintVariant).
     /// </summary>
     public interface IPreferredVersionRepository
     {
         /// <summary>
-        /// Inserts a new tracked printing for the given (cardID, setCode, rarityName) combination, or
-        /// updates the existing one if that exact printing is already tracked. When
+        /// Inserts a new tracked printing for the given (cardID, setCode, rarityName, printVariant) combination,
+        /// or updates the existing one if that exact printing is already tracked. When
         /// <paramref name="desiredQuantity"/> is null, a newly-created record defaults to 3 and an
         /// existing one keeps its current target.
         /// </summary>
-        Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null);
+        Task AddOrUpdateAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null);
 
         /// <summary>
         /// Deletes the tracked printing with the given ID.
@@ -32,10 +32,10 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<PreferredVersion>> GetByCardIDAsync(int cardID);
 
         /// <summary>
-        /// Returns the tracked printings for the given set of image IDs, grouped by image ID. More than
-        /// one tracked printing can share an image ID (different set/rarity printings of the same artwork).
+        /// Returns the tracked printings for the given set of card IDs, grouped by card ID. More than
+        /// one tracked printing can share a card ID (different set/rarity/variant printings).
         /// </summary>
-        Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByImageIDsAsync(IEnumerable<int> imageIDs);
+        Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByCardIDsAsync(IEnumerable<int> cardIDs);
 
         /// <summary>
         /// Returns the set of card IDs that have at least one tracked printing.

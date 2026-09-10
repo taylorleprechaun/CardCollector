@@ -69,15 +69,15 @@ namespace CardCollector.Repository
                 .ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetStagedQuantitiesAsync()
+        public async Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetStagedQuantitiesAsync()
         {
             var grouped = await _context.PendingOrderLines
-                .GroupBy(l => new { l.ImageID, l.SetCode, RarityName = l.RarityName ?? string.Empty })
-                .Select(g => new { g.Key.ImageID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(l => l.Quantity) })
+                .GroupBy(l => new { l.CardID, l.SetCode, RarityName = l.RarityName ?? string.Empty })
+                .Select(g => new { g.Key.CardID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(l => l.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return grouped.ToDictionary(g => (g.ImageID, g.SetCode, g.RarityName), g => g.Quantity);
+            return grouped.ToDictionary(g => (g.CardID, g.SetCode, g.RarityName), g => g.Quantity);
         }
 
         public async Task<(int Count, decimal Total)> GetSummaryAsync()

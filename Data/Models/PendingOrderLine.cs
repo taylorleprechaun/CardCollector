@@ -17,10 +17,10 @@ namespace CardCollector.Data.Models
 
         public int ID { get; set; }
 
-        [Required]
-        public int ImageID { get; set; }
-
         public decimal? MarketPriceAtEntry { get; set; }
+
+        /// <summary>Null for a normal/base print; a distinct sellable variant of the same rarity otherwise (e.g. "Extended Art").</summary>
+        public string? PrintVariant { get; set; }
 
         public DateTime? PurchaseDate { get; set; }
 

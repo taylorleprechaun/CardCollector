@@ -22,7 +22,7 @@ namespace CardCollector.Tests.Services
             var map = await _service.GetCardEditionMapAsync(1);
 
             Assert.AreEqual(1, map.Count);
-            CollectionAssert.AreEquivalent(new[] { CardEdition.Unlimited }, map[("LOB-EN001", "COMMON")].ToArray());
+            CollectionAssert.AreEquivalent(new[] { CardEdition.Unlimited }, map[("LOB-EN001", "COMMON", null)].ToArray());
         }
 
         [TestMethod]
@@ -36,7 +36,7 @@ namespace CardCollector.Tests.Services
             var map = await _service.GetCardEditionMapAsync(1);
 
             Assert.AreEqual(1, map.Count);
-            var editions = map[("LOB-EN001", "ULTRA RARE")];
+            var editions = map[("LOB-EN001", "ULTRA RARE", null)];
             CollectionAssert.AreEquivalent(new[] { CardEdition.FirstEdition, CardEdition.Unlimited }, editions.ToArray());
         }
 
@@ -49,7 +49,7 @@ namespace CardCollector.Tests.Services
 
             var map = await _service.GetCardEditionMapAsync(1);
 
-            Assert.AreEqual(0, map[("LOB-EN001", "ULTRA RARE")].Count);
+            Assert.AreEqual(0, map[("LOB-EN001", "ULTRA RARE", null)].Count);
         }
 
         [TestMethod]
@@ -100,6 +100,31 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetPrintingPriceAsync_PrintVariantSpecified_MatchesVariantSpecificEntryOnly()
+        {
+            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
+                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "5.00"),
+                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "12.82", "Extended Art")
+            ]);
+
+            var price = await _service.GetPrintingPriceAsync(1, "MAMO-EN003", "Ultra Rare", printVariant: "Extended Art");
+
+            Assert.AreEqual(12.82m, price);
+        }
+
+        [TestMethod]
+        public async Task GetPrintingPriceAsync_PrintVariantSpecifiedButOnlyBasePrintExists_ReturnsNull()
+        {
+            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
+                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "5.00")
+            ]);
+
+            var price = await _service.GetPrintingPriceAsync(1, "MAMO-EN003", "Ultra Rare", printVariant: "Extended Art");
+
+            Assert.IsNull(price);
+        }
+
+        [TestMethod]
         public async Task GetPrintingPriceAsync_SetRarityMatchIgnoringCase_ReturnsPrice()
         {
             _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
@@ -110,7 +135,6 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(12.50m, price);
         }
-
         [TestMethod]
         public async Task GetPrintingPriceAsync_StoredRarityIsCommonButFeedStillSaysShortPrint_ReturnsPrice()
         {
@@ -129,12 +153,13 @@ namespace CardCollector.Tests.Services
             _pricingDataCacheMock = new Mock<IPricingDataCache>();
             _service = new PricingService(_pricingDataCacheMock.Object);
         }
-        private static TCGPriceSet MakeSet(string code, string rarityName, string edition, string priceRaw) => new()
+        private static TCGPriceSet MakeSet(string code, string rarityName, string edition, string priceRaw, string? printVariant = null) => new()
         {
             Code = code,
             RarityName = rarityName,
             Edition = edition,
-            PriceRaw = priceRaw
+            PriceRaw = priceRaw,
+            PrintVariant = printVariant
         };
     }
 }

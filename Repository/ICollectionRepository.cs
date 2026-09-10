@@ -18,7 +18,7 @@ namespace CardCollector.Repository
         Task<bool> DeleteAsync(int id);
 
         /// <summary>
-        /// Returns all entries for the given card ID across all artworks.
+        /// Returns all entries for the given card ID.
         /// </summary>
         Task<IEnumerable<CollectionEntry>> GetByCardIDAsync(int cardID);
 
@@ -38,15 +38,15 @@ namespace CardCollector.Repository
         Task<IReadOnlySet<int>> GetCardIDsByStatusAsync(CollectionStatus status);
 
         /// <summary>
-        /// Returns the set of (imageID, setCode) pairs present in the collection regardless of status.
+        /// Returns the set of (cardID, setCode) pairs present in the collection regardless of status.
         /// </summary>
-        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetCollectedPairsAsync();
+        Task<IReadOnlySet<(int CardID, string SetCode)>> GetCollectedPairsAsync();
 
         /// <summary>
-        /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned image ID in the given set.
-        /// Image IDs that are not owned are omitted from the result.
+        /// Returns the completion status (Complete, Incomplete, or Placeholder) for each owned card ID in the given set.
+        /// Card IDs that are not owned are omitted from the result.
         /// </summary>
-        Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByImageIDsAsync(IEnumerable<int> imageIDs);
+        Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByCardIDsAsync(IEnumerable<int> cardIDs);
 
         /// <summary>
         /// Returns the distinct non-null acquisition methods present in owned entries, sorted.
@@ -74,11 +74,11 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<string>> GetDistinctSetCodesAsync();
 
         /// <summary>
-        /// Returns the total Ordered quantity for every (imageID, setCode, rarityName) combination, summed
+        /// Returns the total Ordered quantity for every (cardID, setCode, rarityName) combination, summed
         /// across matching entries. RarityName is normalized to an empty string when null, so callers should
         /// look up with <c>rarityName ?? string.Empty</c>.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
+        Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
 
         /// <summary>
         /// Returns the (cardID, setCode, rarityName) of every Owned entry, for cross-referencing against
@@ -87,21 +87,21 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<(int CardID, string SetCode, string? RarityName)>> GetOwnedCardPrintingsAsync();
 
         /// <summary>
-        /// Returns the set of (imageID, setCode) pairs present in Owned entries only.
+        /// Returns the set of (cardID, setCode) pairs present in Owned entries only.
         /// </summary>
-        Task<IReadOnlySet<(int ImageID, string SetCode)>> GetOwnedPairsAsync();
+        Task<IReadOnlySet<(int CardID, string SetCode)>> GetOwnedPairsAsync();
         /// <summary>
-        /// Returns the total owned quantity per (imageID, setCode, rarityName) combination for the given set of combinations.
+        /// Returns the total owned quantity per (cardID, setCode, rarityName) combination for the given set of combinations.
         /// Combinations with no owned entries are omitted from the result.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int ImageID, string SetCode, string RarityName)> pairs);
+        Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int CardID, string SetCode, string RarityName)> pairs);
 
         /// <summary>
-        /// Returns the rarity-aware owned quantity per (imageID, setCode) pair for the given preferred versions.
+        /// Returns the rarity-aware owned quantity per (cardID, setCode) pair for the given preferred versions.
         /// When a preferred version specifies a non-null rarityName, only owned entries with a matching rarity are counted.
         /// Pairs with no matching owned entries are omitted from the result.
         /// </summary>
-        Task<IReadOnlyDictionary<(int ImageID, string SetCode), int>> GetOwnedQuantitiesForPreferredVersionsAsync(IEnumerable<(int ImageID, string SetCode, string? RarityName)> preferredVersions);
+        Task<IReadOnlyDictionary<(int CardID, string SetCode), int>> GetOwnedQuantitiesForPreferredVersionsAsync(IEnumerable<(int CardID, string SetCode, string? RarityName)> preferredVersions);
 
         /// <summary>
         /// Returns quantity, market-value-at-entry, and purchase-price totals for owned entries.

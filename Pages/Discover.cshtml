@@ -99,7 +99,6 @@ else if (Model.CurrentCard is not null && Model.CurrentImage is not null)
                                     <td>
                                         <form method="post" asp-page-handler="SetPreferred">
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
-                                            <input type="hidden" name="ImageID" value="@Model.CurrentImage.ID" />
                                             <input type="hidden" name="SetCode" value="@set.Code" />
                                             <input type="hidden" name="RarityName" value="@rarityKey" />
                                             <button type="submit" class="btn btn-sm btn-primary">

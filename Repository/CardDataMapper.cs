@@ -60,7 +60,7 @@ namespace CardCollector.Repository
             var sets = new List<Set>();
             foreach (var entry in y.Sets?.En ?? [])
             {
-                if (entry.SetName?.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase) == true)
+                if (IsSpeedDuelSet(entry.SetName))
                     continue;
 
                 foreach (var rarity in entry.Rarities ?? [])
@@ -130,10 +130,83 @@ namespace CardCollector.Repository
             return y.Property;
         }
 
+        /// <summary>
+        /// Expands each card's CardSets with print-variant printings found in the tcgcsv catalog (e.g. Extended
+        /// Art), which yaml-yugi/YGOProDeck's own set data can't distinguish since they only track rarity, not the
+        /// underlying sellable print variant. Matches by card name + set code; for each variant found for a
+        /// (SetCode, RarityName) pair, a new Set entry is added alongside the original base-print entry (whose
+        /// PrintVariant is left null).
+        /// </summary>
+        public static void EnrichWithPrintVariants(IReadOnlyList<Card> cards, IReadOnlyList<TCGPriceSet> catalogPrintings)
+        {
+            var variantsByCardAndSetCode = catalogPrintings
+                .Where(p => !string.IsNullOrWhiteSpace(p.CardName) && !string.IsNullOrWhiteSpace(p.Code) && !string.IsNullOrWhiteSpace(p.PrintVariant))
+                .GroupBy(p => (CardName: p.CardName!.ToUpperInvariant(), Code: p.Code.ToUpperInvariant()))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(p => (RarityName: RarityExtensions.NormalizeRarityName(p.RarityName) ?? p.RarityName, p.PrintVariant))
+                        .Distinct()
+                        .ToList());
+
+            foreach (var card in cards)
+            {
+                if (card.CardSets is null || string.IsNullOrWhiteSpace(card.Name))
+                    continue;
+
+                var additions = new List<Set>();
+                foreach (var set in card.CardSets)
+                {
+                    if (string.IsNullOrWhiteSpace(set.Code))
+                        continue;
+
+                    var lookupKey = (CardName: card.Name.ToUpperInvariant(), Code: set.Code.ToUpperInvariant());
+                    if (!variantsByCardAndSetCode.TryGetValue(lookupKey, out var variants))
+                        continue;
+
+                    var normalizedSetRarity = RarityExtensions.NormalizeRarityName(set.RarityName) ?? set.RarityName;
+                    foreach (var variant in variants.Where(v => string.Equals(v.RarityName, normalizedSetRarity, StringComparison.OrdinalIgnoreCase)))
+                        additions.Add(new Set
+                        {
+                            Code = set.Code,
+                            Name = set.Name,
+                            PrintVariant = variant.PrintVariant,
+                            RarityCode = set.RarityCode,
+                            RarityName = set.RarityName
+                        });
+                }
+
+                if (additions.Count > 0)
+                    card.CardSets = card.CardSets.Concat(additions).ToList();
+            }
+        }
+
         public static string GetSetPrefix(string code)
         {
             var hyphen = code.IndexOf('-');
             return hyphen > 0 ? code[..hyphen] : code;
+        }
+
+        public static bool IsSpeedDuelSet(string? setName) =>
+            setName?.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase) == true;
+
+        /// <summary>
+        /// Adds any card present in <paramref name="supplementalCards"/> but absent from <paramref name="primaryCards"/>
+        /// (by ID), backfilling gaps in the primary source. Used to fill yaml-yugi's card-list gaps from the
+        /// already-fetched raw YGOProDeck response, which does not go through <see cref="BuildSets"/> and so needs
+        /// its own Speed Duel set filtering applied here.
+        /// </summary>
+        public static IReadOnlyList<Card> MergeMissingCards(IReadOnlyList<Card> primaryCards, IReadOnlyList<Card> supplementalCards)
+        {
+            var existingIDs = primaryCards.Select(c => c.ID).ToHashSet();
+            var merged = new List<Card>(primaryCards);
+
+            foreach (var card in supplementalCards.Where(c => !existingIDs.Contains(c.ID)))
+            {
+                card.CardSets = card.CardSets?.Where(s => !IsSpeedDuelSet(s.Name)).ToList();
+                merged.Add(card);
+            }
+
+            return merged;
         }
     }
 }

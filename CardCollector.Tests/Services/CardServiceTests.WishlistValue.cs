@@ -12,7 +12,7 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
@@ -30,7 +30,7 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
@@ -51,13 +51,13 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 1 });
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 1 });
             _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(10, "LOB-EN001", "Ultra Rare")] = 2 });
+                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Ultra Rare")] = 2 });
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
                 .ReturnsAsync(10m);

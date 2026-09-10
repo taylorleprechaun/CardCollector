@@ -13,7 +13,7 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();
@@ -65,8 +65,8 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN002")).Returns("2020-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" },
-                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "SDK-EN001" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" },
+                new PreferredVersion { CardID = 2, SetCode = "SDK-EN001" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();
@@ -90,7 +90,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();
@@ -113,7 +113,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
             _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new HashSet<(int, string, string)> { (1, "NEW-EN001", "Common") });
@@ -137,7 +137,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();
@@ -162,7 +162,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("NEW-EN001")).Returns("2020-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
             _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new HashSet<(int, string, string)> { (1, "NEW-EN001", "Secret Rare") });
@@ -185,7 +185,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2015-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();
@@ -206,7 +206,7 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2015-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Common" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Common" }
             ]);
 
             var result = await _service.GetNewPrintingOpportunitiesAsync();

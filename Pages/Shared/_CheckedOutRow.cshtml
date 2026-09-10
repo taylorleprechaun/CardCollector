@@ -3,7 +3,7 @@
 @{
     var item = Model.Item;
     var filterParams = Model.FilterParams;
-    var rowId = $"checkedout-row-{item.ImageID}-{item.SetCode}";
+    var rowId = $"checkedout-row-{item.CardID}-{item.SetCode}";
 }
 <div class="list-group-item d-flex flex-column flex-md-row align-items-md-center gap-2 py-2" id="@rowId">
     <div class="d-flex align-items-center gap-3 flex-grow-1 min-width-0">
@@ -22,9 +22,9 @@
     <form method="post" class="d-flex flex-column flex-shrink-0 ajax-form" data-ajax-target="@rowId">
         @Html.AntiForgeryToken()
         <input type="hidden" name="cardID"  value="@item.CardID"  />
-        <input type="hidden" name="imageID" value="@item.ImageID" />
         <input type="hidden" name="setCode" value="@item.SetCode" />
         <input type="hidden" name="rarityName" value="@item.RarityName" />
+        <input type="hidden" name="printVariant" value="@item.PrintVariant" />
         <div class="d-flex align-items-center gap-1">
             <small class="text-muted">Check Out:</small>
             <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">

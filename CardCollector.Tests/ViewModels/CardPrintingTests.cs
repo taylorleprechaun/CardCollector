@@ -24,7 +24,6 @@ namespace CardCollector.Tests.ViewModels
                 CardID = 1,
                 CardName = "Blue-Eyes White Dragon",
                 CardType = "Normal Monster",
-                ImageID = 2,
                 ImageURLSmall = "https://example.com/small.jpg",
                 Price = 10.00m,
                 RarityCode = "(UR)",

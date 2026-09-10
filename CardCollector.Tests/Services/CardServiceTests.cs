@@ -49,33 +49,33 @@ namespace CardCollector.Tests.Services
                 .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
                 .Returns((Func<Task> op) => op());
 
-            _preferredVersionRepositoryMock.Setup(r => r.GetByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
+            _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>());
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<PreferredVersion>());
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(It.IsAny<int>())).ReturnsAsync(new List<PreferredVersion>());
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
-                .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), (DateTime Date, int Quantity)>());
+                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>());
             _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new HashSet<(int CardID, string SetCode, string RarityName)>());
             _ignoredCardRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new Dictionary<int, DateTime>());
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
             _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), int>());
+                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
             _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), int>());
-            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int ImageID, string SetCode, string? RarityName)>>()))
-                .ReturnsAsync(new Dictionary<(int ImageID, string SetCode), int>());
+                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int CardID, string SetCode, string? RarityName)>>()))
+                .ReturnsAsync(new Dictionary<(int CardID, string SetCode), int>());
             _collectionRepositoryMock.Setup(r => r.GetOwnedStatsAsync()).ReturnsAsync(new OwnedCollectionStats(0, null, null));
             _collectionRepositoryMock.Setup(r => r.GetOwnedPairsAsync()).ReturnsAsync(new HashSet<(int, string)>());
             _collectionRepositoryMock.Setup(r => r.GetStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, CollectionStatus>());
-            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByImageIDsAsync(It.IsAny<IEnumerable<int>>()))
+            _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus>());
             _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(It.IsAny<int>()))
-                .ReturnsAsync(new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>());
-            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPairsAsync(It.IsAny<IEnumerable<(int ImageID, string SetCode, string RarityName)>>()))
-                .ReturnsAsync(new Dictionary<(int ImageID, string SetCode, string RarityName), int>());
+                .ReturnsAsync(new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>());
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPairsAsync(It.IsAny<IEnumerable<(int CardID, string SetCode, string RarityName)>>()))
+                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
             _wishlistValueRepositoryMock.Setup(r => r.GetAllSnapshotsAsync()).ReturnsAsync(new List<WishlistValueSnapshot>());
             _wishlistValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((WishlistValueSnapshot?)null);
 

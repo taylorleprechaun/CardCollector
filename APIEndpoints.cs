@@ -21,10 +21,10 @@ namespace CardCollector
             return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
         }
 
-        public static async Task<IResult> GetPriceAsync(int cardID, string setCode, string rarityName, string? edition, IPricingService pricingService)
+        public static async Task<IResult> GetPriceAsync(int cardID, string setCode, string rarityName, string? edition, string? printVariant, IPricingService pricingService)
         {
             CardEdition? parsedEdition = Enum.TryParse<CardEdition>(edition, out var e) ? e : null;
-            var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName, parsedEdition).ConfigureAwait(false);
+            var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName, parsedEdition, printVariant).ConfigureAwait(false);
             return Results.Json(new { price });
         }
         public static async Task RefreshCardDataStreamAsync(ICardDataRepository cardDataRepository, Func<string, string, Task> send, CancellationToken ct)

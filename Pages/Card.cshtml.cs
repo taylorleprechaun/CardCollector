@@ -19,18 +19,18 @@ namespace CardCollector.Pages
 
         public bool CardNotFound { get; private set; }
 
-        public IReadOnlyDictionary<(string SetCode, string RarityName), (CollectionStatus Status, int TotalQuantity)> CollectionEntriesBySetCode { get; private set; }
-            = new Dictionary<(string, string), (CollectionStatus, int)>();
+        public IReadOnlyDictionary<(string SetCode, string RarityName, string PrintVariant), (CollectionStatus Status, int TotalQuantity)> CollectionEntriesBySetCode { get; private set; }
+            = new Dictionary<(string, string, string), (CollectionStatus, int)>();
 
         public Card? CurrentCard { get; private set; }
 
         [BindProperty(SupportsGet = true)]
         public int ID { get; set; }
 
-        [BindProperty(SupportsGet = true)]
-        public int ImageID { get; set; }
-
         public bool IsIgnored { get; private set; }
+
+        [BindProperty]
+        public string? PrintVariant { get; set; }
 
         [BindProperty]
         public string? RarityName { get; set; }
@@ -49,13 +49,14 @@ namespace CardCollector.Pages
             _cardSetRepository = cardSetRepository;
         }
 
-        public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, string setCode, string rarityName)
+        public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, string setCode, string rarityName, string printVariant)
         {
             if (status != CollectionStatus.Owned) return null;
 
             var tracked = TrackedPrintings.FirstOrDefault(pv =>
                 pv.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
-                && (pv.RarityName is null || pv.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase)));
+                && (pv.RarityName is null || pv.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(pv.PrintVariant ?? string.Empty, printVariant, StringComparison.OrdinalIgnoreCase));
 
             if (tracked is not null)
                 return totalQuantity >= tracked.DesiredQuantity
@@ -65,7 +66,7 @@ namespace CardCollector.Pages
             // This particular printing isn't one of the tracked ones — if some other tracked printing for
             // this card is already complete, this copy still counts as "owned," just not the target.
             var anyOtherTrackedComplete = TrackedPrintings.Any(pv =>
-                CollectionEntriesBySetCode.TryGetValue((pv.SetCode, pv.RarityName ?? string.Empty), out var summary)
+                CollectionEntriesBySetCode.TryGetValue((pv.SetCode, pv.RarityName ?? string.Empty, pv.PrintVariant ?? string.Empty), out var summary)
                 && summary.Status == CollectionStatus.Owned
                 && summary.TotalQuantity >= pv.DesiredQuantity);
 
@@ -92,7 +93,7 @@ namespace CardCollector.Pages
 
             var entries = await _cardService.GetEntriesByCardIDAsync(ID);
             CollectionEntriesBySetCode = entries
-                .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty))
+                .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty, e.PrintVariant ?? string.Empty))
                 .ToDictionary(
                     g => g.Key,
                     g => (
@@ -107,53 +108,55 @@ namespace CardCollector.Pages
         public async Task<IActionResult> OnPostIgnoreAsync()
         {
             await _cardService.IgnoreCardAsync(CardID);
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostOrderAsync(
             int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
             AcquisitionMethod? acquisitionMethod = null,
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
-            bool setAsPreferred = false, string? rarityName = null)
+            bool setAsPreferred = false, string? rarityName = null, string? printVariant = null)
         {
             await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
 
             await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Ordered,
+                CardID, SetCode, CollectionStatus.Ordered,
                 quantity, condition, edition,
                 acquisitionMethod,
-                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
+                purchaseDate, purchasePrice, marketPriceAtEntry,
+                rarityName, printVariant);
 
             if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
+                await _cardService.SavePreferredVersionAsync(CardID, SetCode, rarityName, printVariant);
 
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostOwnAsync(
             int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
             AcquisitionMethod? acquisitionMethod = null,
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
-            bool setAsPreferred = false, string? rarityName = null)
+            bool setAsPreferred = false, string? rarityName = null, string? printVariant = null)
         {
             await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
 
             await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Owned,
+                CardID, SetCode, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod,
-                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName);
+                purchaseDate, purchasePrice, marketPriceAtEntry,
+                rarityName, printVariant);
 
             if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, rarityName);
+                await _cardService.SavePreferredVersionAsync(CardID, SetCode, rarityName, printVariant);
 
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostRemovePreferredAsync(int preferredVersionID)
         {
             await _cardService.RemoveFromWishlistAsync(preferredVersionID);
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostSetDesiredQuantityAsync(int preferredVersionID, int desiredQuantity)
@@ -161,19 +164,19 @@ namespace CardCollector.Pages
             if (preferredVersionID > 0 && desiredQuantity >= 1)
                 await _cardService.SetDesiredQuantityAsync(preferredVersionID, desiredQuantity).ConfigureAwait(false);
 
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
-            await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            await _cardService.SavePreferredVersionAsync(CardID, SetCode, RarityName, PrintVariant);
+            return RedirectToPage(new { ID, ReturnURL });
         }
 
         public async Task<IActionResult> OnPostUnignoreAsync()
         {
             await _cardService.UnignoreCardAsync(CardID);
-            return RedirectToPage(new { ID, ImageID, ReturnURL });
+            return RedirectToPage(new { ID, ReturnURL });
         }
     }
 }

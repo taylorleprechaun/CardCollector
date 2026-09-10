@@ -81,13 +81,12 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
             page.CardID = 5;
-            page.ImageID = 10;
             page.SetCode = "LOB-EN001";
             page.RarityName = "Ultra Rare";
 
             var result = await page.OnPostSetPreferredAsync();
 
-            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(5, 10, "LOB-EN001", "Ultra Rare"), Times.Once);
+            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(5, "LOB-EN001", "Ultra Rare"), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

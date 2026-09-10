@@ -260,6 +260,113 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual("Normal", result);
         }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_CardHasNullCardSets_DoesNotThrow()
+        {
+            var cards = new List<Card> { new() { Name = "Some Card", CardSets = null } };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.IsNull(cards[0].CardSets);
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_CardNameMatchIsCaseInsensitive_AddsVariant()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "dark magical curtain", CardSets = [new Set { Code = "mamo-en003", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(2, cards[0].CardSets!.Count);
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_MatchingVariantExists_AddsNewSetEntryAlongsideBasePrint()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Dark Magical Curtain", CardSets = [new Set { Code = "MAMO-EN003", Name = "Magnificent Monsters", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(2, cards[0].CardSets!.Count);
+            Assert.IsNull(cards[0].CardSets![0].PrintVariant);
+            Assert.AreEqual("Extended Art", cards[0].CardSets![1].PrintVariant);
+            Assert.AreEqual("MAMO-EN003", cards[0].CardSets![1].Code);
+            Assert.AreEqual("Ultra Rare", cards[0].CardSets![1].RarityName);
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_MultipleVariantsForSameRarity_AddsOneEntryPerVariant()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Some Card", CardSets = [new Set { Code = "ABC-EN001", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Extended Art" },
+                new() { CardName = "Some Card", Code = "ABC-EN001", RarityName = "Ultra Rare", PrintVariant = "Alternate Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(3, cards[0].CardSets!.Count);
+            CollectionAssert.AreEquivalent(
+                new[] { null, "Extended Art", "Alternate Art" },
+                cards[0].CardSets!.Select(s => s.PrintVariant).ToArray());
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_NoMatchingCardName_LeavesCardSetsUnchanged()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Some Other Card", CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(1, cards[0].CardSets!.Count);
+        }
+
+        [TestMethod]
+        public void EnrichWithPrintVariants_VariantIsForDifferentRarity_IsNotAdded()
+        {
+            var cards = new List<Card>
+            {
+                new() { Name = "Dark Magical Curtain", CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] }
+            };
+            var catalogPrintings = new List<TCGPriceSet>
+            {
+                new() { CardName = "Dark Magical Curtain", Code = "MAMO-EN003", RarityName = "Starlight Rare", PrintVariant = "Extended Art" }
+            };
+
+            CardDataMapper.EnrichWithPrintVariants(cards, catalogPrintings);
+
+            Assert.AreEqual(1, cards[0].CardSets!.Count);
+        }
         [TestMethod]
         [DataRow("LOB-EN001", "LOB", DisplayName = "Standard code with hyphen")]
         [DataRow("LOB", "LOB", DisplayName = "No hyphen")]
@@ -269,6 +376,74 @@ namespace CardCollector.Tests.Repository
             var result = CardDataMapper.GetSetPrefix(code);
 
             Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        [DataRow(null, false, DisplayName = "Null name")]
+        [DataRow("Legend of Blue Eyes White Dragon", false, DisplayName = "Non-Speed-Duel set")]
+        [DataRow("Speed Duel: Ultimate Predators", true, DisplayName = "Speed Duel set")]
+        [DataRow("speed duel: streets of battle city", true, DisplayName = "Case-insensitive match")]
+        public void IsSpeedDuelSet_ReturnsExpectedResult(string? setName, bool expected)
+        {
+            var result = CardDataMapper.IsSpeedDuelSet(setName);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void MergeMissingCards_AddedCardHasNullCardSets_DoesNotThrow()
+        {
+            var supplementalCards = new List<Card> { new() { ID = 2, CardSets = null } };
+
+            var result = CardDataMapper.MergeMissingCards([], supplementalCards);
+
+            Assert.IsNull(result[0].CardSets);
+        }
+
+        [TestMethod]
+        public void MergeMissingCards_AddedCardHasSpeedDuelSet_StripsIt()
+        {
+            var supplementalCards = new List<Card>
+            {
+                new()
+                {
+                    ID = 2,
+                    CardSets =
+                    [
+                        new Set { Code = "SBLS-EN001", Name = "Speed Duel: Ultimate Predators" },
+                        new Set { Code = "LOB-EN001", Name = "Legend of Blue Eyes White Dragon" }
+                    ]
+                }
+            };
+
+            var result = CardDataMapper.MergeMissingCards([], supplementalCards);
+
+            Assert.AreEqual(1, result[0].CardSets!.Count);
+            Assert.AreEqual("LOB-EN001", result[0].CardSets![0].Code);
+        }
+
+        [TestMethod]
+        public void MergeMissingCards_SupplementalCardAbsentFromPrimary_IsAdded()
+        {
+            var primaryCards = new List<Card> { new() { ID = 1, Name = "Dark Magician" } };
+            var supplementalCards = new List<Card> { new() { ID = 2, Name = "Obelisk the Tormentor" } };
+
+            var result = CardDataMapper.MergeMissingCards(primaryCards, supplementalCards);
+
+            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual("Obelisk the Tormentor", result[1].Name);
+        }
+
+        [TestMethod]
+        public void MergeMissingCards_SupplementalCardAlreadyInPrimary_IsNotDuplicated()
+        {
+            var primaryCards = new List<Card> { new() { ID = 1, Name = "Dark Magician (yaml-yugi)" } };
+            var supplementalCards = new List<Card> { new() { ID = 1, Name = "Dark Magician (YGOProDeck)" } };
+
+            var result = CardDataMapper.MergeMissingCards(primaryCards, supplementalCards);
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("Dark Magician (yaml-yugi)", result[0].Name);
         }
     }
 }

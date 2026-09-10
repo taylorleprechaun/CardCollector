@@ -37,7 +37,7 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(1, 10, "  ", "Ultra Rare", 1, null, 100);
+            var result = await page.OnPostAddToCartAsync(1, "  ", "Ultra Rare", 1, null, 100);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }
@@ -47,17 +47,7 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(0, 10, "LOB-EN001", "Ultra Rare", 1, null, 100);
-
-            Assert.IsInstanceOfType<BadRequestResult>(result);
-        }
-
-        [TestMethod]
-        public async Task OnPostAddToCartAsync_InvalidImageID_ReturnsBadRequest()
-        {
-            var page = CreatePage();
-
-            var result = await page.OnPostAddToCartAsync(1, 0, "LOB-EN001", "Ultra Rare", 1, null, 100);
+            var result = await page.OnPostAddToCartAsync(0, "LOB-EN001", "Ultra Rare", 1, null, 100);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }
@@ -65,14 +55,14 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostAddToCartAsync_ValidParams_CallsAddToCartAndRedirectsWhenNotAjax()
         {
-            _cardServiceMock.Setup(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m)).ReturnsAsync((1, 5m, 1));
+            _cardServiceMock.Setup(s => s.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 1, 5m)).ReturnsAsync((1, 5m, 1));
             _cardServiceMock.Setup(s => s.SearchWishlistAsync(It.IsAny<WishlistSearchCriteria>()))
                 .ReturnsAsync(new WishlistSearchResult { PagedItems = new PagedResult<WishlistItemViewModel>() });
             var page = CreatePage(isAjax: false);
 
-            var result = await page.OnPostAddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m, 100);
+            var result = await page.OnPostAddToCartAsync(1, "LOB-EN001", "Ultra Rare", 1, 5m, 100);
 
-            _cardServiceMock.Verify(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m), Times.Once);
+            _cardServiceMock.Verify(s => s.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 1, 5m), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 
@@ -83,15 +73,14 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new WishlistSearchResult { PagedItems = new PagedResult<WishlistItemViewModel>() });
             var page = CreatePage(isAjax: false);
             page.CardID = 1;
-            page.ImageID = 10;
             page.SetCode = "LOB-EN001";
             page.Quantity = 2;
 
             var result = await page.OnPostOwnAsync();
 
             _cardServiceMock.Verify(s => s.AddEntryAsync(
-                1, 10, "LOB-EN001", CardCollector.Data.Models.CollectionStatus.Owned, 2,
-                null, null, null, null, null, null, null), Times.Once);
+                1, "LOB-EN001", CardCollector.Data.Models.CollectionStatus.Owned, 2,
+                null, null, null, null, null, null, null, null), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

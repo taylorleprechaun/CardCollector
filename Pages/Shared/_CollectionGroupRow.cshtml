@@ -5,7 +5,7 @@
 @{
     var group = Model.Group;
     var filterParams = Model.FilterParams;
-    var rowKey = $"{group.ImageID}-{group.SetCode}";
+    var rowKey = $"{group.CardID}-{group.SetCode}";
     var collapseID = "group-" + rowKey;
     var status = group.CompletionStatus;
 }
@@ -33,9 +33,9 @@
         <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0 ajax-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="cardID" value="@group.CardID" />
-            <input type="hidden" name="imageID" value="@group.ImageID" />
             <input type="hidden" name="setCode" value="@group.SetCode" />
             <input type="hidden" name="rarityName" value="@group.RarityName" />
+            <input type="hidden" name="printVariant" value="@group.PrintVariant" />
             <div class="d-flex align-items-center gap-1">
                 <small class="text-muted">Check Out:</small>
                 <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
@@ -68,8 +68,8 @@
             <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = true, DeleteActionUrl = $"/Collection?handler=Delete&{filterParams}" }' />
             <button type="button" class="btn btn-sm btn-outline-primary"
                     data-card-id="@group.CardID"
-                    data-image-id="@group.ImageID"
                     data-rarity-name="@group.RarityName"
+                    data-print-variant="@group.PrintVariant"
                     data-rarities="@string.Join(",", group.AvailableRarities)"
                     data-set-code="@group.SetCode"
                     data-tcg-date="@Model.TCGDate"

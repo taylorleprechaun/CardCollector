@@ -33,13 +33,13 @@ namespace CardCollector.Pages
         public CardEdition? Edition { get; set; }
 
         [BindProperty]
-        public int ImageID { get; set; }
-
-        [BindProperty]
         public decimal? MarketPriceAtEntry { get; set; }
 
         [BindProperty]
         public int PreferredVersionID { get; set; }
+
+        [BindProperty]
+        public string? PrintVariant { get; set; }
 
         [BindProperty]
         public DateTime? PurchaseDate { get; set; }
@@ -110,12 +110,12 @@ namespace CardCollector.Pages
             Results = result.PagedItems;
         }
 
-        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice, int preferredVersionID)
+        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice, int preferredVersionID)
         {
-            if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
+            if (cardID <= 0 || string.IsNullOrWhiteSpace(setCode))
                 return BadRequest();
 
-            await _cardService.AddToCartAsync(cardID, imageID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
+            await _cardService.AddToCartAsync(cardID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
 
             return await RespondAfterMutationAsync(preferredVersionID).ConfigureAwait(false);
         }
@@ -125,10 +125,10 @@ namespace CardCollector.Pages
             await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, RarityName, Edition);
 
             await _cardService.AddEntryAsync(
-                CardID, ImageID, SetCode, CollectionStatus.Owned,
+                CardID, SetCode, CollectionStatus.Owned,
                 Quantity, Condition, Edition,
                 AcquisitionMethod,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName, PrintVariant);
 
             return await RespondAfterMutationAsync(PreferredVersionID).ConfigureAwait(false);
         }

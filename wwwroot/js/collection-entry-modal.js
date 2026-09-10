@@ -1,4 +1,4 @@
-async function openModal(setCode, setName, action, rarityName, tcgDate) {
+async function openModal(setCode, setName, action, rarityName, tcgDate, printVariant) {
     const isOrder = action === 'Order';
     const form = document.getElementById('orderForm');
 
@@ -11,7 +11,8 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
     document.getElementById('atcRarityName').value = rarityName || '';
-    document.getElementById('atcRarityDisplay').textContent = rarityName || '';
+    document.getElementById('atcPrintVariant').value = printVariant || '';
+    document.getElementById('atcRarityDisplay').textContent = rarityName + (printVariant ? ` (${printVariant})` : '') || '';
 
     document.getElementById('atcAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
     document.getElementById('atcCondition').value = CardDefaults.Condition;
@@ -31,5 +32,5 @@ async function openModal(setCode, setName, action, rarityName, tcgDate) {
     const cardID = document.querySelector('#orderForm [name="CardID"]').value;
     const editionSelect = document.getElementById('atcEdition');
 
-    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName }));
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName, printVariant }));
 }

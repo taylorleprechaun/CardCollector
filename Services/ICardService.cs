@@ -13,11 +13,11 @@ namespace CardCollector.Services
         /// Adds a new entry to the collection.
         /// </summary>
         Task AddEntryAsync(
-            int cardID, int imageID, string setCode, CollectionStatus status,
+            int cardID, string setCode, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
-            string? rarityName = null);
+            string? rarityName = null, string? printVariant = null);
 
         /// <summary>
         /// Stages a printing into the cart as a pending order line, defaulting Condition to Near Mint,
@@ -25,7 +25,7 @@ namespace CardCollector.Services
         /// Returns the cart's new total line count and cost, plus the new staged quantity for this printing.
         /// </summary>
         Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
-            int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
+            int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
 
         /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
@@ -40,20 +40,20 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync();
 
         /// <summary>
-        /// Checks whether the given (setCode, rarityName, edition) is a printing the live pricing data
-        /// actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
+        /// Checks whether the given (setCode, rarityName, printVariant, edition) is a printing the live pricing
+        /// data actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
         /// </summary>
-        Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition);
+        Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition, string? printVariant = null);
 
         /// <summary>
-        /// Clears the checked-out status for the given (imageID, setCode, rarityName) group.
+        /// Clears the checked-out status for the given (cardID, setCode, rarityName, printVariant) group.
         /// </summary>
-        Task CheckInCardAsync(int imageID, string setCode, string rarityName);
+        Task CheckInCardAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
 
         /// <summary>
         /// Sets the checked-out quantity for the given group. Creates a new record if none exists (recording today as the checkout date); updates quantity on an existing record.
         /// </summary>
-        Task CheckOutCardAsync(int cardID, int imageID, string setCode, string rarityName, int quantity);
+        Task CheckOutCardAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null);
 
         /// <summary>
         /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.
@@ -135,7 +135,7 @@ namespace CardCollector.Services
         /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
         /// </summary>
         Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
-            int cardID, int imageID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
+            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
 
         /// <summary>
         /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
@@ -200,7 +200,7 @@ namespace CardCollector.Services
         /// newly-created tracked printing defaults to wanting 3 copies and an existing one keeps its
         /// current target.
         /// </summary>
-        Task SavePreferredVersionAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null);
+        Task SavePreferredVersionAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null);
 
         /// <summary>
         /// Returns a paginated, filtered page of browseable cards matching the given criteria.

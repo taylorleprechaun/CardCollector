@@ -5,10 +5,7 @@
 @using CardCollector.Extensions
 @{
     ViewData["Title"] = Model.CurrentCard?.Name ?? "Card";
-    var primaryImage = (Model.ImageID != 0
-        ? Model.CurrentCard?.CardImages?.FirstOrDefault(img => img.ID == Model.ImageID)
-        : null)
-        ?? Model.CurrentCard?.CardImages?.FirstOrDefault();
+    var primaryImage = Model.CurrentCard?.CardImages?.FirstOrDefault();
 }
 
 @if (!string.IsNullOrEmpty(Model.ReturnURL))
@@ -106,16 +103,17 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                             <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
                                 <div class="flex-grow-1 min-width-0">
                                     <div class="fw-semibold">@set.Name</div>
-                                    <div class="text-muted small"><code>@set.Code</code> &middot; @(RarityExtensions.NormalizeRarityName(set.RarityName))</div>
+                                    <div class="text-muted small"><code>@set.Code</code> &middot; @(RarityExtensions.NormalizeRarityName(set.RarityName))@(string.IsNullOrEmpty(set.PrintVariant) ? "" : $" ({set.PrintVariant})")</div>
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2">
                                     @{
                                         var setCodeKey = set.Code ?? string.Empty;
                                         var rarityKey = RarityExtensions.NormalizeRarityName(set.RarityName) ?? string.Empty;
+                                        var printVariantKey = set.PrintVariant ?? string.Empty;
                                     }
-                                    @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey), out var collectionSummary))
+                                    @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey, printVariantKey), out var collectionSummary))
                                     {
-                                        var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey) ?? CollectionCompletionStatus.Placeholder;
+                                        var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey, printVariantKey) ?? CollectionCompletionStatus.Placeholder;
                                         var isOrdered = collectionSummary.Status == CollectionStatus.Ordered;
                                         var badgeClass = isOrdered ? CollectionStatus.Ordered.GetBadgeClass() : completionStatus.GetBadgeClass();
                                         var badgeLabel = isOrdered ? "Ordered" : completionStatus.GetDisplayName();
@@ -124,7 +122,8 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     @{
                                         var tracked = Model.TrackedPrintings.FirstOrDefault(pv =>
                                             string.Equals(pv.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
-                                            && (pv.RarityName is null || string.Equals(pv.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase)));
+                                            && (pv.RarityName is null || string.Equals(pv.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase))
+                                            && string.Equals(pv.PrintVariant ?? string.Empty, printVariantKey, StringComparison.OrdinalIgnoreCase));
                                     }
                                     @if (tracked is not null)
                                     {
@@ -159,9 +158,9 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                     {
                                         <form method="post" asp-page-handler="SetPreferred" class="d-inline">
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
-                                            <input type="hidden" name="ImageID" value="@primaryImage!.ID" />
                                             <input type="hidden" name="SetCode" value="@set.Code" />
                                             <input type="hidden" name="RarityName" value="@rarityKey" />
+                                            <input type="hidden" name="PrintVariant" value="@printVariantKey" />
                                             <input type="hidden" name="ID" value="@Model.ID" />
                                             @if (!string.IsNullOrEmpty(Model.ReturnURL))
                                             {
@@ -174,12 +173,12 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
                                 <div class="d-flex gap-1 flex-shrink-0">
                                     <button type="button"
                                             class="btn btn-sm btn-primary"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
                                         Order
                                     </button>
                                     <button type="button"
                                             class="btn btn-sm btn-success"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)')">
+                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
                                         Add to Collection
                                     </button>
                                 </div>
@@ -198,7 +197,6 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
     @await Html.PartialAsync("_CollectionEntryModal", new CardCollector.ViewModels.CollectionEntryModalViewModel
     {
         CardID = Model.CurrentCard.ID,
-        ImageID = primaryImage.ID,
         PageID = Model.ID,
         PageURL = Url.Page("Card") ?? "/Card",
         ReturnURL = Model.ReturnURL

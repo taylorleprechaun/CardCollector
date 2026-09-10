@@ -16,8 +16,8 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard(2, "LOB-EN002", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare" },
-                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare" },
+                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", RarityName = "Ultra Rare" }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
@@ -39,8 +39,8 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard(2, "LOB-EN002", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare" },
-                new PreferredVersion { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", RarityName = "Ultra Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare" },
+                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", RarityName = "Ultra Rare" }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(2, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
@@ -56,7 +56,7 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard(1, "LOB-EN001", "Secret Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
 
@@ -69,7 +69,7 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetPurchasePriorityCandidateAsync_CardNotFound_ReturnsNull()
         {
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
 
             Assert.IsNull(result);
         }
@@ -82,7 +82,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(50.00m);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
 
             Assert.IsNull(result);
         }
@@ -95,7 +95,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync((decimal?)null);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
 
             Assert.IsNull(result);
         }
@@ -105,12 +105,12 @@ namespace CardCollector.Tests.Services
         {
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" }]);
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 3 });
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
 
             Assert.IsNull(result);
         }
@@ -121,11 +121,11 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 2 });
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 2 });
             _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(10, "LOB-EN001", "Secret Rare")] = 1 });
+                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Secret Rare")] = 1 });
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
 
             Assert.IsNull(result);
         }
@@ -138,7 +138,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
 
             Assert.IsNotNull(result);
             Assert.AreEqual(9.99m, result!.Price);
@@ -165,12 +165,12 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode(It.IsAny<string>())).Returns("2015-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN002", RarityName = "Ultra Rare", DesiredQuantity = 1 }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN002", RarityName = "Ultra Rare", DesiredQuantity = 1 }
             ]);
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 3 });
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
@@ -187,11 +187,11 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
             ]);
             _collectionRepositoryMock
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(10, "LOB-EN001")] = 3 });
+                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
 
             var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
 
@@ -203,7 +203,7 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
+                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Secret Rare" }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))

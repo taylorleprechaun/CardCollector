@@ -8,7 +8,7 @@
         <div class="d-flex gap-2 align-items-center flex-grow-1 min-width-0">
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
             <div class="min-width-0">
-                <a href="/Card?id=@item.CardID&imageID=@item.ImageID&returnURL=%2FWishlist" class="fw-semibold text-body text-decoration-none">@item.CardName</a>
+                <a href="/Card?id=@item.CardID&returnURL=%2FWishlist" class="fw-semibold text-body text-decoration-none">@item.CardName</a>
                 <div class="text-muted small">@item.SetName &middot; <code>@item.SetCode</code> &middot; @item.RarityName</div>
             </div>
         </div>
@@ -41,8 +41,8 @@
                         data-set-code="@item.SetCode"
                         data-set-name="@item.SetName"
                         data-card-id="@item.CardID"
-                        data-image-id="@item.ImageID"
                         data-rarity-name="@item.RarityName"
+                        data-print-variant="@item.PrintVariant"
                         data-card-name="@item.CardName"
                         data-quantity-needed="@item.QuantityNeeded"
                         data-preferred-version-id="@item.PreferredVersionID"
@@ -56,8 +56,8 @@
                     data-set-code="@item.SetCode"
                     data-set-name="@item.SetName"
                     data-card-id="@item.CardID"
-                    data-image-id="@item.ImageID"
                     data-rarity-name="@item.RarityName"
+                    data-print-variant="@item.PrintVariant"
                     data-rarities="@string.Join(",", item.AvailableRarities)"
                     data-tcg-date="@Model.TCGDate"
                     data-preferred-version-id="@item.PreferredVersionID"

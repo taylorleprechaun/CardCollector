@@ -20,9 +20,9 @@ namespace CardCollector.Tests.Services
         public async Task CheckEntryEditionAsync_RecordedEditionMatchesLiveData_ReturnsNull()
         {
             _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>
+                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
                 {
-                    [("LOB-EN001", "ULTRA RARE")] = new HashSet<CardEdition> { CardEdition.FirstEdition }
+                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.FirstEdition }
                 });
 
             var result = await _service.CheckEntryEditionAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
@@ -34,9 +34,9 @@ namespace CardCollector.Tests.Services
         public async Task CheckEntryEditionAsync_RecordedEditionNotInLiveData_ReturnsEditionMismatch()
         {
             _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>
+                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
                 {
-                    [("LOB-EN001", "ULTRA RARE")] = new HashSet<CardEdition> { CardEdition.Unlimited }
+                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
                 });
 
             var result = await _service.CheckEntryEditionAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
@@ -48,12 +48,12 @@ namespace CardCollector.Tests.Services
         {
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1 }
             ]);
             _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>
+                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
                 {
-                    [("LOB-EN001", "ULTRA RARE")] = new HashSet<CardEdition> { CardEdition.Unlimited }
+                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
                 });
 
             var result = (await _service.GetEnrichedOrdersAsync()).ToList();
@@ -67,7 +67,7 @@ namespace CardCollector.Tests.Services
         {
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = null, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = null, Quantity = 1 }
             ]);
 
             var result = (await _service.GetEnrichedOrdersAsync()).ToList();
@@ -146,14 +146,14 @@ namespace CardCollector.Tests.Services
             });
             var entries = new List<CollectionEntry>
             {
-                new() { ID = 1, CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
+                new() { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
             };
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
             _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
             _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName), IReadOnlySet<CardEdition>>
+                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
                 {
-                    [("LOB-EN001", "ULTRA RARE")] = new HashSet<CardEdition> { CardEdition.Unlimited }
+                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
                 });
         }
     }
