@@ -427,21 +427,4 @@ app.MapGet("/api/price", CardCollector.APIEndpoints.GetPriceAsync);
 
 app.MapGet("/api/stats/card-price-history", CardCollector.APIEndpoints.GetCardPriceHistoryAsync);
 
-app.MapGet("/api/admin/refresh-card-data/stream", async (ICardDataRepository cardDataRepository, HttpContext ctx, CancellationToken ct) =>
-{
-    ctx.Response.ContentType = "text/event-stream";
-    ctx.Response.Headers.CacheControl = "no-cache";
-    ctx.Response.Headers.Connection = "keep-alive";
-
-    async Task Send(string eventName, string data)
-    {
-        await ctx.Response.WriteAsync($"event: {eventName}\ndata: {data}\n\n", ct);
-        await ctx.Response.Body.FlushAsync(ct);
-    }
-
-    await CardCollector.APIEndpoints.RefreshCardDataStreamAsync(cardDataRepository, Send, ct);
-});
-
-app.MapPost("/api/admin/refresh-pricing-data", CardCollector.APIEndpoints.RefreshPricingDataAsync);
-
 app.Run();

@@ -1,7 +1,5 @@
 using System.Reflection;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
-using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Http;
@@ -72,40 +70,6 @@ namespace CardCollector.Tests
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);
             Assert.AreEqual(9.99m, GetPropertyValue(json.Value, "price"));
-        }
-
-        [TestMethod]
-        public async Task RefreshCardDataStreamAsync_SendsStartThenCompleteWithCardCount()
-        {
-            var cardDataRepositoryMock = new Mock<ICardDataRepository>();
-            cardDataRepositoryMock.Setup(r => r.RefreshAsync()).Returns(Task.CompletedTask);
-            cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns([new Card(), new Card()]);
-            var sentEvents = new List<(string EventName, string Data)>();
-            Task Send(string eventName, string data)
-            {
-                sentEvents.Add((eventName, data));
-                return Task.CompletedTask;
-            }
-
-            await APIEndpoints.RefreshCardDataStreamAsync(cardDataRepositoryMock.Object, Send, CancellationToken.None);
-
-            Assert.AreEqual(2, sentEvents.Count);
-            Assert.AreEqual("start", sentEvents[0].EventName);
-            Assert.AreEqual("complete", sentEvents[1].EventName);
-            StringAssert.Contains(sentEvents[1].Data, "\"cardCount\":2");
-            cardDataRepositoryMock.Verify(r => r.RefreshAsync(), Times.Once);
-        }
-
-        [TestMethod]
-        public async Task RefreshPricingDataAsync_RefreshesCacheAndReturnsOk()
-        {
-            var pricingDataCacheMock = new Mock<IPricingDataCache>();
-            pricingDataCacheMock.Setup(c => c.RefreshAsync()).Returns(Task.CompletedTask);
-
-            var result = await APIEndpoints.RefreshPricingDataAsync(pricingDataCacheMock.Object);
-
-            Assert.IsInstanceOfType<Ok>(result);
-            pricingDataCacheMock.Verify(c => c.RefreshAsync(), Times.Once);
         }
 
         private static object? GetPropertyValue(object? source, string propertyName) =>

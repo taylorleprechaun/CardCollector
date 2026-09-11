@@ -8,15 +8,18 @@ namespace CardCollector.Services
         private static readonly TimeZoneInfo EasternTz =
             TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
+        private readonly ICardDataRepository _cardDataRepository;
         private readonly ILogger<PriceRefreshBackgroundService> _logger;
         private readonly IPricingDataCache _pricingDataCache;
         private readonly IServiceScopeFactory _scopeFactory;
 
         public PriceRefreshBackgroundService(
+            ICardDataRepository cardDataRepository,
             ILogger<PriceRefreshBackgroundService> logger,
             IPricingDataCache pricingDataCache,
             IServiceScopeFactory scopeFactory)
         {
+            _cardDataRepository = cardDataRepository;
             _logger = logger;
             _pricingDataCache = pricingDataCache;
             _scopeFactory = scopeFactory;
@@ -61,10 +64,11 @@ namespace CardCollector.Services
         [ExcludeFromCodeCoverage(Justification = "Orchestrates a real DI scope and downstream services; a mocked-scope test would only re-assert the mock setup, not real behavior.")]
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price refresh");
+            _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price and card data refresh");
             try
             {
                 await _pricingDataCache.RefreshAsync();
+                await _cardDataRepository.RefreshAsync();
 
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var cardService = scope.ServiceProvider.GetRequiredService<ICardService>();
@@ -75,7 +79,7 @@ namespace CardCollector.Services
                 await cardService.CalculateCurrentMarketValueAsync();
                 await cardService.CalculateWishlistRemainingValueAsync();
 
-                _logger.LogInformation("PriceRefreshBackgroundService: price refresh complete, pruning snapshots");
+                _logger.LogInformation("PriceRefreshBackgroundService: price and card data refresh complete, pruning snapshots");
 
                 await collectionValueRepo.PruneSnapshotsAsync();
                 await collectionEntryValueRepo.PruneSnapshotsAsync();

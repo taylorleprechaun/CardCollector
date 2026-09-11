@@ -12,7 +12,7 @@ async function openModal(setCode, setName, action, rarityName, tcgDate, printVar
 
     document.getElementById('atcRarityName').value = rarityName || '';
     document.getElementById('atcPrintVariant').value = printVariant || '';
-    document.getElementById('atcRarityDisplay').textContent = rarityName + (printVariant ? ` (${printVariant})` : '') || '';
+    document.getElementById('atcRarityDisplay').textContent = (rarityName || '') + (printVariant ? ` (${printVariant})` : '');
 
     document.getElementById('atcAcquisitionGroup').style.display = isOrder ? 'none' : 'block';
     document.getElementById('atcCondition').value = CardDefaults.Condition;
