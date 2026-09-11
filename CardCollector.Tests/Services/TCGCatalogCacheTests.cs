@@ -139,6 +139,26 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(0, result.Count);
         }
+
+        [TestMethod]
+        public void BuildGroupEntries_QualifierIsProductsOwnSetCode_PrintVariantIsNull()
+        {
+            var products = new List<TCGCatalogProduct>
+            {
+                new()
+                {
+                    ProductID = 1,
+                    Name = "Tri-Horned Dragon (LOB-000)",
+                    ExtendedData = [new() { Name = "Number", Value = "LOB-000" }, new() { Name = "Rarity", Value = "Secret Rare" }]
+                }
+            };
+            var prices = new List<TCGCatalogPrice> { new() { ProductID = 1, MarketPrice = 19.83m } };
+
+            var result = TCGCatalogCache.BuildGroupEntries(products, prices).ToList();
+
+            Assert.AreEqual("Tri-Horned Dragon", result[0].CardName);
+            Assert.IsNull(result[0].PrintVariant);
+        }
         [TestMethod]
         public void ParseProductName_NoParentheticalQualifier_ReturnsNameUnchangedAndNullVariant()
         {
@@ -155,6 +175,15 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Dark Magical Curtain", cardName);
             Assert.AreEqual("Extended Art", printVariant);
+        }
+
+        [TestMethod]
+        public void ParseProductName_QualifierMatchesOwnSetCode_TreatedAsRedundant()
+        {
+            var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Tri-Horned Dragon (LOB-000)", "Secret Rare", "LOB-000");
+
+            Assert.AreEqual("Tri-Horned Dragon", cardName);
+            Assert.IsNull(printVariant);
         }
 
         [TestMethod]

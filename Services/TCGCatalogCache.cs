@@ -56,7 +56,7 @@ namespace CardCollector.Services
                 if (string.IsNullOrWhiteSpace(setCode) || string.IsNullOrWhiteSpace(rarityName))
                     continue;
 
-                var (cardName, printVariant) = ParseProductName(product.Name, rarityName);
+                var (cardName, printVariant) = ParseProductName(product.Name, rarityName, setCode);
 
                 foreach (var price in pricesByProductID[product.ProductID])
                 {
@@ -76,10 +76,12 @@ namespace CardCollector.Services
         /// <summary>
         /// Strips trailing parenthetical qualifiers off a tcgcsv product name (e.g. "Dark Magical Curtain
         /// (Extended Art)"), returning the base card name and — for any qualifier that isn't just a restatement
-        /// of the product's own rarity (name or abbreviation) — the print variant (public for direct unit testing).
-        /// Multiple non-redundant qualifiers are joined with ", "; none found yields a null variant.
+        /// of the product's own rarity (name or abbreviation) or its own set/collector number (e.g. early sets
+        /// like LOB disambiguate same-name listings as "Tri-Horned Dragon (LOB-000)", which is not a real print
+        /// variant) — the print variant (public for direct unit testing). Multiple non-redundant qualifiers are
+        /// joined with ", "; none found yields a null variant.
         /// </summary>
-        public static (string CardName, string? PrintVariant) ParseProductName(string productName, string? rarityName)
+        public static (string CardName, string? PrintVariant) ParseProductName(string productName, string? rarityName, string? setCode = null)
         {
             var name = productName.Trim();
             var variants = new List<string>();
@@ -90,7 +92,7 @@ namespace CardCollector.Services
                 var qualifier = match.Groups[1].Value.Trim();
                 name = name[..match.Index].TrimEnd();
 
-                if (!IsRedundantRarityQualifier(qualifier, rarityName))
+                if (!IsRedundantRarityQualifier(qualifier, rarityName) && !IsRedundantSetCodeQualifier(qualifier, setCode))
                     variants.Insert(0, qualifier);
 
                 match = TrailingParenRegex().Match(name);
@@ -128,6 +130,9 @@ namespace CardCollector.Services
             var code = RarityExtensions.GetRarityCode(rarityName)?.Trim('(', ')');
             return code is not null && string.Equals(qualifier, code, StringComparison.OrdinalIgnoreCase);
         }
+
+        private static bool IsRedundantSetCodeQualifier(string qualifier, string? setCode) =>
+            !string.IsNullOrWhiteSpace(setCode) && string.Equals(qualifier, setCode, StringComparison.OrdinalIgnoreCase);
 
         [GeneratedRegex(@"\(([^()]+)\)\s*$")]
         private static partial Regex TrailingParenRegex();
