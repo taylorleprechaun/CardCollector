@@ -177,7 +177,7 @@ using (var scope = app.Services.CreateScope())
     // no-op on a database that already went through it (or was EnsureCreated fresh from the current model).
     async Task<bool> HasColumnAsync(string table, string column)
     {
-        var columns = await db.Database.SqlQueryRaw<string>($"SELECT name FROM pragma_table_info('{table}')").ToListAsync();
+        var columns = await db.Database.SqlQuery<string>($"SELECT name FROM pragma_table_info({table})").ToListAsync();
         return columns.Contains(column);
     }
 
