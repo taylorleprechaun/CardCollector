@@ -395,7 +395,7 @@ using (var scope = app.Services.CreateScope())
         """);
 
     foreach (var group in db.DismissedNewPrintings.ToList()
-        .GroupBy(d => (d.CardID, d.SetCode, Normalized: RarityExtensions.NormalizeRarityName(d.RarityName))))
+        .GroupBy(d => (d.CardID, d.SetCode, Normalized: RarityExtensions.NormalizeRarityName(d.RarityName), d.PrintVariant)))
     {
         var winner = group.OrderBy(d => d.RarityName == group.Key.Normalized ? 0 : 1).First();
         winner.RarityName = group.Key.Normalized ?? winner.RarityName;
