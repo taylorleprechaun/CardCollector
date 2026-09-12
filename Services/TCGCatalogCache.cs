@@ -28,14 +28,15 @@ namespace CardCollector.Services
         private readonly ILogger<TCGCatalogCache> _logger;
         private IReadOnlyList<TCGPriceSet> _printings;
 
-        [ExcludeFromCodeCoverage(Justification = "Loads cached/live catalog data from disk and HTTP on construction; I/O orchestration, not testable logic.")]
+        [ExcludeFromCodeCoverage(Justification = "Loads cached catalog data from disk on construction; I/O, not testable logic.")]
         public TCGCatalogCache(ILogger<TCGCatalogCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _cacheTtl = TimeSpan.FromHours(config.GetValue<int>("CardDataSettings:PricingCacheTtlHours", 20));
 
-            _printings = LoadCatalog();
+            var (_, cachePath, _) = GetCachePaths();
+            _printings = File.Exists(cachePath) ? LoadEntriesFromJson(cachePath) : [];
         }
 
         /// <summary>
@@ -103,12 +104,25 @@ namespace CardCollector.Services
 
         public IReadOnlyList<TCGPriceSet> GetAllPrintings() => _printings;
 
+        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus HTTP fetch orchestration; I/O, not testable logic.")]
+        public async Task LoadIfStaleAsync()
+        {
+            var (cacheDir, cachePath, timestampPath) = GetCachePaths();
+            if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTtl))
+            {
+                _logger.LogInformation("Catalog cache already fresh — skipping startup warm-up fetch");
+                return;
+            }
+
+            _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
+            await FetchAndStoreAsync(cacheDir, cachePath, timestampPath).ConfigureAwait(false);
+        }
+
         [ExcludeFromCodeCoverage(Justification = "Re-downloads the full catalog regardless of cache freshness; I/O, not testable logic.")]
         public async Task RefreshAsync()
         {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "tcgcatalogcache.json.timestamp"));
-            _printings = await Task.Run(LoadCatalog).ConfigureAwait(false);
+            var (cacheDir, cachePath, timestampPath) = GetCachePaths();
+            await FetchAndStoreAsync(cacheDir, cachePath, timestampPath).ConfigureAwait(false);
         }
 
         [ExcludeFromCodeCoverage(Justification = "Single tcgcsv.com HTTP GET + envelope deserialization; I/O, not testable logic.")]
@@ -117,6 +131,14 @@ namespace CardCollector.Services
             var json = await client.GetStringAsync(path).ConfigureAwait(false);
             var envelope = JsonConvert.DeserializeObject<TCGCatalogEnvelope<T>>(json);
             return envelope?.Results?.ToList();
+        }
+
+        [ExcludeFromCodeCoverage(Justification = "Builds well-known on-disk cache paths; trivial, not testable logic.")]
+        private static (string CacheDir, string CachePath, string TimestampPath) GetCachePaths()
+        {
+            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
+            var cachePath = Path.Combine(cacheDir, "tcgcatalogcache.json");
+            return (cacheDir, cachePath, cachePath + ".timestamp");
         }
 
         private static bool IsRedundantRarityQualifier(string qualifier, string? rarityName)
@@ -136,6 +158,28 @@ namespace CardCollector.Services
 
         [GeneratedRegex(@"\(([^()]+)\)\s*$")]
         private static partial Regex TrailingParenRegex();
+
+        [ExcludeFromCodeCoverage(Justification = "HTTP fetch plus disk persistence and in-memory swap; I/O, not testable logic.")]
+        private async Task FetchAndStoreAsync(string cacheDir, string cachePath, string timestampPath)
+        {
+            var entries = await FetchCatalogAsync().ConfigureAwait(false);
+
+            if (entries is not null)
+            {
+                Directory.CreateDirectory(cacheDir);
+                File.WriteAllText(cachePath, JsonConvert.SerializeObject(entries));
+                FileCacheHelper.WriteTimestamp(timestampPath);
+                _printings = entries;
+                _logger.LogInformation("Catalog data cached to {Path} ({Count} printings)", cachePath, entries.Count);
+                return;
+            }
+
+            if (File.Exists(cachePath))
+                _logger.LogWarning("tcgcsv.com catalog fetch failed — keeping existing catalog data ({Count} printings)", _printings.Count);
+            else
+                _logger.LogError("No catalog data available — fetch failed and no cache exists");
+        }
+
         [ExcludeFromCodeCoverage(Justification = "HTTP fetch orchestration across the full tcgcsv.com group crawl; I/O, not testable logic.")]
         private async Task<IReadOnlyList<TCGPriceSet>?> FetchCatalogAsync()
         {
@@ -184,42 +228,6 @@ namespace CardCollector.Services
                 return null;
             }
         }
-
-        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus file/HTTP fallback orchestration; I/O, not testable logic.")]
-        private IReadOnlyList<TCGPriceSet> LoadCatalog()
-        {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cachePath = Path.Combine(cacheDir, "tcgcatalogcache.json");
-            var timestampPath = cachePath + ".timestamp";
-
-            if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTtl))
-            {
-                _logger.LogInformation("Loading catalog data from cache ({Path})", cachePath);
-                return LoadEntriesFromJson(cachePath);
-            }
-
-            _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
-            var entries = Task.Run(FetchCatalogAsync).GetAwaiter().GetResult();
-
-            if (entries is not null)
-            {
-                Directory.CreateDirectory(cacheDir);
-                File.WriteAllText(cachePath, JsonConvert.SerializeObject(entries));
-                FileCacheHelper.WriteTimestamp(timestampPath);
-                _logger.LogInformation("Catalog data cached to {Path} ({Count} printings)", cachePath, entries.Count);
-                return entries;
-            }
-
-            if (File.Exists(cachePath))
-            {
-                _logger.LogWarning("tcgcsv.com catalog fetch failed — falling back to stale catalog cache");
-                return LoadEntriesFromJson(cachePath);
-            }
-
-            _logger.LogError("No catalog data available — fetch failed and no cache exists");
-            return [];
-        }
-
         [ExcludeFromCodeCoverage(Justification = "Reads catalog JSON from disk; I/O, not testable logic.")]
         private IReadOnlyList<TCGPriceSet> LoadEntriesFromJson(string path)
         {

@@ -37,10 +37,10 @@ namespace CardCollector.Repository
             _yamlYugiUrl = config.GetValue<string>("CardDataSettings:YamlYugiUrl")
                 ?? "https://dawnbrandbots.github.io/yaml-yugi/cards.yaml";
 
-            // Images load first: LoadCards()'s completeness merge reads the same raw cardcache.json
-            // that LoadImages() fetches/refreshes, and needs it already on disk.
-            var images = LoadImages();
-            Initialize(LoadCards(), images);
+            // Images load first: BuildCards() reads the same cardcache.json that image loading writes.
+            // Disk-only, no network, so construction never blocks startup.
+            var images = LoadImagesFromDisk();
+            Initialize(BuildCards(LoadYamlCardsFromDisk()), images);
         }
 
         public IReadOnlyList<string> DistinctRarityNames { get; private set; } = default!;
@@ -57,17 +57,18 @@ namespace CardCollector.Repository
         public string? GetSetPrefixByName(string name) =>
             _setPrefixByName.TryGetValue(name, out var prefix) ? prefix : null;
 
+        public async Task LoadIfStaleAsync()
+        {
+            var images = await LoadImagesAsync(forceRefresh: false).ConfigureAwait(false);
+            var yamlCards = await LoadYamlCardsAsync(forceRefresh: false).ConfigureAwait(false);
+            Initialize(BuildCards(yamlCards), images);
+        }
+
         public async Task RefreshAsync()
         {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "carddata.json.timestamp"));
-            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "cardcache.json.timestamp"));
-
-            await Task.Run(() =>
-            {
-                var images = LoadImages();
-                Initialize(LoadCards(), images);
-            }).ConfigureAwait(false);
+            var images = await LoadImagesAsync(forceRefresh: true).ConfigureAwait(false);
+            var yamlCards = await LoadYamlCardsAsync(forceRefresh: true).ConfigureAwait(false);
+            Initialize(BuildCards(yamlCards), images);
         }
 
         private static void SkipToNextDocument(IParser parser)
@@ -76,6 +77,27 @@ namespace CardCollector.Repository
                 parser.MoveNext();
             if (parser.Current is DocumentEnd)
                 parser.MoveNext();
+        }
+
+        private IReadOnlyList<Card> BuildCards(IReadOnlyList<Card> yamlCards)
+        {
+            var ygoProDeckCards = LoadRawYGOProDeckCards();
+
+            var corrections = LoadRarityCorrections();
+            var correctedCount = CardDataMapper.ApplyRarityCorrections(yamlCards, corrections)
+                + CardDataMapper.ApplyRarityCorrections(ygoProDeckCards, corrections);
+            if (correctedCount > 0)
+                _logger.LogInformation(
+                    "Corrected {Count} known-bad rarity name(s) using the curated correction table",
+                    correctedCount);
+
+            var addedSetPrintings = CardDataMapper.MergeMissingSetPrintings(yamlCards, ygoProDeckCards);
+            if (addedSetPrintings > 0)
+                _logger.LogInformation(
+                    "Added {Count} set printing(s) found in YGOProDeck but missing from yaml-yugi for cards present in both sources",
+                    addedSetPrintings);
+
+            return CardDataMapper.MergeMissingCards(yamlCards, ygoProDeckCards);
         }
 
         private async Task<IReadOnlyList<YamlCard>?> FetchFromYamlYugiAsync()
@@ -148,29 +170,6 @@ namespace CardCollector.Repository
                 .OrderBy(n => n)
                 .ToList();
         }
-
-        private IReadOnlyList<Card> LoadCards()
-        {
-            var yamlCards = LoadYamlCards();
-            var ygoProDeckCards = LoadRawYGOProDeckCards();
-
-            var corrections = LoadRarityCorrections();
-            var correctedCount = CardDataMapper.ApplyRarityCorrections(yamlCards, corrections)
-                + CardDataMapper.ApplyRarityCorrections(ygoProDeckCards, corrections);
-            if (correctedCount > 0)
-                _logger.LogInformation(
-                    "Corrected {Count} known-bad rarity name(s) using the curated correction table",
-                    correctedCount);
-
-            var addedSetPrintings = CardDataMapper.MergeMissingSetPrintings(yamlCards, ygoProDeckCards);
-            if (addedSetPrintings > 0)
-                _logger.LogInformation(
-                    "Added {Count} set printing(s) found in YGOProDeck but missing from yaml-yugi for cards present in both sources",
-                    addedSetPrintings);
-
-            return CardDataMapper.MergeMissingCards(yamlCards, ygoProDeckCards);
-        }
-
         private IReadOnlyList<Card> LoadCardsFromJson(string path)
         {
             try
@@ -185,20 +184,20 @@ namespace CardCollector.Repository
             }
         }
 
-        private IReadOnlyDictionary<int, IReadOnlyList<Image>> LoadImages()
+        private async Task<IReadOnlyDictionary<int, IReadOnlyList<Image>>> LoadImagesAsync(bool forceRefresh)
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
             var cachePath = Path.Combine(cacheDir, "cardcache.json");
             var timestampPath = cachePath + ".timestamp";
 
-            if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, TimeSpan.FromDays(_imageCacheTtlDays)))
+            if (!forceRefresh && FileCacheHelper.IsCacheFresh(cachePath, timestampPath, TimeSpan.FromDays(_imageCacheTtlDays)))
             {
                 _logger.LogInformation("Loading image data from cache ({Path})", cachePath);
             }
             else
             {
                 _logger.LogInformation("Image cache is missing or stale — fetching from YGOProDeck API");
-                var json = Task.Run(FetchImageCacheAsync).GetAwaiter().GetResult();
+                var json = await FetchImageCacheAsync().ConfigureAwait(false);
                 if (json is not null)
                 {
                     Directory.CreateDirectory(cacheDir);
@@ -212,25 +211,13 @@ namespace CardCollector.Repository
                 }
             }
 
-            if (!File.Exists(cachePath))
-            {
-                _logger.LogWarning("No image cache available — card images will use fallback URLs");
-                return new Dictionary<int, IReadOnlyList<Image>>();
-            }
+            return ParseImagesFromDisk(cachePath);
+        }
 
-            try
-            {
-                var json = File.ReadAllText(cachePath);
-                var root = JsonConvert.DeserializeObject<ImageCacheRoot>(json);
-                return (root?.Data ?? [])
-                    .Where(c => c.CardImages?.Any() == true)
-                    .ToDictionary(c => c.ID, c => (IReadOnlyList<Image>)c.CardImages!.ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to parse image cache — card images will use fallback URLs");
-                return new Dictionary<int, IReadOnlyList<Image>>();
-            }
+        private IReadOnlyDictionary<int, IReadOnlyList<Image>> LoadImagesFromDisk()
+        {
+            var cachePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "cardcache.json");
+            return ParseImagesFromDisk(cachePath);
         }
 
         private IReadOnlyDictionary<(string SetCode, string RarityName), string> LoadRarityCorrections()
@@ -275,20 +262,20 @@ namespace CardCollector.Repository
             }
         }
 
-        private IReadOnlyList<Card> LoadYamlCards()
+        private async Task<IReadOnlyList<Card>> LoadYamlCardsAsync(bool forceRefresh)
         {
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
             var cardDataPath = Path.Combine(cacheDir, "carddata.json");
             var timestampPath = cardDataPath + ".timestamp";
 
-            if (FileCacheHelper.IsCacheFresh(cardDataPath, timestampPath, TimeSpan.FromDays(_cacheTtlDays)))
+            if (!forceRefresh && FileCacheHelper.IsCacheFresh(cardDataPath, timestampPath, TimeSpan.FromDays(_cacheTtlDays)))
             {
                 _logger.LogInformation("Loading card data from cache ({Path})", cardDataPath);
                 return LoadCardsFromJson(cardDataPath);
             }
 
             _logger.LogInformation("Card data cache is missing or stale — fetching from yaml-yugi");
-            var yamlCards = Task.Run(FetchFromYamlYugiAsync).GetAwaiter().GetResult();
+            var yamlCards = await FetchFromYamlYugiAsync().ConfigureAwait(false);
 
             if (yamlCards is not null)
             {
@@ -308,6 +295,35 @@ namespace CardCollector.Repository
 
             _logger.LogError("No card data available — yaml-yugi fetch failed and no cache exists");
             return [];
+        }
+
+        private IReadOnlyList<Card> LoadYamlCardsFromDisk()
+        {
+            var cardDataPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "carddata.json");
+            return File.Exists(cardDataPath) ? LoadCardsFromJson(cardDataPath) : [];
+        }
+
+        private IReadOnlyDictionary<int, IReadOnlyList<Image>> ParseImagesFromDisk(string cachePath)
+        {
+            if (!File.Exists(cachePath))
+            {
+                _logger.LogWarning("No image cache available — card images will use fallback URLs");
+                return new Dictionary<int, IReadOnlyList<Image>>();
+            }
+
+            try
+            {
+                var json = File.ReadAllText(cachePath);
+                var root = JsonConvert.DeserializeObject<ImageCacheRoot>(json);
+                return (root?.Data ?? [])
+                    .Where(c => c.CardImages?.Any() == true)
+                    .ToDictionary(c => c.ID, c => (IReadOnlyList<Image>)c.CardImages!.ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to parse image cache — card images will use fallback URLs");
+                return new Dictionary<int, IReadOnlyList<Image>>();
+            }
         }
         private IReadOnlyList<YamlCard> ParseYamlCards(string yaml)
         {

@@ -14,6 +14,12 @@ namespace CardCollector.Services
         /// <summary>Returns every known printing in the catalog.</summary>
         IReadOnlyList<TCGPriceSet> GetAllPrintings();
 
+        /// <summary>
+        /// Fetches a fresh catalog if the on-disk cache is missing or stale; otherwise a no-op. Unlike
+        /// <see cref="RefreshAsync"/>, this respects the cache TTL.
+        /// </summary>
+        Task LoadIfStaleAsync();
+
         /// <summary>Forces a fresh crawl of tcgcsv.com, ignoring cache freshness.</summary>
         Task RefreshAsync();
     }

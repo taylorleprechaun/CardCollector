@@ -11,5 +11,8 @@ namespace CardCollector.Repository
         /// </summary>
         /// <param name="fullSetCode">Card-level set code, e.g. "BLZD-EN049".</param>
         string? GetTCGDateBySetCode(string fullSetCode);
+
+        /// <summary>Fetches a fresh copy if the on-disk set cache is missing or stale; otherwise a no-op.</summary>
+        Task LoadIfStaleAsync();
     }
 }
