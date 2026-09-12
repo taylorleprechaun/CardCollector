@@ -41,6 +41,13 @@ namespace CardCollector.Repository
         /// Returns the set code prefix (e.g. "POTE") for the given canonical set name, or null if not found.
         /// </summary>
         string? GetSetPrefixByName(string canonicalName);
+
+        /// <summary>
+        /// Refreshes stale local caches and re-initializes in-memory state. Call after the card catalog
+        /// has loaded, or print-variant enrichment will run against empty catalog data.
+        /// </summary>
+        Task LoadIfStaleAsync();
+
         /// <summary>
         /// Forces a redownload of card data from yaml-yugi and images from YGOProDeck,
         /// then replaces the in-memory state immediately.

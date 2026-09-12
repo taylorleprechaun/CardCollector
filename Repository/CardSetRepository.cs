@@ -9,19 +9,21 @@ namespace CardCollector.Repository
     public sealed class CardSetRepository : ICardSetRepository
     {
         private readonly int _cacheTtlDays;
-        private readonly IReadOnlyDictionary<string, string> _dateByCode;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CardSetRepository> _logger;
+        private IReadOnlyDictionary<string, string> _dateByCode;
 
-        [ExcludeFromCodeCoverage(Justification = "Loads cached/live set data from disk and HTTP on construction; I/O orchestration, not testable logic.")]
+        [ExcludeFromCodeCoverage(Justification = "Loads cached set data from disk on construction; I/O, not testable logic.")]
         public CardSetRepository(ILogger<CardSetRepository> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _cacheTtlDays = config.GetValue<int>("CardDataSettings:CacheTtlDays", 7);
 
-            var sets = LoadSets();
-            _dateByCode = BuildDateIndex(sets);
+            var cachePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "setscache.json");
+            _dateByCode = File.Exists(cachePath)
+                ? BuildDateIndex(DeserializeFromFile(cachePath))
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         // Public for direct unit testing — pure data transformation, no I/O.
@@ -57,8 +59,6 @@ namespace CardCollector.Repository
             }
         }
 
-        public string? GetTCGDateBySetCode(string fullSetCode) => GetTCGDateBySetCode(_dateByCode, fullSetCode);
-
         // Public for direct unit testing — pure prefix-lookup logic, no I/O.
         public static string? GetTCGDateBySetCode(IReadOnlyDictionary<string, string> dateByCode, string fullSetCode)
         {
@@ -67,6 +67,40 @@ namespace CardCollector.Repository
 
             var prefix = fullSetCode.Split('-')[0];
             return dateByCode.GetValueOrDefault(prefix);
+        }
+
+        public string? GetTCGDateBySetCode(string fullSetCode) => GetTCGDateBySetCode(_dateByCode, fullSetCode);
+        
+        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus HTTP fetch orchestration; I/O, not testable logic.")]
+        public async Task LoadIfStaleAsync()
+        {
+            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
+            var cachePath = Path.Combine(cacheDir, "setscache.json");
+            var timestampPath = cachePath + ".timestamp";
+
+            if (IsCacheFresh(cachePath, timestampPath))
+            {
+                _logger.LogInformation("Set cache already fresh — skipping startup warm-up fetch");
+                return;
+            }
+
+            _logger.LogInformation("Set cache is missing or stale — fetching from YGOProDeck API");
+            var json = await FetchFromAPIAsync().ConfigureAwait(false);
+
+            if (json is not null)
+            {
+                Directory.CreateDirectory(cacheDir);
+                File.WriteAllText(cachePath, json);
+                File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
+                _logger.LogInformation("Card set data cached to {Path}", cachePath);
+                _dateByCode = BuildDateIndex(Deserialize(json, _logger));
+                return;
+            }
+
+            if (File.Exists(cachePath))
+                _logger.LogWarning("API fetch failed — keeping existing set cache data");
+            else
+                _logger.LogError("No card set data available — API fetch failed and no cache exists");
         }
 
         [ExcludeFromCodeCoverage(Justification = "Reads set-cache JSON from disk; I/O, not testable logic.")]
@@ -102,41 +136,6 @@ namespace CardCollector.Repository
                 return false;
 
             return DateTime.UtcNow - cachedAt < TimeSpan.FromDays(_cacheTtlDays);
-        }
-
-        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus file/HTTP fallback orchestration; I/O, not testable logic.")]
-        private IReadOnlyList<CardSetData> LoadSets()
-        {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cachePath = Path.Combine(cacheDir, "setscache.json");
-            var timestampPath = cachePath + ".timestamp";
-
-            if (IsCacheFresh(cachePath, timestampPath))
-            {
-                _logger.LogInformation("Loading card set data from cache ({Path})", cachePath);
-                return DeserializeFromFile(cachePath);
-            }
-
-            _logger.LogInformation("Set cache is missing or stale — fetching from YGOProDeck API");
-            var json = Task.Run(FetchFromAPIAsync).GetAwaiter().GetResult();
-
-            if (json is not null)
-            {
-                Directory.CreateDirectory(cacheDir);
-                File.WriteAllText(cachePath, json);
-                File.WriteAllText(timestampPath, DateTime.UtcNow.ToString("O"));
-                _logger.LogInformation("Card set data cached to {Path}", cachePath);
-                return Deserialize(json, _logger);
-            }
-
-            if (File.Exists(cachePath))
-            {
-                _logger.LogWarning("API fetch failed — falling back to stale set cache");
-                return DeserializeFromFile(cachePath);
-            }
-
-            _logger.LogError("No card set data available — API fetch failed and no cache exists");
-            return [];
         }
     }
 }

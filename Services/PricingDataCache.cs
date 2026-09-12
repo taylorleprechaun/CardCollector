@@ -60,6 +60,8 @@ namespace CardCollector.Services
         public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
             LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
 
+        public void RebuildIndex() => _pricingIndex = BuildIndex(_tcgCatalogCache.GetAllPrintings());
+
         public async Task RefreshAsync()
         {
             await _tcgCatalogCache.RefreshAsync().ConfigureAwait(false);

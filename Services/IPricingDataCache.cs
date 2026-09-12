@@ -14,6 +14,12 @@ namespace CardCollector.Services
         IReadOnlyList<TCGPriceSet> GetCardSets(int cardID);
 
         /// <summary>
+        /// Rebuilds the pricing index from the catalog's current snapshot, without forcing a refetch
+        /// (unlike <see cref="RefreshAsync"/>).
+        /// </summary>
+        void RebuildIndex();
+
+        /// <summary>
         /// Re-downloads the full pricing dataset regardless of cache freshness.
         /// </summary>
         Task RefreshAsync();

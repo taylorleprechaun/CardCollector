@@ -58,6 +58,7 @@ builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IWishlistValueRepository, WishlistValueRepository>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddHostedService<CatalogWarmupHostedService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 
 var app = builder.Build();

@@ -190,6 +190,23 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public void RebuildIndex_CalledAfterCatalogPrintingsChange_ReflectsNewPrintings()
+        {
+            _tcgCatalogCacheMock.SetupSequence(c => c.GetAllPrintings())
+                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "5" }])
+                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82" }]);
+            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(card);
+            var cache = new PricingDataCache(_cardDataRepositoryMock.Object, _tcgCatalogCacheMock.Object);
+
+            cache.RebuildIndex();
+            var result = cache.GetCardSets(1);
+
+            _tcgCatalogCacheMock.Verify(c => c.RefreshAsync(), Times.Never);
+            Assert.AreEqual(12.82m, result[0].Price);
+        }
+
+        [TestMethod]
         public async Task RefreshAsync_RebuildsIndexFromRefreshedCatalog()
         {
             _tcgCatalogCacheMock.SetupSequence(c => c.GetAllPrintings())
