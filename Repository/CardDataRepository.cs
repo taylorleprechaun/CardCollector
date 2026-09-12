@@ -154,6 +154,14 @@ namespace CardCollector.Repository
             var yamlCards = LoadYamlCards();
             var ygoProDeckCards = LoadRawYGOProDeckCards();
 
+            var corrections = LoadRarityCorrections();
+            var correctedCount = CardDataMapper.ApplyRarityCorrections(yamlCards, corrections)
+                + CardDataMapper.ApplyRarityCorrections(ygoProDeckCards, corrections);
+            if (correctedCount > 0)
+                _logger.LogInformation(
+                    "Corrected {Count} known-bad rarity name(s) using the curated correction table",
+                    correctedCount);
+
             var addedSetPrintings = CardDataMapper.MergeMissingSetPrintings(yamlCards, ygoProDeckCards);
             if (addedSetPrintings > 0)
                 _logger.LogInformation(
@@ -222,6 +230,29 @@ namespace CardCollector.Repository
             {
                 _logger.LogError(ex, "Failed to parse image cache — card images will use fallback URLs");
                 return new Dictionary<int, IReadOnlyList<Image>>();
+            }
+        }
+
+        private IReadOnlyDictionary<(string SetCode, string RarityName), string> LoadRarityCorrections()
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Config", "RarityCorrections.json");
+            if (!File.Exists(path))
+                return new Dictionary<(string, string), string>();
+
+            try
+            {
+                var json = File.ReadAllText(path);
+                var entries = JsonConvert.DeserializeObject<List<RarityCorrectionEntry>>(json) ?? [];
+                return entries
+                    .Where(e => !string.IsNullOrWhiteSpace(e.SetCode) && !string.IsNullOrWhiteSpace(e.OldRarityName) && !string.IsNullOrWhiteSpace(e.NewRarityName))
+                    .ToDictionary(
+                        e => (e.SetCode!.ToUpperInvariant(), e.OldRarityName!.ToUpperInvariant()),
+                        e => e.NewRarityName!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to parse rarity correction table — no corrections will be applied");
+                return new Dictionary<(string, string), string>();
             }
         }
 
@@ -321,6 +352,15 @@ namespace CardCollector.Repository
         {
             [JsonProperty("data")]
             public IEnumerable<ImageCacheCard>? Data { get; set; }
+        }
+
+        private sealed class RarityCorrectionEntry
+        {
+            public string? NewRarityName { get; set; }
+
+            public string? OldRarityName { get; set; }
+
+            public string? SetCode { get; set; }
         }
 
         private sealed class RawCardCacheRoot

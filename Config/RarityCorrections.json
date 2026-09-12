@@ -1,0 +1,4402 @@
+[
+  {
+    "SetCode": "MAMA-EN078",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN114",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN089",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN090",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN108",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN107",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN113",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN064",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN112",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN115",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN109",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN111",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN073",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN105",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN110",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN104",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN106",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "MAMA-EN029",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "RA01-EN001",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN001",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN009",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN009",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN055",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN055",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN035",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN035",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN062",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN062",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN070",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN070",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN056",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN056",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN032",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN032",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN057",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN057",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN058",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN058",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN050",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN050",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN042",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN042",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN050",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN050",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN040",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN040",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN019",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN019",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN004",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN004",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN048",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN048",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN034",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN034",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN105",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN105",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN065",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN065",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN034",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN034",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN017",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN017",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN089",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN089",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN023",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN023",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN060",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN060",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN022",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN022",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN048",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN048",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN061",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN061",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN028",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN028",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN087",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN087",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN064",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN064",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN005",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN005",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN001",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN001",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN029",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN029",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN081",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN081",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN075",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN075",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN068",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN068",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN046",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN046",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN005",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN005",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN063",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN063",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN023",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN023",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN024",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN024",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN058",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN058",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN064",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN064",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN020",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN020",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN009",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN009",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN055",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN055",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN110",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN110",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN079",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN079",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN059",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN059",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN055",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN055",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN021",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN021",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN022",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN022",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN029",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN029",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN050",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN050",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN005",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN005",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN012",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN012",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN061",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN061",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN008",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN008",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN025",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN025",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN001",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN001",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN030",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN030",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN011",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN011",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN036",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN036",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN010",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN010",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN068",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN068",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN074",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN074",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN022",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN022",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN004",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN004",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN028",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN028",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN024",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN024",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN068",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN068",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN015",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN015",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN020",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN020",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN075",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN075",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN078",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN078",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN077",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN077",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN078",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN078",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN077",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN077",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN033",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN033",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN003",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN003",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN013",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN013",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN044",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN044",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN039",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN039",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN096",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN096",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN007",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN007",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN043",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN043",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN019",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN019",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN098",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN098",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN029",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN029",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN070",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN070",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN013",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN013",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN011",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN011",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN047",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN047",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN051",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN051",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN057",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN057",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN064",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN064",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN039",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN039",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN002",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN002",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN053",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN053",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN049",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN049",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN056",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN056",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN064",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN064",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN063",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN063",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN019",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN019",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN018",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN018",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN030",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN030",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN007",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN007",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN041",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN041",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN009",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN009",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN015",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN015",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN058",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN058",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN064",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN064",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN033",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN033",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN041",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN041",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN002",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN002",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN045",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN045",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN049",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN049",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN134",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN134",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN074",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN074",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN072",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN072",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN067",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN067",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN017",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN017",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN023",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN023",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN045",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN045",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN044",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN044",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN103",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN103",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN062",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN062",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN101",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN101",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN032",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN032",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN051",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN051",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN024",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN024",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "25LP-EN000",
+    "OldRarityName": "Ultra Rare",
+    "NewRarityName": "Emblazoned Ultra Rare"
+  },
+  {
+    "SetCode": "RA03-EN038",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN038",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN006",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN006",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN071",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN071",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN049",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN049",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN056",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN056",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN072",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN072",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN054",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN054",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN014",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN014",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN035",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN035",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN070",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN070",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN055",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN055",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN010",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN010",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "NKC1-EN001",
+    "OldRarityName": "Secret Rare",
+    "NewRarityName": "Prismatic Secret Rare"
+  },
+  {
+    "SetCode": "RA02-EN046",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN046",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN021",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN021",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN043",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN043",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN010",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN010",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN022",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN022",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN037",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN037",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN006",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN006",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN037",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN037",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN085",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN085",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN054",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN054",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN080",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN080",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN079",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN079",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN079",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN079",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN012",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN012",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN037",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN037",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN075",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN075",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN058",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN058",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN050",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN050",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN029",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN029",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN031",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN031",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN050",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN050",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN019",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN019",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN013",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN013",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN060",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN060",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN011",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN011",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN038",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN038",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN016",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN016",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN082",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN082",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN058",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN058",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN045",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN045",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN047",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN047",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN043",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN043",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN091",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN091",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN054",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN054",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN038",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN038",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "ADC1-EN001",
+    "OldRarityName": "Secret Rare",
+    "NewRarityName": "Prismatic Secret Rare"
+  },
+  {
+    "SetCode": "RA05-EN026",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN026",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN053",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN053",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN088",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN088",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN053",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN053",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN090",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN090",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN033",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN033",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN069",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN069",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN002",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN002",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN074",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN074",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN002",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN002",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN059",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN059",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN046",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN046",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN054",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN054",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN029",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN029",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN025",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN025",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN015",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN015",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN066",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN066",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN026",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN026",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN010",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN010",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN036",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN036",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN010",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN010",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN042",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN042",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN048",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN048",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN069",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN069",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN060",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN060",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN028",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN028",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN041",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN041",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN040",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN040",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN067",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN067",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN072",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN072",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN071",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN071",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN018",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN018",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN005",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN005",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN063",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN063",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN083",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN083",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN067",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN067",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN039",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN039",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN102",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN102",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN059",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN059",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN034",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN034",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN017",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN017",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN076",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN076",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN081",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN081",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN039",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN039",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN012",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN012",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN025",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN025",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN071",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN071",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN052",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN052",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN042",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN042",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN076",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN076",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN076",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN076",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN038",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN038",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN009",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN009",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN015",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN015",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN059",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN059",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN030",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN030",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN080",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN080",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN008",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN008",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN023",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN023",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN020",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN020",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN032",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN032",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN020",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN020",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN049",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN049",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN014",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN014",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN048",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN048",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN030",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN030",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN057",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN057",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN014",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN014",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN037",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN037",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN071",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN071",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN035",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN035",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN023",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN023",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN016",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN016",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN017",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN017",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN033",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN033",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN061",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN061",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN066",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN066",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN036",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN036",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN063",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN063",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN052",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN052",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN016",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN016",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN040",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN040",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN100",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN100",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN077",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN077",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN066",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN066",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN063",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN063",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN042",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN042",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN037",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN037",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN044",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN044",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN031",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN031",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN073",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN073",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN041",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN041",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN053",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN053",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN005",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN005",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN025",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN025",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN015",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN015",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN021",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN021",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN065",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN065",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN026",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN026",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN027",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN027",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN062",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN062",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN012",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN012",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN069",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN069",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN047",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN047",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN073",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN073",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN025",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN025",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN035",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN035",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN032",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN032",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN036",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN036",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN060",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN060",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN054",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN054",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN022",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN022",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN047",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN047",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN065",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN065",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN046",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN046",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN057",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN057",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN028",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN028",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN084",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN084",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN075",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN075",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN011",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN011",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN036",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN036",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN007",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN007",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN006",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN006",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN065",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN065",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN028",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN028",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN051",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN051",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN013",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN013",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN053",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN053",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN052",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN052",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN021",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN021",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN032",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN032",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN069",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN069",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN024",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN024",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN066",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN066",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN068",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN068",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN059",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN059",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN013",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN013",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN004",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN004",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN031",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN031",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN078",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN078",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN062",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN062",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN026",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN026",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN099",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN099",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN018",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN018",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN074",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN074",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN027",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN027",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN049",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN049",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN012",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN012",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN056",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN056",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN074",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN074",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN077",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN077",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN076",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN076",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN020",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN020",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN077",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN077",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN072",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN072",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN052",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN052",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN066",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN066",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN078",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN078",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN071",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN071",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN034",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN034",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN027",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN027",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN073",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN073",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN008",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN008",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN048",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN048",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN082",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN082",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN044",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN044",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN024",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN024",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN018",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN018",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN086",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN086",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN009",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN009",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN035",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN035",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN044",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN044",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN073",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN073",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN011",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN011",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN067",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN067",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN008",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN008",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN043",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN043",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN040",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN040",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN075",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN075",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN027",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN027",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN046",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN046",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN014",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN014",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN061",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN061",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN104",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN104",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN017",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN017",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN072",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN072",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN062",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN062",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN021",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN021",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN040",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN040",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN016",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN016",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN006",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN006",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN016",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN016",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN097",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN097",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN069",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN069",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN055",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN055",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN052",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN052",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN019",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN019",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN068",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN068",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN045",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN045",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN018",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN018",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN056",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN056",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN150",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN150",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN076",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN076",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN003",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN003",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN060",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN060",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN014",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN014",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN003",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN003",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN078",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN078",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN007",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN007",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN051",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN051",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN045",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN045",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA05-EN070",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA05-EN070",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN043",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN043",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA02-EN057",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA02-EN057",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA03-EN031",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA03-EN031",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN006",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN006",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA01-EN065",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA01-EN065",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "RA04-EN027",
+    "OldRarityName": "Ultimate Rare",
+    "NewRarityName": "Prismatic Ultimate Rare"
+  },
+  {
+    "SetCode": "RA04-EN027",
+    "OldRarityName": "Collector's Rare",
+    "NewRarityName": "Prismatic Collector's Rare"
+  },
+  {
+    "SetCode": "EDS-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "MF02-EN003",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL04-EN003",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL2-EN005",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL03-EN003",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL2-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Rare"
+  },
+  {
+    "SetCode": "EDS-001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "MF02-EN002",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Rare"
+  },
+  {
+    "SetCode": "DOR-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "ROD-EN003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL07-EN006",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "TSC-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "CT12-EN001",
+    "OldRarityName": "Platinum Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "CT12-EN002",
+    "OldRarityName": "Platinum Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "SDD-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL06-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL03-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL03-EN004",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL05-EN001",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL06-EN004",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "TSC-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "DOR-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL05-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "DDS-005",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "PCY-004",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "TSC-001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "ROD-EN001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL04-EN006",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "PCY-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "MF01-EN001",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "PCY-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL2-EN006",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL06-EN001",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL04-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL05-EN006",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL04-EN001",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "EDS-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "SDD-001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "CT11-EN002",
+    "OldRarityName": "Platinum Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "WC4-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL04-EN004",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "WC4-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL03-EN007",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL07-EN002",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL03-EN005",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "MF02-EN001",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Rare"
+  },
+  {
+    "SetCode": "HL07-EN001",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "BP03-EN076",
+    "OldRarityName": "Shatterfoil Rare",
+    "NewRarityName": "Rare"
+  },
+  {
+    "SetCode": "MF02-EN004",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Rare"
+  },
+  {
+    "SetCode": "EFC1-EN001",
+    "OldRarityName": "Normal Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "GSE-EN001",
+    "OldRarityName": "Ultra Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL07-EN004",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "ROD-EN002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL05-EN004",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL04-EN005",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL07-EN003",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "PCK-001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "PCK-002",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "HL05-EN003",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL05-EN005",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL06-EN006",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL03-EN001",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "HL06-EN005",
+    "OldRarityName": "Ultra Parallel Rare",
+    "NewRarityName": "Parallel Rare"
+  },
+  {
+    "SetCode": "PCK-003",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "DOR-001",
+    "OldRarityName": "Prismatic Secret Rare",
+    "NewRarityName": "Secret Rare"
+  }
+]

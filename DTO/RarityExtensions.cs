@@ -39,6 +39,7 @@ namespace CardCollector.DTO
             "Short Print" => "(SP)",
             "Super Short Print" => "(SSP)",
             "Normal Parallel Rare" => "(NPR)",
+            "Parallel Rare" => "(ParR)",
             "Super Parallel Rare" => "(SPR)",
             "Ultra Parallel Rare" => "(UPR)",
             "10000 Secret Rare" => "(10000ScR)",

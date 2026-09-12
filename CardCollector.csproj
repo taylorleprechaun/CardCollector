@@ -24,5 +24,9 @@
     <None Remove="CardCollector.Tests\**\*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Config\RarityCorrections.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 
 </Project>

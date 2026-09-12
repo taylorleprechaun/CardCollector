@@ -9,6 +9,83 @@ namespace CardCollector.Tests.Repository
     public sealed class CardDataMapperTests
     {
         [TestMethod]
+        public void ApplyRarityCorrections_CardHasNullCardSets_IsSkipped()
+        {
+            var cards = new List<Card> { new() { ID = 1, CardSets = null } };
+            var corrections = new Dictionary<(string, string), string> { [("RA01-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare" };
+
+            var result = CardDataMapper.ApplyRarityCorrections(cards, corrections);
+
+            Assert.AreEqual(0, result);
+        }
+
+        [TestMethod]
+        public void ApplyRarityCorrections_MatchingRow_RewritesRarityNameAndCode()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "RA01-EN001", RarityName = "Ultimate Rare", RarityCode = "(UtR)" }] }
+            };
+            var corrections = new Dictionary<(string, string), string> { [("RA01-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare" };
+
+            var result = CardDataMapper.ApplyRarityCorrections(cards, corrections);
+
+            Assert.AreEqual(1, result);
+            Assert.AreEqual("Prismatic Ultimate Rare", cards[0].CardSets![0].RarityName);
+            Assert.AreEqual("(PUR)", cards[0].CardSets![0].RarityCode);
+        }
+
+        [TestMethod]
+        public void ApplyRarityCorrections_MatchIsCaseInsensitive_StillCorrects()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "ra01-en001", RarityName = "ultimate rare" }] }
+            };
+            var corrections = new Dictionary<(string, string), string> { [("RA01-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare" };
+
+            var result = CardDataMapper.ApplyRarityCorrections(cards, corrections);
+
+            Assert.AreEqual(1, result);
+            Assert.AreEqual("Prismatic Ultimate Rare", cards[0].CardSets![0].RarityName);
+        }
+        [TestMethod]
+        public void ApplyRarityCorrections_MultipleCardsAndRows_ReturnsTotalCorrectedCount()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "RA01-EN001", RarityName = "Ultimate Rare" }, new Set { Code = "RA01-EN001", RarityName = "Collector's Rare" }] },
+                new() { ID = 2, CardSets = [new Set { Code = "RA02-EN001", RarityName = "Ultimate Rare" }] }
+            };
+            var corrections = new Dictionary<(string, string), string>
+            {
+                [("RA01-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare",
+                [("RA01-EN001", "COLLECTOR'S RARE")] = "Prismatic Collector's Rare",
+                [("RA02-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare"
+            };
+
+            var result = CardDataMapper.ApplyRarityCorrections(cards, corrections);
+
+            Assert.AreEqual(3, result);
+        }
+
+        [TestMethod]
+        public void ApplyRarityCorrections_NoMatchingEntry_RowIsUnchanged()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare", RarityCode = "(UR)" }] }
+            };
+            var corrections = new Dictionary<(string, string), string> { [("RA01-EN001", "ULTIMATE RARE")] = "Prismatic Ultimate Rare" };
+
+            var result = CardDataMapper.ApplyRarityCorrections(cards, corrections);
+
+            Assert.AreEqual(0, result);
+            Assert.AreEqual("Ultra Rare", cards[0].CardSets![0].RarityName);
+            Assert.AreEqual("(UR)", cards[0].CardSets![0].RarityCode);
+        }
+
+        [TestMethod]
         public void AttachImages_CardHasMatchingImages_AttachesThem()
         {
             var cards = new List<Card> { new() { ID = 1 } };

@@ -9,6 +9,37 @@ namespace CardCollector.Repository
     /// </summary>
     public static class CardDataMapper
     {
+        /// <summary>
+        /// Rewrites any Set row whose (SetCode, RarityName) matches a known-bad entry in <paramref name="corrections"/>
+        /// to the corrected rarity name, recomputing RarityCode to match. Matches case-insensitively on both
+        /// SetCode and RarityName. Returns the number of rows corrected, for caller-side logging.
+        /// </summary>
+        public static int ApplyRarityCorrections(IReadOnlyList<Card> cards, IReadOnlyDictionary<(string SetCode, string RarityName), string> corrections)
+        {
+            var correctedCount = 0;
+
+            foreach (var card in cards)
+            {
+                if (card.CardSets is null)
+                    continue;
+
+                foreach (var set in card.CardSets)
+                {
+                    if (string.IsNullOrWhiteSpace(set.Code) || string.IsNullOrWhiteSpace(set.RarityName))
+                        continue;
+
+                    if (!corrections.TryGetValue((set.Code.ToUpperInvariant(), set.RarityName.ToUpperInvariant()), out var newRarityName))
+                        continue;
+
+                    set.RarityName = newRarityName;
+                    set.RarityCode = RarityExtensions.GetRarityCode(newRarityName);
+                    correctedCount++;
+                }
+            }
+
+            return correctedCount;
+        }
+
         public static void AttachImages(IReadOnlyList<Card> cards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
         {
             foreach (var card in cards)

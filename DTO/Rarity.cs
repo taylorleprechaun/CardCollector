@@ -119,6 +119,10 @@ namespace CardCollector.DTO
         [EnumMember(Value = "Oceanian debut")]
         OceanianDebut,
 
+        [Description("Parallel Rare")]
+        [EnumMember(Value = "Parallel Rare")]
+        ParallelRare,
+
         [Description("Platinum Rare")]
         [EnumMember(Value = "Platinum Rare")]
         PlatinumRare,

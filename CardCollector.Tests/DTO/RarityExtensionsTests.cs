@@ -51,6 +51,7 @@ namespace CardCollector.Tests.DTO
         [DataRow("Emblazoned Ultra Rare", "(EmUR)")]
         [DataRow("Secret Pharaoh’s Rare", "(SCR-PhaR)")]
         [DataRow("Ultra Pharaoh’s Rare", "(UR-PhaR)")]
+        [DataRow("Parallel Rare", "(ParR)")]
         public void GetRarityCode_KnownRarityName_ReturnsCode(string rarityName, string expected)
         {
             var result = RarityExtensions.GetRarityCode(rarityName);
@@ -114,6 +115,7 @@ namespace CardCollector.Tests.DTO
         [DataRow("Ultra Pharaoh’s Rare", Rarity.UltraRarePharaohsRare, DisplayName = "tcgcsv curly-apostrophe Ultra Pharaoh's Rare alias")]
         [DataRow("Cr", Rarity.CollectorsRare, DisplayName = "Alias sharing a value with its canonical member (regression: BuildMap previously dropped every same-valued alias)")]
         [DataRow("Secret Rare (Pharaoh's Rare)", Rarity.SecretRarePharaohsRare, DisplayName = "Another same-valued alias")]
+        [DataRow("Parallel Rare", Rarity.ParallelRare, DisplayName = "Parallel Rare")]
         public void ParseRarity_KnownValue_ReturnsMappedRarity(string value, Rarity expected)
         {
             var result = RarityExtensions.ParseRarity(value);
