@@ -6,6 +6,8 @@ namespace CardCollector.ViewModels
 
         public string CardName { get; set; } = string.Empty;
 
+        public string? CurrentPrintVariant { get; set; }
+
         public string CurrentRarityName { get; set; } = string.Empty;
 
         public string? CurrentReleaseDate { get; set; }

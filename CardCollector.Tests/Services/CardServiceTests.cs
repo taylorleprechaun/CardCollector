@@ -57,7 +57,7 @@ namespace CardCollector.Tests.Services
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
                 .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>());
             _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
-                .ReturnsAsync(new HashSet<(int CardID, string SetCode, string RarityName)>());
+                .ReturnsAsync(new HashSet<(int CardID, string SetCode, string RarityName, string? PrintVariant)>());
             _ignoredCardRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new Dictionary<int, DateTime>());
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
             _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())

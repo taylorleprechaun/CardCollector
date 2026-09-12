@@ -45,6 +45,12 @@ namespace CardCollector.Tests.DTO
         [DataRow("Duel Terminal Rare Parallel Rare", "(DTRPR)")]
         [DataRow("Duel Terminal Super Parallel Rare", "(DTSPR)")]
         [DataRow("Duel Terminal Ultra Parallel Rare", "(DTUPR)")]
+        [DataRow("Duel Terminal Technology Common", "(DTTC)")]
+        [DataRow("Duel Terminal Technology Ultra Rare", "(DTTUR)")]
+        [DataRow("Emblazoned Secret Rare", "(EmScR)")]
+        [DataRow("Emblazoned Ultra Rare", "(EmUR)")]
+        [DataRow("Secret Pharaoh’s Rare", "(SCR-PhaR)")]
+        [DataRow("Ultra Pharaoh’s Rare", "(UR-PhaR)")]
         public void GetRarityCode_KnownRarityName_ReturnsCode(string rarityName, string expected)
         {
             var result = RarityExtensions.GetRarityCode(rarityName);
@@ -102,6 +108,12 @@ namespace CardCollector.Tests.DTO
         [DataRow("Common", Rarity.Common, DisplayName = "Common")]
         [DataRow("Secret Rare", Rarity.SecretRare, DisplayName = "Secret Rare")]
         [DataRow("common", Rarity.Common, DisplayName = "Case-insensitive match")]
+        [DataRow("Duel Terminal Technology Common", Rarity.DuelTerminalTechnologyCommon, DisplayName = "Duel Terminal Technology Common")]
+        [DataRow("Emblazoned Ultra Rare", Rarity.EmblazonedUltraRare, DisplayName = "Emblazoned Ultra Rare")]
+        [DataRow("Secret Pharaoh’s Rare", Rarity.SecretRarePharaohsRare, DisplayName = "tcgcsv curly-apostrophe Secret Pharaoh's Rare alias")]
+        [DataRow("Ultra Pharaoh’s Rare", Rarity.UltraRarePharaohsRare, DisplayName = "tcgcsv curly-apostrophe Ultra Pharaoh's Rare alias")]
+        [DataRow("Cr", Rarity.CollectorsRare, DisplayName = "Alias sharing a value with its canonical member (regression: BuildMap previously dropped every same-valued alias)")]
+        [DataRow("Secret Rare (Pharaoh's Rare)", Rarity.SecretRarePharaohsRare, DisplayName = "Another same-valued alias")]
         public void ParseRarity_KnownValue_ReturnsMappedRarity(string value, Rarity expected)
         {
             var result = RarityExtensions.ParseRarity(value);

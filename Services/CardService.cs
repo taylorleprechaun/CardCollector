@@ -319,8 +319,8 @@ namespace CardCollector.Services
             }).ConfigureAwait(false);
         }
 
-        public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName) =>
-            await _dismissedNewPrintingRepository.AddAsync(cardID, setCode, rarityName).ConfigureAwait(false);
+        public async Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName, string? printVariant = null) =>
+            await _dismissedNewPrintingRepository.AddAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
 
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
 
@@ -573,14 +573,17 @@ namespace CardCollector.Services
                 var image = card.CardImages.FirstOrDefault();
 
                 var newerPrintings = card.CardSets
-                    .Where(s => s.Code != pv.SetCode || RarityExtensions.NormalizeRarityName(s.RarityName) != pv.RarityName)
+                    .Where(s => s.Code != pv.SetCode
+                                || RarityExtensions.NormalizeRarityName(s.RarityName) != pv.RarityName
+                                || !string.Equals(s.PrintVariant, pv.PrintVariant, StringComparison.OrdinalIgnoreCase))
                     .Select(s => (Set: s, Date: _cardSetRepository.GetTCGDateBySetCode(s.Code ?? string.Empty)))
                     .Where(x => x.Date is not null
                                 && string.Compare(x.Date, preferredDate, StringComparison.Ordinal) > 0
                                 && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
-                                && !dismissed.Contains((pv.CardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty)))
+                                && !dismissed.Contains((pv.CardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty, x.Set.PrintVariant)))
                     .Select(x => new NewPrintingOptionViewModel
                     {
+                        PrintVariant = x.Set.PrintVariant,
                         RarityName = RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty,
                         ReleaseDate = x.Date,
                         SetCode = x.Set.Code ?? string.Empty,
@@ -597,6 +600,7 @@ namespace CardCollector.Services
                 {
                     CardID = pv.CardID,
                     CardName = card.Name ?? string.Empty,
+                    CurrentPrintVariant = pv.PrintVariant,
                     CurrentRarityName = pv.RarityName ?? string.Empty,
                     CurrentReleaseDate = preferredDate,
                     CurrentSetCode = pv.SetCode,
@@ -625,9 +629,10 @@ namespace CardCollector.Services
                     .Where(x => x.Date is not null
                                 && string.Compare(x.Date, baselineDate, StringComparison.Ordinal) > 0
                                 && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0
-                                && !dismissed.Contains((cardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty)))
+                                && !dismissed.Contains((cardID, x.Set.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty, x.Set.PrintVariant)))
                     .Select(x => new NewPrintingOptionViewModel
                     {
+                        PrintVariant = x.Set.PrintVariant,
                         RarityName = RarityExtensions.NormalizeRarityName(x.Set.RarityName) ?? string.Empty,
                         ReleaseDate = x.Date,
                         SetCode = x.Set.Code ?? string.Empty,
@@ -1254,9 +1259,9 @@ namespace CardCollector.Services
         public async Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity) =>
             await _pendingOrderRepository.UpdateQuantityAsync(pendingOrderLineID, Math.Clamp(quantity, 1, MaxCartQuantity)).ConfigureAwait(false);
 
-        public async Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName)
+        public async Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName, string? newPrintVariant = null)
         {
-            await _preferredVersionRepository.UpgradeAsync(preferredVersionID, newSetCode, newRarityName).ConfigureAwait(false);
+            await _preferredVersionRepository.UpgradeAsync(preferredVersionID, newSetCode, newRarityName, newPrintVariant).ConfigureAwait(false);
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(cardID, newSetCode).ConfigureAwait(false);
         }
@@ -1358,7 +1363,7 @@ namespace CardCollector.Services
                 .ToList();
 
             foreach (var (set, _) in toDismiss)
-                await _dismissedNewPrintingRepository.AddAsync(cardID, set.Code ?? string.Empty, set.RarityName ?? string.Empty)
+                await _dismissedNewPrintingRepository.AddAsync(cardID, set.Code ?? string.Empty, set.RarityName ?? string.Empty, set.PrintVariant)
                     .ConfigureAwait(false);
         }
 

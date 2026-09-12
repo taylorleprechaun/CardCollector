@@ -104,7 +104,7 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName)
+        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName, string? newPrintVariant = null)
         {
             var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
             if (entity is null)
@@ -112,6 +112,7 @@ namespace CardCollector.Repository
 
             entity.SetCode = newSetCode;
             entity.RarityName = RarityExtensions.NormalizeRarityName(newRarityName);
+            entity.PrintVariant = newPrintVariant;
             entity.DateModified = DateTime.UtcNow;
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;

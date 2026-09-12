@@ -52,6 +52,10 @@ else
                                         Currently tracked: @opportunity.CurrentSetName
                                         <span class="ms-1 text-muted">(@opportunity.CurrentSetCode)</span>
                                         &mdash; @opportunity.CurrentRarityName
+                                        @if (!string.IsNullOrEmpty(opportunity.CurrentPrintVariant))
+                                        {
+                                            <span class="ms-1">(@opportunity.CurrentPrintVariant)</span>
+                                        }
                                         @if (!string.IsNullOrEmpty(opportunity.CurrentReleaseDate))
                                         {
                                             <span class="ms-1">(@opportunity.CurrentReleaseDate)</span>
@@ -67,6 +71,7 @@ else
                         {
                             <input type="hidden" name="SetCodes" value="@printing.SetCode" />
                             <input type="hidden" name="RarityNames" value="@printing.RarityName" />
+                            <input type="hidden" name="PrintVariants" value="@printing.PrintVariant" />
                         }
                         <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss All</button>
                     </form>
@@ -96,7 +101,13 @@ else
                                     <div>@printing.SetName</div>
                                     <small class="text-muted">@printing.SetCode</small>
                                 </td>
-                                <td>@printing.RarityName</td>
+                                <td>
+                                    @printing.RarityName
+                                    @if (!string.IsNullOrEmpty(printing.PrintVariant))
+                                    {
+                                        <span class="text-muted">(@printing.PrintVariant)</span>
+                                    }
+                                </td>
                                 <td>@(printing.ReleaseDate ?? "—")</td>
                                 <td class="text-end">
                                     <form method="post" asp-page-handler="Upgrade" class="d-inline">
@@ -104,12 +115,14 @@ else
                                         <input type="hidden" name="PreferredVersionID" value="@opportunity.PreferredVersionID" />
                                         <input type="hidden" name="NewSetCode" value="@printing.SetCode" />
                                         <input type="hidden" name="NewRarityName" value="@printing.RarityName" />
+                                        <input type="hidden" name="NewPrintVariant" value="@printing.PrintVariant" />
                                         <button type="submit" class="btn btn-sm btn-success">Choose This</button>
                                     </form>
                                     <form method="post" asp-page-handler="Dismiss" class="d-inline ms-1">
                                         <input type="hidden" name="CardID" value="@opportunity.CardID" />
                                         <input type="hidden" name="SetCode" value="@printing.SetCode" />
                                         <input type="hidden" name="RarityName" value="@printing.RarityName" />
+                                        <input type="hidden" name="PrintVariant" value="@printing.PrintVariant" />
                                         <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss</button>
                                     </form>
                                 </td>

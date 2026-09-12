@@ -78,6 +78,20 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostDismissAllAsync_PrintVariantsSupplied_ForwardsEachPairedVariant()
+        {
+            _page.CardID = 1;
+            _page.SetCodes = ["RA05-EN001", "RA05-EN001"];
+            _page.RarityNames = ["Ultra Rare", "Ultra Rare"];
+            _page.PrintVariants = ["Extended Art", "Starlight Rare"];
+
+            await _page.OnPostDismissAllAsync();
+
+            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(1, "RA05-EN001", "Ultra Rare", "Extended Art"), Times.Once);
+            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
+        }
+
+        [TestMethod]
         public async Task OnPostDismissAsync_DismissesAndRedirects()
         {
             _page.CardID = 1;
@@ -86,8 +100,35 @@ namespace CardCollector.Tests.Pages
 
             var result = await _page.OnPostDismissAsync();
 
-            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(1, "LOB-EN001", "Ultra Rare"), Times.Once);
+            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(1, "LOB-EN001", "Ultra Rare", null), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostDismissAsync_PrintVariantSupplied_ForwardsVariant()
+        {
+            _page.CardID = 1;
+            _page.SetCode = "RA05-EN001";
+            _page.RarityName = "Ultra Rare";
+            _page.PrintVariant = "Starlight Rare";
+
+            await _page.OnPostDismissAsync();
+
+            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task OnPostUpgradeAsync_NewPrintVariantSupplied_ForwardsVariant()
+        {
+            _page.PreferredVersionID = 10;
+            _page.CardID = 1;
+            _page.NewSetCode = "RA05-EN001";
+            _page.NewRarityName = "Ultra Rare";
+            _page.NewPrintVariant = "Starlight Rare";
+
+            await _page.OnPostUpgradeAsync();
+
+            _cardServiceMock.Verify(s => s.UpgradePreferredVersionAsync(10, 1, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
         }
 
         [TestMethod]
@@ -100,10 +141,9 @@ namespace CardCollector.Tests.Pages
 
             var result = await _page.OnPostUpgradeAsync();
 
-            _cardServiceMock.Verify(s => s.UpgradePreferredVersionAsync(10, 1, "NEW-EN001", "Secret Rare"), Times.Once);
+            _cardServiceMock.Verify(s => s.UpgradePreferredVersionAsync(10, 1, "NEW-EN001", "Secret Rare", null), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
-
         [TestInitialize]
         public void Setup()
         {

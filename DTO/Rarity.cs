@@ -36,9 +36,25 @@ namespace CardCollector.DTO
         [EnumMember(Value = "Duel Terminal Super Parallel Rare")]
         DuelTerminalSuperParallelRare,
 
+        [Description("Duel Terminal Technology Common")]
+        [EnumMember(Value = "Duel Terminal Technology Common")]
+        DuelTerminalTechnologyCommon,
+
+        [Description("Duel Terminal Technology Ultra Rare")]
+        [EnumMember(Value = "Duel Terminal Technology Ultra Rare")]
+        DuelTerminalTechnologyUltraRare,
+
         [Description("Duel Terminal Ultra Parallel Rare")]
         [EnumMember(Value = "Duel Terminal Ultra Parallel Rare")]
         DuelTerminalUltraParallelRare,
+
+        [Description("Emblazoned Secret Rare")]
+        [EnumMember(Value = "Emblazoned Secret Rare")]
+        EmblazonedSecretRare,
+
+        [Description("Emblazoned Ultra Rare")]
+        [EnumMember(Value = "Emblazoned Ultra Rare")]
+        EmblazonedUltraRare,
 
         //This is used for setting some default values and error checking
         Error,
@@ -151,6 +167,10 @@ namespace CardCollector.DTO
         [EnumMember(Value = "Secret Rare (Pharaoh's Rare)")]
         SecRarePharaohsRare = SecretRarePharaohsRare, //Duplicate in data
 
+        [Description("Secret Pharaoh's Rare")]
+        [EnumMember(Value = "Secret Pharaoh’s Rare")]
+        SecretPharaohsRare = SecretRarePharaohsRare, //Duplicate in data (tcgcsv, curly apostrophe)
+
         [Description("Shatterfoil Rare")]
         [EnumMember(Value = "Shatterfoil Rare")]
         ShatterfoilRare,
@@ -206,6 +226,10 @@ namespace CardCollector.DTO
         [Description("Ultra Rare (Pharaoh's Rare)")]
         [EnumMember(Value = "Ultra Rare (Pharaoh's Rare)")]
         URPR = UltraRarePharaohsRare, //Duplicate in data
+
+        [Description("Ultra Pharaoh's Rare")]
+        [EnumMember(Value = "Ultra Pharaoh’s Rare")]
+        UltraPharaohsRare = UltraRarePharaohsRare, //Duplicate in data (tcgcsv, curly apostrophe)
 
         [Description("Ultra Secret Rare")]
         [EnumMember(Value = "Ultra Secret Rare")]

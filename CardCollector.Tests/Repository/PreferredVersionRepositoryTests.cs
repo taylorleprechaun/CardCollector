@@ -239,6 +239,33 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task UpgradeAsync_NewPrintVariantOmitted_ClearsPreviousPrintVariant()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            var created = (await repository.GetByCardIDAsync(1)).Single();
+
+            await repository.UpgradeAsync(created.ID, "LOB-EN002", "Secret Rare");
+
+            var updated = (await repository.GetByCardIDAsync(1)).Single();
+            Assert.IsNull(updated.PrintVariant);
+        }
+
+        [TestMethod]
+        public async Task UpgradeAsync_NewPrintVariantSpecified_SetsPrintVariant()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare");
+            var created = (await repository.GetByCardIDAsync(1)).Single();
+
+            await repository.UpgradeAsync(created.ID, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+
+            var updated = (await repository.GetByCardIDAsync(1)).Single();
+            Assert.AreEqual("Starlight Rare", updated.PrintVariant);
+        }
+        [TestMethod]
         public async Task UpgradeAsync_NoSuchID_ReturnsFalse()
         {
             using var context = InMemoryDbContextFactory.Create();

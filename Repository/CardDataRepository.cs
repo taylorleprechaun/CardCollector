@@ -111,7 +111,12 @@ namespace CardCollector.Repository
         private void Initialize(IReadOnlyList<Card> rawCards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
         {
             CardDataMapper.AttachImages(rawCards, imagesByCardID);
-            CardDataMapper.EnrichWithPrintVariants(rawCards, _tcgCatalogCache.GetAllPrintings());
+
+            var newRarityRowCount = CardDataMapper.EnrichWithPrintVariants(rawCards, _tcgCatalogCache.GetAllPrintings());
+            if (newRarityRowCount > 0)
+                _logger.LogInformation(
+                    "Added {Count} new rarity row(s) from tcgcsv catalog for set codes with no prior matching rarity",
+                    newRarityRowCount);
 
             _cards = rawCards;
             _browseableCards = rawCards.Where(c => c.CardSets?.Any() == true).ToList();
@@ -144,8 +149,19 @@ namespace CardCollector.Repository
                 .ToList();
         }
 
-        private IReadOnlyList<Card> LoadCards() =>
-            CardDataMapper.MergeMissingCards(LoadYamlCards(), LoadRawYGOProDeckCards());
+        private IReadOnlyList<Card> LoadCards()
+        {
+            var yamlCards = LoadYamlCards();
+            var ygoProDeckCards = LoadRawYGOProDeckCards();
+
+            var addedSetPrintings = CardDataMapper.MergeMissingSetPrintings(yamlCards, ygoProDeckCards);
+            if (addedSetPrintings > 0)
+                _logger.LogInformation(
+                    "Added {Count} set printing(s) found in YGOProDeck but missing from yaml-yugi for cards present in both sources",
+                    addedSetPrintings);
+
+            return CardDataMapper.MergeMissingCards(yamlCards, ygoProDeckCards);
+        }
 
         private IReadOnlyList<Card> LoadCardsFromJson(string path)
         {

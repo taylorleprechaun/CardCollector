@@ -56,9 +56,9 @@ namespace CardCollector.Services
         Task CheckOutCardAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null);
 
         /// <summary>
-        /// Records the given card set+rarity combination as dismissed so it no longer appears as an upgrade opportunity.
+        /// Records the given card set+rarity+variant combination as dismissed so it no longer appears as an upgrade opportunity.
         /// </summary>
-        Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName);
+        Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
 
         /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.
@@ -256,6 +256,6 @@ namespace CardCollector.Services
         /// Updates the tracked printing with the given ID to point at the specified newer printing,
         /// preserving its desired quantity.
         /// </summary>
-        Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName);
+        Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName, string? newPrintVariant = null);
     }
 }
