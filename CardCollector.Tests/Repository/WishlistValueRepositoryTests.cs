@@ -61,14 +61,14 @@ namespace CardCollector.Tests.Repository
                 // Well within the 30-day cutoff — always kept regardless of month grouping.
                 var recentDate = now.AddDays(-5).ToString("yyyy-MM-dd");
 
-                // Two snapshots in the same calendar month, both beyond the cutoff — only the later one
-                // (the month's max) should survive pruning. Anchored to day-of-month 1 so adding a few
+                // Two snapshots in the same calendar month, both beyond the cutoff — only the earlier one
+                // (the month's min) should survive pruning. Anchored to day-of-month 1 so adding a few
                 // days never rolls into a different month.
                 var oldMonth = new DateTime(now.AddMonths(-2).Year, now.AddMonths(-2).Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 var oldMonthLaterDate = oldMonth.AddDays(19).ToString("yyyy-MM-dd");
                 var oldMonthEarlierDate = oldMonth.AddDays(9).ToString("yyyy-MM-dd");
 
-                // A different calendar month, further back — its single snapshot is that month's max, so it survives.
+                // A different calendar month, further back — its single snapshot is that month's min, so it survives.
                 var differentOldMonthDate = oldMonth.AddMonths(-2).ToString("yyyy-MM-dd");
 
                 context.WishlistValueSnapshots.AddRange(
@@ -82,7 +82,7 @@ namespace CardCollector.Tests.Repository
 
                 var remainingDates = (await repository.GetAllSnapshotsAsync()).Select(s => s.SnapshotDate).ToList();
                 CollectionAssert.AreEquivalent(
-                    new[] { recentDate, oldMonthLaterDate, differentOldMonthDate },
+                    new[] { recentDate, oldMonthEarlierDate, differentOldMonthDate },
                     remainingDates);
             }
         }

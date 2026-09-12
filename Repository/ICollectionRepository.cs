@@ -125,6 +125,12 @@ namespace CardCollector.Repository
         Task<bool> UpdateAsync(CollectionEntry entry);
 
         /// <summary>
+        /// Updates only the print variant of an existing entry, leaving every other field untouched.
+        /// Returns false if no such entry exists.
+        /// </summary>
+        Task<bool> UpdatePrintVariantAsync(int id, string? printVariant);
+
+        /// <summary>
         /// Updates the status (and optionally quantity) of an existing entry. Returns false if no such entry exists.
         /// </summary>
         Task<bool> UpdateStatusAsync(int id, CollectionStatus status, int? quantity = null);

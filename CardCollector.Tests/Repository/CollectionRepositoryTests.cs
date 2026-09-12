@@ -585,6 +585,36 @@ namespace CardCollector.Tests.Repository
             var updated = await repository.GetByIDAsync(entry.ID);
             Assert.AreEqual("Common", updated!.RarityName);
         }
+
+        [TestMethod]
+        public async Task UpdatePrintVariantAsync_ExistingEntry_UpdatesOnlyPrintVariant()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+            var entry = new CollectionEntry { CardID = 1, SetCode = "RA02-EN040", RarityName = "Quarter Century Secret Rare", Status = CollectionStatus.Owned, Quantity = 2, Edition = CardEdition.FirstEdition };
+            await repository.AddAsync(entry);
+
+            var result = await repository.UpdatePrintVariantAsync(entry.ID, "Alternate Art");
+
+            Assert.IsTrue(result);
+            var updated = await repository.GetByIDAsync(entry.ID);
+            Assert.AreEqual("Alternate Art", updated!.PrintVariant);
+            Assert.AreEqual(2, updated.Quantity);
+            Assert.AreEqual(CardEdition.FirstEdition, updated.Edition);
+            Assert.AreEqual("Quarter Century Secret Rare", updated.RarityName);
+        }
+
+        [TestMethod]
+        public async Task UpdatePrintVariantAsync_NoSuchEntry_ReturnsFalse()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CollectionRepository(context);
+
+            var result = await repository.UpdatePrintVariantAsync(999, "Alternate Art");
+
+            Assert.IsFalse(result);
+        }
+
         [TestMethod]
         public async Task UpdateStatusAsync_ExistingEntryWithQuantity_UpdatesBothFields()
         {

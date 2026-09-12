@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -13,21 +14,6 @@ namespace CardCollector.Pages
         private readonly ICollectionRepository _collectionRepository;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
-        public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
-
-        public IReadOnlyList<string> AvailableSetNames { get; private set; } = [];
-
-        protected override ICardService CardService => _cardService;
-
-        [BindProperty(SupportsGet = true)]
-        public EditionAuditCategory? Category { get; set; }
-
-        public PagedResult<EditionAuditGroupViewModel> Results { get; private set; } = new();
-
-        public override int ActiveFilterCount => base.ActiveFilterCount + (Category.HasValue ? 1 : 0);
-
-        public override bool HasActiveFilters => base.HasActiveFilters || Category.HasValue;
-
         public EditionAuditModel(
             ICardDataRepository cardDataRepository,
             ICardService cardService,
@@ -39,6 +25,18 @@ namespace CardCollector.Pages
             _collectionRepository = collectionRepository;
             _razorPartialRenderer = razorPartialRenderer;
         }
+
+        public override int ActiveFilterCount => base.ActiveFilterCount + (Category.HasValue ? 1 : 0);
+        public IReadOnlyList<string> AvailableRarityNames { get; private set; } = [];
+
+        public IReadOnlyList<string> AvailableSetNames { get; private set; } = [];
+
+        [BindProperty(SupportsGet = true)]
+        public EditionAuditCategory? Category { get; set; }
+
+        public override bool HasActiveFilters => base.HasActiveFilters || Category.HasValue;
+        public PagedResult<EditionAuditGroupViewModel> Results { get; private set; } = new();
+        protected override ICardService CardService => _cardService;
 
         public string GetFilterParams()
         {
@@ -72,8 +70,37 @@ namespace CardCollector.Pages
             Results = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(PageNumber, PageSize)).ConfigureAwait(false);
         }
 
+        public async Task<IActionResult> OnPostApplySuggestedPrintVariantAsync(int entryID, string printVariant)
+        {
+            var existing = await _collectionRepository.GetByIDAsync(entryID).ConfigureAwait(false);
+            if (existing is null)
+                return Content(string.Empty, "text/html");
+
+            await _collectionRepository.UpdatePrintVariantAsync(entryID, printVariant).ConfigureAwait(false);
+
+            var groups = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
+            Response.Headers["X-Total-Count"] = groups.TotalCount.ToString();
+
+            var match = groups.Items.FirstOrDefault(g =>
+                g.CardID == existing.CardID &&
+                g.SetCode.Equals(existing.SetCode, StringComparison.OrdinalIgnoreCase) &&
+                g.RarityCode == RarityExtensions.GetRarityCode(RarityExtensions.NormalizeRarityName(existing.RarityName)) &&
+                string.Equals(g.PrintVariant, printVariant, StringComparison.OrdinalIgnoreCase));
+
+            if (match is null)
+                return Content(string.Empty, "text/html");
+
+            var html = await _razorPartialRenderer.RenderPartialAsync(this, "_EditionAuditGroupRow", new EditionAuditGroupRowViewModel
+            {
+                FilterParams = GetFilterParams(),
+                Group = match
+            }).ConfigureAwait(false);
+
+            return Content(html, "text/html");
+        }
+
         public async Task<IActionResult> OnPostEditAsync(
-            int entryID, int quantity,
+                    int entryID, int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice,
@@ -105,7 +132,10 @@ namespace CardCollector.Pages
             var match = existing is null
                 ? null
                 : groups.Items.FirstOrDefault(g =>
-                    g.CardID == existing.CardID && g.SetCode.Equals(existing.SetCode, StringComparison.OrdinalIgnoreCase));
+                    g.CardID == existing.CardID &&
+                    g.SetCode.Equals(existing.SetCode, StringComparison.OrdinalIgnoreCase) &&
+                    g.RarityCode == RarityExtensions.GetRarityCode(RarityExtensions.NormalizeRarityName(existing.RarityName)) &&
+                    string.Equals(g.PrintVariant, existing.PrintVariant, StringComparison.OrdinalIgnoreCase));
 
             if (match is null)
                 return Content(string.Empty, "text/html");
@@ -119,17 +149,6 @@ namespace CardCollector.Pages
             return Content(html, "text/html");
         }
 
-        private object BuildFilterRedirect() => new
-        {
-            cardType = CardType,
-            category = Category?.ToString(),
-            pageNumber = PageNumber,
-            pageSize = PageSize,
-            query = Query,
-            rarityName = Request.Query["rarityName"].FirstOrDefault(),
-            setName = SetName
-        };
-
         private EditionAuditSearchCriteria BuildCurrentCriteria(int page, int pageSize) => new()
         {
             CardType = CardType,
@@ -141,6 +160,16 @@ namespace CardCollector.Pages
             SetName = SetName
         };
 
+        private object BuildFilterRedirect() => new
+        {
+            cardType = CardType,
+            category = Category?.ToString(),
+            pageNumber = PageNumber,
+            pageSize = PageSize,
+            query = Query,
+            rarityName = Request.Query["rarityName"].FirstOrDefault(),
+            setName = SetName
+        };
         private bool IsAjaxRequest() =>
             Request.Headers["X-Requested-With"] == "XMLHttpRequest";
     }

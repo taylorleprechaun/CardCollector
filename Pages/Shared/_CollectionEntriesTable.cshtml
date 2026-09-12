@@ -116,6 +116,58 @@
                     }
                 </td>
             </tr>
+            @if (auditEntry?.Category == EditionAuditCategory.EditionMismatch)
+            {
+                <tr class="table-warning">
+                    <td colspan="8" class="small text-body-secondary">
+                        Recorded as <strong>@entry.Edition?.GetDisplayName()</strong>, but TCGPlayer lists this printing as
+                        <strong>@string.Join(" or ", auditEntry.AvailableEditions.Select(e => e.GetDisplayName()))</strong>.
+                    </td>
+                </tr>
+            }
+            else if (auditEntry?.Category == EditionAuditCategory.Unverifiable && auditEntry.SuggestedPrintVariants.Count == 1)
+            {
+                var suggestedVariant = auditEntry.SuggestedPrintVariants[0];
+
+                <tr class="table-warning">
+                    <td colspan="8" class="small text-body-secondary">
+                        <div>
+                            TCGPlayer only lists this printing as <strong>@suggestedVariant</strong>
+                            @if (auditEntry.AvailableEditions.Count > 0)
+                            {
+                                <text> (<strong>@string.Join(" or ", auditEntry.AvailableEditions.Select(e => e.GetDisplayName()))</strong>)</text>
+                            }
+                            &mdash; this entry has no matching print variant recorded.
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.ApplySuggestionActionUrl))
+                        {
+                            <form method="post" action="@Model.ApplySuggestionActionUrl" class="d-inline ajax-form mt-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="entryID" value="@entry.EntryID" />
+                                <input type="hidden" name="printVariant" value="@suggestedVariant" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Apply suggestion</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            else if (auditEntry?.Category == EditionAuditCategory.Unverifiable && auditEntry.SuggestedPrintVariants.Count > 1)
+            {
+                <tr class="table-warning">
+                    <td colspan="8" class="small text-body-secondary">
+                        Multiple print variants exist for this printing (<strong>@string.Join(", ", auditEntry.SuggestedPrintVariants)</strong>)
+                        &mdash; can't determine which one automatically.
+                    </td>
+                </tr>
+            }
+            else if (auditEntry?.Category == EditionAuditCategory.Unverifiable)
+            {
+                <tr class="table-warning">
+                    <td colspan="8" class="small text-body-secondary">
+                        No matching printing found in TCGPlayer's data for this set/rarity &mdash; edition can't be verified automatically.
+                    </td>
+                </tr>
+            }
         }
     </tbody>
 </table>

@@ -366,6 +366,18 @@ namespace CardCollector.Repository
             return true;
         }
 
+        public async Task<bool> UpdatePrintVariantAsync(int id, string? printVariant)
+        {
+            var existing = await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);
+            if (existing is null)
+                return false;
+
+            existing.PrintVariant = printVariant;
+            existing.DateModified = DateTime.UtcNow;
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+            return true;
+        }
+
         public async Task<bool> UpdateStatusAsync(int id, CollectionStatus status, int? quantity = null)
         {
             var entry = await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);

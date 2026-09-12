@@ -283,7 +283,7 @@ namespace CardCollector.Services
         public async Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition, string? printVariant = null)
         {
             var editionMap = await _pricingService.GetCardEditionMapAsync(cardID).ConfigureAwait(false);
-            var (category, _) = CategorizeEdition(editionMap, setCode, rarityName, edition, printVariant);
+            var (category, _, _) = CategorizeEdition(editionMap, setCode, rarityName, edition, printVariant);
             return category;
         }
 
@@ -472,10 +472,11 @@ namespace CardCollector.Services
 
                     EditionAuditCategory? category = null;
                     IReadOnlyList<CardEdition> availableEditions = [];
+                    IReadOnlyList<string> suggestedPrintVariants = [];
                     if (!string.IsNullOrWhiteSpace(entry.RarityName) && entry.Edition.HasValue)
-                        (category, availableEditions) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName, entry.Edition.Value);
+                        (category, availableEditions, suggestedPrintVariants) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName, entry.Edition.Value, entry.PrintVariant);
 
-                    viewModels.Add(EditionAuditEntryViewModel.From(baseEntry, category, availableEditions));
+                    viewModels.Add(EditionAuditEntryViewModel.From(baseEntry, category, availableEditions, suggestedPrintVariants));
                 }
             }
 
@@ -1314,24 +1315,44 @@ namespace CardCollector.Services
             return items;
         }
 
-        private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions) CategorizeEdition(
+        private static (EditionAuditCategory? Category, IReadOnlyList<CardEdition> AvailableEditions, IReadOnlyList<string> SuggestedPrintVariants) CategorizeEdition(
             IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>> editionMap,
             string setCode,
             string rarityName,
             CardEdition recordedEdition,
             string? printVariant = null)
         {
-            var key = (SetCode: setCode.ToUpperInvariant(), RarityName: rarityName.ToUpperInvariant(), PrintVariant: printVariant);
+            var normalizedSetCode = setCode.ToUpperInvariant();
+            var normalizedRarityName = rarityName.ToUpperInvariant();
+            var key = (SetCode: normalizedSetCode, RarityName: normalizedRarityName, PrintVariant: printVariant);
 
-            if (!editionMap.TryGetValue(key, out var availableEditions) || availableEditions.Count == 0)
-                return (EditionAuditCategory.Unverifiable, []);
+            if (editionMap.TryGetValue(key, out var availableEditions) && availableEditions.Count > 0)
+            {
+                var orderedEditions = availableEditions.OrderBy(e => e).ToList();
+                return availableEditions.Contains(recordedEdition)
+                    ? (null, orderedEditions, [])
+                    : (EditionAuditCategory.EditionMismatch, orderedEditions, []);
+            }
 
-            var orderedEditions = availableEditions.OrderBy(e => e).ToList();
+            // No exact print-variant match. tcgcsv sometimes retires the plain (non-variant) listing for a
+            // set/rarity entirely, leaving one or more named variants as the only real printings. A recorded
+            // entry from before print-variant tracking existed (or naming a stale variant label) still needs
+            // surfacing — never silently resolved as a match — but when exactly one candidate exists it's an
+            // unambiguous guess worth showing (with its editions) rather than a bare "no data" message.
+            var candidates = editionMap.Keys
+                .Where(k => k.SetCode == normalizedSetCode && k.RarityName == normalizedRarityName)
+                .ToList();
 
-            if (!availableEditions.Contains(recordedEdition))
-                return (EditionAuditCategory.EditionMismatch, orderedEditions);
+            if (candidates.Count == 1 && editionMap.TryGetValue(candidates[0], out var singleCandidateEditions) && singleCandidateEditions.Count > 0)
+                return (EditionAuditCategory.Unverifiable, singleCandidateEditions.OrderBy(e => e).ToList(), [candidates[0].PrintVariant ?? string.Empty]);
 
-            return (null, orderedEditions);
+            var ambiguousVariants = candidates
+                .Select(c => c.PrintVariant)
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Select(v => v!)
+                .Distinct()
+                .ToList();
+            return (EditionAuditCategory.Unverifiable, [], ambiguousVariants);
         }
 
         private static string GetSetPrefix(string code)
@@ -1503,12 +1524,12 @@ namespace CardCollector.Services
                 foreach (var entry in group)
                 {
                     var recordedEdition = entry.Edition!.Value;
-                    var (category, availableEditions) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName!, recordedEdition);
+                    var (category, availableEditions, suggestedPrintVariants) = CategorizeEdition(editionMap, entry.SetCode, entry.RarityName!, recordedEdition, entry.PrintVariant);
 
                     if (category is not null)
                     {
                         var printing = BuildCardPrinting(entry.CardID, entry.SetCode, entry.RarityName, entry.PrintVariant);
-                        results.Add(EditionAuditResult.From(printing, entry.ID, recordedEdition, availableEditions, category.Value));
+                        results.Add(EditionAuditResult.From(printing, entry.ID, recordedEdition, availableEditions, category.Value, suggestedPrintVariants));
                     }
                 }
             }
@@ -1553,11 +1574,12 @@ namespace CardCollector.Services
                         return EditionAuditEntryViewModel.From(
                             baseEntry,
                             isFlagged ? flagged!.Category : null,
-                            isFlagged ? flagged!.AvailableEditions : []);
+                            isFlagged ? flagged!.AvailableEditions : [],
+                            isFlagged ? flagged!.SuggestedPrintVariants : []);
                     })
                     .ToList();
 
-                foreach (var group in enrichedEntries.GroupBy(e => (e.CardID, e.SetCode, e.RarityCode)))
+                foreach (var group in enrichedEntries.GroupBy(e => (e.CardID, e.SetCode, e.RarityCode, e.PrintVariant)))
                 {
                     if (!group.Any(e => e.Category.HasValue))
                         continue;
