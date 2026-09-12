@@ -13,7 +13,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = "Short Print" };
+            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = "Short Print" };
 
             await repository.AddRangeAsync([line]);
 
@@ -28,8 +28,8 @@ namespace CardCollector.Tests.Repository
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "OLD-EN001", DateCreated = new DateTime(2020, 1, 1) },
-                new PendingOrderLine { CardID = 2, ImageID = 20, SetCode = "NEW-EN001", DateCreated = new DateTime(2026, 1, 1) }
+                new PendingOrderLine { CardID = 1, SetCode = "OLD-EN001", DateCreated = new DateTime(2020, 1, 1) },
+                new PendingOrderLine { CardID = 2, SetCode = "NEW-EN001", DateCreated = new DateTime(2026, 1, 1) }
             ]);
 
             var result = await repository.GetAllAsync();
@@ -42,7 +42,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" };
+            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" };
             await repository.AddRangeAsync([line]);
 
             var result = await repository.DeleteAsync(line.ID);
@@ -67,7 +67,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
-            await repository.AddRangeAsync([new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" }]);
+            await repository.AddRangeAsync([new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" }]);
 
             await repository.DeleteRangeAsync([]);
 
@@ -79,8 +79,8 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
-            var line1 = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001" };
-            var line2 = new PendingOrderLine { CardID = 2, ImageID = 20, SetCode = "LOB-EN002" };
+            var line1 = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" };
+            var line2 = new PendingOrderLine { CardID = 2, SetCode = "LOB-EN002" };
             await repository.AddRangeAsync([line1, line2]);
 
             await repository.DeleteRangeAsync([line1.ID]);
@@ -107,9 +107,9 @@ namespace CardCollector.Tests.Repository
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Quantity = 1, DateCreated = new DateTime(2026, 1, 1) },
-                new PendingOrderLine { CardID = 2, ImageID = 20, SetCode = "MRD-EN001", Quantity = 1, DateCreated = new DateTime(2026, 2, 1) },
-                new PendingOrderLine { CardID = 3, ImageID = 30, SetCode = "SDK-EN001", Quantity = 1, DateCreated = new DateTime(2026, 3, 1) }
+                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 1, DateCreated = new DateTime(2026, 1, 1) },
+                new PendingOrderLine { CardID = 2, SetCode = "MRD-EN001", Quantity = 1, DateCreated = new DateTime(2026, 2, 1) },
+                new PendingOrderLine { CardID = 3, SetCode = "SDK-EN001", Quantity = 1, DateCreated = new DateTime(2026, 3, 1) }
             ]);
             var allLines = await repository.GetAllAsync();
             var matchingIDs = allLines.Where(l => l.CardID != 3).Select(l => l.ID);
@@ -128,13 +128,13 @@ namespace CardCollector.Tests.Repository
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = null, Quantity = 2 },
-                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", RarityName = null, Quantity = 1 }
+                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 2 },
+                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 1 }
             ]);
 
             var result = await repository.GetStagedQuantitiesAsync();
 
-            Assert.AreEqual(3, result[(10, "LOB-EN001", "")]);
+            Assert.AreEqual(3, result[(1, "LOB-EN001", "")]);
         }
 
         [TestMethod]
@@ -144,8 +144,8 @@ namespace CardCollector.Tests.Repository
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Quantity = 2, PurchasePrice = 5m },
-                new PendingOrderLine { CardID = 2, ImageID = 20, SetCode = "LOB-EN002", Quantity = 1, PurchasePrice = null }
+                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 2, PurchasePrice = 5m },
+                new PendingOrderLine { CardID = 2, SetCode = "LOB-EN002", Quantity = 1, PurchasePrice = null }
             ]);
 
             var (count, total) = await repository.GetSummaryAsync();
@@ -159,7 +159,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, ImageID = 10, SetCode = "LOB-EN001", Quantity = 1 };
+            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 1 };
             await repository.AddRangeAsync([line]);
 
             var result = await repository.UpdateQuantityAsync(line.ID, 3);

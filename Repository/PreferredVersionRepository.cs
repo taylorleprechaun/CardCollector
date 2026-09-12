@@ -14,12 +14,12 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddOrUpdateAsync(int cardID, int imageID, string setCode, string? rarityName = null, int? desiredQuantity = null)
+        public async Task AddOrUpdateAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null)
         {
             rarityName = RarityExtensions.NormalizeRarityName(rarityName);
 
             var existing = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID && pv.SetCode == setCode && pv.RarityName == rarityName)
+                .FirstOrDefaultAsync(pv => pv.CardID == cardID && pv.SetCode == setCode && pv.RarityName == rarityName && pv.PrintVariant == printVariant)
                 .ConfigureAwait(false);
 
             if (existing is null)
@@ -28,7 +28,7 @@ namespace CardCollector.Repository
                 {
                     CardID = cardID,
                     DesiredQuantity = desiredQuantity ?? 3,
-                    ImageID = imageID,
+                    PrintVariant = printVariant,
                     RarityName = rarityName,
                     SetCode = setCode,
                     DateCreated = DateTime.UtcNow,
@@ -37,7 +37,6 @@ namespace CardCollector.Repository
             }
             else
             {
-                existing.ImageID = imageID;
                 if (desiredQuantity.HasValue)
                     existing.DesiredQuantity = desiredQuantity.Value;
                 existing.DateModified = DateTime.UtcNow;
@@ -65,20 +64,20 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByImageIDsAsync(IEnumerable<int> imageIDs)
+        public async Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByCardIDsAsync(IEnumerable<int> cardIDs)
         {
-            var ids = imageIDs.ToHashSet();
+            var ids = cardIDs.ToHashSet();
             if (ids.Count == 0)
                 return new Dictionary<int, IReadOnlyList<PreferredVersion>>();
 
-            // Filter in memory, not in SQL: imageIDs can cover the whole owned collection (thousands of rows).
+            // Filter in memory, not in SQL: cardIDs can cover the whole owned collection (thousands of rows).
             var all = await _context.PreferredVersions
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             return all
-                .Where(pv => ids.Contains(pv.ImageID))
-                .GroupBy(pv => pv.ImageID)
+                .Where(pv => ids.Contains(pv.CardID))
+                .GroupBy(pv => pv.CardID)
                 .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.ToList());
         }
 
@@ -105,7 +104,7 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName)
+        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName, string? newPrintVariant = null)
         {
             var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
             if (entity is null)
@@ -113,6 +112,7 @@ namespace CardCollector.Repository
 
             entity.SetCode = newSetCode;
             entity.RarityName = RarityExtensions.NormalizeRarityName(newRarityName);
+            entity.PrintVariant = newPrintVariant;
             entity.DateModified = DateTime.UtcNow;
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;

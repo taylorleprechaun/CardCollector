@@ -12,11 +12,12 @@ namespace CardCollector.ViewModels
 
         public int CompleteThreshold { get; init; } = 3;
 
-        public int ImageID { get; init; }
-
         public string ImageURLSmall { get; init; } = string.Empty;
 
         public decimal? Price { get; init; }
+
+        /// <summary>Null for a normal/base print; a distinct sellable variant of the same rarity otherwise (e.g. "Extended Art").</summary>
+        public string? PrintVariant { get; init; }
 
         public string RarityCode { get; init; } = string.Empty;
 
@@ -32,10 +33,9 @@ namespace CardCollector.ViewModels
             CardID = CardID,
             CardName = CardName,
             CardType = CardType,
-            CompleteThreshold = CompleteThreshold,
-            ImageID = ImageID,
             ImageURLSmall = ImageURLSmall,
             Price = price,
+            PrintVariant = PrintVariant,
             RarityCode = RarityCode,
             RarityName = RarityName,
             SetCode = SetCode,

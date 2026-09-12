@@ -81,6 +81,37 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostApplySuggestedPrintVariantAsync_MatchFound_UpdatesAndReturnsRenderedPartial()
+        {
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
+                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            var group = new EditionAuditGroupViewModel { CardID = 5, SetCode = "LOB-EN001", RarityCode = "(UR)", PrintVariant = "Alternate Art" };
+            _cardServiceMock.Setup(s => s.SearchEditionAuditAsync(It.IsAny<EditionAuditSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<EditionAuditGroupViewModel> { Items = [group] });
+            _razorPartialRendererMock
+                .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_EditionAuditGroupRow", It.IsAny<EditionAuditGroupRowViewModel>()))
+                .ReturnsAsync("<tr>rendered</tr>");
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostApplySuggestedPrintVariantAsync(1, "Alternate Art") as ContentResult;
+
+            Assert.AreEqual("<tr>rendered</tr>", result!.Content);
+            _collectionRepositoryMock.Verify(r => r.UpdatePrintVariantAsync(1, "Alternate Art"), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task OnPostApplySuggestedPrintVariantAsync_NoExistingEntry_ReturnsEmptyContent()
+        {
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(999)).ReturnsAsync((CollectionEntry?)null);
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostApplySuggestedPrintVariantAsync(999, "Alternate Art") as ContentResult;
+
+            Assert.AreEqual(string.Empty, result!.Content);
+            _collectionRepositoryMock.Verify(r => r.UpdatePrintVariantAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
         public async Task OnPostEditAsync_AjaxNoExistingEntry_ReturnsEmptyContent()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(999)).ReturnsAsync((CollectionEntry?)null);
@@ -97,11 +128,11 @@ namespace CardCollector.Tests.Pages
         public async Task OnPostEditAsync_AjaxWithMatch_ReturnsRenderedPartial()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
-                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, SetCode = "LOB-EN001" });
+                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
             _cardServiceMock.Setup(s => s.SearchEditionAuditAsync(It.IsAny<EditionAuditSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<EditionAuditGroupViewModel>
                 {
-                    Items = [new EditionAuditGroupViewModel { CardID = 5, SetCode = "LOB-EN001" }]
+                    Items = [new EditionAuditGroupViewModel { CardID = 5, SetCode = "LOB-EN001", RarityCode = "(UR)" }]
                 });
             _razorPartialRendererMock
                 .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_EditionAuditGroupRow", It.IsAny<EditionAuditGroupRowViewModel>()))
@@ -111,6 +142,27 @@ namespace CardCollector.Tests.Pages
             var result = await page.OnPostEditAsync(1, 2, null, null, null, null, null, null) as ContentResult;
 
             Assert.AreEqual("<tr>rendered</tr>", result!.Content);
+        }
+
+        [TestMethod]
+        public async Task OnPostEditAsync_MultipleGroupsForSameSetCode_MatchesCorrectRarityAndVariant()
+        {
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
+                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, SetCode = "LOB-EN001", RarityName = "Ultra Rare", PrintVariant = "Starfoil" });
+            var wrongGroup = new EditionAuditGroupViewModel { CardID = 5, SetCode = "LOB-EN001", RarityCode = "(UR)", PrintVariant = null };
+            var correctGroup = new EditionAuditGroupViewModel { CardID = 5, SetCode = "LOB-EN001", RarityCode = "(UR)", PrintVariant = "Starfoil" };
+            _cardServiceMock.Setup(s => s.SearchEditionAuditAsync(It.IsAny<EditionAuditSearchCriteria>()))
+                .ReturnsAsync(new PagedResult<EditionAuditGroupViewModel> { Items = [wrongGroup, correctGroup] });
+            EditionAuditGroupViewModel? renderedGroup = null;
+            _razorPartialRendererMock
+                .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_EditionAuditGroupRow", It.IsAny<EditionAuditGroupRowViewModel>()))
+                .Callback<PageModel, string, EditionAuditGroupRowViewModel>((_, _, vm) => renderedGroup = vm.Group)
+                .ReturnsAsync("<tr>rendered</tr>");
+            var page = CreatePage(isAjax: true);
+
+            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null);
+
+            Assert.AreSame(correctGroup, renderedGroup);
         }
 
         [TestMethod]

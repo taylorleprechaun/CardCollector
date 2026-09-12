@@ -30,13 +30,13 @@ namespace CardCollector.Data
             modelBuilder.Entity<CheckedOutCard>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.ImageID, e.SetCode, e.RarityName }).IsUnique();
+                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
             });
 
             modelBuilder.Entity<CollectionEntry>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.ImageID, e.SetCode });
+                entity.HasIndex(e => new { e.CardID, e.SetCode });
                 entity.Property(e => e.AcquisitionMethod).HasConversion<string>();
                 entity.Property(e => e.Condition).HasConversion<string>();
                 entity.Property(e => e.Edition).HasConversion<string>();
@@ -52,7 +52,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<DismissedNewPrinting>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName }).IsUnique();
+                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
             });
 
             modelBuilder.Entity<IgnoredCard>(entity =>
@@ -72,7 +72,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<PreferredVersion>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName }).IsUnique();
+                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
             });
         }
     }

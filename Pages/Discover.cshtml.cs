@@ -18,9 +18,6 @@ namespace CardCollector.Pages
 
         public Image? CurrentImage { get; private set; }
 
-        [BindProperty]
-        public int ImageID { get; set; }
-
         public bool IsComplete { get; private set; }
 
         [BindProperty]
@@ -59,7 +56,7 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
-            await _cardService.SavePreferredVersionAsync(CardID, ImageID, SetCode, RarityName);
+            await _cardService.SavePreferredVersionAsync(CardID, SetCode, RarityName);
             return RedirectToPage();
         }
     }

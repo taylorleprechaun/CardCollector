@@ -40,17 +40,17 @@ namespace CardCollector.Pages
             Results = await _cardService.SearchCheckedOutAsync(criteria).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckInAsync(int imageID, string setCode, string rarityName)
+        public async Task<IActionResult> OnPostCheckInAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
         {
-            await _cardService.CheckInCardAsync(imageID, setCode, rarityName).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(imageID, setCode, rarityName).ConfigureAwait(false);
+            await _cardService.CheckInCardAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, int imageID, string setCode, string rarityName, int quantity)
+        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null)
         {
             if (quantity >= 1)
-                await _cardService.CheckOutCardAsync(cardID, imageID, setCode, rarityName, quantity).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(imageID, setCode, rarityName).ConfigureAwait(false);
+                await _cardService.CheckOutCardAsync(cardID, setCode, rarityName, quantity, printVariant).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
         }
 
         private object BuildFilterRedirect()
@@ -75,7 +75,7 @@ namespace CardCollector.Pages
         private bool IsAjaxRequest() =>
             Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
-        private async Task<IActionResult> RespondAfterMutationAsync(int imageID, string setCode, string? rarityName)
+        private async Task<IActionResult> RespondAfterMutationAsync(int cardID, string setCode, string? rarityName, string? printVariant)
         {
             if (!IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
@@ -95,8 +95,9 @@ namespace CardCollector.Pages
             Response.Headers["X-Total-Count"] = results.TotalCount.ToString();
 
             var match = results.Items.FirstOrDefault(i =>
-                i.ImageID == imageID && i.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
-                && (rarityName is null || i.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase)));
+                i.CardID == cardID && i.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
+                && (rarityName is null || i.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(i.PrintVariant ?? string.Empty, printVariant ?? string.Empty, StringComparison.OrdinalIgnoreCase));
             if (match is null)
                 return Content(string.Empty, "text/html");
 

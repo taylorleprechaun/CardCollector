@@ -33,7 +33,7 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>
                 {
                     TotalCount = 1,
-                    Items = [new CheckedOutCardViewModel { ImageID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]
+                    Items = [new CheckedOutCardViewModel { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]
                 });
             _razorPartialRendererMock
                 .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_CheckedOutRow", It.IsAny<CheckedOutRowViewModel>()))
@@ -78,9 +78,9 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
             var page = CreatePage(isAjax: false);
 
-            await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Ultra Rare", 2);
+            await page.OnPostCheckOutAsync(1, "LOB-EN001", "Ultra Rare", 2);
 
-            _cardServiceMock.Verify(s => s.CheckOutCardAsync(1, 10, "LOB-EN001", "Ultra Rare", 2), Times.Once);
+            _cardServiceMock.Verify(s => s.CheckOutCardAsync(1, "LOB-EN001", "Ultra Rare", 2, null), Times.Once);
         }
 
         [TestMethod]
@@ -90,10 +90,10 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
             var page = CreatePage(isAjax: false);
 
-            await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Ultra Rare", 0);
+            await page.OnPostCheckOutAsync(1, "LOB-EN001", "Ultra Rare", 0);
 
             _cardServiceMock.Verify(s => s.CheckOutCardAsync(
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
         }
 
         [TestMethod]
@@ -103,7 +103,7 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
             var page = CreatePage(isAjax: false, queryString: "?rarityName=Ultra%20Rare");
 
-            var result = await page.OnPostCheckOutAsync(1, 10, "LOB-EN001", "Secret Rare", 2) as RedirectToPageResult;
+            var result = await page.OnPostCheckOutAsync(1, "LOB-EN001", "Secret Rare", 2) as RedirectToPageResult;
 
             Assert.AreEqual("Ultra Rare", result!.RouteValues!["rarityName"]);
         }

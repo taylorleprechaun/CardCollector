@@ -58,7 +58,7 @@ describe('collection-entry-modal.js', () => {
       </form>
       <input id="atcSetCode" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
       <button id="modalSubmitBtn"></button>
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <input id="atcRarityName" /><input id="atcPrintVariant" /><span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup"></div>
       <select id="atcCondition"><option value="4"></option></select>
       <select id="atcEdition"><option value="0"></option></select>

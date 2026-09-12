@@ -8,7 +8,6 @@ namespace CardCollector.ViewModels
         public int CardID { get; set; }
         public string CardType { get; set; } = string.Empty;
         public CollectionCompletionStatus? CompletionStatus { get; set; }
-        public int ImageID { get; set; }
         public string ImageURLSmall { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public CollectionStatus? Status { get; set; }

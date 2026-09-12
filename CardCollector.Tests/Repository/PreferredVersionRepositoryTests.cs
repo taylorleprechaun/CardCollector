@@ -13,9 +13,9 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare");
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN002", "Secret Rare");
+            await repository.AddOrUpdateAsync(1, "LOB-EN002", "Secret Rare");
 
             var result = await repository.GetByCardIDAsync(1);
             Assert.AreEqual(2, result.Count);
@@ -28,7 +28,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare");
 
             var result = await repository.GetByCardIDAsync(1);
             Assert.AreEqual(1, result.Count);
@@ -41,7 +41,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", desiredQuantity: 1);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(1, result.DesiredQuantity);
@@ -53,7 +53,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001");
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(3, result.DesiredQuantity);
@@ -65,7 +65,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Short Print");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Short Print");
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual("Common", result.RarityName);
@@ -76,9 +76,9 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
 
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare", desiredQuantity: 2);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare", desiredQuantity: 2);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(2, result.DesiredQuantity);
@@ -89,13 +89,12 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
 
-            await repository.AddOrUpdateAsync(1, 20, "LOB-EN001", "Ultra Rare");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare");
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(1, result.DesiredQuantity);
-            Assert.AreEqual(20, result.ImageID);
             Assert.AreEqual(1, (await repository.GetAllAsync()).Count());
         }
 
@@ -104,20 +103,20 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Short Print");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Short Print");
 
-            await repository.AddOrUpdateAsync(1, 20, "LOB-EN001", "Super Short Print");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Super Short Print");
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual("Common", result.RarityName);
-            Assert.AreEqual(20, result.ImageID);
+            Assert.AreEqual(1, (await repository.GetAllAsync()).Count());
         }
         [TestMethod]
         public async Task DeleteAsync_ExistingID_RemovesRecord()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001");
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             await repository.DeleteAsync(created.ID);
@@ -146,41 +145,41 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetByImageIDsAsync_EmptyInput_ReturnsEmpty()
+        public async Task GetByCardIDsAsync_EmptyInput_ReturnsEmpty()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            var result = await repository.GetByImageIDsAsync([]);
+            var result = await repository.GetByCardIDsAsync([]);
 
             Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
-        public async Task GetByImageIDsAsync_MatchingIDs_ReturnsKeyedByImageID()
+        public async Task GetByCardIDsAsync_MatchingIDs_ReturnsKeyedByCardID()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001");
 
-            var result = await repository.GetByImageIDsAsync([10, 999]);
+            var result = await repository.GetByCardIDsAsync([1, 999]);
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("LOB-EN001", result[10].Single().SetCode);
+            Assert.AreEqual("LOB-EN001", result[1].Single().SetCode);
         }
 
         [TestMethod]
-        public async Task GetByImageIDsAsync_TwoTrackedPrintingsShareImageID_BothReturnedForThatKey()
+        public async Task GetByCardIDsAsync_TwoTrackedPrintingsForSameCard_BothReturnedForThatKey()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "SUDA-EN001", "Secret Rare");
-            await repository.AddOrUpdateAsync(1, 10, "RA04-EN001", "Quarter Century Secret Rare");
+            await repository.AddOrUpdateAsync(1, "SUDA-EN001", "Secret Rare");
+            await repository.AddOrUpdateAsync(1, "RA04-EN001", "Quarter Century Secret Rare");
 
-            var result = await repository.GetByImageIDsAsync([10]);
+            var result = await repository.GetByCardIDsAsync([1]);
 
-            Assert.AreEqual(2, result[10].Count);
-            CollectionAssert.AreEquivalent(new[] { "SUDA-EN001", "RA04-EN001" }, result[10].Select(pv => pv.SetCode).ToArray());
+            Assert.AreEqual(2, result[1].Count);
+            CollectionAssert.AreEquivalent(new[] { "SUDA-EN001", "RA04-EN001" }, result[1].Select(pv => pv.SetCode).ToArray());
         }
 
         [TestMethod]
@@ -188,8 +187,8 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001");
-            await repository.AddOrUpdateAsync(2, 20, "LOB-EN002");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001");
+            await repository.AddOrUpdateAsync(2, "LOB-EN002");
 
             var result = await repository.GetPreferredCardIDsAsync();
 
@@ -201,7 +200,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001");
+            await repository.AddOrUpdateAsync(1, "LOB-EN001");
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             var result = await repository.UpdateDesiredQuantityAsync(created.ID, 1);
@@ -227,7 +226,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(1, 10, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare", desiredQuantity: 1);
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             var result = await repository.UpgradeAsync(created.ID, "LOB-EN002", "Secret Rare");
@@ -239,6 +238,33 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(1, updated.DesiredQuantity);
         }
 
+        [TestMethod]
+        public async Task UpgradeAsync_NewPrintVariantOmitted_ClearsPreviousPrintVariant()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            var created = (await repository.GetByCardIDAsync(1)).Single();
+
+            await repository.UpgradeAsync(created.ID, "LOB-EN002", "Secret Rare");
+
+            var updated = (await repository.GetByCardIDAsync(1)).Single();
+            Assert.IsNull(updated.PrintVariant);
+        }
+
+        [TestMethod]
+        public async Task UpgradeAsync_NewPrintVariantSpecified_SetsPrintVariant()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare");
+            var created = (await repository.GetByCardIDAsync(1)).Single();
+
+            await repository.UpgradeAsync(created.ID, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+
+            var updated = (await repository.GetByCardIDAsync(1)).Single();
+            Assert.AreEqual("Starlight Rare", updated.PrintVariant);
+        }
         [TestMethod]
         public async Task UpgradeAsync_NoSuchID_ReturnsFalse()
         {

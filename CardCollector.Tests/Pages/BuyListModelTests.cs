@@ -176,13 +176,13 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostAddToCartAsync_CandidateNoLongerValid_DoesNotRenderPartial()
         {
-            _cardServiceMock.Setup(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 3, 5m)).ReturnsAsync((0, 0m, 3));
+            _cardServiceMock.Setup(s => s.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 3, 5m)).ReturnsAsync((0, 0m, 3));
             _cardServiceMock
-                .Setup(s => s.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Ultra Rare", It.IsAny<decimal?>(), null))
+                .Setup(s => s.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Ultra Rare", It.IsAny<decimal?>(), null))
                 .ReturnsAsync((PurchasePriorityCandidateViewModel?)null);
             var page = CreatePage();
 
-            await page.OnPostAddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 3, 5m);
+            await page.OnPostAddToCartAsync(1, "LOB-EN001", "Ultra Rare", 3, 5m);
 
             _razorPartialRendererMock.Verify(r => r.RenderPartialAsync(
                 It.IsAny<PageModel>(), It.IsAny<string>(), It.IsAny<object>()), Times.Never);
@@ -191,31 +191,30 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostAddToCartAsync_CandidateStillValid_ReturnsJsonWithRenderedRow()
         {
-            _cardServiceMock.Setup(s => s.AddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m)).ReturnsAsync((2, 10m, 1));
+            _cardServiceMock.Setup(s => s.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 1, 5m)).ReturnsAsync((2, 10m, 1));
             var candidate = new PurchasePriorityCandidateViewModel { CardName = "Dark Magician" };
             _cardServiceMock
-                .Setup(s => s.GetPurchasePriorityCandidateAsync(1, 10, "LOB-EN001", "Ultra Rare", It.IsAny<decimal?>(), null))
+                .Setup(s => s.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Ultra Rare", It.IsAny<decimal?>(), null))
                 .ReturnsAsync(candidate);
             _razorPartialRendererMock
                 .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_BuyListRow", candidate))
                 .ReturnsAsync("<tr>row</tr>");
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(1, 10, "LOB-EN001", "Ultra Rare", 1, 5m) as JsonResult;
+            var result = await page.OnPostAddToCartAsync(1, "LOB-EN001", "Ultra Rare", 1, 5m) as JsonResult;
 
             Assert.IsNotNull(result);
         }
 
         [TestMethod]
-        [DataRow(0, 10, "LOB-EN001", DisplayName = "Non-positive cardID")]
-        [DataRow(1, 0, "LOB-EN001", DisplayName = "Non-positive imageID")]
-        [DataRow(1, 10, "", DisplayName = "Blank setCode")]
-        [DataRow(1, 10, "   ", DisplayName = "Whitespace setCode")]
-        public async Task OnPostAddToCartAsync_InvalidParams_ReturnsBadRequest(int cardID, int imageID, string setCode)
+        [DataRow(0, "LOB-EN001", DisplayName = "Non-positive cardID")]
+        [DataRow(1, "", DisplayName = "Blank setCode")]
+        [DataRow(1, "   ", DisplayName = "Whitespace setCode")]
+        public async Task OnPostAddToCartAsync_InvalidParams_ReturnsBadRequest(int cardID, string setCode)
         {
             var page = CreatePage();
 
-            var result = await page.OnPostAddToCartAsync(cardID, imageID, setCode, "Ultra Rare", 1, null);
+            var result = await page.OnPostAddToCartAsync(cardID, setCode, "Ultra Rare", 1, null);
 
             Assert.IsInstanceOfType<BadRequestResult>(result);
         }

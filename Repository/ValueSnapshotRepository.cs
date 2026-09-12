@@ -39,7 +39,7 @@ namespace CardCollector.Repository
                 DELETE FROM "__TABLE__"
                 WHERE SnapshotDate < {0}
                   AND SnapshotDate NOT IN (
-                      SELECT MAX(SnapshotDate)
+                      SELECT MIN(SnapshotDate)
                       FROM "__TABLE__"
                       WHERE SnapshotDate < {0}
                       GROUP BY substr(SnapshotDate, 1, 7)

@@ -12,12 +12,15 @@ namespace CardCollector.ViewModels
 
         public CardEdition RecordedEdition { get; init; }
 
+        public IReadOnlyList<string> SuggestedPrintVariants { get; init; } = [];
+
         public static EditionAuditResult From(
             CardPrinting printing,
             int collectionEntryID,
             CardEdition recordedEdition,
             IReadOnlyList<CardEdition> availableEditions,
-            EditionAuditCategory category) => new()
+            EditionAuditCategory category,
+            IReadOnlyList<string> suggestedPrintVariants) => new()
         {
             AvailableEditions = availableEditions,
             AvailableRarities = printing.AvailableRarities,
@@ -26,14 +29,15 @@ namespace CardCollector.ViewModels
             CardType = printing.CardType,
             Category = category,
             CollectionEntryID = collectionEntryID,
-            ImageID = printing.ImageID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
+            PrintVariant = printing.PrintVariant,
             RarityCode = printing.RarityCode,
             RarityName = printing.RarityName,
             RecordedEdition = recordedEdition,
             SetCode = printing.SetCode,
-            SetName = printing.SetName
+            SetName = printing.SetName,
+            SuggestedPrintVariants = suggestedPrintVariants
         };
     }
 }

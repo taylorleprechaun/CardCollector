@@ -27,15 +27,19 @@ namespace CardCollector.DTO
             "Gold Rare" => "(GUR)",
             "Ghost Rare" => "(GHR)",
             "Ghost/Gold Rare" => "(GGR)",
+            "Grand Master Rare" => "(GMR)",
             "Starlight Rare" => "(StR)",
             "Collector's Rare" => "(CR)",
+            "Prismatic Collector's Rare" => "(PCR)",
             "Prismatic Secret Rare" => "(PScR)",
+            "Prismatic Ultimate Rare" => "(PUR)",
             "Quarter Century Secret Rare" => "(QCSCR)",
             "Platinum Secret Rare" => "(PlScR)",
             "Platinum Rare" => "(PR)",
             "Short Print" => "(SP)",
             "Super Short Print" => "(SSP)",
             "Normal Parallel Rare" => "(NPR)",
+            "Parallel Rare" => "(ParR)",
             "Super Parallel Rare" => "(SPR)",
             "Ultra Parallel Rare" => "(UPR)",
             "10000 Secret Rare" => "(10000ScR)",
@@ -53,6 +57,12 @@ namespace CardCollector.DTO
             "Duel Terminal Rare Parallel Rare" => "(DTRPR)",
             "Duel Terminal Super Parallel Rare" => "(DTSPR)",
             "Duel Terminal Ultra Parallel Rare" => "(DTUPR)",
+            "Duel Terminal Technology Common" => "(DTTC)",
+            "Duel Terminal Technology Ultra Rare" => "(DTTUR)",
+            "Emblazoned Secret Rare" => "(EmScR)",
+            "Emblazoned Ultra Rare" => "(EmUR)",
+            "Secret Pharaoh’s Rare" => "(SCR-PhaR)",
+            "Ultra Pharaoh’s Rare" => "(UR-PhaR)",
             _ => null
         };
 
@@ -71,15 +81,14 @@ namespace CardCollector.DTO
         {
             var map = new Dictionary<string, Rarity>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (Rarity rarity in Enum.GetValues<Rarity>())
+            // Enumerate fields directly rather than Enum.GetValues()+ToString(): aliases sharing another
+            // member's value (e.g. Cr = CollectorsRare) would have their own EnumMemberAttribute silently
+            // skipped otherwise, since ToString() on a shared value always resolves to one declared name.
+            foreach (var field in typeof(Rarity).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
-                var member = typeof(Rarity).GetMember(rarity.ToString()).FirstOrDefault();
-                if (member is null)
-                    continue;
-
-                var enumMember = member.GetCustomAttribute<EnumMemberAttribute>();
+                var enumMember = field.GetCustomAttribute<EnumMemberAttribute>();
                 if (enumMember?.Value is not null)
-                    map.TryAdd(enumMember.Value, rarity);
+                    map.TryAdd(enumMember.Value, (Rarity)field.GetValue(null)!);
             }
 
             return map;

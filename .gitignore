@@ -37,3 +37,7 @@ Thumbs.db
 .claude/
 Data/pricingcache.json
 Data/pricingcache.json.timestamp
+Data/tcgpricingcache.json
+Data/tcgpricingcache.json.timestamp
+Data/tcgcatalogcache.json
+Data/tcgcatalogcache.json.timestamp

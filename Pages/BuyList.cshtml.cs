@@ -62,18 +62,18 @@ namespace CardCollector.Pages
             await RebuildPlanAsync().ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, int imageID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
+        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice)
         {
-            if (cardID <= 0 || imageID <= 0 || string.IsNullOrWhiteSpace(setCode))
+            if (cardID <= 0 || string.IsNullOrWhiteSpace(setCode))
                 return BadRequest();
 
             var (count, total, _) = await _cardService.AddToCartAsync(
-                cardID, imageID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
+                cardID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
 
             // No plan reflow — only this row's own numbers are recomputed, not the whole budget-fill.
             NormalizeFilterDefaults();
             var item = await _cardService.GetPurchasePriorityCandidateAsync(
-                cardID, imageID, setCode, rarityName, MaxPricePerCard).ConfigureAwait(false);
+                cardID, setCode, rarityName, MaxPricePerCard).ConfigureAwait(false);
 
             var itemRemoved = item is null;
             var rowHtml = item is null

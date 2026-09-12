@@ -13,6 +13,9 @@ namespace CardCollector.Data.Models
 
         public int ID { get; set; }
 
+        /// <summary>Null for a normal/base print; a distinct sellable variant of the same rarity otherwise (e.g. "Extended Art").</summary>
+        public string? PrintVariant { get; set; }
+
         [Required]
         public string RarityName { get; set; } = string.Empty;
 

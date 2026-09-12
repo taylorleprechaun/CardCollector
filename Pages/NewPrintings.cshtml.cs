@@ -7,12 +7,19 @@ namespace CardCollector.Pages
 {
     public sealed class NewPrintingsModel : PageModel
     {
+        private static readonly int[] _validPageSizes = [10, 25, 50, 100];
         private readonly ICardService _cardService;
 
-        private static readonly int[] _validPageSizes = [10, 25, 50, 100];
+        public NewPrintingsModel(ICardService cardService)
+        {
+            _cardService = cardService;
+        }
 
         [BindProperty]
         public int CardID { get; set; }
+
+        [BindProperty]
+        public string? NewPrintVariant { get; set; }
 
         [BindProperty]
         public string NewRarityName { get; set; } = string.Empty;
@@ -32,6 +39,12 @@ namespace CardCollector.Pages
         public int PreferredVersionID { get; set; }
 
         [BindProperty]
+        public string? PrintVariant { get; set; }
+
+        [BindProperty]
+        public IReadOnlyList<string?> PrintVariants { get; set; } = [];
+
+        [BindProperty]
         public string RarityName { get; set; } = string.Empty;
 
         [BindProperty]
@@ -42,12 +55,6 @@ namespace CardCollector.Pages
 
         [BindProperty]
         public IReadOnlyList<string> SetCodes { get; set; } = [];
-
-        public NewPrintingsModel(ICardService cardService)
-        {
-            _cardService = cardService;
-        }
-
         public async Task OnGetAsync()
         {
             if (PageNumber < 1) PageNumber = 1;
@@ -63,22 +70,22 @@ namespace CardCollector.Pages
             };
         }
 
-        public async Task<IActionResult> OnPostDismissAsync()
-        {
-            await _cardService.DismissNewPrintingAsync(CardID, SetCode, RarityName);
-            return RedirectToPage();
-        }
-
         public async Task<IActionResult> OnPostDismissAllAsync()
         {
             for (var i = 0; i < SetCodes.Count && i < RarityNames.Count; i++)
-                await _cardService.DismissNewPrintingAsync(CardID, SetCodes[i], RarityNames[i]);
+                await _cardService.DismissNewPrintingAsync(CardID, SetCodes[i], RarityNames[i], i < PrintVariants.Count ? PrintVariants[i] : null);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostDismissAsync()
+        {
+            await _cardService.DismissNewPrintingAsync(CardID, SetCode, RarityName, PrintVariant);
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostUpgradeAsync()
         {
-            await _cardService.UpgradePreferredVersionAsync(PreferredVersionID, CardID, NewSetCode, NewRarityName);
+            await _cardService.UpgradePreferredVersionAsync(PreferredVersionID, CardID, NewSetCode, NewRarityName, NewPrintVariant);
             return RedirectToPage();
         }
     }

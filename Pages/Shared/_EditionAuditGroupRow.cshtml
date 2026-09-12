@@ -4,7 +4,7 @@
 @{
     var group = Model.Group;
     var filterParams = Model.FilterParams;
-    var rowKey = $"{group.ImageID}-{group.SetCode}";
+    var rowKey = $"{group.CardID}-{group.SetCode}";
     var collapseID = "group-" + rowKey;
 }
 
@@ -40,7 +40,7 @@
     <!-- Expanded entries -->
     <div class="collapse border-top" id="@collapseID">
         <div class="p-3 ps-4">
-            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = false }' />
+            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { ApplySuggestionActionUrl = $"/EditionAudit?handler=ApplySuggestedPrintVariant&{filterParams}", Entries = group.Entries, ShowRemoveButton = false }' />
         </div>
     </div>
 </div>

@@ -2,6 +2,8 @@ namespace CardCollector.ViewModels
 {
     public sealed class NewPrintingOptionViewModel
     {
+        public string? PrintVariant { get; set; }
+
         public string RarityName { get; set; } = string.Empty;
 
         public string? ReleaseDate { get; set; }

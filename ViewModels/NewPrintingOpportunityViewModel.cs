@@ -6,6 +6,8 @@ namespace CardCollector.ViewModels
 
         public string CardName { get; set; } = string.Empty;
 
+        public string? CurrentPrintVariant { get; set; }
+
         public string CurrentRarityName { get; set; } = string.Empty;
 
         public string? CurrentReleaseDate { get; set; }
@@ -13,8 +15,6 @@ namespace CardCollector.ViewModels
         public string CurrentSetCode { get; set; } = string.Empty;
 
         public string CurrentSetName { get; set; } = string.Empty;
-
-        public int ImageID { get; set; }
 
         public string ImageURLSmall { get; set; } = string.Empty;
 

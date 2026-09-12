@@ -1,127 +1,72 @@
-using System.Diagnostics.CodeAnalysis;
-using CardCollector.Data;
 using CardCollector.DTO;
-using Newtonsoft.Json;
+using CardCollector.Repository;
 
 namespace CardCollector.Services
 {
     public sealed class PricingDataCache : IPricingDataCache
     {
-        private const string CardInfoApiPath = "api/v7/cardinfo.php";
-        private const int PageSize = 5000;
+        private readonly ICardDataRepository _cardDataRepository;
+        private readonly ITCGCatalogCache _tcgCatalogCache;
+        private IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> _pricingIndex;
 
-        private readonly TimeSpan _cacheTtl;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<PricingDataCache> _logger;
-        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _cardSetsByCardID;
-
-        [ExcludeFromCodeCoverage(Justification = "Loads cached/live pricing data from disk and HTTP on construction; I/O orchestration, not testable logic.")]
-        public PricingDataCache(ILogger<PricingDataCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
+        public PricingDataCache(ICardDataRepository cardDataRepository, ITCGCatalogCache tcgCatalogCache)
         {
-            _logger = logger;
-            _httpClientFactory = httpClientFactory;
-            _cacheTtl = TimeSpan.FromHours(config.GetValue<int>("CardDataSettings:PricingCacheTtlHours", 20));
-
-            _cardSetsByCardID = LoadCardSets();
+            _cardDataRepository = cardDataRepository;
+            _tcgCatalogCache = tcgCatalogCache;
+            _pricingIndex = BuildIndex(tcgCatalogCache.GetAllPrintings());
         }
 
-        [ExcludeFromCodeCoverage(Justification = "Trivial dictionary lookup, but constructing this class always triggers the eager I/O in LoadCardSets; not unit-testable without a real cache file or HTTP call.")]
+        /// <summary>
+        /// Groups printings by (SetCode, RarityName, PrintVariant) into a lookup index (public for direct unit
+        /// testing). Cross-set-code collisions within the same key (e.g. old reprints sharing a set code across
+        /// different tcgcsv groups) resolve by last-group-wins, since <see cref="ITCGCatalogCache"/> has no
+        /// concept of which group "owns" a set code.
+        /// </summary>
+        public static IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> BuildIndex(
+            IEnumerable<TCGPriceSet> printings)
+        {
+            var index = new Dictionary<(string, string, string?), List<TCGPriceSet>>();
+            foreach (var group in printings.GroupBy(e => BuildKey(e.Code, e.RarityName, e.PrintVariant)))
+                index[group.Key] = group.ToList();
+
+            return index.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<TCGPriceSet>)kv.Value);
+        }
+
+        /// <summary>
+        /// Looks up a card's known printings (via <see cref="ICardDataRepository"/>) in the pricing index, since
+        /// tcgcsv.com has no concept of the card's numeric ID (public for direct unit testing).
+        /// </summary>
+        public static IReadOnlyList<TCGPriceSet> LookupCardSets(
+            Card? card,
+            IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> pricingIndex)
+        {
+            if (card?.CardSets is null)
+                return [];
+
+            var matches = new List<TCGPriceSet>();
+            foreach (var set in card.CardSets)
+            {
+                if (string.IsNullOrWhiteSpace(set.Code))
+                    continue;
+
+                var key = BuildKey(set.Code, set.RarityName, set.PrintVariant);
+                if (pricingIndex.TryGetValue(key, out var priceSets))
+                    matches.AddRange(priceSets);
+            }
+
+            return matches;
+        }
+
         public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
-            _cardSetsByCardID.TryGetValue(cardID, out var sets) ? sets : [];
+            LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
 
-        // Public for direct unit testing — pure dictionary-building logic, no I/O.
-        public static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> IndexCards(IEnumerable<TCGPriceCard> cards) =>
-            cards.ToDictionary(c => c.ID, c => (IReadOnlyList<TCGPriceSet>)c.CardSets.ToList());
-
-        [ExcludeFromCodeCoverage(Justification = "Re-fetches and re-caches pricing data from disk and HTTP; I/O orchestration, not testable logic.")]
         public async Task RefreshAsync()
         {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            FileCacheHelper.TryDeleteFile(Path.Combine(cacheDir, "pricingcache.json.timestamp"));
-            _cardSetsByCardID = await Task.Run(LoadCardSets).ConfigureAwait(false);
+            await _tcgCatalogCache.RefreshAsync().ConfigureAwait(false);
+            _pricingIndex = BuildIndex(_tcgCatalogCache.GetAllPrintings());
         }
 
-        [ExcludeFromCodeCoverage(Justification = "HTTP fetch orchestration with pagination; I/O, not testable logic.")]
-        private async Task<List<TCGPriceCard>?> FetchAllCardsAsync()
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("YGOProDeck");
-                var allCards = new List<TCGPriceCard>();
-                var offset = 0;
-
-                while (true)
-                {
-                    var json = await client.GetStringAsync($"{CardInfoApiPath}?tcgplayer_data=true&num={PageSize}&offset={offset}").ConfigureAwait(false);
-                    var page = JsonConvert.DeserializeObject<TCGPriceCardArray>(json);
-                    if (page?.Cards is null)
-                        break;
-
-                    allCards.AddRange(page.Cards);
-
-                    if (page.Meta is null || page.Meta.RowsRemaining <= 0)
-                        break;
-
-                    offset += PageSize;
-                }
-
-                _logger.LogInformation("Fetched pricing data for {Count} cards from YGOProDeck", allCards.Count);
-                return allCards;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch bulk pricing data from YGOProDeck");
-                return null;
-            }
-        }
-        [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus file/HTTP fallback orchestration; I/O, not testable logic.")]
-        private IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> LoadCardSets()
-        {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cachePath = Path.Combine(cacheDir, "pricingcache.json");
-            var timestampPath = cachePath + ".timestamp";
-
-            if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTtl))
-            {
-                _logger.LogInformation("Loading pricing data from cache ({Path})", cachePath);
-                return IndexCards(LoadCardsFromJson(cachePath));
-            }
-
-            _logger.LogInformation("Pricing data cache is missing or stale — fetching from YGOProDeck");
-            var cards = Task.Run(FetchAllCardsAsync).GetAwaiter().GetResult();
-
-            if (cards is not null)
-            {
-                Directory.CreateDirectory(cacheDir);
-                File.WriteAllText(cachePath, JsonConvert.SerializeObject(cards));
-                FileCacheHelper.WriteTimestamp(timestampPath);
-                _logger.LogInformation("Pricing data cached to {Path} ({Count} cards)", cachePath, cards.Count);
-                return IndexCards(cards);
-            }
-
-            if (File.Exists(cachePath))
-            {
-                _logger.LogWarning("YGOProDeck pricing fetch failed — falling back to stale pricing cache");
-                return IndexCards(LoadCardsFromJson(cachePath));
-            }
-
-            _logger.LogError("No pricing data available — fetch failed and no cache exists");
-            return new Dictionary<int, IReadOnlyList<TCGPriceSet>>();
-        }
-
-        [ExcludeFromCodeCoverage(Justification = "Reads pricing JSON from disk; I/O, not testable logic.")]
-        private List<TCGPriceCard> LoadCardsFromJson(string path)
-        {
-            try
-            {
-                var json = File.ReadAllText(path);
-                return JsonConvert.DeserializeObject<List<TCGPriceCard>>(json) ?? [];
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to deserialize pricing data from {Path}", path);
-                return [];
-            }
-        }
+        private static (string SetCode, string RarityName, string? PrintVariant) BuildKey(string setCode, string? rarityName, string? printVariant) =>
+            (setCode.ToUpperInvariant(), (RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName ?? string.Empty).ToUpperInvariant(), printVariant?.ToUpperInvariant());
     }
 }
