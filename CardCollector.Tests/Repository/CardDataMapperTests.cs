@@ -827,5 +827,72 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(0, result);
             Assert.AreEqual(0, primaryCards[0].CardSets!.Count);
         }
+
+        [TestMethod]
+        public void StripPlaceholderSets_CardHasNullCardSets_IsSkipped()
+        {
+            var cards = new List<Card> { new() { ID = 1, CardSets = null } };
+
+            var result = CardDataMapper.StripPlaceholderSets(cards);
+
+            Assert.AreEqual(0, result);
+            Assert.IsNull(cards[0].CardSets);
+        }
+
+        [TestMethod]
+        public void StripPlaceholderSets_CardHasOnlyPlaceholderCodes_LeavesEmptyCardSets()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "MAMS-EN???", RarityName = "Ultra Rare" }, new Set { Code = "MAMS-EN???", RarityName = "Secret Rare" }] }
+            };
+
+            var result = CardDataMapper.StripPlaceholderSets(cards);
+
+            Assert.AreEqual(2, result);
+            Assert.AreEqual(0, cards[0].CardSets!.Count);
+        }
+
+        [TestMethod]
+        public void StripPlaceholderSets_NoPlaceholderCodes_LeavesCardSetsUnchanged()
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }, new Set { Code = "BLAR-EN10K", RarityName = "Common" }] }
+            };
+
+            var result = CardDataMapper.StripPlaceholderSets(cards);
+
+            Assert.AreEqual(0, result);
+            Assert.AreEqual(2, cards[0].CardSets!.Count);
+        }
+
+        [TestMethod]
+        [DataRow("MAMO-EN0??", DisplayName = "Trailing two placeholder digits")]
+        [DataRow("MAMS-EN???", DisplayName = "All three placeholder digits")]
+        public void StripPlaceholderSets_PlaceholderCodeWithRealTwin_RemovesOnlyThePlaceholder(string placeholderCode)
+        {
+            var cards = new List<Card>
+            {
+                new() { ID = 1, CardSets = [new Set { Code = placeholderCode, RarityName = "Secret Rare" }, new Set { Code = "MAMO-EN022", RarityName = "Secret Rare" }] }
+            };
+
+            var result = CardDataMapper.StripPlaceholderSets(cards);
+
+            Assert.AreEqual(1, result);
+            Assert.AreEqual(1, cards[0].CardSets!.Count);
+            Assert.AreEqual("MAMO-EN022", cards[0].CardSets![0].Code);
+        }
+
+        [TestMethod]
+        public void StripPlaceholderSets_SetHasNullCode_IsKept()
+        {
+            var cards = new List<Card> { new() { ID = 1, CardSets = [new Set { Code = null, RarityName = "Common" }] } };
+
+            var result = CardDataMapper.StripPlaceholderSets(cards);
+
+            Assert.AreEqual(0, result);
+            Assert.AreEqual(1, cards[0].CardSets!.Count);
+        }
     }
 }
