@@ -97,7 +97,15 @@ namespace CardCollector.Repository
                     "Added {Count} set printing(s) found in YGOProDeck but missing from yaml-yugi for cards present in both sources",
                     addedSetPrintings);
 
-            return CardDataMapper.MergeMissingCards(yamlCards, ygoProDeckCards);
+            var mergedCards = CardDataMapper.MergeMissingCards(yamlCards, ygoProDeckCards);
+
+            var strippedCount = CardDataMapper.StripPlaceholderSets(mergedCards);
+            if (strippedCount > 0)
+                _logger.LogInformation(
+                    "Removed {Count} printing(s) with a placeholder set code (unnumbered set) until a source publishes the real code",
+                    strippedCount);
+
+            return mergedCards;
         }
 
         private async Task<IReadOnlyList<YamlCard>?> FetchFromYamlYugiAsync()

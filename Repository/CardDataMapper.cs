@@ -325,6 +325,32 @@ namespace CardCollector.Repository
         }
 
         /// <summary>
+        /// Removes every Set row whose code still contains a '?' (e.g. "MAMS-EN???"), the placeholder a source
+        /// publishes for a printing in a set that has not been numbered yet. A card left with no printings is
+        /// excluded from the browseable list until a later refresh brings a real code. Returns the number of Set
+        /// rows removed, for caller-side logging.
+        /// </summary>
+        public static int StripPlaceholderSets(IReadOnlyList<Card> cards)
+        {
+            var removedCount = 0;
+
+            foreach (var card in cards)
+            {
+                if (card.CardSets is null)
+                    continue;
+
+                var kept = card.CardSets.Where(s => s.Code?.Contains('?') != true).ToList();
+                if (kept.Count == card.CardSets.Count)
+                    continue;
+
+                removedCount += card.CardSets.Count - kept.Count;
+                card.CardSets = kept;
+            }
+
+            return removedCount;
+        }
+
+        /// <summary>
         /// Expands baseSet into its distinct tcgcsv print variants for the given rarity. When the catalog also
         /// lists a plain (non-variant) product for that rarity, each variant is added as a new sibling row;
         /// otherwise baseSet is rewritten in place to carry the first variant instead of duplicating a
