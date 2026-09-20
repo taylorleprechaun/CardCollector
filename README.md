@@ -101,10 +101,10 @@ CardCollector/
 ## Testing
 
 <!-- coverage:start -->
-![C# Tests](https://img.shields.io/badge/C%23%20tests-929%20passing-brightgreen)
-![C# Coverage](https://img.shields.io/badge/C%23%20coverage-91%25-brightgreen)
-![JS Tests](https://img.shields.io/badge/JS%20tests-157%20passing-brightgreen)
-![JS Coverage](https://img.shields.io/badge/JS%20coverage-94%25-brightgreen)
+![C# Tests](https://img.shields.io/badge/C%23%20tests-1071%20passing-brightgreen)
+![C# Coverage](https://img.shields.io/badge/C%23%20coverage-92%25-brightgreen)
+![JS Tests](https://img.shields.io/badge/JS%20tests-211%20passing-brightgreen)
+![JS Coverage](https://img.shields.io/badge/JS%20coverage-95%25-brightgreen)
 <!-- coverage:end -->
 
 ```
