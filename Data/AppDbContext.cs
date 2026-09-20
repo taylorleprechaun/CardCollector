@@ -17,11 +17,15 @@ namespace CardCollector.Data
 
         public DbSet<DismissedNewPrinting> DismissedNewPrintings { get; set; }
 
+        public DbSet<Event> Events { get; set; }
+
         public DbSet<Format> Formats { get; set; }
 
         public DbSet<FormatStrategy> FormatStrategies { get; set; }
 
         public DbSet<IgnoredCard> IgnoredCards { get; set; }
+
+        public DbSet<Match> Matches { get; set; }
 
         public DbSet<PendingOrderLine> PendingOrderLines { get; set; }
 
@@ -59,6 +63,17 @@ namespace CardCollector.Data
                 entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
             });
 
+            modelBuilder.Entity<Event>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.Date);
+                entity.Property(e => e.EventType).HasConversion<string>();
+                entity.HasMany(e => e.Matches)
+                    .WithOne()
+                    .HasForeignKey(m => m.EventID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<Format>(entity =>
             {
                 entity.HasKey(e => e.ID);
@@ -78,6 +93,13 @@ namespace CardCollector.Data
             {
                 entity.HasKey(e => e.ID);
                 entity.HasIndex(e => e.CardID).IsUnique();
+            });
+
+            modelBuilder.Entity<Match>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.EventID);
+                entity.Property(e => e.Result).HasConversion(new MatchResultConverter());
             });
 
             modelBuilder.Entity<PendingOrderLine>(entity =>

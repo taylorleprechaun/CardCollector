@@ -1,0 +1,173 @@
+@page
+@model CardCollector.Pages.Tournaments.Events.DetailsModel
+@using System.Globalization
+@using CardCollector.Data.Models
+@using CardCollector.Services
+@{
+    var detail = Model.Detail!;
+    var tournamentEvent = detail.Event;
+    ViewData["Title"] = $"{tournamentEvent.Location} Event";
+
+    string ResultBadge(MatchResult result) => result switch
+    {
+        MatchResult.Win => "badge-status badge-status--good",
+        MatchResult.Loss => "badge-status badge-status--critical",
+        _ => "badge-status badge-status--warning"
+    };
+    string ResultText(MatchResult result) => result switch
+    {
+        MatchResult.Win => "Win",
+        MatchResult.Loss => "Loss",
+        _ => "Tie"
+    };
+    string GamesText(Match round) => round.IsBye ? "—" : $"{round.GamesWon}-{round.GamesLost}{(round.GamesTied > 0 ? $"-{round.GamesTied}" : string.Empty)}";
+    string DiceText(Match round) => round.WonDiceRoll switch
+    {
+        true => "W",
+        false => "L",
+        _ => "–"
+    };
+
+    var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
+    var hasDecklistUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+}
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <a href="/Tournaments/Events" class="small"><i class="bi bi-arrow-left me-1"></i>All events</a>
+</nav>
+
+<div class="mb-3">
+    <h1 class="mb-1 text-break">@tournamentEvent.Location</h1>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="text-muted">@tournamentEvent.Date.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)</span>
+        <span class="badge-neutral">@tournamentEvent.EventType.GetDisplayName()</span>
+    </div>
+</div>
+
+<div class="cc-table-card p-3 mb-4">
+    <dl class="row mb-0 gy-2">
+        <dt class="col-sm-3">Format</dt>
+        <dd class="col-sm-9 mb-0">
+            @if (detail.Format is null)
+            {
+                <span class="text-muted">@EventService.NO_FORMAT_NAME</span>
+            }
+            else
+            {
+                <div class="fw-semibold">@detail.Format.Name</div>
+                <partial name="_FormatStrategyChips" model="detail.Format" />
+            }
+        </dd>
+
+        <dt class="col-sm-3">Deck</dt>
+        <dd class="col-sm-9 mb-0">
+            <span class="text-break">@tournamentEvent.DeckName</span>
+            @if (hasDecklistUrl)
+            {
+                <div><a href="@tournamentEvent.DecklistURL" target="_blank" rel="noopener noreferrer" class="text-break">Decklist <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a></div>
+            }
+        </dd>
+
+        <dt class="col-sm-3">Finish</dt>
+        <dd class="col-sm-9 mb-0">
+            @if (finishText is null && tournamentEvent.Players is null)
+            {
+                <span class="text-muted">&mdash;</span>
+            }
+            else
+            {
+                <span>@(finishText ?? "?")@(tournamentEvent.Players is { } players ? $" of {players} players" : string.Empty)</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(tournamentEvent.TopCut))
+            {
+                <span class="text-muted"> &middot; @tournamentEvent.TopCut</span>
+            }
+        </dd>
+
+        @if (!string.IsNullOrWhiteSpace(tournamentEvent.Notes))
+        {
+            <dt class="col-sm-3">Notes</dt>
+            <dd class="col-sm-9 mb-0 text-break cc-pre-line">@tournamentEvent.Notes</dd>
+        }
+    </dl>
+</div>
+
+<h2 class="h4">Rounds</h2>
+
+@if (tournamentEvent.Matches.Count == 0)
+{
+    <div class="alert alert-info">No rounds recorded for this event.</div>
+}
+else
+{
+    <p class="mb-3" role="status">
+        <span class="me-3"><span class="text-muted">Matches:</span> <strong>@detail.MatchRecord</strong></span>
+        <span class="me-3"><span class="text-muted">Games:</span> <strong>@detail.GameRecord</strong></span>
+        <span><span class="text-muted">Dice rolls won&ndash;lost:</span> <strong>@detail.DiceRecord</strong></span>
+    </p>
+
+    <div class="cc-table-card d-none d-md-block">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Round</th>
+                    <th scope="col">Opponent</th>
+                    <th scope="col">Games</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Dice</th>
+                    <th scope="col">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var round in tournamentEvent.Matches)
+                {
+                    <tr>
+                        <td class="text-nowrap">@round.Round</td>
+                        <td class="text-break">
+                            @round.OpponentDeck
+                            @if (round.IsBye)
+                            {
+                                <span class="badge-neutral ms-1">Bye</span>
+                            }
+                        </td>
+                        <td class="text-nowrap">@GamesText(round)</td>
+                        <td><span class="@ResultBadge(round.Result)">@ResultText(round.Result)</span></td>
+                        <td>@DiceText(round)</td>
+                        <td class="text-break cc-pre-line">@round.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="list-group cc-table-card d-md-none">
+        @foreach (var round in tournamentEvent.Matches)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-column gap-1 py-1">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <span class="text-muted">Round @round.Round</span>
+                            <div class="fw-semibold text-break">
+                                @round.OpponentDeck
+                                @if (round.IsBye)
+                                {
+                                    <span class="badge-neutral ms-1">Bye</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="@ResultBadge(round.Result)">@ResultText(round.Result)</span>
+                    </div>
+                    @if (!round.IsBye)
+                    {
+                        <div class="small"><span class="text-muted">Games:</span> @GamesText(round) &middot; <span class="text-muted">Dice:</span> @DiceText(round)</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(round.Notes))
+                    {
+                        <div class="text-muted small text-break cc-pre-line">@round.Notes</div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

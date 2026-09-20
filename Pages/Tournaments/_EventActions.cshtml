@@ -1,0 +1,31 @@
+@model CardCollector.ViewModels.EventListItemViewModel
+@{
+    var tournamentEvent = Model.Event;
+}
+<div class="d-flex gap-1 flex-shrink-0 justify-content-md-end">
+    <a class="btn btn-sm btn-outline-primary" href="/Tournaments/Events/Details?id=@tournamentEvent.ID">Details</a>
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary"
+            data-event-id="@tournamentEvent.ID"
+            data-event-date="@tournamentEvent.Date.ToString("yyyy-MM-dd")"
+            data-event-deck="@tournamentEvent.DeckName"
+            data-event-finish="@tournamentEvent.Finish"
+            data-event-finish-note="@tournamentEvent.FinishNote"
+            data-event-location="@tournamentEvent.Location"
+            data-event-notes="@tournamentEvent.Notes"
+            data-event-players="@tournamentEvent.Players"
+            data-event-top-cut="@tournamentEvent.TopCut"
+            data-event-type="@tournamentEvent.EventType"
+            data-event-url="@tournamentEvent.DecklistURL"
+            onclick="openEventModal(this)">
+        Edit
+    </button>
+    <button type="button"
+            class="btn btn-sm btn-outline-danger"
+            data-event-id="@tournamentEvent.ID"
+            data-event-location="@tournamentEvent.Location"
+            data-event-rounds="@Model.RoundCount"
+            onclick="openDeleteEventModal(this)">
+        Delete
+    </button>
+</div>

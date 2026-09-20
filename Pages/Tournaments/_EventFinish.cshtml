@@ -1,0 +1,17 @@
+@model CardCollector.ViewModels.EventListItemViewModel
+@{
+    var tournamentEvent = Model.Event;
+    var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
+}
+@if (finishText is null && tournamentEvent.Players is null)
+{
+    <span class="text-muted">&mdash;</span>
+}
+else
+{
+    <span>@(finishText ?? "?")@(tournamentEvent.Players is { } players ? $" / {players}" : string.Empty)</span>
+}
+@if (!string.IsNullOrWhiteSpace(tournamentEvent.TopCut))
+{
+    <div class="text-muted small">@tournamentEvent.TopCut</div>
+}

@@ -475,3 +475,8 @@
     min-height: 0;
     overflow: hidden;
 }
+
+/* Multi-line free text (notes) keeps its line breaks but still wraps. */
+.cc-pre-line {
+    white-space: pre-line;
+}
