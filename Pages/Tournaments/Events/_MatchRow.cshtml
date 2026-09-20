@@ -1,0 +1,75 @@
+@model CardCollector.Data.Models.Match
+@using CardCollector.Data.Models
+@{
+    var round = Model;
+    var rowId = $"match-row-{round.ID}";
+
+    var resultBadge = round.Result switch
+    {
+        MatchResult.Win => "badge-status badge-status--good",
+        MatchResult.Loss => "badge-status badge-status--critical",
+        _ => "badge-status badge-status--warning"
+    };
+    var resultText = round.Result switch
+    {
+        MatchResult.Win => "Win",
+        MatchResult.Loss => "Loss",
+        _ => "Tie"
+    };
+    var gamesText = $"{round.GamesWon}-{round.GamesLost}{(round.GamesTied > 0 ? $"-{round.GamesTied}" : string.Empty)}";
+    var diceText = round.WonDiceRoll switch
+    {
+        true => "W",
+        false => "L",
+        _ => "–"
+    };
+    var diceValue = round.WonDiceRoll switch
+    {
+        true => "true",
+        false => "false",
+        _ => string.Empty
+    };
+}
+<div class="list-group-item" id="@rowId"
+     data-match-id="@round.ID"
+     data-round="@round.Round"
+     data-opponent="@round.OpponentDeck"
+     data-bye="@(round.IsBye ? "true" : "false")"
+     data-games-won="@round.GamesWon"
+     data-games-lost="@round.GamesLost"
+     data-games-tied="@round.GamesTied"
+     data-result="@round.Result"
+     data-dice="@diceValue"
+     data-notes="@round.Notes">
+    <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 py-1">
+        <div class="cc-match-round text-muted">Round @round.Round</div>
+        <div class="flex-grow-1 min-width-0">
+            <div class="fw-semibold text-break">
+                @round.OpponentDeck
+                @if (round.IsBye)
+                {
+                    <span class="badge-neutral ms-1">Bye</span>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(round.Notes))
+            {
+                <div class="text-muted small text-break cc-pre-line">@round.Notes</div>
+            }
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="@resultBadge">@resultText</span>
+            @if (!round.IsBye)
+            {
+                <span class="small text-nowrap"><span class="text-muted">Games:</span> @gamesText &middot; <span class="text-muted">Dice:</span> @diceText</span>
+            }
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <button type="button" class="btn btn-outline-secondary btn-sm cc-tap-target" data-match-action="edit" aria-label="Edit round @round.Round">
+                <i class="bi bi-pencil" aria-hidden="true"></i><span class="ms-1">Edit</span>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm cc-tap-target" data-match-action="delete" aria-label="Delete round @round.Round">
+                <i class="bi bi-trash" aria-hidden="true"></i><span class="ms-1">Delete</span>
+            </button>
+        </div>
+    </div>
+</div>

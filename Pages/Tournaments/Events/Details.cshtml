@@ -3,33 +3,15 @@
 @using System.Globalization
 @using CardCollector.Data.Models
 @using CardCollector.Services
+@using CardCollector.ViewModels
 @{
     var detail = Model.Detail!;
     var tournamentEvent = detail.Event;
     ViewData["Title"] = $"{tournamentEvent.Location} Event";
 
-    string ResultBadge(MatchResult result) => result switch
-    {
-        MatchResult.Win => "badge-status badge-status--good",
-        MatchResult.Loss => "badge-status badge-status--critical",
-        _ => "badge-status badge-status--warning"
-    };
-    string ResultText(MatchResult result) => result switch
-    {
-        MatchResult.Win => "Win",
-        MatchResult.Loss => "Loss",
-        _ => "Tie"
-    };
-    string GamesText(Match round) => round.IsBye ? "—" : $"{round.GamesWon}-{round.GamesLost}{(round.GamesTied > 0 ? $"-{round.GamesTied}" : string.Empty)}";
-    string DiceText(Match round) => round.WonDiceRoll switch
-    {
-        true => "W",
-        false => "L",
-        _ => "–"
-    };
-
     var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
     var hasDecklistUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+    var hasRounds = Model.Summary.RoundCount > 0;
 }
 
 <nav aria-label="breadcrumb" class="mb-2">
@@ -92,82 +74,106 @@
     </dl>
 </div>
 
-<h2 class="h4">Rounds</h2>
+<h2 class="h4" id="rounds">Rounds</h2>
 
-@if (tournamentEvent.Matches.Count == 0)
+<p class="mb-3" id="matchSummary" role="status" hidden="@(!hasRounds)">
+    <partial name="_MatchSummary" model="Model.Summary" />
+</p>
+
+@if (Model.AreRoundsOutOfOrder)
 {
-    <div class="alert alert-info">No rounds recorded for this event.</div>
+    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+        <span>These rounds aren&rsquo;t in round order.</span>
+        <form method="post" asp-page-handler="SortMatches" asp-route-id="@Model.ID">
+            <button type="submit" class="btn btn-warning btn-sm cc-tap-target">Sort by round</button>
+        </form>
+    </div>
 }
-else
-{
-    <p class="mb-3" role="status">
-        <span class="me-3"><span class="text-muted">Matches:</span> <strong>@detail.MatchRecord</strong></span>
-        <span class="me-3"><span class="text-muted">Games:</span> <strong>@detail.GameRecord</strong></span>
-        <span><span class="text-muted">Dice rolls won&ndash;lost:</span> <strong>@detail.DiceRecord</strong></span>
-    </p>
 
-    <div class="cc-table-card d-none d-md-block">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">Round</th>
-                    <th scope="col">Opponent</th>
-                    <th scope="col">Games</th>
-                    <th scope="col">Result</th>
-                    <th scope="col">Dice</th>
-                    <th scope="col">Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var round in tournamentEvent.Matches)
-                {
-                    <tr>
-                        <td class="text-nowrap">@round.Round</td>
-                        <td class="text-break">
-                            @round.OpponentDeck
-                            @if (round.IsBye)
-                            {
-                                <span class="badge-neutral ms-1">Bye</span>
-                            }
-                        </td>
-                        <td class="text-nowrap">@GamesText(round)</td>
-                        <td><span class="@ResultBadge(round.Result)">@ResultText(round.Result)</span></td>
-                        <td>@DiceText(round)</td>
-                        <td class="text-break cc-pre-line">@round.Notes</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <div class="list-group cc-table-card d-md-none">
-        @foreach (var round in tournamentEvent.Matches)
-        {
-            <div class="list-group-item">
-                <div class="d-flex flex-column gap-1 py-1">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <span class="text-muted">Round @round.Round</span>
-                            <div class="fw-semibold text-break">
-                                @round.OpponentDeck
-                                @if (round.IsBye)
-                                {
-                                    <span class="badge-neutral ms-1">Bye</span>
-                                }
-                            </div>
-                        </div>
-                        <span class="@ResultBadge(round.Result)">@ResultText(round.Result)</span>
-                    </div>
-                    @if (!round.IsBye)
-                    {
-                        <div class="small"><span class="text-muted">Games:</span> @GamesText(round) &middot; <span class="text-muted">Dice:</span> @DiceText(round)</div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(round.Notes))
-                    {
-                        <div class="text-muted small text-break cc-pre-line">@round.Notes</div>
-                    }
-                </div>
+<div class="cc-table-card cc-match-form mb-3">
+    <button type="button" class="btn w-100 d-flex justify-content-between align-items-center fw-semibold cc-add-round-toggle"
+            data-bs-toggle="collapse" data-bs-target="#addRoundPanel" aria-expanded="false" aria-controls="addRoundPanel">
+        <span><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add round</span>
+        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+    </button>
+    <div class="collapse" id="addRoundPanel">
+        <form method="post" asp-page-handler="AddMatch" asp-route-id="@Model.ID" class="p-3 pt-2" data-match-form="add">
+            <partial name="_MatchFormFields" model='new MatchFormViewModel { IDPrefix = "add", InitialRound = Model.Summary.NextRound }' />
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary cc-tap-target">Add round</button>
             </div>
-        }
+        </form>
     </div>
+</div>
+
+<div class="alert alert-info" id="matchEmpty" hidden="@hasRounds">No rounds recorded for this event.</div>
+
+<div class="list-group cc-table-card" id="matchList" hidden="@(!hasRounds)">
+    @foreach (var round in tournamentEvent.Matches)
+    {
+        <partial name="_MatchRow" model="round" />
+    }
+</div>
+
+<datalist id="matchOpponentOptions">
+    @foreach (var opponent in Model.OpponentDecks)
+    {
+        <option value="@opponent"></option>
+    }
+</datalist>
+
+<datalist id="matchRoundOptions">
+    <option value="Top 8"></option>
+    <option value="Top 4"></option>
+    <option value="Finals"></option>
+</datalist>
+
+<!-- Edit Round Modal -->
+<div class="modal fade" id="editMatchModal" tabindex="-1" aria-labelledby="editMatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content cc-match-form">
+            <form method="post" asp-page-handler="EditMatch" asp-route-id="@Model.ID" data-match-form="edit">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMatchModalLabel">Edit round</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <partial name="_MatchFormFields" model='new MatchFormViewModel { IDPrefix = "edit" }' />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cc-tap-target" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary cc-tap-target">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Round Modal -->
+<div class="modal fade" id="deleteMatchModal" tabindex="-1" aria-labelledby="deleteMatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content cc-match-form">
+            <form method="post" asp-page-handler="DeleteMatch" asp-route-id="@Model.ID" data-match-form="delete">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteMatchModalLabel">Delete round</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div data-match-errors class="alert alert-danger" role="alert" hidden>
+                        <ul class="mb-0"></ul>
+                    </div>
+                    <input type="hidden" name="matchID" id="deleteMatchID" />
+                    <p class="mb-0">Delete <strong id="deleteMatchName" class="text-break"></strong>? This can&rsquo;t be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cc-tap-target" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger cc-tap-target">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/event-matches.js" asp-append-version="true"></script>
 }

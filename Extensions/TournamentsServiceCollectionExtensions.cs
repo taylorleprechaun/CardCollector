@@ -11,6 +11,8 @@ namespace CardCollector.Extensions
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IFormatRepository, FormatRepository>();
             services.AddScoped<IFormatService, FormatService>();
+            services.AddScoped<IMatchRepository, MatchRepository>();
+            services.AddScoped<IMatchService, MatchService>();
 
             return services;
         }
