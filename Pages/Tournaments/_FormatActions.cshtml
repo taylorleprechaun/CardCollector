@@ -1,0 +1,22 @@
+@model CardCollector.Data.Models.Format
+@using System.Text.Json
+<div class="d-flex gap-1 flex-shrink-0 justify-content-md-end">
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary"
+            data-format-id="@Model.ID"
+            data-format-name="@Model.Name"
+            data-format-start="@Model.StartDate.ToString("yyyy-MM-dd")"
+            data-format-end="@Model.EndDate?.ToString("yyyy-MM-dd")"
+            data-format-notes="@Model.Notes"
+            data-format-strategies="@JsonSerializer.Serialize(Model.Strategies.Select(s => s.Name))"
+            onclick="openFormatModal(this)">
+        Edit
+    </button>
+    <button type="button"
+            class="btn btn-sm btn-outline-danger"
+            data-format-id="@Model.ID"
+            data-format-name="@Model.Name"
+            onclick="openDeleteFormatModal(this)">
+        Delete
+    </button>
+</div>

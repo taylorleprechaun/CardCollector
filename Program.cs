@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.DTO;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -58,6 +59,7 @@ builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IWishlistValueRepository, WishlistValueRepository>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddTournamentsModule();
 builder.Services.AddHostedService<CatalogWarmupHostedService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 
@@ -409,6 +411,8 @@ using (var scope = app.Services.CreateScope())
     }
 
     db.SaveChanges();
+
+    TournamentSchema.Apply(db);
 }
 
 if (!app.Environment.IsDevelopment())

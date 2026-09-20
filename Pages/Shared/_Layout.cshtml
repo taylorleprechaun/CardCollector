@@ -28,6 +28,7 @@
         var isCollection = currentPage is "/Collection" or "/CheckedOut";
         var isShopping = currentPage is "/Wishlist" or "/BuyList" or "/Cart" or "/Orders";
         var isInsights = currentPage is "/Stats" or "/EditionAudit";
+        var isTournaments = currentPage is "/Tournaments/Formats";
         (int Count, decimal Total) cartSummary = User.Identity?.IsAuthenticated == true
             ? await CardService.GetCartSummaryAsync()
             : (0, 0m);
@@ -87,6 +88,15 @@
                             <ul class="dropdown-menu dropdown-menu-dark">
                                 <li><a class="dropdown-item @(currentPage == "/Stats" ? "active" : "")" href="/Stats">Stats</a></li>
                                 <li><a class="dropdown-item @(currentPage == "/EditionAudit" ? "active" : "")" href="/EditionAudit">Edition Audit</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(isTournaments ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-trophy me-1"></i>Tournaments
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item @(currentPage == "/Tournaments/Formats" ? "active" : "")" href="/Tournaments/Formats">Formats</a></li>
                             </ul>
                         </div>
                     </div>

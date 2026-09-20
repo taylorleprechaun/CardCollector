@@ -1,0 +1,14 @@
+@model CardCollector.Data.Models.Format
+@if (Model.Strategies.Any())
+{
+    <ol class="list-unstyled d-flex flex-wrap gap-1 mb-0">
+        @foreach (var strategy in Model.Strategies)
+        {
+            <li class="badge-neutral">@strategy.Name</li>
+        }
+    </ol>
+}
+else
+{
+    <span class="text-muted small">No strategies recorded</span>
+}

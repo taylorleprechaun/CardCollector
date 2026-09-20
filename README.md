@@ -27,6 +27,9 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 - **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value and wishlist cost-to-complete over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart
 - **Edition Audit** &mdash; flags owned entries whose recorded edition doesn&rsquo;t match (or can&rsquo;t be verified against) the live API data, with inline editing to correct them
 
+**Tournaments**
+- **Formats** &mdash; metagame periods with a date range, notes, and ranked top strategies; add, edit, and delete them from the Tournaments menu. Date ranges can&rsquo;t overlap, an open-ended format shows as &ldquo;Ongoing&rdquo;, and the format containing today is badged &ldquo;Current&rdquo;
+
 **Export**
 - **Export** &mdash; download your collection or wishlist as a CSV
 
@@ -81,8 +84,8 @@ CardCollector/
 ├── DTO/                     # Card data structures (yaml-yugi card data + YGOProDeck image data)
 ├── Extensions/              # EnumExtensions (.GetDisplayName())
 ├── Pages/                   # Razor Pages, one per feature (see Features above)
-├── Repository/              # Data access (CardDataRepository, CollectionRepository, PreferredVersionRepository)
-├── Services/                # CardService (joins JSON + SQLite), PricingService (live TCGPlayer prices)
+├── Repository/              # Data access
+├── Services/                # Business logic (joins card data with collection state, live pricing)
 ├── ViewModels/              # Page-specific view models
 └── wwwroot/js/              # Page-specific JavaScript
 ```
