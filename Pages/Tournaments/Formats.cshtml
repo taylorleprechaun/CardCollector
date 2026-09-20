@@ -1,0 +1,189 @@
+@page
+@model CardCollector.Pages.Tournaments.FormatsModel
+@using System.Globalization
+@using System.Text.Json
+@using CardCollector.Data.Models
+@using CardCollector.Services
+@{
+    ViewData["Title"] = "Formats";
+
+    string DateText(DateOnly date) => date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
+    string RangeText(Format format) => $"{DateText(format.StartDate)} – {(format.EndDate is { } end ? DateText(end) : "Ongoing")}";
+
+    var isEditing = Model.Input.ID != 0;
+    var initialStrategies = JsonSerializer.Serialize(Model.Input.Strategies ?? []);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-1">
+    <h1>Formats</h1>
+    <button type="button" class="btn btn-primary btn-sm" onclick="openFormatModal(null)">
+        <i class="bi bi-plus-lg me-1"></i>Add Format
+    </button>
+</div>
+
+<p class="text-muted mb-4">Metagame periods with their top strategies. An event&rsquo;s format is worked out from its date, so ranges can&rsquo;t overlap.</p>
+
+@if (!Model.Formats.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        <h4>No formats yet</h4>
+        <p class="mb-0">Use <strong>Add Format</strong> to record your first metagame period.</p>
+    </div>
+}
+else
+{
+    <div class="cc-table-card d-none d-md-block">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Dates</th>
+                    <th scope="col">Strategies</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var format in Model.Formats)
+                {
+                    <tr>
+                        <td>
+                            <span class="fw-semibold">@format.Name</span>
+                            @if (format.ID == Model.CurrentFormatID)
+                            {
+                                <span class="badge-status badge-status--good ms-1">Current</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(format.Notes))
+                            {
+                                <div class="text-muted small text-break">@format.Notes</div>
+                            }
+                        </td>
+                        <td class="text-nowrap">@RangeText(format)</td>
+                        <td><partial name="_FormatStrategyChips" model="format" /></td>
+                        <td class="text-end"><partial name="_FormatActions" model="format" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="list-group cc-table-card d-md-none">
+        @foreach (var format in Model.Formats)
+        {
+            <div class="list-group-item">
+                <div class="d-flex flex-column gap-2 py-1">
+                    <div>
+                        <span class="fw-semibold">@format.Name</span>
+                        @if (format.ID == Model.CurrentFormatID)
+                        {
+                            <span class="badge-status badge-status--good ms-1">Current</span>
+                        }
+                        <div class="text-muted small">@RangeText(format)</div>
+                        @if (!string.IsNullOrWhiteSpace(format.Notes))
+                        {
+                            <div class="text-muted small text-break">@format.Notes</div>
+                        }
+                    </div>
+                    <partial name="_FormatStrategyChips" model="format" />
+                    <partial name="_FormatActions" model="format" />
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Add / Edit Modal -->
+<div class="modal fade" id="formatModal" tabindex="-1" aria-labelledby="formatModalLabel" aria-hidden="true"
+     data-open-on-load="@(Model.ShowFormModal ? "true" : "false")">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="formatForm" method="post" asp-page-handler="Save">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formatModalLabel">@(isEditing ? "Edit Format" : "Add Format")</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Model.Errors.Count > 0)
+                    {
+                        <div class="alert alert-danger" id="formatErrors" role="alert">
+                            <ul class="mb-0">
+                                @foreach (var error in Model.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <input type="hidden" asp-for="Input.ID" />
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Name" class="form-label">Name</label>
+                        <input asp-for="Input.Name" class="form-control" maxlength="@FormatRules.MAX_NAME_LENGTH" autocomplete="off" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Input.StartDate" class="form-label">Start date</label>
+                            <input asp-for="Input.StartDate" class="form-control form-control-sm cc-date-picker" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Input.EndDate" class="form-label">End date</label>
+                            <input asp-for="Input.EndDate" class="form-control form-control-sm cc-date-picker" />
+                            <div class="form-check mt-2">
+                                <input asp-for="Input.IsOngoing" class="form-check-input" />
+                                <label asp-for="Input.IsOngoing" class="form-check-label">Ongoing (no end date)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Notes" class="form-label">Notes</label>
+                        <textarea asp-for="Input.Notes" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="strategyInput" class="form-label">Top strategies</label>
+                        <div class="input-group">
+                            <input type="text" id="strategyInput" class="form-control" maxlength="@FormatRules.MAX_STRATEGY_LENGTH"
+                                   autocomplete="off" placeholder="Add a strategy and press Enter" />
+                            <button type="button" class="btn btn-outline-secondary" id="strategyAddBtn">Add</button>
+                        </div>
+                        <div class="form-text" id="strategyHint" role="status" aria-live="polite"></div>
+                    </div>
+                    <ol class="list-unstyled d-flex flex-column gap-1 mb-0" id="strategyList"
+                        data-max="@FormatRules.MAX_STRATEGIES" data-initial="@initialStrategies"></ol>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteFormatModal" tabindex="-1" aria-labelledby="deleteFormatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Delete">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteFormatModalLabel">Delete format</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="deleteFormatID" />
+                    <p class="mb-0">Delete <strong id="deleteFormatName"></strong> and its strategies? This can&rsquo;t be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/formats.js" asp-append-version="true"></script>
+}

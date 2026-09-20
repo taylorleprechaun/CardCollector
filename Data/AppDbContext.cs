@@ -17,6 +17,10 @@ namespace CardCollector.Data
 
         public DbSet<DismissedNewPrinting> DismissedNewPrintings { get; set; }
 
+        public DbSet<Format> Formats { get; set; }
+
+        public DbSet<FormatStrategy> FormatStrategies { get; set; }
+
         public DbSet<IgnoredCard> IgnoredCards { get; set; }
 
         public DbSet<PendingOrderLine> PendingOrderLines { get; set; }
@@ -53,6 +57,21 @@ namespace CardCollector.Data
             {
                 entity.HasKey(e => e.ID);
                 entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
+            });
+
+            modelBuilder.Entity<Format>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasMany(e => e.Strategies)
+                    .WithOne()
+                    .HasForeignKey(s => s.FormatID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FormatStrategy>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.FormatID);
             });
 
             modelBuilder.Entity<IgnoredCard>(entity =>
