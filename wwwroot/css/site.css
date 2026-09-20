@@ -480,3 +480,28 @@
 .cc-pre-line {
     white-space: pre-line;
 }
+
+/* Tournament round list and entry form. */
+.cc-match-round {
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .cc-match-round {
+        width: 6rem;
+    }
+}
+
+/* Rounds are entered on a phone between matches, so controls need thumb-sized targets. */
+@media (max-width: 767.98px) {
+    .cc-match-form .btn,
+    .cc-match-form .form-control,
+    .cc-tap-target {
+        min-height: 44px;
+    }
+}
+
+/* The chevron on the collapsed Add round box flips when it is open. */
+.cc-add-round-toggle[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}

@@ -1,0 +1,105 @@
+@model CardCollector.ViewModels.MatchFormViewModel
+@using CardCollector.Services
+@{
+    var p = Model.IDPrefix;
+    var presets = new (string Label, int Won, int Lost, int Tied)[]
+    {
+        ("2-0", 2, 0, 0),
+        ("2-1", 2, 1, 0),
+        ("1-1", 1, 1, 0),
+        ("1-2", 1, 2, 0),
+        ("0-2", 0, 2, 0),
+        ("1-1-1", 1, 1, 1)
+    };
+    var games = new (string Name, string Field, int? Max)[]
+    {
+        ("Won", "won", MatchRules.MAX_GAMES_WON_OR_LOST),
+        ("Lost", "lost", MatchRules.MAX_GAMES_WON_OR_LOST),
+        ("Tied", "tied", null)
+    };
+}
+<div data-match-errors class="alert alert-danger" role="alert" hidden>
+    <ul class="mb-0"></ul>
+</div>
+
+<input type="hidden" name="Input.ID" value="0" data-match-field="id" />
+
+<div class="row g-3 mb-3 align-items-end">
+    <div class="col-6 col-sm-4">
+        <label for="@(p)Round" class="form-label">Round</label>
+        <input type="text" id="@(p)Round" name="Input.Round" class="form-control" list="matchRoundOptions"
+               maxlength="@MatchRules.MAX_ROUND_LENGTH" autocomplete="off" required
+               value="@Model.InitialRound" data-suggested="@Model.InitialRound" data-match-field="round" />
+    </div>
+    <div class="col-6 col-sm-8">
+        <div class="form-check form-switch mb-2">
+            <input type="checkbox" id="@(p)IsBye" name="Input.IsBye" value="true" class="form-check-input" data-match-field="bye" />
+            <label for="@(p)IsBye" class="form-check-label">Bye</label>
+        </div>
+    </div>
+</div>
+
+<div data-bye-hide>
+    <div class="mb-3">
+        <label for="@(p)OpponentDeck" class="form-label">Opponent deck</label>
+        <input type="text" id="@(p)OpponentDeck" name="Input.OpponentDeck" class="form-control" list="matchOpponentOptions"
+               maxlength="@MatchRules.MAX_OPPONENT_LENGTH" autocomplete="off" enterkeyhint="done" data-match-field="opponent" />
+    </div>
+
+    <fieldset class="mb-3">
+        <legend class="form-label fs-6">Score</legend>
+        <div class="d-flex flex-wrap align-items-center gap-1" role="group" aria-label="Common scores">
+            @foreach (var preset in presets)
+            {
+                var presetId = $"{p}Score_{preset.Label}";
+                <input type="radio" class="btn-check" name="@(p)ScorePreset" id="@presetId" autocomplete="off"
+                       data-score-preset data-won="@preset.Won" data-lost="@preset.Lost" data-tied="@preset.Tied" />
+                <label class="btn btn-outline-secondary btn-sm" for="@presetId">@preset.Label</label>
+            }
+            <button type="button" class="btn btn-link btn-sm" data-custom-toggle aria-expanded="false" aria-controls="@(p)CustomScore">Custom score</button>
+        </div>
+        <div class="row g-2 mt-1" id="@(p)CustomScore" data-custom-score hidden>
+            @foreach (var game in games)
+            {
+                <div class="col-4">
+                    <label for="@(p)Games@(game.Name)" class="form-label small mb-1">@game.Name</label>
+                    <input type="number" id="@(p)Games@(game.Name)" name="Input.Games@(game.Name)" class="form-control" min="0" max="@game.Max"
+                           inputmode="numeric" value="0" data-match-field="@game.Field" />
+                </div>
+            }
+        </div>
+    </fieldset>
+
+    <fieldset class="mb-3">
+        <legend class="form-label fs-6">Result</legend>
+        <div class="btn-group flex-wrap" role="group" aria-label="Result">
+            <input type="radio" class="btn-check" name="Input.Result" id="@(p)Result_Win" value="Win" autocomplete="off" data-match-result />
+            <label class="btn btn-outline-success" for="@(p)Result_Win">Win</label>
+            <input type="radio" class="btn-check" name="Input.Result" id="@(p)Result_Loss" value="Loss" autocomplete="off" data-match-result />
+            <label class="btn btn-outline-danger" for="@(p)Result_Loss">Loss</label>
+            <input type="radio" class="btn-check" name="Input.Result" id="@(p)Result_Tie" value="Tie" autocomplete="off" data-match-result checked />
+            <label class="btn btn-outline-warning" for="@(p)Result_Tie">Tie</label>
+        </div>
+        <div class="form-text" data-result-hint hidden>
+            Suggested from the score: <strong data-result-suggestion></strong>.
+            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-result-reset>Use suggestion</button>
+        </div>
+    </fieldset>
+
+    <fieldset class="mb-3">
+        <legend class="form-label fs-6">Dice roll</legend>
+        <div class="btn-group flex-wrap" role="group" aria-label="Dice roll">
+            <input type="radio" class="btn-check" name="Input.WonDiceRoll" id="@(p)Dice_Won" value="true" autocomplete="off" data-match-dice />
+            <label class="btn btn-outline-success" for="@(p)Dice_Won">Won</label>
+            <input type="radio" class="btn-check" name="Input.WonDiceRoll" id="@(p)Dice_Lost" value="false" autocomplete="off" data-match-dice />
+            <label class="btn btn-outline-danger" for="@(p)Dice_Lost">Lost</label>
+            <input type="radio" class="btn-check" name="Input.WonDiceRoll" id="@(p)Dice_None" value="" autocomplete="off" data-match-dice checked />
+            <label class="btn btn-outline-secondary" for="@(p)Dice_None">Not recorded</label>
+        </div>
+    </fieldset>
+</div>
+
+<div class="mb-0">
+    <label for="@(p)Notes" class="form-label">Notes</label>
+    <textarea id="@(p)Notes" name="Input.Notes" class="form-control" rows="2" data-match-field="notes"></textarea>
+</div>
