@@ -33,6 +33,12 @@ namespace CardCollector.Repository
         Card? GetCardByID(int cardID);
 
         /// <summary>
+        /// Returns a dictionary mapping each alternate passcode of a card (a second primary id, an alternate artwork id)
+        /// to the card's <see cref="Card.ID"/>. A passcode with no entry is not an alias.
+        /// </summary>
+        IReadOnlyDictionary<int, int> GetPasscodeAliases();
+
+        /// <summary>
         /// Returns a dictionary mapping full card code (e.g. "LOB-EN001") to canonical set name (e.g. "Legend of Blue Eyes White Dragon").
         /// </summary>
         IReadOnlyDictionary<string, string> GetSetNamesByCode();

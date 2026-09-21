@@ -8,7 +8,7 @@ namespace CardCollector.Tests.Data
     [TestClass]
     public sealed class TournamentSchemaTests
     {
-        private static readonly string[] TournamentTables = ["Events", "FormatStrategies", "Formats", "Matches"];
+        private static readonly string[] TournamentTables = ["DeckCards", "Decks", "Events", "FormatStrategies", "Formats", "Matches"];
 
         [TestMethod]
         public void Apply_CalledTwice_DoesNotThrowAndKeepsSchema()

@@ -15,5 +15,8 @@ namespace CardCollector.ViewModels
         public required WinLossTie GameRecord { get; init; }
 
         public required WinLossTie MatchRecord { get; init; }
+
+        /// <summary>How many other events have this event's decklist URL and no deck; 0 when it has no URL.</summary>
+        public int OtherUnlinkedEventsWithSameURL { get; init; }
     }
 }

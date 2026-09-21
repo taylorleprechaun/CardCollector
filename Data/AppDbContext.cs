@@ -15,6 +15,10 @@ namespace CardCollector.Data
 
         public DbSet<CollectionValueSnapshot> CollectionValueSnapshots { get; set; }
 
+        public DbSet<DeckCard> DeckCards { get; set; }
+
+        public DbSet<Deck> Decks { get; set; }
+
         public DbSet<DismissedNewPrinting> DismissedNewPrintings { get; set; }
 
         public DbSet<Event> Events { get; set; }
@@ -55,6 +59,22 @@ namespace CardCollector.Data
             {
                 entity.HasKey(e => e.ID);
                 entity.Property(e => e.Edition).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<Deck>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasMany(e => e.Cards)
+                    .WithOne()
+                    .HasForeignKey(c => c.DeckID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<DeckCard>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.DeckID, e.CardID, e.Section }).IsUnique();
+                entity.Property(e => e.Section).HasConversion<string>();
             });
 
             modelBuilder.Entity<DismissedNewPrinting>(entity =>
