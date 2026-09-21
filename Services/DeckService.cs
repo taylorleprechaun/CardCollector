@@ -129,17 +129,14 @@ namespace CardCollector.Services
         private DeckSectionViewModel BuildSection(Deck deck, DeckSection section) =>
             new()
             {
-                Cards = deck.Cards
+                Cards = DeckSorter.Sort(deck.Cards
                     .Where(c => c.Section == section)
-                    .OrderBy(c => c.SortOrder)
-                    .ThenBy(c => c.ID)
                     .Select(c => new DeckCardViewModel
                     {
                         Card = _cardDataRepository.GetCardByID(c.CardID),
                         CardID = c.CardID,
                         Quantity = c.Quantity
-                    })
-                    .ToList()
+                    }))
             };
 
         private async Task<IReadOnlyList<int>> GetEventIDsToLinkAsync(Event tournamentEvent, bool includeOthersWithSameUrl, CancellationToken cancellationToken)

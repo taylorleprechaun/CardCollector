@@ -14,11 +14,13 @@ namespace CardCollector.Pages.Tournaments
 
         private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
 
+        private readonly IDeckService _deckService;
         private readonly IEventService _eventService;
         private readonly IFormatService _formatService;
 
-        public EventsModel(IEventService eventService, IFormatService formatService)
+        public EventsModel(IDeckService deckService, IEventService eventService, IFormatService formatService)
         {
+            _deckService = deckService;
             _eventService = eventService;
             _formatService = formatService;
         }
@@ -33,6 +35,9 @@ namespace CardCollector.Pages.Tournaments
         public string? Deck { get; set; }
 
         public IReadOnlyList<string> DeckNames { get; private set; } = [];
+
+        /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
+        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
 
         public IReadOnlyList<string> Errors { get; private set; } = [];
 
@@ -192,6 +197,7 @@ namespace CardCollector.Pages.Tournaments
 
             Formats = await _formatService.GetAllAsync(cancellationToken).ConfigureAwait(false);
             DeckNames = await _eventService.GetDeckNamesAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
             Locations = await _eventService.GetLocationsAsync(cancellationToken).ConfigureAwait(false);
 
             Results = await SearchAsync(cancellationToken).ConfigureAwait(false);

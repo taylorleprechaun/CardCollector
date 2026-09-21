@@ -48,6 +48,7 @@
             {
                 <div><a href="@tournamentEvent.DecklistURL" target="_blank" rel="noopener noreferrer" class="text-break">Decklist <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a></div>
             }
+            <div><partial name="_EventDeckLinks" model="new EventDeckLinksViewModel(tournamentEvent, detail.OtherUnlinkedEventsWithSameURL)" /></div>
         </dd>
 
         <dt class="col-sm-3">Finish</dt>
@@ -174,6 +175,9 @@
     </div>
 </div>
 
+<partial name="~/Pages/Tournaments/_DeckImportModal.cshtml" model="Model.DeckOptions" />
+
 @section Scripts {
     <script src="~/js/event-matches.js" asp-append-version="true"></script>
+    <script src="~/js/deck-import.js" asp-append-version="true"></script>
 }

@@ -15,10 +15,18 @@ namespace CardCollector.Services
 
             var known = cards.Where(c => c.Card is not null).ToList();
             return new DeckTypeCounts(
-                known.Where(c => !IsSpell(c) && !IsTrap(c)).Sum(c => c.Quantity),
-                known.Where(IsSpell).Sum(c => c.Quantity),
-                known.Where(IsTrap).Sum(c => c.Quantity));
+                known.Where(c => !IsSpell(c.Card?.CardType) && !IsTrap(c.Card?.CardType)).Sum(c => c.Quantity),
+                known.Where(c => IsSpell(c.Card?.CardType)).Sum(c => c.Quantity),
+                known.Where(c => IsTrap(c.Card?.CardType)).Sum(c => c.Quantity));
         }
+
+        /// <summary>True when the card type (for example "Spell Card") is a spell.</summary>
+        public static bool IsSpell(string? cardType) =>
+            cardType?.Contains("Spell", StringComparison.OrdinalIgnoreCase) == true;
+
+        /// <summary>True when the card type (for example "Trap Card") is a trap.</summary>
+        public static bool IsTrap(string? cardType) =>
+            cardType?.Contains("Trap", StringComparison.OrdinalIgnoreCase) == true;
 
         /// <summary>
         /// Returns a copy of the deck's own fields with text trimmed and blank notes turned into null.
@@ -50,11 +58,5 @@ namespace CardCollector.Services
 
             return [];
         }
-
-        private static bool IsSpell(DeckCardViewModel card) =>
-            card.Card?.CardType?.Contains("Spell", StringComparison.OrdinalIgnoreCase) == true;
-
-        private static bool IsTrap(DeckCardViewModel card) =>
-            card.Card?.CardType?.Contains("Trap", StringComparison.OrdinalIgnoreCase) == true;
     }
 }

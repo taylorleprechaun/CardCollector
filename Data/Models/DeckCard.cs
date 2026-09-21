@@ -14,7 +14,7 @@ namespace CardCollector.Data.Models
 
         public DeckSection Section { get; set; }
 
-        /// <summary>Where the card first appeared in its section, so the order the deck was arranged in survives.</summary>
+        /// <summary>Where the card first appeared in the pasted list. Kept as pasted; the viewer sorts by type and name instead.</summary>
         public int SortOrder { get; set; }
     }
 }

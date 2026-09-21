@@ -116,7 +116,10 @@ else
                             <a class="fw-semibold text-break" href="/Tournaments/Events/Details?id=@item.Event.ID">@item.Event.Location</a>
                             <div><span class="badge-neutral">@item.Event.EventType.GetDisplayName()</span></div>
                         </td>
-                        <td class="text-break">@item.Event.DeckName</td>
+                        <td class="text-break">
+                            @item.Event.DeckName
+                            <div><partial name="_EventDeckLinks" model="new EventDeckLinksViewModel(item.Event, item.OtherUnlinkedEventsWithSameURL)" /></div>
+                        </td>
                         <td class="text-nowrap"><partial name="_EventFinish" model="item" /></td>
                         <td class="text-nowrap">@RecordText(item)</td>
                         <td>@item.FormatName</td>
@@ -139,6 +142,7 @@ else
                     </div>
                     <div class="small">
                         <div><span class="text-muted">Deck:</span> <span class="text-break">@item.Event.DeckName</span></div>
+                        <div><partial name="_EventDeckLinks" model="new EventDeckLinksViewModel(item.Event, item.OtherUnlinkedEventsWithSameURL)" /></div>
                         <div><span class="text-muted">Finish:</span> <partial name="_EventFinish" model="item" /></div>
                         <div><span class="text-muted">Record:</span> @RecordText(item)</div>
                     </div>
@@ -290,6 +294,9 @@ else
     </div>
 </div>
 
+<partial name="_DeckImportModal" model="Model.DeckOptions" />
+
 @section Scripts {
     <script src="~/js/events.js" asp-append-version="true"></script>
+    <script src="~/js/deck-import.js" asp-append-version="true"></script>
 }

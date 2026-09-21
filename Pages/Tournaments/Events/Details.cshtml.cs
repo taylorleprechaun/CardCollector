@@ -11,12 +11,14 @@ namespace CardCollector.Pages.Tournaments.Events
     {
         private const string ROUNDS_FRAGMENT = "rounds";
 
+        private readonly IDeckService _deckService;
         private readonly IEventService _eventService;
         private readonly IMatchService _matchService;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
-        public DetailsModel(IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
+        public DetailsModel(IDeckService deckService, IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
         {
+            _deckService = deckService;
             _eventService = eventService;
             _matchService = matchService;
             _razorPartialRenderer = razorPartialRenderer;
@@ -24,6 +26,9 @@ namespace CardCollector.Pages.Tournaments.Events
 
         /// <summary>True when the stored order of the rounds doesn't match their round labels.</summary>
         public bool AreRoundsOutOfOrder { get; private set; }
+
+        /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
+        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
 
         public EventDetailViewModel? Detail { get; private set; }
 
@@ -46,6 +51,7 @@ namespace CardCollector.Pages.Tournaments.Events
             AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(Detail.Event.Matches.Select(m => m.Round));
             Summary = MatchRules.Summarize(Detail.Event.Matches);
             OpponentDecks = await _matchService.GetOpponentDecksAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
 
             return Page();
         }

@@ -47,17 +47,19 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_DeckWithCards_ResolvesSectionsInOrderAndFlagsUnknownCards()
+        public async Task GetAsync_DeckWithCards_SortsSectionsByNameAndFlagsUnknownCards()
         {
             using var context = InMemoryDbContextFactory.Create();
-            var service = CreateService(context, unknownCardIDs: [300]);
+            var names = new Dictionary<int, string> { [100] = "Alpha", [200] = "Zulu" };
+            var service = CreateService(context, unknownCardIDs: [300], names: names);
             var eventID = await AddEventAsync(context);
             var text = "#main\n200\n100\n100\n300\n#extra\n900\n!side\n800\n";
             var deckID = (await service.ImportAsync(new DeckImportRequest { EventID = eventID, Text = text })).DeckID;
 
             var detail = await service.GetAsync(deckID);
 
-            CollectionAssert.AreEqual(new[] { 200, 100, 300 }, detail!.Main.Cards.Select(c => c.CardID).ToArray());
+            // Pasted as 200, 100, 300: the display order comes from the sort, with the unknown card last.
+            CollectionAssert.AreEqual(new[] { 100, 200, 300 }, detail!.Main.Cards.Select(c => c.CardID).ToArray());
             Assert.AreEqual(4, detail.Main.Count);
             Assert.AreEqual(1, detail.Extra.Count);
             Assert.AreEqual(1, detail.Side.Count);
@@ -393,19 +395,21 @@ namespace CardCollector.Tests.Services
             return tournamentEvent.ID;
         }
 
-        private static Mock<ICardDataRepository> CardData(IReadOnlyDictionary<int, int>? aliases = null, int[]? unknownCardIDs = null)
+        private static Mock<ICardDataRepository> CardData(IReadOnlyDictionary<int, int>? aliases = null, int[]? unknownCardIDs = null, IReadOnlyDictionary<int, string>? names = null)
         {
             var unknown = unknownCardIDs ?? [];
             var cardData = new Mock<ICardDataRepository>();
             cardData.Setup(r => r.GetPasscodeAliases()).Returns(aliases ?? new Dictionary<int, int>());
             cardData
                 .Setup(r => r.GetCardByID(It.IsAny<int>()))
-                .Returns((int id) => unknown.Contains(id) ? null : new Card { CardType = "Effect Monster", ID = id });
+                .Returns((int id) => unknown.Contains(id)
+                    ? null
+                    : new Card { CardType = "Effect Monster", ID = id, Name = names?.GetValueOrDefault(id) ?? $"Card {id}" });
             return cardData;
         }
 
-        private static DeckService CreateService(AppDBContext context, IReadOnlyDictionary<int, int>? aliases = null, int[]? unknownCardIDs = null) =>
-            new(CardData(aliases, unknownCardIDs).Object, new DeckRepository(context), new EventRepository(context), new UnitOfWork(context));
+        private static DeckService CreateService(AppDBContext context, IReadOnlyDictionary<int, int>? aliases = null, int[]? unknownCardIDs = null, IReadOnlyDictionary<int, string>? names = null) =>
+            new(CardData(aliases, unknownCardIDs, names).Object, new DeckRepository(context), new EventRepository(context), new UnitOfWork(context));
 
         // The stored rows in a form that two decks can be compared by.
         private static string Describe(AppDBContext context, int deckID) =>
