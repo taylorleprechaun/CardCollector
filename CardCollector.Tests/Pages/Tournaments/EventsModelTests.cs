@@ -60,6 +60,17 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.IsFalse(model.HasActiveFilters);
         }
+
+        [TestMethod]
+        public async Task OnGetAsync_DecksExist_ExposesThemAsDeckOptions()
+        {
+            var options = new[] { new DeckListItemViewModel { EventCount = 1, ExtraCount = 15, ID = 3, MainCount = 60, Name = "Sample Deck", SideCount = 15 } };
+            var (model, _, _) = CreateModel(options);
+
+            await model.OnGetAsync(CancellationToken.None);
+
+            Assert.AreEqual("Sample Deck", model.DeckOptions.Single().Name);
+        }
         [TestMethod]
         public async Task OnGetAsync_FiltersBound_PassesThemToTheService()
         {
@@ -301,8 +312,11 @@ namespace CardCollector.Tests.Pages.Tournaments
         private static PagedResult<EventListItemViewModel> BuildPage(int page, params EventListItemViewModel[] items) =>
             new() { Items = items, Page = page, PageSize = 25, TotalCount = items.Length };
 
-        private static (EventsModel Model, Mock<IEventService> Events, Mock<IFormatService> Formats) CreateModel()
+        private static (EventsModel Model, Mock<IEventService> Events, Mock<IFormatService> Formats) CreateModel(IReadOnlyList<DeckListItemViewModel>? deckOptions = null)
         {
+            var decks = new Mock<IDeckService>();
+            decks.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(deckOptions ?? []);
+
             var events = new Mock<IEventService>();
             events.Setup(s => s.SearchAsync(It.IsAny<EventSearchCriteria>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new PagedResult<EventListItemViewModel> { Page = 1, PageSize = 25 });
@@ -312,7 +326,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             var formats = new Mock<IFormatService>();
             formats.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
-            var model = new EventsModel(events.Object, formats.Object);
+            var model = new EventsModel(decks.Object, events.Object, formats.Object);
             PageContextFactory.Attach(model);
             return (model, events, formats);
         }

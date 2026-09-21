@@ -122,6 +122,21 @@ namespace CardCollector.Tests.Repository
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, loaded!.Matches.Select(m => m.Sequence).ToArray());
         }
         [TestMethod]
+        public async Task GetByDeckAsync_EventsOfSeveralDecks_ReturnsOnlyTheDecksEventsNewestFirst()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            var older = await AddEventAsync(context, "2024-01-10", deckID: 7);
+            var newer = await AddEventAsync(context, "2024-03-10", deckID: 7);
+            await AddEventAsync(context, "2024-02-10", deckID: 8);
+            await AddEventAsync(context, "2024-02-11");
+
+            var events = await repository.GetByDeckAsync(7);
+
+            CollectionAssert.AreEqual(new[] { newer, older }, events.Select(e => e.ID).ToArray());
+        }
+
+        [TestMethod]
         public async Task GetDeckNamesAsync_RepeatedDecks_ReturnsDistinctSortedNames()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -147,6 +162,70 @@ namespace CardCollector.Tests.Repository
             var locations = await repository.GetLocationsAsync();
 
             CollectionAssert.AreEqual(new[] { "Alpha Shop", "Zebra Shop" }, locations.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetUnlinkedByDecklistUrlAsync_BlankUrl_ThrowsArgumentException()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => repository.GetUnlinkedByDecklistUrlAsync("  ", 1));
+        }
+
+        [TestMethod]
+        public async Task GetUnlinkedByDecklistUrlAsync_SharedUrl_ReturnsOnlyOtherEventsWithNoDeck()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            const string url = "https://decks.example.test/one";
+            var excluded = await AddEventAsync(context, "2024-01-10", url);
+            var unlinkedPeer = await AddEventAsync(context, "2024-01-17", url);
+            await AddEventAsync(context, "2024-01-24", url, deckID: 3);
+            await AddEventAsync(context, "2024-01-31", "https://decks.example.test/two");
+            await AddEventAsync(context, "2024-02-07");
+
+            var events = await repository.GetUnlinkedByDecklistUrlAsync(url, excluded);
+
+            CollectionAssert.AreEqual(new[] { unlinkedPeer }, events.Select(e => e.ID).ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetUnlinkedUrlCountsAsync_NoUrls_ReturnsEmpty()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            await AddEventAsync(context, "2024-01-10", "https://decks.example.test/one");
+
+            var counts = await repository.GetUnlinkedUrlCountsAsync([]);
+
+            Assert.AreEqual(0, counts.Count);
+        }
+
+        [TestMethod]
+        public async Task GetUnlinkedUrlCountsAsync_NullUrls_ThrowsArgumentNullException()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.GetUnlinkedUrlCountsAsync(null!));
+        }
+
+        [TestMethod]
+        public async Task GetUnlinkedUrlCountsAsync_SharedUrls_CountsOnlyEventsWithNoDeck()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            await AddEventAsync(context, "2024-01-10", "https://decks.example.test/one");
+            await AddEventAsync(context, "2024-01-17", "https://decks.example.test/one");
+            await AddEventAsync(context, "2024-01-24", "https://decks.example.test/one", deckID: 3);
+            await AddEventAsync(context, "2024-01-31", "https://decks.example.test/two", deckID: 3);
+            await AddEventAsync(context, "2024-02-07", "https://decks.example.test/other");
+
+            var counts = await repository.GetUnlinkedUrlCountsAsync(["https://decks.example.test/one", "https://decks.example.test/two"]);
+
+            Assert.AreEqual(1, counts.Count);
+            Assert.AreEqual(2, counts["https://decks.example.test/one"]);
         }
 
         [TestMethod]
@@ -316,6 +395,54 @@ namespace CardCollector.Tests.Repository
             CollectionAssert.AreEqual(new[] { secondID, firstID }, result.Items.Select(e => e.ID).ToArray());
         }
         [TestMethod]
+        public async Task SetDeckAsync_DeckIDIsNull_ClearsTheLink()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            var linked = await AddEventAsync(context, "2024-01-10", deckID: 5);
+
+            var count = await repository.SetDeckAsync([linked], null);
+
+            Assert.AreEqual(1, count);
+            Assert.IsNull((await repository.GetAsync(linked, includeMatches: false))!.DeckID);
+        }
+
+        [TestMethod]
+        public async Task SetDeckAsync_EventsAndAMissingID_SetsTheExistingOnesAndCountsThem()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            var first = await AddEventAsync(context, "2024-01-10");
+            var second = await AddEventAsync(context, "2024-01-17");
+            var untouched = await AddEventAsync(context, "2024-01-24");
+
+            var count = await repository.SetDeckAsync([first, second, 9999], 5);
+
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(5, (await repository.GetAsync(first, includeMatches: false))!.DeckID);
+            Assert.AreEqual(5, (await repository.GetAsync(second, includeMatches: false))!.DeckID);
+            Assert.IsNull((await repository.GetAsync(untouched, includeMatches: false))!.DeckID);
+        }
+
+        [TestMethod]
+        public async Task SetDeckAsync_NoEventIDs_ReturnsZero()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+
+            Assert.AreEqual(0, await repository.SetDeckAsync([], 5));
+        }
+
+        [TestMethod]
+        public async Task SetDeckAsync_NullEventIDs_ThrowsArgumentNullException()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.SetDeckAsync(null!, 5));
+        }
+
+        [TestMethod]
         public async Task UpdateAsync_EventMissing_ReturnsFalse()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -359,6 +486,15 @@ namespace CardCollector.Tests.Repository
             var repository = new EventRepository(context);
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
+        }
+        private static async Task<int> AddEventAsync(AppDBContext context, string date, string? decklistUrl = null, int? deckID = null)
+        {
+            var tournamentEvent = BuildEvent(date, "Test Hobby Shop", "Sample Deck");
+            tournamentEvent.DecklistURL = decklistUrl;
+            tournamentEvent.DeckID = deckID;
+            context.Events.Add(tournamentEvent);
+            await context.SaveChangesAsync();
+            return tournamentEvent.ID;
         }
 
         private static async Task AddMatchesAsync(AppDBContext context, int eventID, params int[] sequences)

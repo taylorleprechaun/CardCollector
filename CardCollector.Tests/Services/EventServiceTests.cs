@@ -89,6 +89,33 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetAsync_EventSharesUrlWithUnlinkedEvents_CountsOnlyTheOthers()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+            var eventID = AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one");
+            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
+            AddEventWithUrl(context, "2024-01-31", "https://decks.example.test/one", deckID: 3);
+
+            var detail = await service.GetAsync(eventID);
+
+            Assert.AreEqual(2, detail!.OtherUnlinkedEventsWithSameURL);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_EventWithNoUrl_HasNoOtherUnlinkedEvents()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+            var eventID = AddEvent(context, "2024-01-10", "Test Hobby Shop");
+
+            var detail = await service.GetAsync(eventID);
+
+            Assert.AreEqual(0, detail!.OtherUnlinkedEventsWithSameURL);
+        }
+
+        [TestMethod]
         public async Task GetAsync_EventWithRounds_ReturnsRecordsFormatAndOrderedRounds()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -122,6 +149,33 @@ namespace CardCollector.Tests.Services
             var detail = await service.GetAsync(id);
 
             Assert.IsNull(detail!.Format);
+        }
+
+        [TestMethod]
+        public async Task GetDeckNamesAsync_RepeatedDecks_ReturnsDistinctNames()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            AddEvent(context, "2024-05-01", "Shop A");
+            AddEvent(context, "2024-05-02", "Shop B");
+            var service = CreateService(context);
+
+            var names = await service.GetDeckNamesAsync();
+
+            CollectionAssert.AreEqual(new[] { "Sample Deck" }, names.ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetLocationsAsync_RepeatedLocations_ReturnsDistinctNames()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            AddEvent(context, "2024-05-01", "Shop B");
+            AddEvent(context, "2024-05-02", "Shop A");
+            AddEvent(context, "2024-05-03", "Shop B");
+            var service = CreateService(context);
+
+            var locations = await service.GetLocationsAsync();
+
+            CollectionAssert.AreEqual(new[] { "Shop A", "Shop B" }, locations.ToArray());
         }
 
         [TestMethod]
@@ -237,34 +291,6 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
-
-        [TestMethod]
-        public async Task GetDeckNamesAsync_RepeatedDecks_ReturnsDistinctNames()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            AddEvent(context, "2024-05-01", "Shop A");
-            AddEvent(context, "2024-05-02", "Shop B");
-            var service = CreateService(context);
-
-            var names = await service.GetDeckNamesAsync();
-
-            CollectionAssert.AreEqual(new[] { "Sample Deck" }, names.ToArray());
-        }
-
-        [TestMethod]
-        public async Task GetLocationsAsync_RepeatedLocations_ReturnsDistinctNames()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            AddEvent(context, "2024-05-01", "Shop B");
-            AddEvent(context, "2024-05-02", "Shop A");
-            AddEvent(context, "2024-05-03", "Shop B");
-            var service = CreateService(context);
-
-            var locations = await service.GetLocationsAsync();
-
-            CollectionAssert.AreEqual(new[] { "Shop A", "Shop B" }, locations.ToArray());
-        }
-
         [TestMethod]
         public async Task SearchAsync_FormatFilterWithDisjointDateRange_ReturnsNothing()
         {
@@ -325,6 +351,21 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
+        [TestMethod]
+        public async Task SearchAsync_LinkedEventSharesUrlWithUnlinkedEvents_CountsAllUnlinkedEvents()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+            AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one", deckID: 3);
+            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
+
+            var result = await service.SearchAsync(new EventSearchCriteria { Page = 1, PageSize = 25 });
+
+            var counts = result.Items.OrderBy(i => i.Event.Date).Select(i => i.OtherUnlinkedEventsWithSameURL).ToArray();
+            CollectionAssert.AreEqual(new[] { 2, 1, 1 }, counts);
+        }
+
         [TestMethod]
         public async Task SearchAsync_NullCriteria_ThrowsArgumentNullException()
         {
@@ -400,7 +441,6 @@ namespace CardCollector.Tests.Services
             Assert.IsTrue(result.Succeeded);
             Assert.AreEqual("Changed Shop", (await context.Events.SingleAsync()).Location);
         }
-
         private static int AddEvent(AppDBContext context, string date, string location)
         {
             var entity = new Event
@@ -415,6 +455,21 @@ namespace CardCollector.Tests.Services
             return entity.ID;
         }
 
+        private static int AddEventWithUrl(AppDBContext context, string date, string decklistUrl, int? deckID = null)
+        {
+            var entity = new Event
+            {
+                Date = DateOnly.Parse(date),
+                DeckID = deckID,
+                DeckName = "Sample Deck",
+                DecklistURL = decklistUrl,
+                EventType = EventType.Locals,
+                Location = "Test Hobby Shop"
+            };
+            context.Events.Add(entity);
+            context.SaveChanges();
+            return entity.ID;
+        }
         private static int AddFormat(AppDBContext context, string name, string start, string? end, params string[] strategies)
         {
             var entity = new Format

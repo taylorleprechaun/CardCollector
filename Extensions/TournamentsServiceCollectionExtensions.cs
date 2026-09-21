@@ -7,6 +7,8 @@ namespace CardCollector.Extensions
     {
         public static IServiceCollection AddTournamentsModule(this IServiceCollection services)
         {
+            services.AddScoped<IDeckRepository, DeckRepository>();
+            services.AddScoped<IDeckService, DeckService>();
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IEventService, EventService>();
             services.AddScoped<IFormatRepository, FormatRepository>();

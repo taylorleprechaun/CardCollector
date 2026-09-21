@@ -1,0 +1,45 @@
+@model CardCollector.ViewModels.DeckSectionViewModel
+@{
+    var title = (string)ViewData["Title"]!;
+    var returnUrl = Uri.EscapeDataString((string)ViewData["ReturnURL"]!);
+    var columns = (int)ViewData["Columns"]!;
+}
+
+<section class="mb-4" aria-labelledby="deck-section-@title">
+    <h2 class="h5" id="deck-section-@title">@title <span class="text-muted">(@Model.Count)</span></h2>
+
+    @if (Model.Cards.Count == 0)
+    {
+        <p class="text-muted">No cards.</p>
+    }
+    else
+    {
+        <div class="cc-deck-grid" style="--cc-deck-columns: @columns">
+            @foreach (var card in Model.Cards)
+            {
+                for (var copy = 0; copy < card.Quantity; copy++)
+                {
+                    if (card.IsUnknown)
+                    {
+                        <div class="cc-deck-tile cc-deck-tile-empty" title="Unknown card (passcode @card.CardID)">
+                            <span>Unknown card</span>
+                            <span>@card.CardID</span>
+                        </div>
+                    }
+                    else if (card.ImageURL is null)
+                    {
+                        <a class="cc-deck-tile cc-deck-tile-empty" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                            <span>@card.Card!.Name</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="cc-deck-tile" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                            <img src="@card.ImageURL" alt="@card.Card!.Name" width="168" height="246" loading="lazy" />
+                        </a>
+                    }
+                }
+            }
+        </div>
+    }
+</section>

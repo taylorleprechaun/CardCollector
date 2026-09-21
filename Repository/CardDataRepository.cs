@@ -25,6 +25,7 @@ namespace CardCollector.Repository
         private IReadOnlyList<Card> _browseableCards = default!;
         private IReadOnlyDictionary<int, Card> _cardIndex = default!;
         private IReadOnlyList<Card> _cards = default!;
+        private IReadOnlyDictionary<int, int> _passcodeAliases = default!;
         private IReadOnlyDictionary<string, string> _setNamesByCode = default!;
         private IReadOnlyDictionary<string, string> _setPrefixByName = default!;
         public CardDataRepository(ILogger<CardDataRepository> logger, IHttpClientFactory httpClientFactory, ITCGCatalogCache tcgCatalogCache, IConfiguration config)
@@ -51,6 +52,8 @@ namespace CardCollector.Repository
 
         public Card? GetCardByID(int cardID) =>
             _cardIndex.GetValueOrDefault(cardID);
+
+        public IReadOnlyDictionary<int, int> GetPasscodeAliases() => _passcodeAliases;
 
         public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _setNamesByCode;
 
@@ -82,6 +85,10 @@ namespace CardCollector.Repository
         private IReadOnlyList<Card> BuildCards(IReadOnlyList<Card> yamlCards)
         {
             var ygoProDeckCards = LoadRawYGOProDeckCards();
+
+            // Built before the merge: afterwards YGOProDeck's alternate primary ids exist as cards of their own,
+            // and the yaml-yugi ids are what tell the real card from its duplicate.
+            _passcodeAliases = PasscodeAliasResolver.BuildAliases(yamlCards.Select(c => c.ID), ygoProDeckCards);
 
             var corrections = LoadRarityCorrections();
             var correctedCount = CardDataMapper.ApplyRarityCorrections(yamlCards, corrections)

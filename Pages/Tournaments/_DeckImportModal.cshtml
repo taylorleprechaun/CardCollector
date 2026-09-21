@@ -1,0 +1,62 @@
+@model IReadOnlyList<CardCollector.ViewModels.DeckListItemViewModel>
+@using CardCollector.Services
+<div class="modal fade" id="deckImportModal" tabindex="-1" aria-labelledby="deckImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="deckImportForm" method="post" asp-page="/Tournaments/Decks" asp-page-handler="Import"
+                  data-import-url="@Url.Page("/Tournaments/Decks", "Import")"
+                  data-link-url="@Url.Page("/Tournaments/Decks", "Link")"
+                  data-parse-url="@Url.Page("/Tournaments/Decks", "Parse")"
+                  data-unlink-url="@Url.Page("/Tournaments/Decks", "Unlink")">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deckImportModalLabel">Add deck</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" id="deckImportErrors" role="alert" hidden></div>
+
+                    <input type="hidden" name="eventID" id="deckImportEventID" />
+
+                    <div class="mb-3">
+                        <label for="deckImportText" class="form-label">Paste a YDKe code or YDK file contents</label>
+                        <textarea name="text" id="deckImportText" class="form-control font-monospace" rows="5"
+                                  maxlength="@DeckListParser.MAX_INPUT_LENGTH" spellcheck="false" autocomplete="off"></textarea>
+                        <div class="form-text" id="deckImportPreview" role="status"></div>
+                        <div class="form-text" id="deckImportHelp">In DuelingBook, use <strong>Download Deck</strong> and copy the YDKe code.</div>
+                        <a id="deckImportOpenLink" class="small" href="#" target="_blank" rel="noopener noreferrer" hidden>Open in DuelingBook <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="deckImportName" class="form-label">Deck name</label>
+                        <input type="text" name="name" id="deckImportName" class="form-control"
+                               maxlength="@DeckRules.MAX_NAME_LENGTH" autocomplete="off" />
+                    </div>
+
+                    <div class="form-check mb-3" id="deckImportLinkOthers" hidden>
+                        <input class="form-check-input" type="checkbox" name="linkOthers" value="true" id="deckImportLinkOthersInput" checked />
+                        <label class="form-check-label" for="deckImportLinkOthersInput" id="deckImportLinkOthersLabel">Also link other events that use this decklist URL</label>
+                    </div>
+
+                    @if (Model.Count > 0)
+                    {
+                        <details class="mb-0" id="deckImportExistingGroup">
+                            <summary class="mb-2">Use an existing deck instead</summary>
+                            <select name="deckID" id="deckImportExisting" class="form-select">
+                                <option value="">None &mdash; import the pasted list</option>
+                                @foreach (var deck in Model)
+                                {
+                                    <option value="@deck.ID">@deck.Name</option>
+                                }
+                            </select>
+                        </details>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger me-auto" id="deckImportRemove" hidden>Remove deck</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="deckImportSubmit">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

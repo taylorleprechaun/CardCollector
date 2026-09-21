@@ -9,7 +9,7 @@ namespace CardCollector.Data.Models
 
         public DateTime DateModified { get; set; }
 
-        /// <summary>Reserved for the deck link; deliberately has no foreign key, so the link is enforced in code.</summary>
+        /// <summary>The <see cref="Deck"/> played; deliberately has no foreign key, so deleting a deck clears it in code.</summary>
         public int? DeckID { get; set; }
 
         public string? DecklistURL { get; set; }

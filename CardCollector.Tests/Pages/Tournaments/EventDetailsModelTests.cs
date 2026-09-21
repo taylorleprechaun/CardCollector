@@ -15,6 +15,17 @@ namespace CardCollector.Tests.Pages.Tournaments
     public sealed class EventDetailsModelTests
     {
         [TestMethod]
+        public async Task OnGetAsync_DecksExist_ExposesThemAsDeckOptions()
+        {
+            var options = new[] { new DeckListItemViewModel { EventCount = 0, ExtraCount = 15, ID = 3, MainCount = 60, Name = "Sample Deck", SideCount = 15 } };
+            var context = CreateModel(5, BuildDetail(5), deckOptions: options);
+
+            await context.Model.OnGetAsync(CancellationToken.None);
+
+            Assert.AreEqual("Sample Deck", context.Model.DeckOptions.Single().Name);
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_EventExists_ReturnsPageWithDetailSummaryAndOpponents()
         {
             var detail = BuildDetail(5, new Match { Result = MatchResult.Win, Round = "1" });
@@ -29,7 +40,6 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreEqual("2", context.Model.Summary.NextRound);
             CollectionAssert.AreEqual(new[] { "Test Opponent" }, context.Model.OpponentDecks.ToArray());
         }
-
         [TestMethod]
         public async Task OnGetAsync_EventMissing_ReturnsNotFound()
         {
@@ -324,8 +334,11 @@ namespace CardCollector.Tests.Pages.Tournaments
                 MatchRecord = new WinLossTie(0, 0, 0)
             };
 
-        private static PageTestContext CreateModel(int id, EventDetailViewModel? detail, bool ajax = false)
+        private static PageTestContext CreateModel(int id, EventDetailViewModel? detail, bool ajax = false, IReadOnlyList<DeckListItemViewModel>? deckOptions = null)
         {
+            var decks = new Mock<IDeckService>();
+            decks.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(deckOptions ?? []);
+
             var events = new Mock<IEventService>();
             events.Setup(s => s.GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
 
@@ -336,7 +349,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             renderer.Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_MatchRow", It.IsAny<Match>())).ReturnsAsync("<row/>");
             renderer.Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_MatchSummary", It.IsAny<MatchSummaryViewModel>())).ReturnsAsync("<summary/>");
 
-            var model = new DetailsModel(events.Object, matches.Object, renderer.Object) { ID = id };
+            var model = new DetailsModel(decks.Object, events.Object, matches.Object, renderer.Object) { ID = id };
             PageContextFactory.Attach(model, http =>
             {
                 if (ajax)

@@ -1,0 +1,20 @@
+@model CardCollector.ViewModels.DeckListItemViewModel
+<div class="d-flex gap-1 flex-shrink-0 justify-content-md-end">
+    <a class="btn btn-sm btn-outline-primary" href="/Tournaments/Decks/Details?id=@Model.ID">View</a>
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary"
+            data-deck-id="@Model.ID"
+            data-deck-name="@Model.Name"
+            data-deck-notes="@Model.Notes"
+            onclick="openRenameDeckModal(this)">
+        Rename
+    </button>
+    <button type="button"
+            class="btn btn-sm btn-outline-danger"
+            data-deck-id="@Model.ID"
+            data-deck-name="@Model.Name"
+            data-deck-events="@Model.EventCount"
+            onclick="openDeleteDeckModal(this)">
+        Delete
+    </button>
+</div>

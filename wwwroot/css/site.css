@@ -505,3 +505,45 @@
 .cc-add-round-toggle[aria-expanded="true"] .bi-chevron-down {
     transform: rotate(180deg);
 }
+
+/* Deck viewer: one tile per copy, a fixed number of tiles per row (10 for the main deck, 15 for extra and side).
+   The last row of a section may be incomplete; its tiles keep the same size. */
+.cc-deck-grid {
+    display: grid;
+    gap: 0.125rem;
+    grid-template-columns: repeat(var(--cc-deck-columns, 10), minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+    .cc-deck-grid {
+        gap: 0.375rem;
+    }
+}
+
+.cc-deck-tile {
+    aspect-ratio: 168 / 246;
+    border-radius: 0.25rem;
+    display: block;
+    overflow: hidden;
+}
+
+.cc-deck-tile img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.cc-deck-tile-empty {
+    align-items: center;
+    border: 1px dashed var(--bs-border-color);
+    color: var(--bs-secondary-color);
+    display: flex;
+    flex-direction: column;
+    font-size: clamp(0.4rem, 1.3vw, 0.75rem);
+    justify-content: center;
+    overflow-wrap: anywhere;
+    padding: 0.125rem;
+    text-align: center;
+    text-decoration: none;
+}

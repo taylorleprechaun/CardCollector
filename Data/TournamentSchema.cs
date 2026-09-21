@@ -81,6 +81,32 @@ namespace CardCollector.Data
                 """);
 
             db.Database.ExecuteSqlRaw("""
+                CREATE TABLE IF NOT EXISTS "Decks" (
+                    "ID" INTEGER NOT NULL CONSTRAINT "PK_Decks" PRIMARY KEY AUTOINCREMENT,
+                    "DateCreated" TEXT NOT NULL,
+                    "DateModified" TEXT NOT NULL,
+                    "Name" TEXT NOT NULL,
+                    "Notes" TEXT NULL
+                );
+                """);
+
+            db.Database.ExecuteSqlRaw("""
+                CREATE TABLE IF NOT EXISTS "DeckCards" (
+                    "ID" INTEGER NOT NULL CONSTRAINT "PK_DeckCards" PRIMARY KEY AUTOINCREMENT,
+                    "CardID" INTEGER NOT NULL,
+                    "DeckID" INTEGER NOT NULL,
+                    "Quantity" INTEGER NOT NULL,
+                    "Section" TEXT NOT NULL,
+                    "SortOrder" INTEGER NOT NULL,
+                    CONSTRAINT "FK_DeckCards_Decks_DeckID" FOREIGN KEY ("DeckID") REFERENCES "Decks" ("ID") ON DELETE CASCADE
+                );
+                """);
+
+            db.Database.ExecuteSqlRaw("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_DeckCards_DeckID_CardID_Section" ON "DeckCards" ("DeckID", "CardID", "Section");
+                """);
+
+            db.Database.ExecuteSqlRaw("""
                 CREATE INDEX IF NOT EXISTS "IX_Events_Date" ON "Events" ("Date");
                 """);
 

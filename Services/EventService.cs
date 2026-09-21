@@ -42,6 +42,7 @@ namespace CardCollector.Services
                 return null;
 
             var formats = await _formatService.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            var unlinkedUrlCounts = await GetUnlinkedUrlCountsAsync([tournamentEvent], cancellationToken).ConfigureAwait(false);
 
             return new EventDetailViewModel
             {
@@ -49,7 +50,8 @@ namespace CardCollector.Services
                 Event = tournamentEvent,
                 Format = FormatRules.FindForDate(formats, tournamentEvent.Date),
                 GameRecord = EventRules.GetGameRecord(tournamentEvent.Matches),
-                MatchRecord = EventRules.GetMatchRecord(tournamentEvent.Matches)
+                MatchRecord = EventRules.GetMatchRecord(tournamentEvent.Matches),
+                OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedUrlCounts)
             };
         }
 
@@ -76,10 +78,11 @@ namespace CardCollector.Services
             }
 
             var result = await _eventRepository.SearchAsync(resolved, cancellationToken).ConfigureAwait(false);
+            var unlinkedUrlCounts = await GetUnlinkedUrlCountsAsync(result.Items, cancellationToken).ConfigureAwait(false);
 
             return new PagedResult<EventListItemViewModel>
             {
-                Items = result.Items.Select(e => ToListItem(e, formats)).ToList(),
+                Items = result.Items.Select(e => ToListItem(e, formats, unlinkedUrlCounts)).ToList(),
                 Page = result.Page,
                 PageSize = result.PageSize,
                 TotalCount = result.TotalCount
@@ -98,6 +101,19 @@ namespace CardCollector.Services
 
             var updated = await _eventRepository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
             return updated ? EventSaveResult.Success() : EventSaveResult.Failure(["Event not found."]);
+        }
+
+        /// <summary>The event itself is left out of the count of events sharing its URL.</summary>
+        /// <param name="tournamentEvent"></param>
+        /// <param name="unlinkedUrlCounts"></param>
+        /// <returns></returns>
+        private static int CountOtherUnlinkedEvents(Event tournamentEvent, IReadOnlyDictionary<string, int> unlinkedUrlCounts)
+        {
+            if (string.IsNullOrEmpty(tournamentEvent.DecklistURL))
+                return 0;
+
+            var unlinked = unlinkedUrlCounts.GetValueOrDefault(tournamentEvent.DecklistURL);
+            return Math.Max(0, unlinked - (tournamentEvent.DeckID is null ? 1 : 0));
         }
 
         /// <summary>
@@ -140,12 +156,25 @@ namespace CardCollector.Services
             };
         }
 
-        private static EventListItemViewModel ToListItem(Event tournamentEvent, IReadOnlyList<Format> formats) =>
+        private static EventListItemViewModel ToListItem(Event tournamentEvent, IReadOnlyList<Format> formats, IReadOnlyDictionary<string, int> unlinkedUrlCounts) =>
             new()
             {
                 Event = tournamentEvent,
                 FormatName = FormatRules.FindForDate(formats, tournamentEvent.Date)?.Name ?? NO_FORMAT_NAME,
+                OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedUrlCounts),
                 Record = EventRules.GetMatchRecord(tournamentEvent.Matches)
             };
+
+        private Task<IReadOnlyDictionary<string, int>> GetUnlinkedUrlCountsAsync(IEnumerable<Event> events, CancellationToken cancellationToken)
+        {
+            var urls = events
+                .Select(e => e.DecklistURL)
+                .OfType<string>()
+                .Where(url => url.Length > 0)
+                .Distinct()
+                .ToList();
+
+            return _eventRepository.GetUnlinkedUrlCountsAsync(urls, cancellationToken);
+        }
     }
 }

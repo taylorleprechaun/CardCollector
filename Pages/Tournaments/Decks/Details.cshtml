@@ -1,0 +1,73 @@
+@page
+@model CardCollector.Pages.Tournaments.Decks.DetailsModel
+@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    var detail = Model.Detail!;
+    ViewData["Title"] = detail.Deck.Name;
+
+    var types = detail.MainTypes;
+    ViewDataDictionary SectionData(string title, int columns) =>
+        new(ViewData) { ["Columns"] = columns, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
+
+    // A 40 to 60 card main deck reads as 4 to 6 rows of 10; extra and side are one row of 15.
+    var mainData = SectionData("Main", 10);
+    var extraData = SectionData("Extra", 15);
+    var sideData = SectionData("Side", 15);
+}
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <a href="/Tournaments/Decks" class="small"><i class="bi bi-arrow-left me-1"></i>All decks</a>
+</nav>
+
+<div class="mb-3">
+    <h1 class="mb-1 text-break">@detail.Deck.Name</h1>
+    <div class="text-muted">
+        @detail.Main.Count main &middot; @detail.Extra.Count extra &middot; @detail.Side.Count side
+    </div>
+    <div class="text-muted small">
+        Main deck: @types.Monsters monsters &middot; @types.Spells spells &middot; @types.Traps traps
+    </div>
+</div>
+
+@* Reserved for the banlist legality banner. *@
+<div id="deckLegality" data-legality-placeholder></div>
+
+@if (detail.UnknownCardCount > 0)
+{
+    <div class="alert alert-warning" role="status">
+        @detail.UnknownCardCount @(detail.UnknownCardCount == 1 ? "card" : "cards") couldn&rsquo;t be matched to the card data and show as unknown.
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(detail.Deck.Notes) || detail.Events.Count > 0)
+{
+    <div class="cc-table-card p-3 mb-4">
+        <dl class="row mb-0 gy-2">
+            @if (!string.IsNullOrWhiteSpace(detail.Deck.Notes))
+            {
+                <dt class="col-sm-3">Notes</dt>
+                <dd class="col-sm-9 mb-0 text-break cc-pre-line">@detail.Deck.Notes</dd>
+            }
+            @if (detail.Events.Count > 0)
+            {
+                <dt class="col-sm-3">Played at</dt>
+                <dd class="col-sm-9 mb-0">
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var tournamentEvent in detail.Events)
+                        {
+                            <li>
+                                <a class="text-break" href="/Tournaments/Events/Details?id=@tournamentEvent.ID">@tournamentEvent.Location</a>
+                                <span class="text-muted"> &middot; @tournamentEvent.Date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</span>
+                            </li>
+                        }
+                    </ul>
+                </dd>
+            }
+        </dl>
+    </div>
+}
+
+<partial name="_DeckSection" model="detail.Main" view-data="mainData" />
+<partial name="_DeckSection" model="detail.Extra" view-data="extraData" />
+<partial name="_DeckSection" model="detail.Side" view-data="sideData" />
