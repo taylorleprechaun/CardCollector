@@ -86,6 +86,33 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(keptID, (await context.Matches.SingleAsync()).EventID);
         }
         [TestMethod]
+        public async Task GetAllWithMatchesAsync_NoEvents_ReturnsEmpty()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+
+            var events = await repository.GetAllWithMatchesAsync();
+
+            Assert.AreEqual(0, events.Count);
+        }
+
+        [TestMethod]
+        public async Task GetAllWithMatchesAsync_SeveralEvents_ReturnsEveryEventNewestFirstWithRoundsInPlayOrder()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new EventRepository(context);
+            var older = await AddEventAsync(context, "2024-01-10");
+            var newer = await AddEventAsync(context, "2024-03-10");
+            await AddMatchesAsync(context, older, 2, 1);
+            await AddMatchesAsync(context, newer, 3, 1, 2);
+
+            var events = await repository.GetAllWithMatchesAsync();
+
+            CollectionAssert.AreEqual(new[] { newer, older }, events.Select(e => e.ID).ToArray());
+            CollectionAssert.AreEqual(new[] { 1, 2, 3 }, events[0].Matches.Select(m => m.Sequence).ToArray());
+            CollectionAssert.AreEqual(new[] { 1, 2 }, events[1].Matches.Select(m => m.Sequence).ToArray());
+        }
+        [TestMethod]
         public async Task GetAsync_EventMissing_ReturnsNull()
         {
             using var context = InMemoryDbContextFactory.Create();

@@ -50,6 +50,15 @@ namespace CardCollector.Repository
             return true;
         }
 
+        public async Task<IReadOnlyList<Event>> GetAllWithMatchesAsync(CancellationToken cancellationToken = default) =>
+            await _context.Events
+                .AsNoTracking()
+                .Include(e => e.Matches.OrderBy(m => m.Sequence).ThenBy(m => m.ID))
+                .OrderByDescending(e => e.Date)
+                .ThenByDescending(e => e.ID)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
         public async Task<Event?> GetAsync(int id, bool includeMatches, CancellationToken cancellationToken = default)
         {
             var query = _context.Events.AsNoTracking();

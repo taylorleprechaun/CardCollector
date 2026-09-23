@@ -1,0 +1,264 @@
+@page
+@model CardCollector.Pages.Tournaments.AnalyticsModel
+@using System.Globalization
+@using CardCollector.Data.Models
+@{
+    ViewData["Title"] = "Analytics";
+
+    var report = Model.Report;
+    var summary = report.Summary;
+    var eventTypes = Enum.GetValues<EventType>();
+    var matchWinRate = AnalyticsDisplay.Percent(summary.MatchRecord.WinRate);
+    var gameWinRate = AnalyticsDisplay.Percent(summary.GameRecord.WinRate);
+    var tiles = new[]
+    {
+        new StatTileViewModel("Events", summary.EventCount.ToString(CultureInfo.InvariantCulture)),
+        new StatTileViewModel("Match record", $"{summary.MatchRecord} · {matchWinRate}"),
+        new StatTileViewModel("Game record", $"{summary.GameRecord} · {gameWinRate}"),
+        new StatTileViewModel("1st places", summary.FirstPlaceCount.ToString(CultureInfo.InvariantCulture))
+    };
+    var tabs = new (string ID, string Title)[]
+    {
+        ("deck-format", "Deck × Format"),
+        ("matchups", "Matchups"),
+        ("trend", "Trend"),
+        ("by-deck", "By deck"),
+        ("by-format", "By format"),
+        ("by-type", "Event type"),
+        ("dice", "Dice")
+    };
+}
+
+<h1 class="mb-1">Analytics</h1>
+<p class="text-muted mb-3">Your tournament results, filtered however you like. An event&rsquo;s format is worked out from its date.</p>
+
+<button type="button" class="btn btn-outline-secondary btn-sm d-md-none mb-2" data-bs-toggle="collapse" data-bs-target="#analyticsFilters"
+        aria-expanded="@(Model.HasActiveFilters ? "true" : "false")" aria-controls="analyticsFilters">
+    <i class="bi bi-funnel me-1"></i>Filters@(Model.HasActiveFilters ? " (active)" : string.Empty)
+</button>
+
+<div id="analyticsFilters" class="collapse d-md-block @(Model.HasActiveFilters ? "show" : string.Empty)">
+    <form method="get" id="analyticsFilterForm" class="cc-table-card p-3 mb-4" aria-label="Filter analytics">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label for="filterFormat" class="form-label small mb-1">Format</label>
+                <select id="filterFormat" name="formatID" class="form-select form-select-sm">
+                    <option value="">All formats</option>
+                    @foreach (var format in Model.Formats)
+                    {
+                        <option value="@format.ID" selected="@(Model.FormatID == format.ID)">@format.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-4">
+                <label for="filterDeck" class="form-label small mb-1">Deck</label>
+                <input type="text" id="filterDeck" name="deck" class="form-control form-control-sm" list="analyticsDeckOptions"
+                       value="@Model.Deck" autocomplete="off" />
+            </div>
+            <div class="col-6 col-md-4">
+                <label for="filterOpponent" class="form-label small mb-1">Opponent</label>
+                <input type="text" id="filterOpponent" name="opponent" class="form-control form-control-sm" list="analyticsOpponentOptions"
+                       value="@Model.Opponent" autocomplete="off" />
+            </div>
+        </div>
+
+        <div id="analyticsMoreFilters" class="collapse @(Model.HasSecondaryFilters ? "show" : string.Empty)">
+            <div class="row g-2 align-items-end mt-0">
+                <div class="col-6 col-md-3">
+                    <label for="filterDateFrom" class="form-label small mb-1">From</label>
+                    <input type="text" id="filterDateFrom" name="dateFrom" class="form-control form-control-sm cc-date-picker"
+                           value="@Model.DateFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="filterDateTo" class="form-label small mb-1">To</label>
+                    <input type="text" id="filterDateTo" name="dateTo" class="form-control form-control-sm cc-date-picker"
+                           value="@Model.DateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="filterType" class="form-label small mb-1">Type</label>
+                    <select id="filterType" name="type" class="form-select form-select-sm">
+                        <option value="">All types</option>
+                        @foreach (var type in eventTypes)
+                        {
+                            <option value="@type" selected="@(Model.Type == type)">@type.GetDisplayName()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="filterLocation" class="form-label small mb-1">Location</label>
+                    <input type="text" id="filterLocation" name="location" class="form-control form-control-sm"
+                           value="@Model.Location" autocomplete="off" />
+                </div>
+                <div class="col-12">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="filterExcludeByes" name="excludeByes" value="true" checked="@Model.ExcludeByes" />
+                        <label class="form-check-label small" for="filterExcludeByes">Exclude byes</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            @if (Model.HasActiveFilters || Model.MinMatches != AnalyticsCriteria.DEFAULT_MIN_MATCHES)
+            {
+                <a href="/Tournaments/Analytics" class="btn btn-outline-secondary btn-sm">Reset</a>
+            }
+            <button type="button" class="btn btn-link btn-sm ms-auto" data-bs-toggle="collapse" data-bs-target="#analyticsMoreFilters"
+                    aria-expanded="@(Model.HasSecondaryFilters ? "true" : "false")" aria-controls="analyticsMoreFilters">
+                More filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<datalist id="analyticsDeckOptions">
+    @foreach (var name in Model.DeckNames)
+    {
+        <option value="@name"></option>
+    }
+</datalist>
+<datalist id="analyticsOpponentOptions">
+    @foreach (var name in Model.OpponentNames)
+    {
+        <option value="@name"></option>
+    }
+</datalist>
+
+@if (report.IsEmpty)
+{
+    <div class="alert alert-info text-center py-5">
+        @if (Model.HasActiveFilters)
+        {
+            <h2 class="h4">No matching events</h2>
+            <p class="mb-0">Try loosening the filters, or <a href="/Tournaments/Analytics">reset them</a>.</p>
+        }
+        else
+        {
+            <h2 class="h4">No events yet</h2>
+            <p class="mb-0">Add tournaments on the <a href="/Tournaments/Events">Events</a> page and their results show up here.</p>
+        }
+    </div>
+}
+else
+{
+    <div class="row g-3 mb-2">
+        @foreach (var tile in tiles)
+        {
+            <div class="col-6 col-lg-3">
+                <partial name="_StatTile" model="tile" />
+            </div>
+        }
+    </div>
+    <p class="text-muted small mb-4">
+        Win % counts a tie as half a win. Byes count by their recorded result@(Model.ExcludeByes ? " but are excluded right now" : string.Empty).
+    </p>
+
+    <ul class="nav nav-tabs cc-scroll-tabs mb-3" role="tablist" id="analyticsTabs">
+        @for (var i = 0; i < tabs.Length; i++)
+        {
+            var (id, title) = tabs[i];
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link @(i == 0 ? "active" : string.Empty)" id="tab-@id" data-bs-toggle="tab" data-bs-target="#@id"
+                        role="tab" aria-controls="@id" aria-selected="@(i == 0 ? "true" : "false")">@title</button>
+            </li>
+        }
+    </ul>
+
+    <div class="tab-content">
+        <section class="tab-pane fade show active" id="deck-format" role="tabpanel" aria-labelledby="tab-deck-format">
+            <div class="cc-table-card table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" data-sortable-table>
+                    <caption class="visually-hidden">Match record for each deck in each format</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"><button type="button" class="cc-sort-button" data-sort="text">Deck</button></th>
+                            <th scope="col" class="d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">Format</button></th>
+                            <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">Events</button></th>
+                            <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">W</button></th>
+                            <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">L</button></th>
+                            <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">T</button></th>
+                            <th scope="col" class="text-end d-md-none">Record</th>
+                            <th scope="col" class="text-end"><button type="button" class="cc-sort-button" data-sort="number">Win %</button></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in report.DeckFormats)
+                        {
+                            var formatSort = row.FormatStartDate?.DayNumber.ToString(CultureInfo.InvariantCulture) ?? "-1";
+                            <tr>
+                                <td class="text-break">
+                                    @row.DeckName
+                                    <div class="text-muted small d-md-none">@row.FormatName &middot; @row.EventCount @(row.EventCount == 1 ? "event" : "events")</div>
+                                </td>
+                                <td class="d-none d-md-table-cell" data-sort-value="@formatSort">@row.FormatName</td>
+                                <td class="text-end d-none d-md-table-cell">@row.EventCount</td>
+                                <td class="text-end d-none d-md-table-cell">@row.Record.Wins</td>
+                                <td class="text-end d-none d-md-table-cell">@row.Record.Losses</td>
+                                <td class="text-end d-none d-md-table-cell">@row.Record.Ties</td>
+                                <td class="text-end d-md-none text-nowrap">@row.Record</td>
+                                <td class="text-end" data-sort-value="@AnalyticsDisplay.SortValue(row.Record.WinRate)">@AnalyticsDisplay.Percent(row.Record.WinRate)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-semibold">
+                            <th scope="row">
+                                Total
+                                <div class="text-muted small fw-normal d-md-none">@report.DeckFormatTotal.EventCount @(report.DeckFormatTotal.EventCount == 1 ? "event" : "events")</div>
+                            </th>
+                            <td class="d-none d-md-table-cell"></td>
+                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.EventCount</td>
+                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Wins</td>
+                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Losses</td>
+                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Ties</td>
+                            <td class="text-end d-md-none text-nowrap">@report.DeckFormatTotal.Record</td>
+                            <td class="text-end">@AnalyticsDisplay.Percent(report.DeckFormatTotal.Record.WinRate)</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="matchups" role="tabpanel" aria-labelledby="tab-matchups">
+            <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <div>
+                    <label for="analyticsMinMatches" class="form-label small mb-1">Minimum rounds</label>
+                    <input type="number" id="analyticsMinMatches" class="form-control form-control-sm cc-min-matches-input" min="1"
+                           name="minMatches" form="analyticsFilterForm" value="@Model.MinMatches" />
+                </div>
+                <button type="submit" form="analyticsFilterForm" class="btn btn-outline-primary btn-sm">Apply</button>
+                <p class="text-muted small mb-0 w-100">One row per opponent deck as you typed it. Byes aren&rsquo;t matchups, so they&rsquo;re left out.</p>
+            </div>
+            <partial name="_AnalyticsRecordTable" model="@(new AnalyticsTableViewModel { Caption = "Match record against each opponent deck", CountsRounds = true, LabelHeader = "Opponent", Rows = report.Matchups })" />
+        </section>
+
+        <section class="tab-pane fade" id="trend" role="tabpanel" aria-labelledby="tab-trend">
+            <p class="text-muted small">Match win % (bars) and events played (line) per format, oldest first. The <strong>By format</strong> tab has the same numbers as a table.</p>
+            <div class="cc-analytics-chart">
+                <canvas id="analyticsTrendChart" role="img" aria-label="Match win percentage and events played per format" data-trend="@Model.TrendJson"></canvas>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="by-deck" role="tabpanel" aria-labelledby="tab-by-deck">
+            <partial name="_AnalyticsRecordTable" model="@(new AnalyticsTableViewModel { Caption = "Match record for each deck", LabelHeader = "Deck", Rows = report.ByDeck })" />
+        </section>
+
+        <section class="tab-pane fade" id="by-format" role="tabpanel" aria-labelledby="tab-by-format">
+            <partial name="_AnalyticsRecordTable" model="@(new AnalyticsTableViewModel { Caption = "Match record for each format, oldest first", LabelHeader = "Format", Rows = report.ByFormat })" />
+        </section>
+
+        <section class="tab-pane fade" id="by-type" role="tabpanel" aria-labelledby="tab-by-type">
+            <partial name="_AnalyticsRecordTable" model="@(new AnalyticsTableViewModel { Caption = "Match record for each event type", LabelHeader = "Event type", Rows = report.ByEventType })" />
+        </section>
+
+        <section class="tab-pane fade" id="dice" role="tabpanel" aria-labelledby="tab-dice">
+            <p class="text-muted small">Match record by whether you won the dice roll. Byes are left out.</p>
+            <partial name="_AnalyticsRecordTable" model="@(new AnalyticsTableViewModel { Caption = "Match record by dice roll", CountsRounds = true, LabelHeader = "Dice roll", Rows = report.Dice })" />
+        </section>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/analytics.js" asp-append-version="true"></script>
+}
