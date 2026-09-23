@@ -7,75 +7,6 @@ namespace CardCollector.Tests.Rules
     public sealed class EventRulesTests
     {
         [TestMethod]
-        public void GetDiceRecord_RoundsWithAndWithoutRecordedRolls_CountsOnlyRecordedRolls()
-        {
-            var matches = new[]
-            {
-                BuildMatch(MatchResult.Win, wonDiceRoll: true),
-                BuildMatch(MatchResult.Loss, wonDiceRoll: true),
-                BuildMatch(MatchResult.Win, wonDiceRoll: false),
-                BuildMatch(MatchResult.Win, wonDiceRoll: null)
-            };
-
-            var record = EventRules.GetDiceRecord(matches);
-
-            Assert.AreEqual(2, record.Won);
-            Assert.AreEqual(1, record.Lost);
-            Assert.AreEqual("2-1", record.ToString());
-        }
-
-        [TestMethod]
-        public void GetGameRecord_MultipleRounds_SumsGames()
-        {
-            var matches = new[]
-            {
-                BuildMatch(MatchResult.Win, gamesWon: 2, gamesLost: 1),
-                BuildMatch(MatchResult.Tie, gamesWon: 1, gamesLost: 1, gamesTied: 1),
-                BuildMatch(MatchResult.Win, isBye: true)
-            };
-
-            var record = EventRules.GetGameRecord(matches);
-
-            Assert.AreEqual("3-2-1", record.ToString());
-        }
-
-        [TestMethod]
-        public void GetMatchRecord_ByeStoredAsWin_CountsTheByeAsAWin()
-        {
-            var matches = new[]
-            {
-                BuildMatch(MatchResult.Win, gamesWon: 2),
-                BuildMatch(MatchResult.Loss, gamesLost: 2),
-                BuildMatch(MatchResult.Tie),
-                BuildMatch(MatchResult.Win, isBye: true)
-            };
-
-            var record = EventRules.GetMatchRecord(matches);
-
-            Assert.AreEqual("2-1-1", record.ToString());
-            Assert.AreEqual(4, record.Total);
-        }
-
-        [TestMethod]
-        public void GetMatchRecord_NoRounds_ReturnsZeroRecord()
-        {
-            var record = EventRules.GetMatchRecord([]);
-
-            Assert.AreEqual("0-0-0", record.ToString());
-        }
-
-        [TestMethod]
-        public void GetMatchRecord_StoredResultContradictsScore_UsesStoredResult()
-        {
-            var matches = new[] { BuildMatch(MatchResult.Win, gamesWon: 1, gamesLost: 2) };
-
-            var record = EventRules.GetMatchRecord(matches);
-
-            Assert.AreEqual(1, record.Wins);
-            Assert.AreEqual(0, record.Losses);
-        }
-
-        [TestMethod]
         public void Normalize_BlankOptionalText_BecomesNull()
         {
             var normalized = EventRules.Normalize(BuildEvent(decklistURL: "   ", finishNote: "", notes: "  ", topCut: " "));
@@ -91,7 +22,7 @@ namespace CardCollector.Tests.Rules
         {
             var source = BuildEvent();
             source.DeckID = 7;
-            source.Matches = [BuildMatch(MatchResult.Win)];
+            source.Matches = [new Match()];
 
             var normalized = EventRules.Normalize(source);
 
@@ -305,23 +236,5 @@ namespace CardCollector.Tests.Rules
                 TopCut = topCut
             };
 
-        private static Match BuildMatch(
-            MatchResult result,
-            int gamesLost = 0,
-            int gamesTied = 0,
-            int gamesWon = 0,
-            bool isBye = false,
-            bool? wonDiceRoll = null) =>
-            new()
-            {
-                GamesLost = gamesLost,
-                GamesTied = gamesTied,
-                GamesWon = gamesWon,
-                IsBye = isBye,
-                OpponentDeck = "Sample Opponent",
-                Result = result,
-                Round = "1",
-                WonDiceRoll = wonDiceRoll
-            };
     }
 }

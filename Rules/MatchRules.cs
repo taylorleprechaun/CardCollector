@@ -5,7 +5,7 @@ using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
 {
-    /// <summary>Pure validation, normalization and suggestion rules for <see cref="Match"/>.</summary>
+    /// <summary>Pure validation, normalization, tally and suggestion rules for <see cref="Match"/>.</summary>
     public static class MatchRules
     {
         public const string BYE_OPPONENT_NAME = "Bye";
@@ -15,6 +15,24 @@ namespace CardCollector.Rules
 
         /// <summary>Top-cut round labels in the order they are played, after the numbered rounds.</summary>
         private static readonly string[] TopCutLabels = ["Top 8", "Top 4", "Finals"];
+
+        /// <summary>Counts how often the dice roll was won and lost; rounds with no recorded roll are skipped.</summary>
+        public static DiceRecord GetDiceRecord(IEnumerable<Match> matches)
+        {
+            if (matches is null) throw new ArgumentNullException(nameof(matches));
+
+            var rolls = matches.Where(m => m.WonDiceRoll is not null).ToList();
+            return new DiceRecord(rolls.Count(m => m.WonDiceRoll == true), rolls.Count(m => m.WonDiceRoll == false));
+        }
+
+        /// <summary>Sums the games won, lost and tied across the rounds.</summary>
+        public static WinLossTie GetGameRecord(IEnumerable<Match> matches)
+        {
+            if (matches is null) throw new ArgumentNullException(nameof(matches));
+
+            var list = matches.ToList();
+            return new WinLossTie(list.Sum(m => m.GamesWon), list.Sum(m => m.GamesLost), list.Sum(m => m.GamesTied));
+        }
 
         /// <summary>
         /// Works out where a new round belongs among the existing ones: straight after the last existing round that
@@ -38,6 +56,18 @@ namespace CardCollector.Rules
             }
 
             return position;
+        }
+
+        /// <summary>Counts the stored round results. A bye counts by its stored result, like any other round.</summary>
+        public static WinLossTie GetMatchRecord(IEnumerable<Match> matches)
+        {
+            if (matches is null) throw new ArgumentNullException(nameof(matches));
+
+            var list = matches.ToList();
+            return new WinLossTie(
+                list.Count(m => m.Result == MatchResult.Win),
+                list.Count(m => m.Result == MatchResult.Loss),
+                list.Count(m => m.Result == MatchResult.Tie));
         }
 
         /// <summary>
@@ -144,9 +174,9 @@ namespace CardCollector.Rules
             var list = matches.ToList();
             return new MatchSummaryViewModel
             {
-                DiceRecord = EventRules.GetDiceRecord(list),
-                GameRecord = EventRules.GetGameRecord(list),
-                MatchRecord = EventRules.GetMatchRecord(list),
+                DiceRecord = GetDiceRecord(list),
+                GameRecord = GetGameRecord(list),
+                MatchRecord = GetMatchRecord(list),
                 NextRound = NextRoundLabel(list.Select(m => m.Round)),
                 RoundCount = list.Count
             };

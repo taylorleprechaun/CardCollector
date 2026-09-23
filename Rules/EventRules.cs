@@ -1,45 +1,14 @@
 using CardCollector.Data.Models;
 using CardCollector.Extensions;
-using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
 {
-    /// <summary>Pure validation, normalization and tally rules for <see cref="Event"/>.</summary>
+    /// <summary>Pure validation and normalization rules for <see cref="Event"/>.</summary>
     public static class EventRules
     {
         public const int MAX_DECK_NAME_LENGTH = 150;
         public const int MAX_LOCATION_LENGTH = 150;
         public const int MAX_URL_LENGTH = 500;
-
-        /// <summary>Counts how often the dice roll was won and lost; rounds with no recorded roll are skipped.</summary>
-        public static DiceRecord GetDiceRecord(IEnumerable<Match> matches)
-        {
-            if (matches is null) throw new ArgumentNullException(nameof(matches));
-
-            var rolls = matches.Where(m => m.WonDiceRoll is not null).ToList();
-            return new DiceRecord(rolls.Count(m => m.WonDiceRoll == true), rolls.Count(m => m.WonDiceRoll == false));
-        }
-
-        /// <summary>Sums the games won, lost and tied across the rounds.</summary>
-        public static WinLossTie GetGameRecord(IEnumerable<Match> matches)
-        {
-            if (matches is null) throw new ArgumentNullException(nameof(matches));
-
-            var list = matches.ToList();
-            return new WinLossTie(list.Sum(m => m.GamesWon), list.Sum(m => m.GamesLost), list.Sum(m => m.GamesTied));
-        }
-
-        /// <summary>Counts the stored round results. A bye counts by its stored result, like any other round.</summary>
-        public static WinLossTie GetMatchRecord(IEnumerable<Match> matches)
-        {
-            if (matches is null) throw new ArgumentNullException(nameof(matches));
-
-            var list = matches.ToList();
-            return new WinLossTie(
-                list.Count(m => m.Result == MatchResult.Win),
-                list.Count(m => m.Result == MatchResult.Loss),
-                list.Count(m => m.Result == MatchResult.Tie));
-        }
 
         /// <summary>
         /// Returns a copy of the event's own fields with text trimmed and blank optional text turned into null.

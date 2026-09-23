@@ -111,18 +111,6 @@ namespace CardCollector.Services
             return Math.Max(0, unlinked - (tournamentEvent.DeckID is null ? 1 : 0));
         }
 
-        private Task<IReadOnlyDictionary<string, int>> GetUnlinkedURLCountsAsync(IEnumerable<Event> events, CancellationToken cancellationToken)
-        {
-            var urls = events
-                .Select(e => e.DecklistURL)
-                .OfType<string>()
-                .Where(url => url.Length > 0)
-                .Distinct()
-                .ToList();
-
-            return _eventRepository.GetUnlinkedURLCountsAsync(urls, cancellationToken);
-        }
-
         /// <summary>
         /// Format is derived from an event's date, so filtering by format means filtering to that format's date range.
         /// Returns null when nothing can match (unknown format, or a range that misses the format entirely).
@@ -166,7 +154,19 @@ namespace CardCollector.Services
                 Event = tournamentEvent,
                 FormatName = FormatRules.FindForDate(formats, tournamentEvent.Date)?.Name ?? FormatRules.NO_FORMAT_NAME,
                 OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedURLCounts),
-                Record = EventRules.GetMatchRecord(tournamentEvent.Matches)
+                Record = MatchRules.GetMatchRecord(tournamentEvent.Matches)
             };
+
+        private Task<IReadOnlyDictionary<string, int>> GetUnlinkedURLCountsAsync(IEnumerable<Event> events, CancellationToken cancellationToken)
+        {
+            var urls = events
+                .Select(e => e.DecklistURL)
+                .OfType<string>()
+                .Where(url => url.Length > 0)
+                .Distinct()
+                .ToList();
+
+            return _eventRepository.GetUnlinkedURLCountsAsync(urls, cancellationToken);
+        }
     }
 }

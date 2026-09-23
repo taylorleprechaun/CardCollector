@@ -23,7 +23,7 @@ namespace CardCollector.Rules
             if (events is null) throw new ArgumentNullException(nameof(events));
 
             var matches = events.SelectMany(e => e.Matches).ToList();
-            var matchRecord = EventRules.GetMatchRecord(matches);
+            var matchRecord = MatchRules.GetMatchRecord(matches);
 
             return new AnalyticsReport
             {
@@ -82,7 +82,7 @@ namespace CardCollector.Rules
         private static AnalyticsRecordRow CreateEventRow(string label, IEnumerable<AnalyticsEvent> events)
         {
             var list = events.ToList();
-            return new AnalyticsRecordRow(label, list.Count, EventRules.GetMatchRecord(list.SelectMany(e => e.Matches)));
+            return new AnalyticsRecordRow(label, list.Count, MatchRules.GetMatchRecord(list.SelectMany(e => e.Matches)));
         }
 
         /// <summary>Groups the non-bye rounds; each row's event count is the number of distinct events its rounds came from.</summary>
@@ -97,7 +97,7 @@ namespace CardCollector.Rules
                 .Select(group => new AnalyticsRecordRow(
                     labelSelector(group.First().Match),
                     group.Select(round => round.EventID).Distinct().Count(),
-                    EventRules.GetMatchRecord(group.Select(round => round.Match))))
+                    MatchRules.GetMatchRecord(group.Select(round => round.Match))))
                 .ToList();
         }
 
@@ -169,7 +169,7 @@ namespace CardCollector.Rules
             {
                 EventCount = events.Count,
                 FirstPlaceCount = events.Count(e => e.Event.Finish == 1),
-                GameRecord = EventRules.GetGameRecord(matches),
+                GameRecord = MatchRules.GetGameRecord(matches),
                 MatchRecord = matchRecord
             };
 

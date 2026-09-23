@@ -7,6 +7,51 @@ namespace CardCollector.Tests.Rules
     public sealed class MatchRulesTests
     {
         [TestMethod]
+        public void GetDiceRecord_NullRounds_Throws()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.GetDiceRecord(null!));
+        }
+
+        [TestMethod]
+        public void GetDiceRecord_RoundsWithAndWithoutRecordedRolls_CountsOnlyRecordedRolls()
+        {
+            var matches = new[]
+            {
+                BuildMatch(MatchResult.Win, wonDiceRoll: true),
+                BuildMatch(MatchResult.Loss, wonDiceRoll: true),
+                BuildMatch(MatchResult.Win, wonDiceRoll: false),
+                BuildMatch(MatchResult.Win, wonDiceRoll: null)
+            };
+
+            var record = MatchRules.GetDiceRecord(matches);
+
+            Assert.AreEqual(2, record.Won);
+            Assert.AreEqual(1, record.Lost);
+            Assert.AreEqual("2-1", record.ToString());
+        }
+
+        [TestMethod]
+        public void GetGameRecord_MultipleRounds_SumsGames()
+        {
+            var matches = new[]
+            {
+                BuildMatch(MatchResult.Win, gamesWon: 2, gamesLost: 1),
+                BuildMatch(MatchResult.Tie, gamesWon: 1, gamesLost: 1, gamesTied: 1),
+                BuildMatch(MatchResult.Win, isBye: true)
+            };
+
+            var record = MatchRules.GetGameRecord(matches);
+
+            Assert.AreEqual("3-2-1", record.ToString());
+        }
+
+        [TestMethod]
+        public void GetGameRecord_NullRounds_Throws()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.GetGameRecord(null!));
+        }
+
+        [TestMethod]
         [DataRow(new string[0], "1", 0, DisplayName = "First round of an empty event")]
         [DataRow(new[] { "1", "2", "3" }, "4", 3, DisplayName = "Next round goes last")]
         [DataRow(new[] { "1", "2", "4", "5" }, "3", 2, DisplayName = "Re-added middle round goes between its neighbours")]
@@ -31,6 +76,73 @@ namespace CardCollector.Tests.Rules
         public void GetInsertPosition_NullRounds_Throws()
         {
             Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.GetInsertPosition(null!, "1"));
+        }
+
+        [TestMethod]
+        public void GetMatchRecord_ByeStoredAsWin_CountsTheByeAsAWin()
+        {
+            var matches = new[]
+            {
+                BuildMatch(MatchResult.Win, gamesWon: 2),
+                BuildMatch(MatchResult.Loss, gamesLost: 2),
+                BuildMatch(MatchResult.Tie),
+                BuildMatch(MatchResult.Win, isBye: true)
+            };
+
+            var record = MatchRules.GetMatchRecord(matches);
+
+            Assert.AreEqual("2-1-1", record.ToString());
+            Assert.AreEqual(4, record.Total);
+        }
+
+        [TestMethod]
+        public void GetMatchRecord_NoRounds_ReturnsZeroRecord()
+        {
+            var record = MatchRules.GetMatchRecord([]);
+
+            Assert.AreEqual("0-0-0", record.ToString());
+        }
+
+        [TestMethod]
+        public void GetMatchRecord_NullRounds_Throws()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.GetMatchRecord(null!));
+        }
+
+        [TestMethod]
+        public void GetMatchRecord_StoredResultContradictsScore_UsesStoredResult()
+        {
+            var matches = new[] { BuildMatch(MatchResult.Win, gamesWon: 1, gamesLost: 2) };
+
+            var record = MatchRules.GetMatchRecord(matches);
+
+            Assert.AreEqual(1, record.Wins);
+            Assert.AreEqual(0, record.Losses);
+        }
+
+        [TestMethod]
+        public void IsInRoundOrder_NullRounds_Throws()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.IsInRoundOrder(null!));
+        }
+
+        [TestMethod]
+        [DataRow(new string[0], true, DisplayName = "No rounds")]
+        [DataRow(new[] { "1" }, true, DisplayName = "One round")]
+        [DataRow(new[] { "1", "2", "3" }, true, DisplayName = "Numbered rounds in order")]
+        [DataRow(new[] { "2", "1", "3" }, false, DisplayName = "Numbered rounds out of order")]
+        [DataRow(new[] { "1", "1", "2" }, true, DisplayName = "Repeated label")]
+        [DataRow(new[] { "1", "2", "Top 8", "Top 4", "Finals" }, true, DisplayName = "Top cut after the numbered rounds")]
+        [DataRow(new[] { "1", "Top 4", "Top 8" }, false, DisplayName = "Top cut out of order")]
+        [DataRow(new[] { "Top 8", "1" }, false, DisplayName = "Top cut before a numbered round")]
+        [DataRow(new[] { "1", "Semifinal" }, true, DisplayName = "Unrecognised label last")]
+        [DataRow(new[] { "1", "Semifinal", "2" }, false, DisplayName = "Unrecognised label in the middle")]
+        [DataRow(new[] { "1", "top 8" }, true, DisplayName = "Top-cut label is case-insensitive")]
+        public void IsInRoundOrder_Rounds_ReturnsWhetherTheyAreInOrder(string[] rounds, bool expected)
+        {
+            var inOrder = MatchRules.IsInRoundOrder(rounds);
+
+            Assert.AreEqual(expected, inOrder);
         }
 
         [TestMethod]
@@ -127,44 +239,11 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual("4", normalized.Round);
             Assert.IsNull(normalized.Notes);
         }
-        [TestMethod]
-        [DataRow(2, 0, 0, MatchResult.Win, DisplayName = "2-0")]
-        [DataRow(2, 1, 0, MatchResult.Win, DisplayName = "2-1")]
-        [DataRow(1, 2, 0, MatchResult.Loss, DisplayName = "1-2")]
-        [DataRow(0, 2, 0, MatchResult.Loss, DisplayName = "0-2")]
-        [DataRow(1, 1, 0, MatchResult.Tie, DisplayName = "1-1-0")]
-        [DataRow(1, 1, 1, MatchResult.Tie, DisplayName = "1-1-1")]
-        [DataRow(0, 0, 0, MatchResult.Tie, DisplayName = "0-0-0")]
-        [DataRow(1, 0, 0, MatchResult.Win, DisplayName = "1-0-0")]
-        public void SuggestResult_Score_ReturnsExpectedResult(int won, int lost, int tied, MatchResult expected)
-        {
-            var result = MatchRules.SuggestResult(won, lost, tied);
-
-            Assert.AreEqual(expected, result);
-        }
-        [TestMethod]
-        [DataRow(new string[0], true, DisplayName = "No rounds")]
-        [DataRow(new[] { "1" }, true, DisplayName = "One round")]
-        [DataRow(new[] { "1", "2", "3" }, true, DisplayName = "Numbered rounds in order")]
-        [DataRow(new[] { "2", "1", "3" }, false, DisplayName = "Numbered rounds out of order")]
-        [DataRow(new[] { "1", "1", "2" }, true, DisplayName = "Repeated label")]
-        [DataRow(new[] { "1", "2", "Top 8", "Top 4", "Finals" }, true, DisplayName = "Top cut after the numbered rounds")]
-        [DataRow(new[] { "1", "Top 4", "Top 8" }, false, DisplayName = "Top cut out of order")]
-        [DataRow(new[] { "Top 8", "1" }, false, DisplayName = "Top cut before a numbered round")]
-        [DataRow(new[] { "1", "Semifinal" }, true, DisplayName = "Unrecognised label last")]
-        [DataRow(new[] { "1", "Semifinal", "2" }, false, DisplayName = "Unrecognised label in the middle")]
-        [DataRow(new[] { "1", "top 8" }, true, DisplayName = "Top-cut label is case-insensitive")]
-        public void IsInRoundOrder_Rounds_ReturnsWhetherTheyAreInOrder(string[] rounds, bool expected)
-        {
-            var inOrder = MatchRules.IsInRoundOrder(rounds);
-
-            Assert.AreEqual(expected, inOrder);
-        }
 
         [TestMethod]
-        public void IsInRoundOrder_NullRounds_Throws()
+        public void OrderByRound_NullMatches_Throws()
         {
-            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.IsInRoundOrder(null!));
+            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.OrderByRound(null!));
         }
 
         [TestMethod]
@@ -201,9 +280,19 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void OrderByRound_NullMatches_Throws()
+        [DataRow(2, 0, 0, MatchResult.Win, DisplayName = "2-0")]
+        [DataRow(2, 1, 0, MatchResult.Win, DisplayName = "2-1")]
+        [DataRow(1, 2, 0, MatchResult.Loss, DisplayName = "1-2")]
+        [DataRow(0, 2, 0, MatchResult.Loss, DisplayName = "0-2")]
+        [DataRow(1, 1, 0, MatchResult.Tie, DisplayName = "1-1-0")]
+        [DataRow(1, 1, 1, MatchResult.Tie, DisplayName = "1-1-1")]
+        [DataRow(0, 0, 0, MatchResult.Tie, DisplayName = "0-0-0")]
+        [DataRow(1, 0, 0, MatchResult.Win, DisplayName = "1-0-0")]
+        public void SuggestResult_Score_ReturnsExpectedResult(int won, int lost, int tied, MatchResult expected)
         {
-            Assert.ThrowsExactly<ArgumentNullException>(() => MatchRules.OrderByRound(null!));
+            var result = MatchRules.SuggestResult(won, lost, tied);
+
+            Assert.AreEqual(expected, result);
         }
 
         [TestMethod]
@@ -328,5 +417,23 @@ namespace CardCollector.Tests.Rules
 
             Assert.AreEqual(0, errors.Count);
         }
+        private static Match BuildMatch(
+            MatchResult result,
+            int gamesLost = 0,
+            int gamesTied = 0,
+            int gamesWon = 0,
+            bool isBye = false,
+            bool? wonDiceRoll = null) =>
+            new()
+            {
+                GamesLost = gamesLost,
+                GamesTied = gamesTied,
+                GamesWon = gamesWon,
+                IsBye = isBye,
+                OpponentDeck = "Sample Opponent",
+                Result = result,
+                Round = "1",
+                WonDiceRoll = wonDiceRoll
+            };
     }
 }
