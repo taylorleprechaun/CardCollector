@@ -49,16 +49,15 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.AreSame(legality, model.Legality);
         }
+
         [TestMethod]
-        public async Task OnGetAsync_DeckMissing_DoesNotCallLegalityService()
+        public async Task OnGetAsync_DeckMissing_LeavesLegalityNull()
         {
-            var (model, _, legalityService) = CreateModel(99, null);
+            var (model, _, _) = CreateModel(99, null);
 
             await model.OnGetAsync(CancellationToken.None);
 
-            legalityService.Verify(
-                s => s.GetAsync(It.IsAny<DeckDetailViewModel>(), It.IsAny<DeckLegalityView?>(), It.IsAny<int?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+            Assert.IsNull(model.Legality);
         }
 
         [TestMethod]

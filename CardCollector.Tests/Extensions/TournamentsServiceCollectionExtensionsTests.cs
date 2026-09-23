@@ -14,6 +14,17 @@ namespace CardCollector.Tests.Extensions
     public sealed class TournamentsServiceCollectionExtensionsTests
     {
         [TestMethod]
+        public void AddTournamentsModule_BanlistClient_HasTimeoutAndUserAgent()
+        {
+            using var provider = BuildProvider();
+
+            using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("YamlYugiLimitRegulation");
+
+            Assert.AreEqual(TimeSpan.FromSeconds(60), client.Timeout);
+            Assert.IsTrue(client.DefaultRequestHeaders.UserAgent.Count > 0);
+        }
+
+        [TestMethod]
         public void AddTournamentsModule_BanlistSettingsSection_BindsSettings()
         {
             using var provider = BuildProvider(new Dictionary<string, string?>

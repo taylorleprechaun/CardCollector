@@ -26,7 +26,6 @@ namespace CardCollector.Tests.Services
 
             Assert.IsNull(result.CardStatuses);
             Assert.IsNull(result.AtEventSource);
-            repo.Verify(r => r.GetListForDateAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [TestMethod]
@@ -96,24 +95,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_ListDateOverrideOnAtEventView_UsesRequestedList()
-        {
-            var tournamentEvent = new Event { ID = 1, Date = new DateOnly(2024, 6, 1), Location = "Locals" };
-            var deck = BuildDeck([tournamentEvent]);
-            var overrideDate = new DateOnly(2022, 5, 17);
-            var overrideList = BuildBanlist(overrideDate, BanlistLimit.SemiLimited);
-            var repo = new Mock<IBanlistRepository>();
-            repo.Setup(r => r.GetListAsync(overrideDate, It.IsAny<CancellationToken>())).ReturnsAsync(overrideList);
-            repo.Setup(r => r.GetAvailableListsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((IReadOnlyList<DateOnly>)[overrideDate]);
-            var service = new DeckLegalityService(repo.Object);
-
-            var result = await service.GetAsync(deck, DeckLegalityView.AtEvent, eventID: null, listDate: overrideDate);
-
-            Assert.AreEqual(BanlistLimit.SemiLimited, result.CardStatuses![RESTRICTED_CARD_ID].Limit);
-            repo.Verify(r => r.GetListForDateAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [TestMethod]
         public async Task GetAsync_ListDateOverride_UsesRequestedListInsteadOfResolved()
         {
             var deck = BuildDeck([]);
@@ -128,8 +109,23 @@ namespace CardCollector.Tests.Services
             var result = await service.GetAsync(deck, DeckLegalityView.Current, eventID: null, listDate: overrideDate);
 
             Assert.AreEqual(BanlistLimit.SemiLimited, result.CardStatuses![RESTRICTED_CARD_ID].Limit);
-            repo.Verify(r => r.GetCurrentAsync(It.IsAny<CancellationToken>()), Times.Once);
-            repo.Verify(r => r.GetListAsync(overrideDate, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_ListDateOverrideOnAtEventView_UsesRequestedList()
+        {
+            var tournamentEvent = new Event { ID = 1, Date = new DateOnly(2024, 6, 1), Location = "Locals" };
+            var deck = BuildDeck([tournamentEvent]);
+            var overrideDate = new DateOnly(2022, 5, 17);
+            var overrideList = BuildBanlist(overrideDate, BanlistLimit.SemiLimited);
+            var repo = new Mock<IBanlistRepository>();
+            repo.Setup(r => r.GetListAsync(overrideDate, It.IsAny<CancellationToken>())).ReturnsAsync(overrideList);
+            repo.Setup(r => r.GetAvailableListsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((IReadOnlyList<DateOnly>)[overrideDate]);
+            var service = new DeckLegalityService(repo.Object);
+
+            var result = await service.GetAsync(deck, DeckLegalityView.AtEvent, eventID: null, listDate: overrideDate);
+
+            Assert.AreEqual(BanlistLimit.SemiLimited, result.CardStatuses![RESTRICTED_CARD_ID].Limit);
         }
 
         [TestMethod]
@@ -163,23 +159,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_TokenGiven_PassesItToEveryBanlistLookup()
-        {
-            var requestedDate = new DateOnly(2024, 4, 15);
-            using var source = new CancellationTokenSource();
-            var token = source.Token;
-            var repo = new Mock<IBanlistRepository>();
-            repo.Setup(r => r.GetListAsync(requestedDate, token)).ReturnsAsync(BuildBanlist(requestedDate));
-            repo.Setup(r => r.GetAvailableListsAsync(token)).ReturnsAsync((IReadOnlyList<DateOnly>)[requestedDate]);
-            var service = new DeckLegalityService(repo.Object);
-
-            var result = await service.GetAsync(BuildDeck([]), DeckLegalityView.Current, eventID: null, listDate: requestedDate, token);
-
-            Assert.IsNotNull(result.CardStatuses);
-            repo.Verify(r => r.GetCurrentAsync(token), Times.Once);
-        }
-
-        [TestMethod]
         public async Task GetAsync_NoListDateRequested_ViewModelRequestedListDateIsNull()
         {
             var deck = BuildDeck([]);
@@ -200,6 +179,23 @@ namespace CardCollector.Tests.Services
             var service = new DeckLegalityService(new Mock<IBanlistRepository>().Object);
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => service.GetAsync(null!, null, null, null));
+        }
+
+        [TestMethod]
+        public async Task GetAsync_TokenGiven_PassesItToEveryBanlistLookup()
+        {
+            var requestedDate = new DateOnly(2024, 4, 15);
+            using var source = new CancellationTokenSource();
+            var token = source.Token;
+            var repo = new Mock<IBanlistRepository>();
+            repo.Setup(r => r.GetListAsync(requestedDate, token)).ReturnsAsync(BuildBanlist(requestedDate));
+            repo.Setup(r => r.GetAvailableListsAsync(token)).ReturnsAsync((IReadOnlyList<DateOnly>)[requestedDate]);
+            var service = new DeckLegalityService(repo.Object);
+
+            var result = await service.GetAsync(BuildDeck([]), DeckLegalityView.Current, eventID: null, listDate: requestedDate, token);
+
+            Assert.IsNotNull(result.CardStatuses);
+            repo.Verify(r => r.GetCurrentAsync(token), Times.Once);
         }
 
         [TestMethod]

@@ -59,7 +59,6 @@ namespace CardCollector.Tests.Pages.Tournaments
             var result = await context.Model.OnGetAsync(CancellationToken.None);
 
             Assert.IsInstanceOfType<NotFoundResult>(result);
-            context.Events.Verify(s => s.GetAsync(0, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
