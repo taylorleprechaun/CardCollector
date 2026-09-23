@@ -178,7 +178,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostSaveAsync_EditingExistingEvent_CallsUpdate()
         {
             var (model, events, _) = CreateModel();
-            events.Setup(s => s.UpdateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>())).ReturnsAsync(EventSaveResult.Success());
+            events.Setup(s => s.UpdateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
             model.Input = BuildInput(id: 9);
 
             var result = await model.OnPostSaveAsync(CancellationToken.None);
@@ -249,7 +249,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Event? saved = null;
             events.Setup(s => s.AddAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
                 .Callback<Event, CancellationToken>((e, _) => saved = e)
-                .ReturnsAsync(EventSaveResult.Success());
+                .ReturnsAsync(SaveResult.Success());
             model.Input = BuildInput();
             model.Input.DecklistURL = "https://example.test/deck";
             model.Input.Finish = 2;
@@ -279,7 +279,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         {
             var (model, events, _) = CreateModel();
             events.Setup(s => s.AddAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(EventSaveResult.Failure(["Location is required."]));
+                .ReturnsAsync(SaveResult.Failure(["Location is required."]));
             model.Input = BuildInput();
 
             var result = await model.OnPostSaveAsync(CancellationToken.None);

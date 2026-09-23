@@ -183,7 +183,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_DeckMissing_ReturnsNotFoundForAjax()
         {
             var (model, decks) = CreateModel(ajax: true);
-            decks.Setup(s => s.UpdateAsync(3, "Name", null, It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Missing("Deck not found."));
+            decks.Setup(s => s.UpdateAsync(3, "Name", null, It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Missing("Deck not found."));
 
             var result = await model.OnPostRenameAsync(3, "Name", null, null, CancellationToken.None);
 
@@ -194,7 +194,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_InvalidName_SetsErrorAndRedirects()
         {
             var (model, decks) = CreateModel();
-            decks.Setup(s => s.UpdateAsync(3, " ", null, It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Failure(["Deck name is required."]));
+            decks.Setup(s => s.UpdateAsync(3, " ", null, It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Failure(["Deck name is required."]));
 
             var result = await model.OnPostRenameAsync(3, " ", null, null, CancellationToken.None);
 
@@ -206,7 +206,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_ValidValues_SetsMessage()
         {
             var (model, decks) = CreateModel();
-            decks.Setup(s => s.UpdateAsync(3, "Name", "Note", It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Success());
+            decks.Setup(s => s.UpdateAsync(3, "Name", "Note", It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
 
             await model.OnPostRenameAsync(3, "Name", "Note", null, CancellationToken.None);
 

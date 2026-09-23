@@ -7,7 +7,7 @@
     <button type="button"
             class="btn btn-sm btn-outline-secondary"
             data-event-id="@tournamentEvent.ID"
-            data-event-date="@tournamentEvent.Date.ToString("yyyy-MM-dd")"
+            data-event-date="@TournamentDisplay.IsoDate(tournamentEvent.Date)"
             data-event-deck="@tournamentEvent.DeckName"
             data-event-finish="@tournamentEvent.Finish"
             data-event-finish-note="@tournamentEvent.FinishNote"

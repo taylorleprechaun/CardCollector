@@ -17,7 +17,7 @@ namespace CardCollector.Services
             _formatService = formatService;
         }
 
-        public async Task<EventSaveResult> AddAsync(Event tournamentEvent, CancellationToken cancellationToken = default)
+        public async Task<SaveResult> AddAsync(Event tournamentEvent, CancellationToken cancellationToken = default)
         {
             if (tournamentEvent is null) throw new ArgumentNullException(nameof(tournamentEvent));
 
@@ -26,10 +26,10 @@ namespace CardCollector.Services
 
             var errors = EventRules.Validate(normalized);
             if (errors.Count > 0)
-                return EventSaveResult.Failure(errors);
+                return SaveResult.Failure(errors);
 
             await _eventRepository.AddAsync(normalized, cancellationToken).ConfigureAwait(false);
-            return EventSaveResult.Success();
+            return SaveResult.Success();
         }
 
         public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
@@ -46,12 +46,10 @@ namespace CardCollector.Services
 
             return new EventDetailViewModel
             {
-                DiceRecord = EventRules.GetDiceRecord(tournamentEvent.Matches),
                 Event = tournamentEvent,
                 Format = FormatRules.FindForDate(formats, tournamentEvent.Date),
-                GameRecord = EventRules.GetGameRecord(tournamentEvent.Matches),
-                MatchRecord = EventRules.GetMatchRecord(tournamentEvent.Matches),
-                OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedUrlCounts)
+                OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedUrlCounts),
+                Summary = MatchRules.Summarize(tournamentEvent.Matches)
             };
         }
 
@@ -89,7 +87,7 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<EventSaveResult> UpdateAsync(Event tournamentEvent, CancellationToken cancellationToken = default)
+        public async Task<SaveResult> UpdateAsync(Event tournamentEvent, CancellationToken cancellationToken = default)
         {
             if (tournamentEvent is null) throw new ArgumentNullException(nameof(tournamentEvent));
 
@@ -97,10 +95,10 @@ namespace CardCollector.Services
 
             var errors = EventRules.Validate(normalized);
             if (errors.Count > 0)
-                return EventSaveResult.Failure(errors);
+                return SaveResult.Failure(errors);
 
             var updated = await _eventRepository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
-            return updated ? EventSaveResult.Success() : EventSaveResult.Failure(["Event not found."]);
+            return updated ? SaveResult.Success() : SaveResult.Failure(["Event not found."]);
         }
 
         /// <summary>The event itself is left out of the count of events sharing its URL.</summary>

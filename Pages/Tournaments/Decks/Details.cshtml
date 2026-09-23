@@ -1,6 +1,5 @@
 @page
 @model CardCollector.Pages.Tournaments.Decks.DetailsModel
-@using System.Globalization
 @using Microsoft.AspNetCore.Mvc.ViewFeatures
 @{
     var detail = Model.Detail!;
@@ -59,7 +58,7 @@
                         {
                             <li>
                                 <a class="text-break" href="/Tournaments/Events/Details?id=@tournamentEvent.ID">@tournamentEvent.Location</a>
-                                <span class="text-muted"> &middot; @tournamentEvent.Date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</span>
+                                <span class="text-muted"> &middot; @TournamentDisplay.Date(tournamentEvent.Date)</span>
                             </li>
                         }
                     </ul>

@@ -35,20 +35,17 @@ namespace CardCollector.Rules
 
         private static int GetRank(DeckCardViewModel card)
         {
-            var cardType = card.Card?.CardType;
             if (card.Card is null) return UNKNOWN;
+
+            var cardType = card.Card.CardType;
             if (DeckRules.IsSpell(cardType)) return SPELL;
             if (DeckRules.IsTrap(cardType)) return TRAP;
-            if (Contains(cardType, "Fusion")) return FUSION;
-            if (Contains(cardType, "Synchro")) return SYNCHRO;
-            if (Contains(cardType, "Xyz")) return XYZ;
-            if (Contains(cardType, "Link")) return LINK;
+            if (DeckRules.HasTypeKeyword(cardType, "Fusion")) return FUSION;
+            if (DeckRules.HasTypeKeyword(cardType, "Synchro")) return SYNCHRO;
+            if (DeckRules.HasTypeKeyword(cardType, "Xyz")) return XYZ;
+            if (DeckRules.HasTypeKeyword(cardType, "Link")) return LINK;
 
             return MAIN_MONSTER;
         }
-
-        // The card types from yaml-yugi and YGOProDeck differ in case ("Xyz Monster" and "XYZ Monster").
-        private static bool Contains(string? cardType, string word) =>
-            cardType?.Contains(word, StringComparison.OrdinalIgnoreCase) == true;
     }
 }

@@ -45,6 +45,22 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
+        [DataRow("XYZ Monster", "Xyz", DisplayName = "Different case")]
+        [DataRow("Synchro Pendulum Effect Monster", "Synchro", DisplayName = "Keyword inside a longer type")]
+        public void HasTypeKeyword_TypeContainsKeyword_ReturnsTrue(string cardType, string keyword)
+        {
+            Assert.IsTrue(DeckRules.HasTypeKeyword(cardType, keyword));
+        }
+
+        [TestMethod]
+        [DataRow(null, DisplayName = "No card type")]
+        [DataRow("Effect Monster", DisplayName = "Keyword missing")]
+        public void HasTypeKeyword_TypeLacksKeyword_ReturnsFalse(string? cardType)
+        {
+            Assert.IsFalse(DeckRules.HasTypeKeyword(cardType, "Link"));
+        }
+
+        [TestMethod]
         public void Normalize_BlankNotes_BecomeNull()
         {
             var normalized = DeckRules.Normalize(new Deck { Name = "Sample", Notes = "   " });

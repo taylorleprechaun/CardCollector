@@ -5,8 +5,8 @@
             class="btn btn-sm btn-outline-secondary"
             data-format-id="@Model.ID"
             data-format-name="@Model.Name"
-            data-format-start="@Model.StartDate.ToString("yyyy-MM-dd")"
-            data-format-end="@Model.EndDate?.ToString("yyyy-MM-dd")"
+            data-format-start="@TournamentDisplay.IsoDate(Model.StartDate)"
+            data-format-end="@TournamentDisplay.IsoDate(Model.EndDate)"
             data-format-notes="@Model.Notes"
             data-format-strategies="@JsonSerializer.Serialize(Model.Strategies.Select(s => s.Name))"
             onclick="openFormatModal(this)">

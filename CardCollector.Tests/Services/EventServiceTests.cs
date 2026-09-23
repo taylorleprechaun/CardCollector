@@ -133,9 +133,11 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Alpha Era", detail!.Format!.Name);
             CollectionAssert.AreEqual(new[] { "First", "Second" }, detail.Format.Strategies.Select(s => s.Name).ToArray());
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, detail.Event.Matches.Select(m => m.Sequence).ToArray());
-            Assert.AreEqual("2-1-0", detail.MatchRecord.ToString());
-            Assert.AreEqual("2-3-0", detail.GameRecord.ToString());
-            Assert.AreEqual("1-1", detail.DiceRecord.ToString());
+            Assert.AreEqual("2-1-0", detail.Summary.MatchRecord.ToString());
+            Assert.AreEqual("2-3-0", detail.Summary.GameRecord.ToString());
+            Assert.AreEqual("1-1", detail.Summary.DiceRecord.ToString());
+            Assert.AreEqual(3, detail.Summary.RoundCount);
+            Assert.AreEqual("4", detail.Summary.NextRound);
         }
 
         [TestMethod]

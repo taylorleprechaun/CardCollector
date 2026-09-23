@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
@@ -52,15 +53,15 @@ namespace CardCollector.Rules
             {
                 Date = tournamentEvent.Date,
                 DeckName = tournamentEvent.DeckName?.Trim() ?? string.Empty,
-                DecklistURL = TrimToNull(tournamentEvent.DecklistURL),
+                DecklistURL = tournamentEvent.DecklistURL.TrimToNull(),
                 EventType = tournamentEvent.EventType,
                 Finish = tournamentEvent.Finish,
-                FinishNote = TrimToNull(tournamentEvent.FinishNote),
+                FinishNote = tournamentEvent.FinishNote.TrimToNull(),
                 ID = tournamentEvent.ID,
                 Location = tournamentEvent.Location?.Trim() ?? string.Empty,
-                Notes = TrimToNull(tournamentEvent.Notes),
+                Notes = tournamentEvent.Notes.TrimToNull(),
                 Players = tournamentEvent.Players,
-                TopCut = TrimToNull(tournamentEvent.TopCut)
+                TopCut = tournamentEvent.TopCut.TrimToNull()
             };
         }
 
@@ -109,11 +110,5 @@ namespace CardCollector.Rules
         private static bool IsHttpURL(string value) =>
             Uri.TryCreate(value, UriKind.Absolute, out var uri)
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-
-        private static string? TrimToNull(string? value)
-        {
-            var trimmed = value?.Trim();
-            return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-        }
     }
 }

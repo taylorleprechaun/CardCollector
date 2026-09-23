@@ -1,10 +1,10 @@
 using System.Globalization;
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages.Tournaments
@@ -81,8 +81,8 @@ namespace CardCollector.Pages.Tournaments
         public IReadOnlyDictionary<string, string?> GetFilterParams()
         {
             var values = new Dictionary<string, string?>();
-            AddIfPresent(values, "dateFrom", DateFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            AddIfPresent(values, "dateTo", DateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            AddIfPresent(values, "dateFrom", TournamentDisplay.IsoDate(DateFrom));
+            AddIfPresent(values, "dateTo", TournamentDisplay.IsoDate(DateTo));
             AddIfPresent(values, "deck", Deck?.Trim());
             AddIfPresent(values, "formatID", FormatID?.ToString(CultureInfo.InvariantCulture));
             AddIfPresent(values, "location", Location?.Trim());
@@ -149,12 +149,6 @@ namespace CardCollector.Pages.Tournaments
                 values[key] = value;
         }
 
-        private void AddBindingError(List<string> errors, string field, string message)
-        {
-            if (HasBindingError(field))
-                errors.Add(message);
-        }
-
         private Event BuildEvent() =>
             new()
             {
@@ -175,22 +169,24 @@ namespace CardCollector.Pages.Tournaments
         {
             var errors = new List<string>();
 
-            AddBindingError(errors, nameof(Input.Date), "Date is not a valid date.");
-            if (Input.Date is null && !HasBindingError(nameof(Input.Date)))
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Date)))
+                errors.Add("Date is not a valid date.");
+            else if (Input.Date is null)
                 errors.Add("Date is required.");
 
-            AddBindingError(errors, nameof(Input.EventType), "Event type is not valid.");
-            if (Input.EventType is null && !HasBindingError(nameof(Input.EventType)))
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.EventType)))
+                errors.Add("Event type is not valid.");
+            else if (Input.EventType is null)
                 errors.Add("Event type is required.");
 
-            AddBindingError(errors, nameof(Input.Finish), "Finish must be a whole number.");
-            AddBindingError(errors, nameof(Input.Players), "Players must be a whole number.");
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Finish)))
+                errors.Add("Finish must be a whole number.");
+
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Players)))
+                errors.Add("Players must be a whole number.");
 
             return errors;
         }
-
-        private bool HasBindingError(string field) =>
-            ModelState.GetFieldValidationState($"{nameof(Input)}.{field}") == ModelValidationState.Invalid;
 
         private async Task LoadAsync(CancellationToken cancellationToken)
         {
@@ -217,7 +213,7 @@ namespace CardCollector.Pages.Tournaments
             if (!ValidPageSizes.Contains(PageSize)) PageSize = DEFAULT_PAGE_SIZE;
         }
 
-        private Task<EventSaveResult> SaveAsync(CancellationToken cancellationToken)
+        private Task<SaveResult> SaveAsync(CancellationToken cancellationToken)
         {
             var tournamentEvent = BuildEvent();
             return tournamentEvent.ID == 0

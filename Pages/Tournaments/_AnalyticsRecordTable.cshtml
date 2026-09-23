@@ -40,7 +40,7 @@ else
                         <td class="text-end d-none d-md-table-cell">@row.Record.Losses</td>
                         <td class="text-end d-none d-md-table-cell">@row.Record.Ties</td>
                         <td class="text-end d-md-none text-nowrap">@row.Record</td>
-                        <td class="text-end" data-sort-value="@AnalyticsDisplay.SortValue(row.Record.WinRate)">@AnalyticsDisplay.Percent(row.Record.WinRate)</td>
+                        <td class="text-end" data-sort-value="@TournamentDisplay.SortValue(row.Record.WinRate)">@TournamentDisplay.Percent(row.Record.WinRate)</td>
                     </tr>
                 }
             </tbody>
@@ -57,7 +57,7 @@ else
                         <td class="text-end d-none d-md-table-cell">@total.Record.Losses</td>
                         <td class="text-end d-none d-md-table-cell">@total.Record.Ties</td>
                         <td class="text-end d-md-none text-nowrap">@total.Record</td>
-                        <td class="text-end">@AnalyticsDisplay.Percent(total.Record.WinRate)</td>
+                        <td class="text-end">@TournamentDisplay.Percent(total.Record.WinRate)</td>
                     </tr>
                 </tfoot>
             }

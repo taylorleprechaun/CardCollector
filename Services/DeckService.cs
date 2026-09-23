@@ -113,16 +113,16 @@ namespace CardCollector.Services
         public async Task<bool> UnlinkEventAsync(int eventID, CancellationToken cancellationToken = default) =>
             await _eventRepository.SetDeckAsync([eventID], null, cancellationToken).ConfigureAwait(false) > 0;
 
-        public async Task<DeckSaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default)
+        public async Task<SaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default)
         {
             var normalized = DeckRules.Normalize(new Deck { ID = id, Name = name ?? string.Empty, Notes = notes });
 
             var errors = DeckRules.Validate(normalized);
             if (errors.Count > 0)
-                return DeckSaveResult.Failure(errors);
+                return SaveResult.Failure(errors);
 
             var updated = await _deckRepository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
-            return updated ? DeckSaveResult.Success() : DeckSaveResult.Missing("Deck not found.");
+            return updated ? SaveResult.Success() : SaveResult.Missing("Deck not found.");
         }
 
         private static int CountCopies(IEnumerable<DeckCard> cards, DeckSection section) =>

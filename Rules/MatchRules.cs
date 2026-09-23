@@ -1,5 +1,6 @@
 using System.Globalization;
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
@@ -88,7 +89,7 @@ namespace CardCollector.Rules
                 GamesWon = match.GamesWon,
                 ID = match.ID,
                 IsBye = match.IsBye,
-                Notes = TrimToNull(match.Notes),
+                Notes = match.Notes.TrimToNull(),
                 OpponentDeck = match.OpponentDeck?.Trim() ?? string.Empty,
                 Result = match.Result,
                 Round = match.Round?.Trim() ?? string.Empty,
@@ -195,11 +196,5 @@ namespace CardCollector.Rules
         private static (int Group, int Order) GetSortKey(string? round) => GetRoundKey(round) ?? (2, 0);
 
         private static bool IsValidWinOrLossCount(int games) => games is >= 0 and <= MAX_GAMES_WON_OR_LOST;
-
-        private static string? TrimToNull(string? value)
-        {
-            var trimmed = value?.Trim();
-            return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-        }
     }
 }

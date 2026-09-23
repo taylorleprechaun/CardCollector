@@ -1,13 +1,11 @@
 @page
 @model CardCollector.Pages.Tournaments.EventsModel
-@using System.Globalization
 @using CardCollector.Data.Models
 @using CardCollector.Rules
 @{
     ViewData["Title"] = "Events";
 
-    string DateText(DateOnly date) => date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
-    string RecordText(EventListItemViewModel item) => item.Record.Total == 0 ? "—" : item.Record.ToString();
+    string RecordText(EventListItemViewModel item) => item.Record.Total == 0 ? TournamentDisplay.MISSING : item.Record.ToString();
 
     var isEditing = Model.Input.ID != 0;
     var eventTypes = Enum.GetValues<EventType>();
@@ -28,12 +26,12 @@
         <div class="col-6 col-lg-2">
             <label for="filterDateFrom" class="form-label small mb-1">From</label>
             <input type="text" id="filterDateFrom" name="dateFrom" class="form-control form-control-sm cc-date-picker"
-                   value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+                   value="@TournamentDisplay.IsoDate(Model.DateFrom)" />
         </div>
         <div class="col-6 col-lg-2">
             <label for="filterDateTo" class="form-label small mb-1">To</label>
             <input type="text" id="filterDateTo" name="dateTo" class="form-control form-control-sm cc-date-picker"
-                   value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
+                   value="@TournamentDisplay.IsoDate(Model.DateTo)" />
         </div>
         <div class="col-6 col-lg-2">
             <label for="filterFormat" class="form-label small mb-1">Format</label>
@@ -111,7 +109,7 @@ else
                 @foreach (var item in Model.Results.Items)
                 {
                     <tr>
-                        <td class="text-nowrap">@DateText(item.Event.Date)</td>
+                        <td class="text-nowrap">@TournamentDisplay.Date(item.Event.Date)</td>
                         <td>
                             <a class="fw-semibold text-break" href="/Tournaments/Events/Details?id=@item.Event.ID">@item.Event.Location</a>
                             <div><span class="badge-neutral">@item.Event.EventType.GetDisplayName()</span></div>
@@ -137,7 +135,7 @@ else
                 <div class="d-flex flex-column gap-2 py-1">
                     <div>
                         <a class="fw-semibold text-break" href="/Tournaments/Events/Details?id=@item.Event.ID">@item.Event.Location</a>
-                        <div class="text-muted small">@DateText(item.Event.Date) &middot; @item.FormatName</div>
+                        <div class="text-muted small">@TournamentDisplay.Date(item.Event.Date) &middot; @item.FormatName</div>
                         <div class="mt-1"><span class="badge-neutral">@item.Event.EventType.GetDisplayName()</span></div>
                     </div>
                     <div class="small">

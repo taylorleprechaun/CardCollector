@@ -8,8 +8,8 @@
     var report = Model.Report;
     var summary = report.Summary;
     var eventTypes = Enum.GetValues<EventType>();
-    var matchWinRate = AnalyticsDisplay.Percent(summary.MatchRecord.WinRate);
-    var gameWinRate = AnalyticsDisplay.Percent(summary.GameRecord.WinRate);
+    var matchWinRate = TournamentDisplay.Percent(summary.MatchRecord.WinRate);
+    var gameWinRate = TournamentDisplay.Percent(summary.GameRecord.WinRate);
     var tiles = new[]
     {
         new StatTileViewModel("Events", summary.EventCount.ToString(CultureInfo.InvariantCulture)),
@@ -67,12 +67,12 @@
                 <div class="col-6 col-md-3">
                     <label for="filterDateFrom" class="form-label small mb-1">From</label>
                     <input type="text" id="filterDateFrom" name="dateFrom" class="form-control form-control-sm cc-date-picker"
-                           value="@Model.DateFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                           value="@TournamentDisplay.IsoDate(Model.DateFrom)" />
                 </div>
                 <div class="col-6 col-md-3">
                     <label for="filterDateTo" class="form-label small mb-1">To</label>
                     <input type="text" id="filterDateTo" name="dateTo" class="form-control form-control-sm cc-date-picker"
-                           value="@Model.DateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                           value="@TournamentDisplay.IsoDate(Model.DateTo)" />
                 </div>
                 <div class="col-6 col-md-3">
                     <label for="filterType" class="form-label small mb-1">Type</label>
@@ -197,7 +197,7 @@ else
                                 <td class="text-end d-none d-md-table-cell">@row.Record.Losses</td>
                                 <td class="text-end d-none d-md-table-cell">@row.Record.Ties</td>
                                 <td class="text-end d-md-none text-nowrap">@row.Record</td>
-                                <td class="text-end" data-sort-value="@AnalyticsDisplay.SortValue(row.Record.WinRate)">@AnalyticsDisplay.Percent(row.Record.WinRate)</td>
+                                <td class="text-end" data-sort-value="@TournamentDisplay.SortValue(row.Record.WinRate)">@TournamentDisplay.Percent(row.Record.WinRate)</td>
                             </tr>
                         }
                     </tbody>
@@ -213,7 +213,7 @@ else
                             <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Losses</td>
                             <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Ties</td>
                             <td class="text-end d-md-none text-nowrap">@report.DeckFormatTotal.Record</td>
-                            <td class="text-end">@AnalyticsDisplay.Percent(report.DeckFormatTotal.Record.WinRate)</td>
+                            <td class="text-end">@TournamentDisplay.Percent(report.DeckFormatTotal.Record.WinRate)</td>
                         </tr>
                     </tfoot>
                 </table>

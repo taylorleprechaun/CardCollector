@@ -1,10 +1,10 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Models;
 using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages.Tournaments
@@ -86,13 +86,12 @@ namespace CardCollector.Pages.Tournaments
         {
             var errors = new List<string>();
 
-            var startState = ModelState.GetFieldValidationState($"{nameof(Input)}.{nameof(Input.StartDate)}");
-            if (startState == ModelValidationState.Invalid)
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.StartDate)))
                 errors.Add("Start date is not a valid date.");
             else if (Input.StartDate is null)
                 errors.Add("Start date is required.");
 
-            if (ModelState.GetFieldValidationState($"{nameof(Input)}.{nameof(Input.EndDate)}") == ModelValidationState.Invalid)
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.EndDate)))
                 errors.Add("End date is not a valid date.");
 
             return errors;
@@ -104,7 +103,7 @@ namespace CardCollector.Pages.Tournaments
             CurrentFormatID = FormatRules.FindForDate(Formats, DateOnly.FromDateTime(DateTime.Today))?.ID;
         }
 
-        private Task<FormatSaveResult> SaveAsync(CancellationToken cancellationToken)
+        private Task<SaveResult> SaveAsync(CancellationToken cancellationToken)
         {
             var format = BuildFormat();
             return format.ID == 0

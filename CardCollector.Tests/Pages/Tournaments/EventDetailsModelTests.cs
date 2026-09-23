@@ -2,6 +2,7 @@ using System.Text.Json;
 using CardCollector.Data.Models;
 using CardCollector.Models;
 using CardCollector.Pages.Tournaments.Events;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -27,7 +28,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         }
 
         [TestMethod]
-        public async Task OnGetAsync_EventExists_ReturnsPageWithDetailSummaryAndOpponents()
+        public async Task OnGetAsync_EventExists_ReturnsPageWithDetailAndOpponents()
         {
             var detail = BuildDetail(5, new Match { Result = MatchResult.Win, Round = "1" });
             var context = CreateModel(5, detail);
@@ -37,8 +38,6 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.IsInstanceOfType<PageResult>(result);
             Assert.AreSame(detail, context.Model.Detail);
-            Assert.AreEqual(1, context.Model.Summary.RoundCount);
-            Assert.AreEqual("2", context.Model.Summary.NextRound);
             CollectionAssert.AreEqual(new[] { "Test Opponent" }, context.Model.OpponentDecks.ToArray());
         }
         [TestMethod]
@@ -329,10 +328,8 @@ namespace CardCollector.Tests.Pages.Tournaments
         private static EventDetailViewModel BuildDetail(int id, params Match[] rounds) =>
             new()
             {
-                DiceRecord = new DiceRecord(0, 0),
                 Event = new Event { ID = id, Location = "Test Hobby Shop", Matches = rounds },
-                GameRecord = new WinLossTie(0, 0, 0),
-                MatchRecord = new WinLossTie(0, 0, 0)
+                Summary = MatchRules.Summarize(rounds)
             };
 
         private static PageTestContext CreateModel(int id, EventDetailViewModel? detail, bool ajax = false, IReadOnlyList<DeckListItemViewModel>? deckOptions = null)

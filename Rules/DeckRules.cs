@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
@@ -20,13 +21,18 @@ namespace CardCollector.Rules
                 known.Where(c => IsTrap(c.Card?.CardType)).Sum(c => c.Quantity));
         }
 
+        /// <summary>
+        /// True when the card type contains the keyword, ignoring case: the card sources differ in case
+        /// ("Xyz Monster" and "XYZ Monster") and in Pendulum variants such as "Synchro Pendulum Effect Monster".
+        /// </summary>
+        public static bool HasTypeKeyword(string? cardType, string keyword) =>
+            cardType?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true;
+
         /// <summary>True when the card type (for example "Spell Card") is a spell.</summary>
-        public static bool IsSpell(string? cardType) =>
-            cardType?.Contains("Spell", StringComparison.OrdinalIgnoreCase) == true;
+        public static bool IsSpell(string? cardType) => HasTypeKeyword(cardType, "Spell");
 
         /// <summary>True when the card type (for example "Trap Card") is a trap.</summary>
-        public static bool IsTrap(string? cardType) =>
-            cardType?.Contains("Trap", StringComparison.OrdinalIgnoreCase) == true;
+        public static bool IsTrap(string? cardType) => HasTypeKeyword(cardType, "Trap");
 
         /// <summary>
         /// Returns a copy of the deck's own fields with text trimmed and blank notes turned into null.
@@ -36,12 +42,11 @@ namespace CardCollector.Rules
         {
             if (deck is null) throw new ArgumentNullException(nameof(deck));
 
-            var notes = deck.Notes?.Trim();
             return new Deck
             {
                 ID = deck.ID,
                 Name = deck.Name?.Trim() ?? string.Empty,
-                Notes = string.IsNullOrEmpty(notes) ? null : notes
+                Notes = deck.Notes.TrimToNull()
             };
         }
 

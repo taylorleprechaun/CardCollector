@@ -48,6 +48,6 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and updates a deck's name and notes. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<DeckSaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default);
+        Task<SaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default);
     }
 }

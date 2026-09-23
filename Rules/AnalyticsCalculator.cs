@@ -50,9 +50,9 @@ namespace CardCollector.Rules
             if (formats is null) throw new ArgumentNullException(nameof(formats));
             if (criteria is null) throw new ArgumentNullException(nameof(criteria));
 
-            var deckName = TrimToNull(criteria.DeckName);
-            var location = TrimToNull(criteria.Location);
-            var opponent = TrimToNull(criteria.Opponent);
+            var deckName = criteria.DeckName.TrimToNull();
+            var location = criteria.Location.TrimToNull();
+            var opponent = criteria.Opponent.TrimToNull();
             var results = new List<AnalyticsEvent>();
 
             foreach (var tournamentEvent in events)
@@ -183,11 +183,5 @@ namespace CardCollector.Rules
             && (location is null || Contains(tournamentEvent.Location, location));
 
         private static string TrimText(string? value) => value?.Trim() ?? string.Empty;
-
-        private static string? TrimToNull(string? value)
-        {
-            var trimmed = value?.Trim();
-            return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-        }
     }
 }

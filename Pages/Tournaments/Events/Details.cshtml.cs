@@ -1,10 +1,10 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Models;
 using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages.Tournaments.Events
@@ -42,8 +42,6 @@ namespace CardCollector.Pages.Tournaments.Events
 
         public IReadOnlyList<string> OpponentDecks { get; private set; } = [];
 
-        public MatchSummaryViewModel Summary { get; private set; } = MatchRules.Summarize([]);
-
         public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {
             Detail = await _eventService.GetAsync(ID, cancellationToken).ConfigureAwait(false);
@@ -51,7 +49,6 @@ namespace CardCollector.Pages.Tournaments.Events
                 return NotFound();
 
             AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(Detail.Event.Matches.Select(m => m.Round));
-            Summary = MatchRules.Summarize(Detail.Event.Matches);
             OpponentDecks = await _matchService.GetOpponentDecksAsync(cancellationToken).ConfigureAwait(false);
             DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
 
@@ -107,12 +104,6 @@ namespace CardCollector.Pages.Tournaments.Events
             return RedirectToRounds();
         }
 
-        private void AddBindingError(List<string> errors, string field, string message)
-        {
-            if (HasBindingError(field))
-                errors.Add(message);
-        }
-
         private Match BuildMatch()
         {
             var gamesLost = Input.GamesLost ?? 0;
@@ -137,19 +128,20 @@ namespace CardCollector.Pages.Tournaments.Events
 
         private List<string> GetBindingErrors()
         {
-            var errors = new List<string>();
+            (string Field, string Message)[] checks =
+            [
+                (nameof(Input.GamesWon), "Games won must be a whole number."),
+                (nameof(Input.GamesLost), "Games lost must be a whole number."),
+                (nameof(Input.GamesTied), "Games tied must be a whole number."),
+                (nameof(Input.Result), "Result is not valid."),
+                (nameof(Input.WonDiceRoll), "Dice roll is not valid.")
+            ];
 
-            AddBindingError(errors, nameof(Input.GamesWon), "Games won must be a whole number.");
-            AddBindingError(errors, nameof(Input.GamesLost), "Games lost must be a whole number.");
-            AddBindingError(errors, nameof(Input.GamesTied), "Games tied must be a whole number.");
-            AddBindingError(errors, nameof(Input.Result), "Result is not valid.");
-            AddBindingError(errors, nameof(Input.WonDiceRoll), "Dice roll is not valid.");
-
-            return errors;
+            return checks
+                .Where(check => ModelState.IsFieldInvalid(nameof(Input), check.Field))
+                .Select(check => check.Message)
+                .ToList();
         }
-
-        private bool HasBindingError(string field) =>
-            ModelState.GetFieldValidationState($"{nameof(Input)}.{field}") == ModelValidationState.Invalid;
 
         private bool IsAjaxRequest() =>
             Request.Headers["X-Requested-With"] == "XMLHttpRequest";

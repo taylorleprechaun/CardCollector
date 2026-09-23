@@ -1,14 +1,10 @@
 @page
 @model CardCollector.Pages.Tournaments.FormatsModel
-@using System.Globalization
 @using System.Text.Json
-@using CardCollector.Data.Models
 @using CardCollector.Rules
 @{
     ViewData["Title"] = "Formats";
 
-    string DateText(DateOnly date) => date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
-    string RangeText(Format format) => $"{DateText(format.StartDate)} – {(format.EndDate is { } end ? DateText(end) : "Ongoing")}";
 
     var isEditing = Model.Input.ID != 0;
     var initialStrategies = JsonSerializer.Serialize(Model.Input.Strategies ?? []);
@@ -57,7 +53,7 @@ else
                                 <div class="text-muted small text-break">@format.Notes</div>
                             }
                         </td>
-                        <td class="text-nowrap">@RangeText(format)</td>
+                        <td class="text-nowrap">@TournamentDisplay.DateRange(format)</td>
                         <td><partial name="_FormatStrategyChips" model="format" /></td>
                         <td class="text-end"><partial name="_FormatActions" model="format" /></td>
                     </tr>
@@ -77,7 +73,7 @@ else
                         {
                             <span class="badge-status badge-status--good ms-1">Current</span>
                         }
-                        <div class="text-muted small">@RangeText(format)</div>
+                        <div class="text-muted small">@TournamentDisplay.DateRange(format)</div>
                         @if (!string.IsNullOrWhiteSpace(format.Notes))
                         {
                             <div class="text-muted small text-break">@format.Notes</div>

@@ -1,5 +1,6 @@
-using System.Globalization;
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
+using CardCollector.ViewModels;
 
 namespace CardCollector.Rules
 {
@@ -43,14 +44,12 @@ namespace CardCollector.Rules
                 strategies.Add(new FormatStrategy { Name = name, Position = strategies.Count });
             }
 
-            var notes = format.Notes?.Trim();
-
             return new Format
             {
                 EndDate = format.EndDate,
                 ID = format.ID,
                 Name = format.Name?.Trim() ?? string.Empty,
-                Notes = string.IsNullOrEmpty(notes) ? null : notes,
+                Notes = format.Notes.TrimToNull(),
                 StartDate = format.StartDate,
                 Strategies = strategies
             };
@@ -82,16 +81,9 @@ namespace CardCollector.Rules
                 errors.Add($"Each strategy must be {MAX_STRATEGY_LENGTH} characters or fewer.");
 
             foreach (var other in existingFormats.Where(f => f.ID != format.ID && Overlaps(format, f)))
-                errors.Add($"Dates overlap with \"{other.Name}\" ({DescribeRange(other)}).");
+                errors.Add($"Dates overlap with \"{other.Name}\" ({TournamentDisplay.DateRange(other)}).");
 
             return errors;
-        }
-
-        private static string DescribeRange(Format format)
-        {
-            var start = format.StartDate.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
-            var end = format.EndDate?.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) ?? "Ongoing";
-            return $"{start} – {end}";
         }
 
         private static bool Overlaps(Format a, Format b) =>
