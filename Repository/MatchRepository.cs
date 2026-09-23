@@ -46,7 +46,7 @@ namespace CardCollector.Repository
             CopyFields(match, entity);
 
             rounds.Insert(index, entity);
-            Renumber(rounds);
+            Renumber(rounds, now);
 
             _context.Matches.Add(entity);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -63,7 +63,7 @@ namespace CardCollector.Repository
 
             rounds.Remove(target);
             _context.Matches.Remove(target);
-            Renumber(rounds);
+            Renumber(rounds, DateTime.UtcNow);
 
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return rounds;
@@ -100,6 +100,7 @@ namespace CardCollector.Repository
                 .ToDictionaryAsync(m => m.ID, cancellationToken)
                 .ConfigureAwait(false);
 
+            var now = DateTime.UtcNow;
             var moved = 0;
             var position = 0;
             foreach (var id in orderedIDs)
@@ -111,6 +112,7 @@ namespace CardCollector.Repository
                 if (round.Sequence == position)
                     continue;
 
+                round.DateModified = now;
                 round.Sequence = position;
                 moved++;
             }
@@ -161,11 +163,18 @@ namespace CardCollector.Repository
                 .ThenBy(m => m.ID)
                 .ToListAsync(cancellationToken);
 
-        /// <summary>Keeps the event's rounds numbered 1 to n in their list order.</summary>
-        private static void Renumber(IReadOnlyList<Match> rounds)
+        /// <summary>Keeps the event's rounds numbered 1 to n in their list order; a round whose number changes is marked modified.</summary>
+        private static void Renumber(IReadOnlyList<Match> rounds, DateTime now)
         {
             for (var index = 0; index < rounds.Count; index++)
-                rounds[index].Sequence = index + 1;
+            {
+                var round = rounds[index];
+                if (round.Sequence == index + 1)
+                    continue;
+
+                round.DateModified = now;
+                round.Sequence = index + 1;
+            }
         }
     }
 }

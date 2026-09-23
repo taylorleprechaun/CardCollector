@@ -9,6 +9,8 @@ namespace CardCollector.Tests.Repository
     [TestClass]
     public sealed class MatchRepositoryTests
     {
+        private static readonly DateTime SeededAt = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         [TestMethod]
         public async Task AddAsync_EmptyEvent_StartsAtSequenceOne()
         {
@@ -162,6 +164,21 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task AddAsync_PositionInTheMiddle_MarksOnlyTheMovedRoundsModified()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = await CreateRepositoryAsync(context);
+            await SeedRoundsAsync(context, "First", "Second", "Fourth");
+
+            await AddAtAsync(repository, 1, BuildMatch("3", "Third"), 2);
+
+            var rounds = await repository.GetByEventAsync(1);
+            Assert.AreEqual(SeededAt, rounds[0].DateModified);
+            Assert.AreEqual(SeededAt, rounds[1].DateModified);
+            Assert.IsTrue(rounds[3].DateModified > SeededAt);
+        }
+
+        [TestMethod]
         public async Task AddAsync_PositionOutOfRange_IsClampedToTheEnds()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -212,6 +229,20 @@ namespace CardCollector.Tests.Repository
 
             Assert.IsNotNull(deleted);
             CollectionAssert.AreEqual(new[] { 1, 2 }, (await repository.GetByEventAsync(1)).Select(m => m.Sequence).ToArray());
+        }
+
+        [TestMethod]
+        public async Task DeleteAsync_MiddleRound_MarksOnlyTheMovedRoundsModified()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = await CreateRepositoryAsync(context);
+            var ids = await SeedRoundsAsync(context, "First", "Second", "Third");
+
+            await repository.DeleteAsync(1, ids[1]);
+
+            var remaining = await repository.GetByEventAsync(1);
+            Assert.AreEqual(SeededAt, remaining[0].DateModified);
+            Assert.IsTrue(remaining[1].DateModified > SeededAt);
         }
 
         [TestMethod]
@@ -360,6 +391,21 @@ namespace CardCollector.Tests.Repository
             Assert.IsTrue(asBye!.IsBye);
             Assert.AreEqual(0, asBye.GamesWon);
             Assert.IsNull(asBye.WonDiceRoll);
+        }
+
+        [TestMethod]
+        public async Task SetOrderAsync_NewOrder_MarksOnlyTheMovedRoundsModified()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = await CreateRepositoryAsync(context);
+            var ids = await SeedRoundsAsync(context, "Second", "First", "Third");
+
+            await repository.SetOrderAsync(1, [ids[1], ids[0], ids[2]]);
+
+            var rounds = await repository.GetByEventAsync(1);
+            Assert.IsTrue(rounds[0].DateModified > SeededAt);
+            Assert.IsTrue(rounds[1].DateModified > SeededAt);
+            Assert.AreEqual(SeededAt, rounds[2].DateModified);
         }
 
         [TestMethod]
@@ -513,5 +559,24 @@ namespace CardCollector.Tests.Repository
 
         private static Task<Match?> FindAsync(AppDBContext context, int eventID, int id) =>
             context.Matches.AsNoTracking().FirstOrDefaultAsync(m => m.EventID == eventID && m.ID == id);
+
+        /// <summary>Adds rounds 1 to n to event 1, last modified at <see cref="SeededAt"/>, and returns their IDs in order.</summary>
+        private static async Task<IReadOnlyList<int>> SeedRoundsAsync(AppDBContext context, params string[] opponents)
+        {
+            var rounds = opponents
+                .Select((opponent, index) => new Match
+                {
+                    DateCreated = SeededAt,
+                    DateModified = SeededAt,
+                    EventID = 1,
+                    OpponentDeck = opponent,
+                    Round = (index + 1).ToString(),
+                    Sequence = index + 1
+                })
+                .ToList();
+            context.Matches.AddRange(rounds);
+            await context.SaveChangesAsync();
+            return rounds.Select(m => m.ID).ToList();
+        }
     }
 }
