@@ -25,9 +25,6 @@ namespace CardCollector.Pages.Tournaments.Decks
         [BindProperty(SupportsGet = true)]
         public DateOnly? ListDate { get; set; }
 
-        /// <summary>Where a card's page sends the user back to.</summary>
-        public string ReturnURL => $"/Tournaments/Decks/Details?id={ID}";
-
         [BindProperty(SupportsGet = true)]
         public DeckLegalityView? View { get; set; }
 

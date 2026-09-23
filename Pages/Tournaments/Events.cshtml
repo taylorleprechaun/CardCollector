@@ -68,7 +68,7 @@
         <button type="submit" class="btn btn-primary btn-sm">Apply</button>
         @if (Model.HasActiveFilters)
         {
-            <a href="/Tournaments/Events" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <a asp-page="/Tournaments/Events" class="btn btn-outline-secondary btn-sm">Clear</a>
         }
     </div>
 </form>
@@ -79,7 +79,7 @@
         @if (Model.HasActiveFilters)
         {
             <h4>No matching events</h4>
-            <p class="mb-0">Try loosening the filters, or <a href="/Tournaments/Events">clear them</a>.</p>
+            <p class="mb-0">Try loosening the filters, or <a asp-page="/Tournaments/Events">clear them</a>.</p>
         }
         else
         {
@@ -111,7 +111,7 @@ else
                     <tr>
                         <td class="text-nowrap">@TournamentDisplay.Date(item.Event.Date)</td>
                         <td>
-                            <a class="fw-semibold text-break" href="/Tournaments/Events/Details?id=@item.Event.ID">@item.Event.Location</a>
+                            <a class="fw-semibold text-break" asp-page="/Tournaments/Events/Details" asp-route-id="@item.Event.ID">@item.Event.Location</a>
                             <div><span class="badge-neutral">@item.Event.EventType.GetDisplayName()</span></div>
                         </td>
                         <td class="text-break">
@@ -134,7 +134,7 @@ else
             <div class="list-group-item">
                 <div class="d-flex flex-column gap-2 py-1">
                     <div>
-                        <a class="fw-semibold text-break" href="/Tournaments/Events/Details?id=@item.Event.ID">@item.Event.Location</a>
+                        <a class="fw-semibold text-break" asp-page="/Tournaments/Events/Details" asp-route-id="@item.Event.ID">@item.Event.Location</a>
                         <div class="text-muted small">@TournamentDisplay.Date(item.Event.Date) &middot; @item.FormatName</div>
                         <div class="mt-1"><span class="badge-neutral">@item.Event.EventType.GetDisplayName()</span></div>
                     </div>

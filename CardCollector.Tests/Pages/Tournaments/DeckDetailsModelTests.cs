@@ -72,14 +72,6 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.IsNull(model.Detail);
         }
 
-        [TestMethod]
-        public void ReturnURL_DeckID_PointsBackAtThisDeck()
-        {
-            var (model, _, _) = CreateModel(4, null);
-
-            Assert.AreEqual("/Tournaments/Decks/Details?id=4", model.ReturnURL);
-        }
-
         private static DeckDetailViewModel BuildDetail()
         {
             var empty = new DeckSectionViewModel { Cards = [] };

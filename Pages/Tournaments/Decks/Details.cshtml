@@ -7,7 +7,7 @@
 
     var types = detail.MainTypes;
     ViewDataDictionary SectionData(string title, int columns) =>
-        new(ViewData) { ["Columns"] = columns, ["CardStatuses"] = Model.Legality!.CardStatuses, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
+        new(ViewData) { ["Columns"] = columns, ["CardStatuses"] = Model.Legality!.CardStatuses, ["ReturnURL"] = Url.Page("/Tournaments/Decks/Details", new { id = Model.ID }), ["Title"] = title };
 
     // A 40 to 60 card main deck reads as 4 to 6 rows of 10; extra and side are one row of 15.
     var mainData = SectionData("Main", 10);
@@ -16,7 +16,7 @@
 }
 
 <nav aria-label="breadcrumb" class="mb-2">
-    <a href="/Tournaments/Decks" class="small"><i class="bi bi-arrow-left me-1"></i>All decks</a>
+    <a asp-page="/Tournaments/Decks" class="small"><i class="bi bi-arrow-left me-1"></i>All decks</a>
 </nav>
 
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
@@ -57,7 +57,7 @@
                         @foreach (var tournamentEvent in detail.Events)
                         {
                             <li>
-                                <a class="text-break" href="/Tournaments/Events/Details?id=@tournamentEvent.ID">@tournamentEvent.Location</a>
+                                <a class="text-break" asp-page="/Tournaments/Events/Details" asp-route-id="@tournamentEvent.ID">@tournamentEvent.Location</a>
                                 <span class="text-muted"> &middot; @TournamentDisplay.Date(tournamentEvent.Date)</span>
                             </li>
                         }

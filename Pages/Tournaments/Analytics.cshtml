@@ -102,7 +102,7 @@
             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
             @if (Model.HasActiveFilters || Model.MinMatches != AnalyticsCriteria.DEFAULT_MIN_MATCHES)
             {
-                <a href="/Tournaments/Analytics" class="btn btn-outline-secondary btn-sm">Reset</a>
+                <a asp-page="/Tournaments/Analytics" class="btn btn-outline-secondary btn-sm">Reset</a>
             }
             <button type="button" class="btn btn-link btn-sm ms-auto" data-bs-toggle="collapse" data-bs-target="#analyticsMoreFilters"
                     aria-expanded="@(Model.HasSecondaryFilters ? "true" : "false")" aria-controls="analyticsMoreFilters">
@@ -131,12 +131,12 @@
         @if (Model.HasActiveFilters)
         {
             <h2 class="h4">No matching events</h2>
-            <p class="mb-0">Try loosening the filters, or <a href="/Tournaments/Analytics">reset them</a>.</p>
+            <p class="mb-0">Try loosening the filters, or <a asp-page="/Tournaments/Analytics">reset them</a>.</p>
         }
         else
         {
             <h2 class="h4">No events yet</h2>
-            <p class="mb-0">Add tournaments on the <a href="/Tournaments/Events">Events</a> page and their results show up here.</p>
+            <p class="mb-0">Add tournaments on the <a asp-page="/Tournaments/Events">Events</a> page and their results show up here.</p>
         }
     </div>
 }

@@ -7,7 +7,7 @@
 <span class="d-inline-flex flex-wrap align-items-center column-gap-3">
     @if (tournamentEvent.DeckID is { } deckID)
     {
-        <a class="small" href="/Tournaments/Decks/Details?id=@deckID">View deck</a>
+        <a class="small" asp-page="/Tournaments/Decks/Details" asp-route-id="@deckID">View deck</a>
     }
     <button type="button"
             class="btn btn-link btn-sm p-0 cc-tap-target"

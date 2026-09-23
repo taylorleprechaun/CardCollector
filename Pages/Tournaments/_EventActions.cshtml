@@ -3,7 +3,7 @@
     var tournamentEvent = Model.Event;
 }
 <div class="d-flex gap-1 flex-shrink-0 justify-content-md-end">
-    <a class="btn btn-sm btn-outline-primary" href="/Tournaments/Events/Details?id=@tournamentEvent.ID">Details</a>
+    <a class="btn btn-sm btn-outline-primary" asp-page="/Tournaments/Events/Details" asp-route-id="@tournamentEvent.ID">Details</a>
     <button type="button"
             class="btn btn-sm btn-outline-secondary"
             data-event-id="@tournamentEvent.ID"
