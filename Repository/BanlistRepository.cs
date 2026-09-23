@@ -18,7 +18,7 @@ namespace CardCollector.Repository
         private const int MAX_CONCURRENT_LIST_FETCHES = 8;
 
         private readonly string _cachePath;
-        private BanlistCollection? _collection;
+        private volatile BanlistCollection? _collection;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SemaphoreSlim _loadLock = new(1, 1);
         private readonly ILogger<BanlistRepository> _logger;
