@@ -53,7 +53,7 @@ namespace CardCollector.Services
 
                 var catalogTask = _tcgCatalogCache.LoadIfStaleAsync();
                 var setTask = _cardSetRepository.LoadIfStaleAsync();
-                var banlistTask = _banlistRepository.LoadIfStaleAsync();
+                var banlistTask = _banlistRepository.LoadIfStaleAsync(_lifetime.ApplicationStopping);
 
                 await catalogTask.ConfigureAwait(false);
                 await _cardDataRepository.LoadIfStaleAsync().ConfigureAwait(false);
@@ -63,6 +63,10 @@ namespace CardCollector.Services
                 await banlistTask.ConfigureAwait(false);
 
                 _logger.LogInformation("Startup cache warm-up: complete");
+            }
+            catch (OperationCanceledException) when (_lifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                _logger.LogInformation("Startup cache warm-up: stopped because the app is shutting down");
             }
             catch (Exception ex)
             {
