@@ -1,5 +1,5 @@
 using CardCollector.Data.Models;
-using CardCollector.Services;
+using CardCollector.Models;
 
 namespace CardCollector.ViewModels
 {

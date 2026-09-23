@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;

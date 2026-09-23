@@ -1,5 +1,7 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 
 namespace CardCollector.Services
 {

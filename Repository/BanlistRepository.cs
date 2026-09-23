@@ -1,5 +1,6 @@
 using CardCollector.Data;
-using CardCollector.Services;
+using CardCollector.Models;
+using CardCollector.Rules;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;

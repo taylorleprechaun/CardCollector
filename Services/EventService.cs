@@ -1,13 +1,13 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
 {
     public sealed class EventService : IEventService
     {
-        public const string NO_FORMAT_NAME = "No format";
-
         private readonly IEventRepository _eventRepository;
         private readonly IFormatService _formatService;
 
@@ -160,7 +160,7 @@ namespace CardCollector.Services
             new()
             {
                 Event = tournamentEvent,
-                FormatName = FormatRules.FindForDate(formats, tournamentEvent.Date)?.Name ?? NO_FORMAT_NAME,
+                FormatName = FormatRules.FindForDate(formats, tournamentEvent.Date)?.Name ?? FormatRules.NO_FORMAT_NAME,
                 OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedUrlCounts),
                 Record = EventRules.GetMatchRecord(tournamentEvent.Matches)
             };

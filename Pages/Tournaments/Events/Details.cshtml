@@ -2,7 +2,7 @@
 @model CardCollector.Pages.Tournaments.Events.DetailsModel
 @using System.Globalization
 @using CardCollector.Data.Models
-@using CardCollector.Services
+@using CardCollector.Rules
 @using CardCollector.ViewModels
 @{
     var detail = Model.Detail!;
@@ -32,7 +32,7 @@
         <dd class="col-sm-9 mb-0">
             @if (detail.Format is null)
             {
-                <span class="text-muted">@EventService.NO_FORMAT_NAME</span>
+                <span class="text-muted">@FormatRules.NO_FORMAT_NAME</span>
             }
             else
             {

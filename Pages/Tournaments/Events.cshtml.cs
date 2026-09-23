@@ -1,5 +1,6 @@
 using System.Globalization;
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;

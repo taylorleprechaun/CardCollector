@@ -90,8 +90,10 @@ CardCollector/
 │   └── ...                  # Startup schema patching and cache helpers
 ├── DTO/                     # Card data structures (yaml-yugi, YGOProDeck, and tcgcsv pricing)
 ├── Extensions/              # Enum/set-code helpers and DI registration modules
+├── Models/                  # Domain, request, and result types (not EF entities)
 ├── Pages/                   # Razor Pages, one per feature (see Features above)
 ├── Repository/              # Data access and card-data merging
+├── Rules/                   # Pure business rules, parsers, and calculators
 ├── Services/                # Business logic (joins card data with collection state, pricing, background refresh)
 ├── ViewModels/              # Page-specific view models
 ├── scripts/                 # Deployment script and systemd unit
@@ -113,6 +115,8 @@ CardCollector/
 CardCollector.Tests/
 ├── Pages/          # PageModel tests, one file per page
 ├── Repository/     # EF Core repository and card-data mapper tests (InMemory provider)
+├── Rules/          # Pure rule, parser, and calculator tests
+├── Models/         # Domain-type tests
 ├── Services/       # CardService, PricingService, catalog/pricing cache, and background service tests
 ├── ViewModels/     # ViewModel logic tests
 ├── DTO/            # DTO/enum-extension tests

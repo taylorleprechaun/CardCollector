@@ -1,4 +1,4 @@
-using CardCollector.Services;
+using CardCollector.Models;
 
 namespace CardCollector.Repository
 {

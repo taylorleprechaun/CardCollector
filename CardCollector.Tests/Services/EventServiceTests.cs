@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -189,7 +190,7 @@ namespace CardCollector.Tests.Services
 
             var result = await service.SearchAsync(new EventSearchCriteria());
 
-            Assert.AreEqual(EventService.NO_FORMAT_NAME, result.Items.Single().FormatName);
+            Assert.AreEqual(FormatRules.NO_FORMAT_NAME, result.Items.Single().FormatName);
         }
 
         [TestMethod]

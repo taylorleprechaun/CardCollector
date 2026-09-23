@@ -1,3 +1,4 @@
+using CardCollector.Models;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services

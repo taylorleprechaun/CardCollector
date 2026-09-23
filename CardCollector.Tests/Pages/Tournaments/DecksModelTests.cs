@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CardCollector.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;

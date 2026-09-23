@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;

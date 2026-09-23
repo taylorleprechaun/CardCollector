@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -61,7 +62,7 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(3, report.Summary.EventCount);
             Assert.AreEqual(new WinLossTie(2, 1, 0), report.Summary.MatchRecord);
-            Assert.AreEqual(EventService.NO_FORMAT_NAME, report.ByFormat[^1].Label);
+            Assert.AreEqual(FormatRules.NO_FORMAT_NAME, report.ByFormat[^1].Label);
         }
 
         [TestMethod]

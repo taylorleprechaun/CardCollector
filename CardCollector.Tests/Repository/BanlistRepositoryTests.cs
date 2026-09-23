@@ -1,6 +1,6 @@
 using System.Net;
+using CardCollector.Models;
 using CardCollector.Repository;
-using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
