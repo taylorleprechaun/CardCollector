@@ -63,27 +63,6 @@ namespace CardCollector.Tests.Pages.Tournaments
         }
 
         [TestMethod]
-        public async Task OnGetAsync_RoundsInOrder_DoesNotFlagThem()
-        {
-            var detail = BuildDetail(5, new Match { Round = "1" }, new Match { Round = "2" }, new Match { Round = "Top 8" });
-            var context = CreateModel(5, detail);
-
-            await context.Model.OnGetAsync(CancellationToken.None);
-
-            Assert.IsFalse(context.Model.AreRoundsOutOfOrder);
-        }
-
-        [TestMethod]
-        public async Task OnGetAsync_RoundsOutOfOrder_FlagsThem()
-        {
-            var detail = BuildDetail(5, new Match { Round = "2" }, new Match { Round = "1" });
-            var context = CreateModel(5, detail);
-
-            await context.Model.OnGetAsync(CancellationToken.None);
-
-            Assert.IsTrue(context.Model.AreRoundsOutOfOrder);
-        }
-        [TestMethod]
         public async Task OnPostAddMatchAsync_AjaxBindingError_ReturnsBadRequestWithoutCallingTheService()
         {
             var context = CreateModel(5, null, ajax: true);

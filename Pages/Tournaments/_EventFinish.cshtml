@@ -1,7 +1,7 @@
 @model CardCollector.ViewModels.EventListItemViewModel
 @{
     var tournamentEvent = Model.Event;
-    var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
+    var finishText = tournamentEvent.FinishText;
 }
 @if (finishText is null && tournamentEvent.Players is null)
 {

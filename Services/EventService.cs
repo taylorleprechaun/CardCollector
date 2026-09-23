@@ -46,6 +46,7 @@ namespace CardCollector.Services
 
             return new EventDetailViewModel
             {
+                AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(tournamentEvent.Matches.Select(m => m.Round)),
                 Event = tournamentEvent,
                 Format = FormatRules.FindForDate(formats, tournamentEvent.Date),
                 OtherUnlinkedEventsWithSameURL = CountOtherUnlinkedEvents(tournamentEvent, unlinkedURLCounts),

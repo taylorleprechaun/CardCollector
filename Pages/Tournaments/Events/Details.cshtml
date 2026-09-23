@@ -9,7 +9,7 @@
     var tournamentEvent = detail.Event;
     ViewData["Title"] = $"{tournamentEvent.Location} Event";
 
-    var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
+    var finishText = tournamentEvent.FinishText;
     var hasDecklistURL = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
     var hasRounds = detail.Summary.RoundCount > 0;
 }
@@ -81,7 +81,7 @@
     <partial name="_MatchSummary" model="detail.Summary" />
 </p>
 
-@if (Model.AreRoundsOutOfOrder)
+@if (detail.AreRoundsOutOfOrder)
 {
     <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
         <span>These rounds aren&rsquo;t in round order.</span>

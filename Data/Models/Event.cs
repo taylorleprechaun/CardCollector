@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace CardCollector.Data.Models
 {
     /// <summary>A tournament the user played. Its format is derived from <see cref="Date"/>, never stored.</summary>
@@ -22,6 +24,9 @@ namespace CardCollector.Data.Models
         public int? Finish { get; set; }
 
         public string? FinishNote { get; set; }
+
+        /// <summary>The finish as shown: the placing, or <see cref="FinishNote"/> when there is none. Null when neither is set.</summary>
+        public string? FinishText => Finish?.ToString(CultureInfo.InvariantCulture) ?? FinishNote;
 
         public int ID { get; set; }
 

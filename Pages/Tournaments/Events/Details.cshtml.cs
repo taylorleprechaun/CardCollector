@@ -18,9 +18,6 @@ namespace CardCollector.Pages.Tournaments.Events
         private readonly IMatchService _matchService;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
-        /// <summary>True when the stored order of the rounds doesn't match their round labels.</summary>
-        public bool AreRoundsOutOfOrder { get; private set; }
-
         /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
         public IReadOnlyList<DeckOption> DeckOptions { get; private set; } = [];
 
@@ -48,7 +45,6 @@ namespace CardCollector.Pages.Tournaments.Events
             if (Detail is null)
                 return NotFound();
 
-            AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(Detail.Event.Matches.Select(m => m.Round));
             OpponentDecks = await _matchService.GetOpponentDecksAsync(cancellationToken).ConfigureAwait(false);
             DeckOptions = await _deckService.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
 

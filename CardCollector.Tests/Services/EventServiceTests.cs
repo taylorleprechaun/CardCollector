@@ -155,6 +155,37 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetAsync_RoundsInOrder_DoesNotFlagThem()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var id = AddEvent(context, "2024-05-04", "Test Hobby Shop");
+            AddRound(context, id, 1, "1");
+            AddRound(context, id, 2, "2");
+            AddRound(context, id, 3, "Top 8");
+            await context.SaveChangesAsync();
+            var service = CreateService(context);
+
+            var detail = await service.GetAsync(id);
+
+            Assert.IsFalse(detail!.AreRoundsOutOfOrder);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_RoundsOutOfOrder_FlagsThem()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var id = AddEvent(context, "2024-05-04", "Test Hobby Shop");
+            AddRound(context, id, 1, "2");
+            AddRound(context, id, 2, "1");
+            await context.SaveChangesAsync();
+            var service = CreateService(context);
+
+            var detail = await service.GetAsync(id);
+
+            Assert.IsTrue(detail!.AreRoundsOutOfOrder);
+        }
+
+        [TestMethod]
         public async Task GetDeckNamesAsync_RepeatedDecks_ReturnsDistinctNames()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -525,6 +556,16 @@ namespace CardCollector.Tests.Services
                 WonDiceRoll = wonDiceRoll
             });
         }
+
+        private static void AddRound(AppDBContext context, int eventID, int sequence, string round) =>
+            context.Matches.Add(new Match
+            {
+                EventID = eventID,
+                OpponentDeck = "Sample Opponent",
+                Result = MatchResult.Win,
+                Round = round,
+                Sequence = sequence
+            });
 
         private static Event BuildEvent(int id, string date) =>
             new()
