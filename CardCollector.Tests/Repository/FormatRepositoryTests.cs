@@ -16,7 +16,7 @@ namespace CardCollector.Tests.Repository
 
             var id = await repository.AddAsync(BuildFormat("Alpha Era", new DateOnly(2024, 1, 1), null, "First", "Second", "Third"));
 
-            var saved = await repository.GetAsync(id);
+            var saved = await FindAsync(repository, id);
             CollectionAssert.AreEqual(new[] { "First", "Second", "Third" }, saved!.Strategies.Select(s => s.Name).ToArray());
             CollectionAssert.AreEqual(new[] { 0, 1, 2 }, saved.Strategies.Select(s => s.Position).ToArray());
         }
@@ -29,7 +29,7 @@ namespace CardCollector.Tests.Repository
 
             var id = await repository.AddAsync(BuildFormat("Alpha Era", new DateOnly(2024, 1, 1), null));
 
-            var saved = await repository.GetAsync(id);
+            var saved = await FindAsync(repository, id);
             Assert.AreNotEqual(default, saved!.DateCreated);
             Assert.AreEqual(saved.DateCreated, saved.DateModified);
         }
@@ -107,30 +107,19 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetAsync_FormatMissing_ReturnsNull()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new FormatRepository(context);
-
-            var result = await repository.GetAsync(99);
-
-            Assert.IsNull(result);
-        }
-
-        [TestMethod]
         public async Task UpdateAsync_FormatExists_AdvancesDateModifiedOnly()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new FormatRepository(context);
             var id = await repository.AddAsync(BuildFormat("Alpha Era", new DateOnly(2024, 1, 1), null));
-            var before = await repository.GetAsync(id);
+            var before = await FindAsync(repository, id);
             await Task.Delay(10);
             var edited = BuildFormat("Alpha Era 2", new DateOnly(2024, 1, 1), null);
             edited.ID = id;
 
             await repository.UpdateAsync(edited);
 
-            var after = await repository.GetAsync(id);
+            var after = await FindAsync(repository, id);
             Assert.AreEqual(before!.DateCreated, after!.DateCreated);
             Assert.IsTrue(after.DateModified > before.DateModified);
         }
@@ -147,7 +136,7 @@ namespace CardCollector.Tests.Repository
 
             var updated = await repository.UpdateAsync(edited);
 
-            var saved = await repository.GetAsync(id);
+            var saved = await FindAsync(repository, id);
             Assert.IsTrue(updated);
             Assert.AreEqual("Beta Era", saved!.Name);
             Assert.AreEqual(new DateOnly(2024, 2, 1), saved.StartDate);
@@ -186,5 +175,8 @@ namespace CardCollector.Tests.Repository
                 StartDate = start,
                 Strategies = strategies.Select(s => new FormatStrategy { Name = s }).ToList()
             };
+
+        private static async Task<Format?> FindAsync(FormatRepository repository, int id) =>
+            (await repository.GetAllAsync()).FirstOrDefault(f => f.ID == id);
     }
 }

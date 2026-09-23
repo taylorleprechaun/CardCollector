@@ -14,7 +14,6 @@ namespace CardCollector.Rules
         public const string DICE_LOST_LABEL = "Lost the roll";
         public const string DICE_NOT_RECORDED_LABEL = "Not recorded";
         public const string DICE_WON_LABEL = "Won the roll";
-        public const string TOTAL_LABEL = "Total";
 
         /// <summary>Works out the report for events that have already been filtered.</summary>
         /// <param name="events">The filtered events.</param>
@@ -31,7 +30,6 @@ namespace CardCollector.Rules
                 ByDeck = GetByDeck(events),
                 ByEventType = GetByEventType(events),
                 ByFormat = GetByFormat(events),
-                DeckFormatTotal = new AnalyticsRecordRow(TOTAL_LABEL, events.Count, matchRecord),
                 DeckFormats = GetDeckFormats(events),
                 Dice = GetDice(events),
                 Matchups = GetMatchups(events, Math.Max(1, minMatches)),

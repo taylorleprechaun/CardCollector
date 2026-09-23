@@ -44,23 +44,6 @@ else
                     </tr>
                 }
             </tbody>
-            @if (Model.Total is { } total)
-            {
-                <tfoot>
-                    <tr class="fw-semibold">
-                        <th scope="row">
-                            @total.Label
-                            <div class="text-muted small fw-normal d-md-none">@Subtext(total)</div>
-                        </th>
-                        <td class="text-end d-none d-md-table-cell">@CountText(total)</td>
-                        <td class="text-end d-none d-md-table-cell">@total.Record.Wins</td>
-                        <td class="text-end d-none d-md-table-cell">@total.Record.Losses</td>
-                        <td class="text-end d-none d-md-table-cell">@total.Record.Ties</td>
-                        <td class="text-end d-md-none text-nowrap">@total.Record</td>
-                        <td class="text-end">@TournamentDisplay.Percent(total.Record.WinRate)</td>
-                    </tr>
-                </tfoot>
-            }
         </table>
     </div>
 }

@@ -205,15 +205,15 @@ else
                         <tr class="fw-semibold">
                             <th scope="row">
                                 Total
-                                <div class="text-muted small fw-normal d-md-none">@report.DeckFormatTotal.EventCount @(report.DeckFormatTotal.EventCount == 1 ? "event" : "events")</div>
+                                <div class="text-muted small fw-normal d-md-none">@summary.EventCount @(summary.EventCount == 1 ? "event" : "events")</div>
                             </th>
                             <td class="d-none d-md-table-cell"></td>
-                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.EventCount</td>
-                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Wins</td>
-                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Losses</td>
-                            <td class="text-end d-none d-md-table-cell">@report.DeckFormatTotal.Record.Ties</td>
-                            <td class="text-end d-md-none text-nowrap">@report.DeckFormatTotal.Record</td>
-                            <td class="text-end">@TournamentDisplay.Percent(report.DeckFormatTotal.Record.WinRate)</td>
+                            <td class="text-end d-none d-md-table-cell">@summary.EventCount</td>
+                            <td class="text-end d-none d-md-table-cell">@summary.MatchRecord.Wins</td>
+                            <td class="text-end d-none d-md-table-cell">@summary.MatchRecord.Losses</td>
+                            <td class="text-end d-none d-md-table-cell">@summary.MatchRecord.Ties</td>
+                            <td class="text-end d-md-none text-nowrap">@summary.MatchRecord</td>
+                            <td class="text-end">@matchWinRate</td>
                         </tr>
                     </tfoot>
                 </table>

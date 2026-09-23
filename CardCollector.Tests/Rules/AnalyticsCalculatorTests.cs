@@ -107,7 +107,7 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Calculate_DeckFormatTotal_SumsEveryEventAndRound()
+        public void Calculate_EventsAcrossDecks_SummaryTotalsEveryEventAndRound()
         {
             var events = Prepare(
                 BuildEvent(1, "2024-02-01", "Alpha Deck", matches: [Round(MatchResult.Win), Bye()]),
@@ -115,9 +115,8 @@ namespace CardCollector.Tests.Rules
 
             var report = AnalyticsCalculator.Calculate(events, 1);
 
-            Assert.AreEqual(AnalyticsCalculator.TOTAL_LABEL, report.DeckFormatTotal.Label);
-            Assert.AreEqual(2, report.DeckFormatTotal.EventCount);
-            Assert.AreEqual(new WinLossTie(2, 1, 1), report.DeckFormatTotal.Record);
+            Assert.AreEqual(2, report.Summary.EventCount);
+            Assert.AreEqual(new WinLossTie(2, 1, 1), report.Summary.MatchRecord);
         }
         [TestMethod]
         public void Calculate_DiceRolls_BucketsNonByeRoundsByRoll()
@@ -166,7 +165,6 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(0, report.DeckFormats.Count);
             Assert.AreEqual(0, report.Matchups.Count);
             Assert.AreEqual(3, report.Dice.Count);
-            Assert.IsNull(report.DeckFormatTotal.Record.WinRate);
         }
 
         [TestMethod]
