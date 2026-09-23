@@ -86,6 +86,29 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}}}", DisplayName = "Lists missing")]
+        [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":null}", DisplayName = "Lists null")]
+        [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":[null]}", DisplayName = "Null list entry")]
+        [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":[{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":null}]}", DisplayName = "List with null limits")]
+        [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":null},\"Lists\":[]}", DisplayName = "Current with null limits")]
+        [DataRow("null", DisplayName = "Null root")]
+        public async Task GetCurrentAsync_IncompleteCacheOnDisk_FetchesFromNetworkInstead(string cacheJson)
+        {
+            Directory.CreateDirectory(_cacheDir);
+            File.WriteAllText(Path.Combine(_cacheDir, "banlistcache.json"), cacheJson);
+            File.WriteAllText(Path.Combine(_cacheDir, "banlistcache.json.timestamp"), DateTime.UtcNow.ToString("O"));
+            var handler = BuildHandler(
+                indexNames: ["2024-01-01.vector.json"],
+                currentJson: BuildListJson("2024-01-01", (100, 0)),
+                listJsonByFileName: new Dictionary<string, string> { ["2024-01-01.vector.json"] = BuildListJson("2024-01-01", (100, 0)) });
+            var repo = CreateRepository(handler);
+
+            var current = await repo.GetCurrentAsync();
+
+            Assert.AreEqual(new DateOnly(2024, 1, 1), current!.EffectiveDate);
+        }
+
+        [TestMethod]
         public async Task GetCurrentAsync_MalformedCacheOnDisk_FetchesFromNetworkInstead()
         {
             Directory.CreateDirectory(_cacheDir);

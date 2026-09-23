@@ -4,6 +4,7 @@ using CardCollector.Rules;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Repository
 {
@@ -177,6 +178,10 @@ namespace CardCollector.Repository
             }
         }
 
+        /// <summary>The cache is app-written, but a truncated or hand-edited file can still leave a list or its limits null.</summary>
+        private static bool IsComplete([NotNullWhen(true)] Banlist? list) =>
+            list?.LimitsByKonamiID is not null;
+
         private BanlistCollection? LoadFromDisk()
         {
             if (!File.Exists(_cachePath))
@@ -186,9 +191,13 @@ namespace CardCollector.Repository
             {
                 var json = File.ReadAllText(_cachePath);
                 var root = JsonConvert.DeserializeObject<BanlistCacheRoot>(json);
-                return root is null
-                    ? null
-                    : BanlistCollection.Build(root.Lists, root.Current, _settings.EffectiveDateOverrides, _logger);
+                if (root?.Lists is not { } lists || !lists.All(IsComplete) || (root.Current is not null && !IsComplete(root.Current)))
+                {
+                    _logger.LogWarning("Banlist cache at {Path} is incomplete — treating it as missing", _cachePath);
+                    return null;
+                }
+
+                return BanlistCollection.Build(lists.OfType<Banlist>().ToList(), root.Current, _settings.EffectiveDateOverrides, _logger);
             }
             catch (Exception ex)
             {
@@ -243,7 +252,7 @@ namespace CardCollector.Repository
             var cacheDir = Path.GetDirectoryName(_cachePath)!;
             Directory.CreateDirectory(cacheDir);
 
-            var root = new BanlistCacheRoot { Current = current, Lists = lists.ToList() };
+            var root = new BanlistCacheRoot { Current = current, Lists = [.. lists] };
             File.WriteAllText(_cachePath, JsonConvert.SerializeObject(root));
             FileCacheHelper.WriteTimestamp(_timestampPath);
         }
@@ -252,7 +261,7 @@ namespace CardCollector.Repository
         {
             public Banlist? Current { get; set; }
 
-            public List<Banlist> Lists { get; set; } = [];
+            public List<Banlist?>? Lists { get; set; }
         }
 
         private sealed class GitHubContentEntry
