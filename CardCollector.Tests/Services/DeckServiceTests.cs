@@ -40,6 +40,19 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetAllAsync_DeckImported_ReturnsItWithItsCardCounts()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+            await service.ImportAsync(new DeckImportRequest { Name = "Sample Deck", Text = Ydk(100) });
+
+            var decks = await service.GetAllAsync();
+
+            Assert.AreEqual("Sample Deck", decks.Single().Name);
+            Assert.AreEqual(1, decks.Single().MainCount);
+        }
+
+        [TestMethod]
         public async Task GetAsync_DeckMissing_ReturnsNull()
         {
             using var context = InMemoryDbContextFactory.Create();

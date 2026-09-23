@@ -250,6 +250,20 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
             Assert.AreEqual("Round deleted.", context.Model.TempData["Success"]);
         }
+
+        [TestMethod]
+        public async Task OnPostEditMatchAsync_AjaxBindingError_ReturnsBadRequestWithoutCallingTheService()
+        {
+            var context = CreateModel(5, null, ajax: true);
+            context.Model.ModelState.AddModelError("Input.Result", "not a result");
+
+            var result = await context.Model.OnPostEditMatchAsync(CancellationToken.None);
+
+            var badRequest = Assert.IsInstanceOfType<BadRequestObjectResult>(result);
+            Assert.AreEqual("Result is not valid.", JsonSerializer.SerializeToElement(badRequest.Value).GetProperty("errors")[0].GetString());
+            context.Matches.Verify(s => s.UpdateAsync(It.IsAny<int>(), It.IsAny<Match>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [TestMethod]
         public async Task OnPostEditMatchAsync_AjaxRoundBelongsToAnotherEvent_ReturnsNotFound()
         {

@@ -69,23 +69,6 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetCurrentAsync_IndexDeserializesToNull_ReturnsNullWithoutThrowing()
-        {
-            var handler = new FakeHttpMessageHandler(request =>
-            {
-                var url = request.RequestUri!.ToString();
-                return url.EndsWith("/index", StringComparison.Ordinal)
-                    ? JsonResponse("null")
-                    : new HttpResponseMessage(HttpStatusCode.InternalServerError);
-            });
-            var repo = CreateRepository(handler);
-
-            var current = await repo.GetCurrentAsync();
-
-            Assert.IsNull(current);
-        }
-
-        [TestMethod]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}}}", DisplayName = "Lists missing")]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":null}", DisplayName = "Lists null")]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":[null]}", DisplayName = "Null list entry")]
@@ -109,6 +92,23 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetCurrentAsync_IndexDeserializesToNull_ReturnsNullWithoutThrowing()
+        {
+            var handler = new FakeHttpMessageHandler(request =>
+            {
+                var url = request.RequestUri!.ToString();
+                return url.EndsWith("/index", StringComparison.Ordinal)
+                    ? JsonResponse("null")
+                    : new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            });
+            var repo = CreateRepository(handler);
+
+            var current = await repo.GetCurrentAsync();
+
+            Assert.IsNull(current);
+        }
+
+        [TestMethod]
         public async Task GetCurrentAsync_MalformedCacheOnDisk_FetchesFromNetworkInstead()
         {
             Directory.CreateDirectory(_cacheDir);
@@ -127,16 +127,6 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetCurrentAsync_NoCacheAndFetchFails_ReturnsNullWithoutThrowing()
-        {
-            var repo = CreateRepository(BuildHandler(indexFails: true));
-
-            var current = await repo.GetCurrentAsync();
-
-            Assert.IsNull(current);
-        }
-
-        [TestMethod]
         public async Task GetCurrentAsync_NoCacheAndCallerCancelled_ThrowsAndWritesNoCache()
         {
             var repo = CreateRepository(BuildHandler(indexNames: [], currentJson: BuildListJson("2024-01-01")));
@@ -146,6 +136,16 @@ namespace CardCollector.Tests.Repository
             await Assert.ThrowsAsync<OperationCanceledException>(() => repo.GetCurrentAsync(cancelled.Token));
 
             Assert.IsFalse(File.Exists(Path.Combine(_cacheDir, "banlistcache.json")));
+        }
+
+        [TestMethod]
+        public async Task GetCurrentAsync_NoCacheAndFetchFails_ReturnsNullWithoutThrowing()
+        {
+            var repo = CreateRepository(BuildHandler(indexFails: true));
+
+            var current = await repo.GetCurrentAsync();
+
+            Assert.IsNull(current);
         }
 
         [TestMethod]
@@ -162,6 +162,21 @@ namespace CardCollector.Tests.Repository
             Assert.IsNotNull(current);
             Assert.AreEqual(BanlistLimit.Forbidden, current!.GetLimit(100));
             Assert.IsTrue(File.Exists(Path.Combine(_cacheDir, "banlistcache.json")));
+        }
+
+        [TestMethod]
+        public async Task GetListAsync_CacheWithoutACurrentList_LoadsItWithoutFetching()
+        {
+            Directory.CreateDirectory(_cacheDir);
+            File.WriteAllText(Path.Combine(_cacheDir, "banlistcache.json"),
+                "{\"Current\":null,\"Lists\":[{\"EffectiveDate\":\"2024-01-01\",\"LimitsByKonamiID\":{\"100\":1}}]}");
+            File.WriteAllText(Path.Combine(_cacheDir, "banlistcache.json.timestamp"), DateTime.UtcNow.ToString("O"));
+            var repo = CreateRepository(BuildHandler(indexFails: true));
+
+            var list = await repo.GetListAsync(new DateOnly(2024, 1, 1));
+
+            Assert.AreEqual(BanlistLimit.Limited, list!.GetLimit(100));
+            Assert.IsNull(await repo.GetCurrentAsync());
         }
 
         [TestMethod]
