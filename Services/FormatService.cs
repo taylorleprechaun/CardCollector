@@ -52,7 +52,7 @@ namespace CardCollector.Services
 
             var existing = await GetAllAsync(cancellationToken).ConfigureAwait(false);
             if (existing.All(f => f.ID != normalized.ID))
-                return SaveResult.Failure(["Format not found."]);
+                return SaveResult.Missing("Format not found.");
 
             var errors = FormatRules.Validate(normalized, existing);
             if (errors.Count > 0)

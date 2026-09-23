@@ -447,6 +447,7 @@ namespace CardCollector.Tests.Services
 
             Assert.IsFalse(result.Succeeded);
             Assert.AreEqual("Event not found.", result.Errors.Single());
+            Assert.IsTrue(result.NotFound);
         }
 
         [TestMethod]

@@ -107,6 +107,7 @@ namespace CardCollector.Tests.Services
 
             Assert.IsFalse(result.Succeeded);
             Assert.AreEqual("Format not found.", result.Errors.Single());
+            Assert.IsTrue(result.NotFound);
         }
 
         [TestMethod]

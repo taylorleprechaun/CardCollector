@@ -99,7 +99,7 @@ namespace CardCollector.Services
                 return SaveResult.Failure(errors);
 
             var updated = await _eventRepository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
-            return updated ? SaveResult.Success() : SaveResult.Failure(["Event not found."]);
+            return updated ? SaveResult.Success() : SaveResult.Missing("Event not found.");
         }
 
         /// <summary>The event itself is left out of the count of events sharing its URL.</summary>

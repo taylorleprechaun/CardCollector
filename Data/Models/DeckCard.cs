@@ -1,7 +1,7 @@
 namespace CardCollector.Data.Models
 {
     /// <summary>One distinct card in one section of a <see cref="Deck"/>, with how many copies it holds.</summary>
-    public class DeckCard
+    public sealed class DeckCard
     {
         /// <summary>The app's <c>Card.ID</c>. A passcode the card data doesn't know is stored as it was pasted.</summary>
         public int CardID { get; set; }

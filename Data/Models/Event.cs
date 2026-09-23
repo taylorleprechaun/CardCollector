@@ -3,7 +3,7 @@ using System.Globalization;
 namespace CardCollector.Data.Models
 {
     /// <summary>A tournament the user played. Its format is derived from <see cref="Date"/>, never stored.</summary>
-    public class Event
+    public sealed class Event
     {
         public DateOnly Date { get; set; }
 
