@@ -5,6 +5,7 @@ using CardCollector.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
+using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -68,6 +69,18 @@ namespace CardCollector.Tests.Services
             Assert.IsTrue(detail.Main.Cards.Single(c => c.CardID == 300).IsUnknown);
             Assert.AreEqual(3, detail.MainTypes.Monsters);
             Assert.AreEqual(eventID, detail.Events.Single().ID);
+        }
+
+        [TestMethod]
+        public async Task GetOptionsAsync_DeckImported_ReturnsItsIDAndName()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+            var deckID = (await service.ImportAsync(new DeckImportRequest { Name = "Sample Deck", Text = Ydk(100) })).DeckID;
+
+            var options = await service.GetOptionsAsync();
+
+            Assert.AreEqual(new DeckOption(deckID, "Sample Deck"), options.Single());
         }
 
         [TestMethod]

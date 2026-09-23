@@ -8,21 +8,21 @@ namespace CardCollector.Repository
     public interface IMatchRepository
     {
         /// <summary>
-        /// Persists a new round and returns its ID. The round goes at the given zero-based position among the event's
-        /// rounds, moving the later ones down, or at the end when no position is given.
+        /// Persists a new round at the zero-based position <paramref name="choosePosition"/> picks from the event's current
+        /// rounds (clamped to the ends), moving the later ones down. Returns that position and the event's rounds in play
+        /// order with the new one included, or null if the event does not exist.
         /// </summary>
-        Task<int> AddAsync(int eventID, Match match, int? position = null, CancellationToken cancellationToken = default);
+        Task<(int Position, IReadOnlyList<Match> Rounds)?> AddAsync(
+            int eventID,
+            Match match,
+            Func<IReadOnlyList<Match>, int> choosePosition,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Deletes the round and renumbers the event's remaining rounds so they stay contiguous.
-        /// Returns false if the event has no such round.
+        /// Deletes the round and renumbers the event's remaining rounds so they stay contiguous. Returns the remaining
+        /// rounds in play order, or null if the event has no such round.
         /// </summary>
-        Task<bool> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns the round, or null if the event has no such round.
-        /// </summary>
-        Task<Match?> GetAsync(int eventID, int id, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Match>?> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the event's rounds in play order.
@@ -41,9 +41,9 @@ namespace CardCollector.Repository
         Task<int> SetOrderAsync(int eventID, IReadOnlyList<int> orderedIDs, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Updates the round's own fields; its position in the event is left as it is.
-        /// Returns false if the event has no such round.
+        /// Updates the round's own fields; its position in the event is left as it is. Returns the event's rounds in play
+        /// order after the change, or null if the event has no such round.
         /// </summary>
-        Task<bool> UpdateAsync(int eventID, Match match, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Match>?> UpdateAsync(int eventID, Match match, CancellationToken cancellationToken = default);
     }
 }

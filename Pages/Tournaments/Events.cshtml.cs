@@ -31,7 +31,7 @@ namespace CardCollector.Pages.Tournaments
         public IReadOnlyList<string> DeckNames { get; private set; } = [];
 
         /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
-        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
+        public IReadOnlyList<DeckOption> DeckOptions { get; private set; } = [];
 
         public IReadOnlyList<string> Errors { get; private set; } = [];
 
@@ -194,7 +194,7 @@ namespace CardCollector.Pages.Tournaments
 
             Formats = await _formatService.GetAllAsync(cancellationToken).ConfigureAwait(false);
             DeckNames = await _eventService.GetDeckNamesAsync(cancellationToken).ConfigureAwait(false);
-            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
             Locations = await _eventService.GetLocationsAsync(cancellationToken).ConfigureAwait(false);
 
             Results = await SearchAsync(cancellationToken).ConfigureAwait(false);

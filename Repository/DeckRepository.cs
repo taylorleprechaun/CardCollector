@@ -91,12 +91,21 @@ namespace CardCollector.Repository
         {
             var query = _context.Decks.AsNoTracking();
             if (includeCards)
-                query = query.Include(d => d.Cards.OrderBy(c => c.SortOrder).ThenBy(c => c.ID));
+                query = query.Include(d => d.Cards);
 
             return await query
                 .FirstOrDefaultAsync(d => d.ID == id, cancellationToken)
                 .ConfigureAwait(false);
         }
+
+        public async Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default) =>
+            await _context.Decks
+                .AsNoTracking()
+                .OrderBy(d => d.Name)
+                .ThenBy(d => d.ID)
+                .Select(d => new DeckOption(d.ID, d.Name))
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
 
         public async Task<bool> UpdateAsync(Deck deck, CancellationToken cancellationToken = default)
         {

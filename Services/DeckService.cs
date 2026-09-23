@@ -47,6 +47,9 @@ namespace CardCollector.Services
             };
         }
 
+        public Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default) =>
+            _deckRepository.GetOptionsAsync(cancellationToken);
+
         public async Task<DeckImportResult> ImportAsync(DeckImportRequest request, CancellationToken cancellationToken = default)
         {
             if (request is null) throw new ArgumentNullException(nameof(request));

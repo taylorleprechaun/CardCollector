@@ -25,9 +25,14 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<DeckListItemViewModel>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns the deck, optionally with its cards in section order, or null if not found.
+        /// Returns the deck, optionally with its cards (in no particular order), or null if not found.
         /// </summary>
         Task<Deck?> GetAsync(int id, bool includeCards, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns every deck's ID and name, sorted by name.
+        /// </summary>
+        Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates the deck's name and notes. Its cards are left as they are. Returns false if the deck does not exist.

@@ -24,6 +24,11 @@ namespace CardCollector.Services
         Task<DeckDetailViewModel?> GetAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns every deck's ID and name, sorted by name, for pickers that don't need the card counts.
+        /// </summary>
+        Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Parses a pasted deck list and stores it as a new deck, linking it to the requested event. A list that can't
         /// be parsed is reported in the result rather than thrown, and nothing is stored.
         /// </summary>

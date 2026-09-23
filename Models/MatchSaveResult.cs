@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.ViewModels;
 
 namespace CardCollector.Models
 {
@@ -18,19 +19,24 @@ namespace CardCollector.Models
 
         public bool Succeeded { get; }
 
-        private MatchSaveResult(IReadOnlyList<string> errors, Match? match, bool notFound, int? previousMatchID, bool succeeded)
+        /// <summary>The event's tallies after the save; null unless the save succeeded.</summary>
+        public MatchSummaryViewModel? Summary { get; }
+
+        private MatchSaveResult(IReadOnlyList<string> errors, Match? match, bool notFound, int? previousMatchID, bool succeeded, MatchSummaryViewModel? summary)
         {
             Errors = errors;
             Match = match;
             NotFound = notFound;
             PreviousMatchID = previousMatchID;
             Succeeded = succeeded;
+            Summary = summary;
         }
 
-        public static MatchSaveResult Failure(IReadOnlyList<string> errors) => new(errors, null, false, null, false);
+        public static MatchSaveResult Failure(IReadOnlyList<string> errors) => new(errors, null, false, null, false, null);
 
-        public static MatchSaveResult Missing(string message) => new([message], null, true, null, false);
+        public static MatchSaveResult Missing(string message) => new([message], null, true, null, false, null);
 
-        public static MatchSaveResult Success(Match match, int? previousMatchID = null) => new([], match, false, previousMatchID, true);
+        public static MatchSaveResult Success(Match match, MatchSummaryViewModel summary, int? previousMatchID = null) =>
+            new([], match, false, previousMatchID, true, summary);
     }
 }

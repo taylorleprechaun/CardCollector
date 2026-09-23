@@ -22,7 +22,7 @@ namespace CardCollector.Pages.Tournaments.Events
         public bool AreRoundsOutOfOrder { get; private set; }
 
         /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
-        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
+        public IReadOnlyList<DeckOption> DeckOptions { get; private set; } = [];
 
         public EventDetailViewModel? Detail { get; private set; }
 
@@ -50,7 +50,7 @@ namespace CardCollector.Pages.Tournaments.Events
 
             AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(Detail.Event.Matches.Select(m => m.Round));
             OpponentDecks = await _matchService.GetOpponentDecksAsync(cancellationToken).ConfigureAwait(false);
-            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
 
             return Page();
         }
@@ -62,13 +62,13 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RejectSave(errors);
 
             var result = await _matchService.AddAsync(ID, BuildMatch(), cancellationToken).ConfigureAwait(false);
-            return await RespondToSaveAsync(result, "Round added.", cancellationToken).ConfigureAwait(false);
+            return await RespondToSaveAsync(result, "Round added.").ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostDeleteMatchAsync(int matchID, CancellationToken cancellationToken)
         {
-            var deleted = await _matchService.DeleteAsync(ID, matchID, cancellationToken).ConfigureAwait(false);
-            if (!deleted)
+            var summary = await _matchService.DeleteAsync(ID, matchID, cancellationToken).ConfigureAwait(false);
+            if (summary is null)
                 return RespondNotFound("That round no longer exists.");
 
             if (!IsAjaxRequest())
@@ -77,7 +77,6 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RedirectToRounds();
             }
 
-            var summary = await _matchService.GetSummaryAsync(ID, cancellationToken).ConfigureAwait(false);
             return new JsonResult(new
             {
                 nextRound = summary.NextRound,
@@ -93,7 +92,7 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RejectSave(errors);
 
             var result = await _matchService.UpdateAsync(ID, BuildMatch(), cancellationToken).ConfigureAwait(false);
-            return await RespondToSaveAsync(result, "Round updated.", cancellationToken).ConfigureAwait(false);
+            return await RespondToSaveAsync(result, "Round updated.").ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostSortMatchesAsync(CancellationToken cancellationToken)
@@ -170,7 +169,7 @@ namespace CardCollector.Pages.Tournaments.Events
             return RedirectToRounds();
         }
 
-        private async Task<IActionResult> RespondToSaveAsync(MatchSaveResult result, string successMessage, CancellationToken cancellationToken)
+        private async Task<IActionResult> RespondToSaveAsync(MatchSaveResult result, string successMessage)
         {
             if (result.NotFound)
                 return RespondNotFound(result.Errors[0]);
@@ -184,7 +183,7 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RedirectToRounds();
             }
 
-            var summary = await _matchService.GetSummaryAsync(ID, cancellationToken).ConfigureAwait(false);
+            var summary = result.Summary!;
             return new JsonResult(new
             {
                 nextRound = summary.NextRound,
