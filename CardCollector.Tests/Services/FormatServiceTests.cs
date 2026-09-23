@@ -2,6 +2,7 @@ using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
+using Moq;
 
 namespace CardCollector.Tests.Services
 {
@@ -80,6 +81,20 @@ namespace CardCollector.Tests.Services
 
             Assert.IsTrue(deleted);
             Assert.AreEqual(0, (await service.GetAllAsync()).Count);
+        }
+
+        [TestMethod]
+        public async Task GetAllAsync_CalledTwice_LoadsFromRepositoryOnce()
+        {
+            var repository = new Mock<IFormatRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([new Format { ID = 1, Name = "Alpha Era" }]);
+            var service = new FormatService(repository.Object);
+
+            var first = await service.GetAllAsync();
+            var second = await service.GetAllAsync();
+
+            Assert.AreSame(first, second);
+            repository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]

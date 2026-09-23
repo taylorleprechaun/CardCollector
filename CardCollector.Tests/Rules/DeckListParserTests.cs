@@ -42,25 +42,23 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Parse_SampleYdk_ReturnsSixtyFifteenFifteenAsYdk()
+        public void Parse_SampleYdk_ReturnsSixtyFifteenFifteen()
         {
             var result = DeckListParser.Parse(ReadFixture("sample.ydk"));
 
             Assert.IsTrue(result.Succeeded);
-            Assert.AreEqual(DeckListFormat.Ydk, result.Deck!.Format);
-            Assert.AreEqual(60, result.Deck.Main.Count);
+            Assert.AreEqual(60, result.Deck!.Main.Count);
             Assert.AreEqual(15, result.Deck.Extra.Count);
             Assert.AreEqual(15, result.Deck.Side.Count);
         }
 
         [TestMethod]
-        public void Parse_SampleYdke_ReturnsSixtyFifteenFifteenAsYdke()
+        public void Parse_SampleYdke_ReturnsSixtyFifteenFifteen()
         {
             var result = DeckListParser.Parse(ReadFixture("sample.ydke.txt"));
 
             Assert.IsTrue(result.Succeeded);
-            Assert.AreEqual(DeckListFormat.Ydke, result.Deck!.Format);
-            Assert.AreEqual(60, result.Deck.Main.Count);
+            Assert.AreEqual(60, result.Deck!.Main.Count);
             Assert.AreEqual(15, result.Deck.Extra.Count);
             Assert.AreEqual(15, result.Deck.Side.Count);
         }
@@ -184,12 +182,12 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Parse_YdkeSchemeInUpperCase_IsDetectedAsYdke()
+        public void Parse_YdkeSchemeInUpperCase_IsParsedAsYdke()
         {
             var result = DeckListParser.Parse("YDKE://" + Encode(100) + "!!!");
 
             Assert.IsTrue(result.Succeeded);
-            Assert.AreEqual(DeckListFormat.Ydke, result.Deck!.Format);
+            CollectionAssert.AreEqual(new[] { 100 }, result.Deck!.Main.ToArray());
         }
 
         [TestMethod]

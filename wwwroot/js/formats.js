@@ -66,16 +66,6 @@ function createStrategyItem(name) {
     return item;
 }
 
-function fillPickerDate(id, value) {
-    if (typeof setPickerDate === 'function') {
-        setPickerDate(id, value);
-        return;
-    }
-
-    const el = document.getElementById(id);
-    if (el) el.value = value || '';
-}
-
 function getStrategyNames(list) {
     return Array.from(list.querySelectorAll(`input[name="${STRATEGY_FIELD_NAME}"]`)).map(input => input.value);
 }
@@ -146,8 +136,8 @@ function openFormatModal(trigger) {
     document.getElementById('Input_ID').value = isEdit ? data.formatId : '0';
     document.getElementById('Input_Name').value = data.formatName || '';
     document.getElementById('Input_Notes').value = data.formatNotes || '';
-    fillPickerDate('Input_StartDate', data.formatStart || '');
-    fillPickerDate('Input_EndDate', data.formatEnd || '');
+    setPickerDate('Input_StartDate', data.formatStart || '');
+    setPickerDate('Input_EndDate', data.formatEnd || '');
     document.getElementById('Input_IsOngoing').checked = isEdit && !data.formatEnd;
     syncEndDateState();
 
@@ -170,7 +160,7 @@ function syncEndDateState() {
     const ongoing = document.getElementById('Input_IsOngoing');
     if (!end || !ongoing) return;
 
-    if (ongoing.checked) fillPickerDate('Input_EndDate', '');
+    if (ongoing.checked) setPickerDate('Input_EndDate', '');
     end.disabled = ongoing.checked;
     if (end._flatpickr && end._flatpickr.altInput) end._flatpickr.altInput.disabled = ongoing.checked;
 }

@@ -36,14 +36,13 @@ namespace CardCollector.Services
                 : await ResolveAtEventListAsync(atEventSource, listDate).ConfigureAwait(false);
 
             var cards = deck.Main.Cards.Concat(deck.Extra.Cards).Concat(deck.Side.Cards);
-            var activeLegality = activeList is null ? null : DeckLegalityEvaluator.Evaluate(cards, activeList);
 
             return new DeckLegalityViewModel
             {
-                ActiveLegality = activeLegality,
                 ActiveView = activeView,
                 AtEventSource = atEventSource,
                 AvailableListDates = availableListDates,
+                CardStatuses = activeList is null ? null : DeckLegalityEvaluator.Evaluate(cards, activeList),
                 DeckID = deck.Deck.ID,
                 Events = deck.Events,
                 IsAvailable = isAvailable,

@@ -81,7 +81,6 @@ namespace CardCollector.Tests.Rules
             new()
             {
                 Extra = extra ?? [],
-                Format = DeckListFormat.Ydke,
                 Main = main ?? [],
                 Side = side ?? []
             };

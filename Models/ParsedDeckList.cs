@@ -5,8 +5,6 @@ namespace CardCollector.Models
     {
         public required IReadOnlyList<int> Extra { get; init; }
 
-        public required DeckListFormat Format { get; init; }
-
         public required IReadOnlyList<int> Main { get; init; }
 
         public required IReadOnlyList<int> Side { get; init; }

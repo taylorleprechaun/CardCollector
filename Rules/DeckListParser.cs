@@ -37,7 +37,7 @@ namespace CardCollector.Rules
             return DeckListParseResult.Failure("That doesn't look like a YDKe code or a YDK file. A YDKe code starts with ydke:// and a YDK file has a #main section.");
         }
 
-        private static DeckListParseResult Complete(List<int> main, List<int> extra, List<int> side, DeckListFormat format)
+        private static DeckListParseResult Complete(List<int> main, List<int> extra, List<int> side)
         {
             if (main.Count == 0)
                 return DeckListParseResult.Failure("The main deck is empty.");
@@ -49,7 +49,6 @@ namespace CardCollector.Rules
             return DeckListParseResult.Success(new ParsedDeckList
             {
                 Extra = extra,
-                Format = format,
                 Main = main,
                 Side = side
             });
@@ -133,7 +132,7 @@ namespace CardCollector.Rules
                 current.Add(passcode);
             }
 
-            return Complete(main, extra, side, DeckListFormat.Ydk);
+            return Complete(main, extra, side);
         }
 
         private static DeckListParseResult ParseYDKe(string body)
@@ -155,7 +154,7 @@ namespace CardCollector.Rules
                 sections[index] = passcodes;
             }
 
-            return Complete(sections[0], sections[1], sections[2], DeckListFormat.Ydke);
+            return Complete(sections[0], sections[1], sections[2]);
         }
     }
 }

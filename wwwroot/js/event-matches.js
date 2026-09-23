@@ -188,10 +188,11 @@ function populateMatchForm(form, data) {
 
     // A stored result that disagrees with the score was set by hand, so editing the score must not change it.
     const { won, lost, tied } = readMatchScores(form);
-    const result = data.result || suggestMatchResult(won, lost, tied);
-    form.dataset.resultOverridden = String(!isBye && result !== suggestMatchResult(won, lost, tied));
+    const suggestion = suggestMatchResult(won, lost, tied);
+    const result = data.result || suggestion;
+    form.dataset.resultOverridden = String(!isBye && result !== suggestion);
     setMatchResult(form, result);
-    updateResultHint(form, suggestMatchResult(won, lost, tied));
+    updateResultHint(form, suggestion);
     clearMatchErrors(form);
 }
 

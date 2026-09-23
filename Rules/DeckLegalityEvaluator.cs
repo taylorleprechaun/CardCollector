@@ -11,13 +11,16 @@ namespace CardCollector.Rules
     /// </summary>
     public static class DeckLegalityEvaluator
     {
-        public static DeckLegality Evaluate(IEnumerable<DeckCardViewModel> cards, Banlist banlist)
+        /// <summary>
+        /// Returns the status of every restricted card in the deck, keyed by <see cref="DeckCardViewModel.CardID"/>.
+        /// Cards within their limit are included too, so the viewer can badge them.
+        /// </summary>
+        public static IReadOnlyDictionary<int, DeckLegalityCardStatus> Evaluate(IEnumerable<DeckCardViewModel> cards, Banlist banlist)
         {
             if (cards is null) throw new ArgumentNullException(nameof(cards));
             if (banlist is null) throw new ArgumentNullException(nameof(banlist));
 
             var cardStatuses = new Dictionary<int, DeckLegalityCardStatus>();
-            var violations = new List<DeckLegalityViolation>();
 
             foreach (var group in cards.GroupBy(GetGroupKey))
             {
@@ -29,33 +32,12 @@ namespace CardCollector.Rules
                 if (limit == BanlistLimit.Unlimited)
                     continue;
 
-                var copies = group.Sum(c => c.Quantity);
-                var isViolation = copies > (int)limit;
-                var status = new DeckLegalityCardStatus { IsViolation = isViolation, Limit = limit };
-
+                var status = new DeckLegalityCardStatus { IsViolation = group.Sum(c => c.Quantity) > (int)limit, Limit = limit };
                 foreach (var card in group)
                     cardStatuses[card.CardID] = status;
-
-                if (isViolation)
-                {
-                    violations.Add(new DeckLegalityViolation
-                    {
-                        CardName = group.Key,
-                        Copies = copies,
-                        Limit = limit
-                    });
-                }
             }
 
-            return new DeckLegality
-            {
-                CardStatuses = cardStatuses,
-                EffectiveDate = banlist.EffectiveDate,
-                Violations = violations
-                    .OrderBy(v => v.Limit)
-                    .ThenBy(v => v.CardName, StringComparer.OrdinalIgnoreCase)
-                    .ToList()
-            };
+            return cardStatuses;
         }
 
         private static string GetGroupKey(DeckCardViewModel card) =>

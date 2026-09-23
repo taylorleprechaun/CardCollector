@@ -9,6 +9,10 @@ namespace CardCollector.Services
     {
         private readonly IFormatRepository _repository;
 
+        // Scoped, so this lives for one request: the page, EventService and AnalyticsService all read the formats,
+        // and they are loaded once instead of once per caller. Any write through this service clears it.
+        private IReadOnlyList<Format>? _formats;
+
         public FormatService(IFormatRepository repository)
         {
             _repository = repository;
@@ -21,20 +25,25 @@ namespace CardCollector.Services
             var normalized = FormatRules.Normalize(format);
             normalized.ID = 0;
 
-            var existing = await _repository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            var existing = await GetAllAsync(cancellationToken).ConfigureAwait(false);
             var errors = FormatRules.Validate(normalized, existing);
             if (errors.Count > 0)
                 return SaveResult.Failure(errors);
 
             await _repository.AddAsync(normalized, cancellationToken).ConfigureAwait(false);
+            _formats = null;
             return SaveResult.Success();
         }
 
-        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
-            _repository.DeleteAsync(id, cancellationToken);
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var deleted = await _repository.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
+            _formats = null;
+            return deleted;
+        }
 
-        public Task<IReadOnlyList<Format>> GetAllAsync(CancellationToken cancellationToken = default) =>
-            _repository.GetAllAsync(cancellationToken);
+        public async Task<IReadOnlyList<Format>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            _formats ??= await _repository.GetAllAsync(cancellationToken).ConfigureAwait(false);
 
         public async Task<SaveResult> UpdateAsync(Format format, CancellationToken cancellationToken = default)
         {
@@ -42,7 +51,7 @@ namespace CardCollector.Services
 
             var normalized = FormatRules.Normalize(format);
 
-            var existing = await _repository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            var existing = await GetAllAsync(cancellationToken).ConfigureAwait(false);
             if (existing.All(f => f.ID != normalized.ID))
                 return SaveResult.Failure(["Format not found."]);
 
@@ -51,6 +60,7 @@ namespace CardCollector.Services
                 return SaveResult.Failure(errors);
 
             await _repository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
+            _formats = null;
             return SaveResult.Success();
         }
     }

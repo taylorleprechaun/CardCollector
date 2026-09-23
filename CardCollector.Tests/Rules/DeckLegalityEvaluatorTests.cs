@@ -21,23 +21,21 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsFalse(result.IsLegal);
-            Assert.AreEqual(2, result.Violations.Single().Copies);
+            Assert.IsTrue(result[1].IsViolation);
         }
 
         [TestMethod]
-        public void Evaluate_EmptyDeck_ReturnsLegalWithNoStatuses()
+        public void Evaluate_EmptyDeck_ReturnsNoStatuses()
         {
             var banlist = BuildBanlist((100, BanlistLimit.Forbidden));
 
             var result = DeckLegalityEvaluator.Evaluate([], banlist);
 
-            Assert.IsTrue(result.IsLegal);
-            Assert.AreEqual(0, result.CardStatuses.Count);
+            Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
-        public void Evaluate_ForbiddenCardPresent_ReportsViolation()
+        public void Evaluate_ForbiddenCardPresent_FlagsViolation()
         {
             var card = BuildCard(1, "Pot of Greed", konamiID: 100);
             var cards = new[] { BuildDeckCard(card, 1, quantity: 1) };
@@ -45,8 +43,8 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsFalse(result.IsLegal);
-            Assert.AreEqual(BanlistLimit.Forbidden, result.Violations.Single().Limit);
+            Assert.AreEqual(BanlistLimit.Forbidden, result[1].Limit);
+            Assert.IsTrue(result[1].IsViolation);
         }
 
         [TestMethod]
@@ -58,12 +56,11 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsTrue(result.IsLegal);
-            Assert.AreEqual(0, result.CardStatuses.Count);
+            Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
-        public void Evaluate_LegalDeck_StillReportsLimitedStatus()
+        public void Evaluate_LimitedWithOneCopy_ReportsLimitWithoutViolation()
         {
             var card = BuildCard(1, "Raigeki", konamiID: 200);
             var cards = new[] { BuildDeckCard(card, 1, quantity: 1) };
@@ -71,25 +68,12 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsTrue(result.IsLegal);
-            Assert.AreEqual(BanlistLimit.Limited, result.CardStatuses[1].Limit);
-            Assert.IsFalse(result.CardStatuses[1].IsViolation);
+            Assert.AreEqual(BanlistLimit.Limited, result[1].Limit);
+            Assert.IsFalse(result[1].IsViolation);
         }
 
         [TestMethod]
-        public void Evaluate_LimitedWithOneCopy_NoViolation()
-        {
-            var card = BuildCard(1, "Raigeki", konamiID: 200);
-            var cards = new[] { BuildDeckCard(card, 1, quantity: 1) };
-            var banlist = BuildBanlist((200, BanlistLimit.Limited));
-
-            var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
-
-            Assert.IsTrue(result.IsLegal);
-        }
-
-        [TestMethod]
-        public void Evaluate_LimitedWithTwoCopies_ReportsViolation()
+        public void Evaluate_LimitedWithTwoCopies_FlagsViolation()
         {
             var card = BuildCard(1, "Raigeki", konamiID: 200);
             var cards = new[] { BuildDeckCard(card, 1, quantity: 2) };
@@ -97,27 +81,7 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsFalse(result.IsLegal);
-            Assert.AreEqual(2, result.Violations.Single().Copies);
-        }
-
-        [TestMethod]
-        public void Evaluate_MultipleViolations_OrderedByLimitThenName()
-        {
-            var raigeki = BuildCard(1, "Raigeki", konamiID: 100);
-            var potOfGreed = BuildCard(2, "Pot of Greed", konamiID: 200);
-            var cards = new[]
-            {
-                BuildDeckCard(raigeki, 1, quantity: 2),
-                BuildDeckCard(potOfGreed, 2, quantity: 1)
-            };
-            var banlist = BuildBanlist((100, BanlistLimit.Limited), (200, BanlistLimit.Forbidden));
-
-            var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
-
-            Assert.AreEqual(2, result.Violations.Count);
-            Assert.AreEqual("Pot of Greed", result.Violations[0].CardName);
-            Assert.AreEqual("Raigeki", result.Violations[1].CardName);
+            Assert.IsTrue(result[1].IsViolation);
         }
 
         [TestMethod]
@@ -129,8 +93,7 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsTrue(result.IsLegal);
-            Assert.AreEqual(0, result.CardStatuses.Count);
+            Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
@@ -146,7 +109,7 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Evaluate_SemiLimitedWithThreeCopies_ReportsViolation()
+        public void Evaluate_SemiLimitedWithThreeCopies_FlagsViolation()
         {
             var card = BuildCard(1, "Reinforcement of the Army", konamiID: 300);
             var cards = new[] { BuildDeckCard(card, 1, quantity: 3) };
@@ -154,7 +117,7 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsFalse(result.IsLegal);
+            Assert.IsTrue(result[1].IsViolation);
         }
 
         [TestMethod]
@@ -166,7 +129,7 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsTrue(result.IsLegal);
+            Assert.IsFalse(result[1].IsViolation);
         }
 
         [TestMethod]
@@ -182,14 +145,12 @@ namespace CardCollector.Tests.Rules
                 BuildDeckCard(realCard, 1, quantity: 1),
                 BuildDeckCard(ghostCard, 2, quantity: 1)
             };
-            var banlist = BuildBanlist((400, BanlistLimit.Forbidden));
+            var banlist = BuildBanlist((400, BanlistLimit.Limited));
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsFalse(result.IsLegal);
-            Assert.AreEqual(2, result.Violations.Single().Copies);
-            Assert.IsTrue(result.CardStatuses[1].IsViolation);
-            Assert.IsTrue(result.CardStatuses[2].IsViolation);
+            Assert.IsTrue(result[1].IsViolation);
+            Assert.IsTrue(result[2].IsViolation);
         }
 
         [TestMethod]
@@ -200,8 +161,7 @@ namespace CardCollector.Tests.Rules
 
             var result = DeckLegalityEvaluator.Evaluate(cards, banlist);
 
-            Assert.IsTrue(result.IsLegal);
-            Assert.AreEqual(0, result.CardStatuses.Count);
+            Assert.AreEqual(0, result.Count);
         }
 
         private static Banlist BuildBanlist(params (int KonamiID, BanlistLimit Limit)[] entries) =>

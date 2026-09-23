@@ -7,7 +7,7 @@
 
     var types = detail.MainTypes;
     ViewDataDictionary SectionData(string title, int columns) =>
-        new(ViewData) { ["Columns"] = columns, ["Legality"] = Model.Legality!.ActiveLegality, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
+        new(ViewData) { ["Columns"] = columns, ["CardStatuses"] = Model.Legality!.CardStatuses, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
 
     // A 40 to 60 card main deck reads as 4 to 6 rows of 10; extra and side are one row of 15.
     var mainData = SectionData("Main", 10);
