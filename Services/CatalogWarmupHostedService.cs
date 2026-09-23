@@ -9,6 +9,7 @@ namespace CardCollector.Services
     /// </summary>
     public sealed class CatalogWarmupHostedService : IHostedService
     {
+        private readonly IBanlistRepository _banlistRepository;
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ICardSetRepository _cardSetRepository;
         private readonly IHostApplicationLifetime _lifetime;
@@ -18,6 +19,7 @@ namespace CardCollector.Services
         private Task _warmupTask = Task.CompletedTask;
 
         public CatalogWarmupHostedService(
+            IBanlistRepository banlistRepository,
             ICardDataRepository cardDataRepository,
             ICardSetRepository cardSetRepository,
             IHostApplicationLifetime lifetime,
@@ -25,6 +27,7 @@ namespace CardCollector.Services
             IPricingDataCache pricingDataCache,
             ITCGCatalogCache tcgCatalogCache)
         {
+            _banlistRepository = banlistRepository;
             _cardDataRepository = cardDataRepository;
             _cardSetRepository = cardSetRepository;
             _lifetime = lifetime;
@@ -50,12 +53,14 @@ namespace CardCollector.Services
 
                 var catalogTask = _tcgCatalogCache.LoadIfStaleAsync();
                 var setTask = _cardSetRepository.LoadIfStaleAsync();
+                var banlistTask = _banlistRepository.LoadIfStaleAsync();
 
                 await catalogTask.ConfigureAwait(false);
                 await _cardDataRepository.LoadIfStaleAsync().ConfigureAwait(false);
                 _pricingDataCache.RebuildIndex();
 
                 await setTask.ConfigureAwait(false);
+                await banlistTask.ConfigureAwait(false);
 
                 _logger.LogInformation("Startup cache warm-up: complete");
             }

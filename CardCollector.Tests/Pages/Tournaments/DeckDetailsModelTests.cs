@@ -13,10 +13,25 @@ namespace CardCollector.Tests.Pages.Tournaments
     public sealed class DeckDetailsModelTests
     {
         [TestMethod]
+        public async Task OnGetAsync_DeckExists_PassesViewEventIDAndListDateToLegalityService()
+        {
+            var detail = BuildDetail();
+            var (model, _, legalityService) = CreateModel(4, detail);
+            model.View = DeckLegalityView.Current;
+            model.EventID = 7;
+            model.ListDate = new DateOnly(2024, 4, 15);
+
+            await model.OnGetAsync(CancellationToken.None);
+
+            legalityService.Verify(s => s.GetAsync(
+                detail, DeckLegalityView.Current, 7, new DateOnly(2024, 4, 15), It.IsAny<CancellationToken>()));
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_DeckExists_ReturnsPageWithDetail()
         {
             var detail = BuildDetail();
-            var (model, _) = CreateModel(4, detail);
+            var (model, _, _) = CreateModel(4, detail);
 
             var result = await model.OnGetAsync(CancellationToken.None);
 
@@ -25,9 +40,31 @@ namespace CardCollector.Tests.Pages.Tournaments
         }
 
         [TestMethod]
+        public async Task OnGetAsync_DeckExists_SetsLegalityFromService()
+        {
+            var legality = BuildLegality();
+            var (model, _, _) = CreateModel(4, BuildDetail(), legality);
+
+            await model.OnGetAsync(CancellationToken.None);
+
+            Assert.AreSame(legality, model.Legality);
+        }
+        [TestMethod]
+        public async Task OnGetAsync_DeckMissing_DoesNotCallLegalityService()
+        {
+            var (model, _, legalityService) = CreateModel(99, null);
+
+            await model.OnGetAsync(CancellationToken.None);
+
+            legalityService.Verify(
+                s => s.GetAsync(It.IsAny<DeckDetailViewModel>(), It.IsAny<DeckLegalityView?>(), It.IsAny<int?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_DeckMissing_ReturnsNotFound()
         {
-            var (model, _) = CreateModel(99, null);
+            var (model, _, _) = CreateModel(99, null);
 
             var result = await model.OnGetAsync(CancellationToken.None);
 
@@ -38,7 +75,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         [TestMethod]
         public void ReturnURL_DeckID_PointsBackAtThisDeck()
         {
-            var (model, _) = CreateModel(4, null);
+            var (model, _, _) = CreateModel(4, null);
 
             Assert.AreEqual("/Tournaments/Decks/Details?id=4", model.ReturnURL);
         }
@@ -57,14 +94,30 @@ namespace CardCollector.Tests.Pages.Tournaments
             };
         }
 
-        private static (DetailsModel Model, Mock<IDeckService> Decks) CreateModel(int id, DeckDetailViewModel? detail)
+        private static DeckLegalityViewModel BuildLegality() =>
+            new()
+            {
+                ActiveView = DeckLegalityView.Current,
+                AvailableListDates = [],
+                DeckID = 4,
+                Events = [],
+                IsAvailable = false
+            };
+
+        private static (DetailsModel Model, Mock<IDeckService> Decks, Mock<IDeckLegalityService> Legality) CreateModel(
+            int id, DeckDetailViewModel? detail, DeckLegalityViewModel? legality = null)
         {
             var decks = new Mock<IDeckService>();
             decks.Setup(s => s.GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
 
-            var model = new DetailsModel(decks.Object) { ID = id };
+            var legalityService = new Mock<IDeckLegalityService>();
+            legalityService
+                .Setup(s => s.GetAsync(It.IsAny<DeckDetailViewModel>(), It.IsAny<DeckLegalityView?>(), It.IsAny<int?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legality ?? BuildLegality());
+
+            var model = new DetailsModel(legalityService.Object, decks.Object) { ID = id };
             PageContextFactory.Attach(model);
-            return (model, decks);
+            return (model, decks, legalityService);
         }
     }
 }

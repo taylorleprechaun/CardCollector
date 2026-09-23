@@ -523,8 +523,10 @@
 .cc-deck-tile {
     aspect-ratio: 168 / 246;
     border-radius: 0.25rem;
+    container-type: inline-size;
     display: block;
     overflow: hidden;
+    position: relative;
 }
 
 .cc-deck-tile img {
@@ -546,4 +548,41 @@
     padding: 0.125rem;
     text-align: center;
     text-decoration: none;
+}
+
+/* Banlist badge: a corner disc naming the restriction (Forbidden gets an icon, Limited/Semi-Limited the
+   copies allowed); a violating tile also gets an inner outline, so the signal isn't color alone. Sized in
+   container-query units off the tile itself (not the viewport), so it stays legible whether the tile is in
+   a 10-column row (Main) or a 15-column one (Extra/Side) — a vw-based size would shrink on the denser rows. */
+.cc-deck-tile-violation {
+    outline: 3px solid var(--cc-status-critical);
+    outline-offset: -3px;
+}
+
+.cc-deck-tile-badge {
+    align-items: center;
+    aspect-ratio: 1;
+    border: 2px solid var(--bs-body-bg);
+    border-radius: 50%;
+    box-shadow: var(--cc-surface-shadow-sm);
+    display: flex;
+    font-size: 18cqw;
+    font-weight: 700;
+    justify-content: center;
+    line-height: 1;
+    position: absolute;
+    right: 4%;
+    top: 4%;
+    width: 34%;
+    z-index: 2;
+}
+
+.cc-deck-tile-badge--forbidden {
+    background-color: var(--cc-status-critical);
+    color: #fff;
+}
+
+.cc-deck-tile-badge--limited, .cc-deck-tile-badge--semilimited {
+    background-color: var(--cc-status-warning);
+    color: #000;
 }

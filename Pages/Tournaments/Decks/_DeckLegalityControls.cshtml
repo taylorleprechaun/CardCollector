@@ -1,0 +1,53 @@
+@model CardCollector.ViewModels.DeckLegalityViewModel
+@using System.Globalization
+@using CardCollector.ViewModels
+@{
+    var showAtEventOption = Model.Events.Count > 0;
+}
+
+@if (Model.IsAvailable && (showAtEventOption || Model.AvailableListDates.Count > 0))
+{
+    <form id="deckLegalityForm" method="get" class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+        <input type="hidden" name="id" value="@Model.DeckID" />
+
+        @if (showAtEventOption)
+        {
+            <div class="btn-group btn-group-sm" role="group" aria-label="Legality view">
+                <input type="radio" class="btn-check" name="view" id="legalityViewAtEvent" value="@DeckLegalityView.AtEvent"
+                       autocomplete="off" data-auto-submit checked="@(Model.ActiveView == DeckLegalityView.AtEvent)" />
+                <label class="btn btn-outline-secondary" for="legalityViewAtEvent">At event</label>
+
+                <input type="radio" class="btn-check" name="view" id="legalityViewCurrent" value="@DeckLegalityView.Current"
+                       autocomplete="off" data-auto-submit checked="@(Model.ActiveView == DeckLegalityView.Current)" />
+                <label class="btn btn-outline-secondary" for="legalityViewCurrent">Current</label>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" name="view" value="@DeckLegalityView.Current" />
+        }
+
+        @if (showAtEventOption && Model.ActiveView == DeckLegalityView.AtEvent && Model.Events.Count > 1)
+        {
+            <select name="eventId" class="form-select form-select-sm w-auto" aria-label="Event" data-auto-submit>
+                @foreach (var tournamentEvent in Model.Events)
+                {
+                    <option value="@tournamentEvent.ID" selected="@(tournamentEvent.ID == Model.AtEventSource?.ID)">
+                        @tournamentEvent.Location (@tournamentEvent.Date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture))
+                    </option>
+                }
+            </select>
+        }
+
+        @if (Model.AvailableListDates.Count > 0)
+        {
+            <select name="listDate" class="form-select form-select-sm w-auto" aria-label="Choose a list" data-auto-submit>
+                <option value="">Auto</option>
+                @foreach (var date in Model.AvailableListDates)
+                {
+                    <option value="@date.ToString("yyyy-MM-dd")" selected="@(Model.RequestedListDate == date)">@date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</option>
+                }
+            </select>
+        }
+    </form>
+}

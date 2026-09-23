@@ -1,8 +1,11 @@
 @model CardCollector.ViewModels.DeckSectionViewModel
+@using CardCollector.Extensions
+@using CardCollector.Services
 @{
     var title = (string)ViewData["Title"]!;
     var returnUrl = Uri.EscapeDataString((string)ViewData["ReturnURL"]!);
     var columns = (int)ViewData["Columns"]!;
+    var legality = ViewData["Legality"] as DeckLegality;
 }
 
 <section class="mb-4" aria-labelledby="deck-section-@title">
@@ -17,6 +20,7 @@
         <div class="cc-deck-grid" style="--cc-deck-columns: @columns">
             @foreach (var card in Model.Cards)
             {
+                var status = legality?.CardStatuses.GetValueOrDefault(card.CardID);
                 for (var copy = 0; copy < card.Quantity; copy++)
                 {
                     if (card.IsUnknown)
@@ -28,14 +32,16 @@
                     }
                     else if (card.ImageURL is null)
                     {
-                        <a class="cc-deck-tile cc-deck-tile-empty" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                        <a class="cc-deck-tile cc-deck-tile-empty @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnUrl">
                             <span>@card.Card!.Name</span>
+                            <partial name="_DeckLegalityBadge" model="status" />
                         </a>
                     }
                     else
                     {
-                        <a class="cc-deck-tile" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                        <a class="cc-deck-tile @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnUrl">
                             <img src="@card.ImageURL" alt="@card.Card!.Name" width="168" height="246" loading="lazy" />
+                            <partial name="_DeckLegalityBadge" model="status" />
                         </a>
                     }
                 }
