@@ -5,8 +5,17 @@ namespace CardCollector.Extensions
 {
     public static class TournamentsServiceCollectionExtensions
     {
-        public static IServiceCollection AddTournamentsModule(this IServiceCollection services)
+        public static IServiceCollection AddTournamentsModule(this IServiceCollection services, IConfiguration configuration)
         {
+            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+
+            services.AddHttpClient("YamlYugiLimitRegulation", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(60);
+                client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0 (personal Yu-Gi-Oh collection tracker)");
+            });
+            services.Configure<BanlistSettings>(configuration.GetSection("BanlistSettings"));
+
             services.AddScoped<IAnalyticsService, AnalyticsService>();
             services.AddSingleton<IBanlistRepository, BanlistRepository>();
             services.AddScoped<IDeckLegalityService, DeckLegalityService>();
