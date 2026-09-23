@@ -19,6 +19,11 @@ namespace CardCollector.Repository
         Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns every event, each with its rounds in play order.
+        /// </summary>
+        Task<IReadOnlyList<Event>> GetAllWithMatchesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Returns the event, optionally with its rounds in play order, or null if not found.
         /// </summary>
         Task<Event?> GetAsync(int id, bool includeMatches, CancellationToken cancellationToken = default);

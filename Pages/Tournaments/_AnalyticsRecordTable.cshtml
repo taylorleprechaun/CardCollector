@@ -1,0 +1,66 @@
+@model CardCollector.ViewModels.AnalyticsTableViewModel
+@using System.Globalization
+@{
+    var countHeader = Model.CountsRounds ? "Rounds" : "Events";
+    int Count(AnalyticsRecordRow row) => Model.CountsRounds ? row.Record.Total : row.EventCount;
+    string CountText(AnalyticsRecordRow row) => Count(row).ToString(CultureInfo.InvariantCulture);
+    string Subtext(AnalyticsRecordRow row) => $"{CountText(row)} {countHeader.ToLowerInvariant()}";
+}
+
+@if (Model.Rows.Count == 0)
+{
+    <p class="text-muted mb-0">Nothing to show for these filters.</p>
+}
+else
+{
+    <div class="cc-table-card table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0" data-sortable-table>
+            <caption class="visually-hidden">@Model.Caption</caption>
+            <thead>
+                <tr>
+                    <th scope="col"><button type="button" class="cc-sort-button" data-sort="text">@Model.LabelHeader</button></th>
+                    <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">@countHeader</button></th>
+                    <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">W</button></th>
+                    <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">L</button></th>
+                    <th scope="col" class="text-end d-none d-md-table-cell"><button type="button" class="cc-sort-button" data-sort="number">T</button></th>
+                    <th scope="col" class="text-end d-md-none">Record</th>
+                    <th scope="col" class="text-end"><button type="button" class="cc-sort-button" data-sort="number">Win %</button></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td class="text-break">
+                            @row.Label
+                            <div class="text-muted small d-md-none">@Subtext(row)</div>
+                        </td>
+                        <td class="text-end d-none d-md-table-cell">@CountText(row)</td>
+                        <td class="text-end d-none d-md-table-cell">@row.Record.Wins</td>
+                        <td class="text-end d-none d-md-table-cell">@row.Record.Losses</td>
+                        <td class="text-end d-none d-md-table-cell">@row.Record.Ties</td>
+                        <td class="text-end d-md-none text-nowrap">@row.Record</td>
+                        <td class="text-end" data-sort-value="@AnalyticsDisplay.SortValue(row.Record.WinRate)">@AnalyticsDisplay.Percent(row.Record.WinRate)</td>
+                    </tr>
+                }
+            </tbody>
+            @if (Model.Total is { } total)
+            {
+                <tfoot>
+                    <tr class="fw-semibold">
+                        <th scope="row">
+                            @total.Label
+                            <div class="text-muted small fw-normal d-md-none">@Subtext(total)</div>
+                        </th>
+                        <td class="text-end d-none d-md-table-cell">@CountText(total)</td>
+                        <td class="text-end d-none d-md-table-cell">@total.Record.Wins</td>
+                        <td class="text-end d-none d-md-table-cell">@total.Record.Losses</td>
+                        <td class="text-end d-none d-md-table-cell">@total.Record.Ties</td>
+                        <td class="text-end d-md-none text-nowrap">@total.Record</td>
+                        <td class="text-end">@AnalyticsDisplay.Percent(total.Record.WinRate)</td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+}

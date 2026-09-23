@@ -586,3 +586,48 @@
     background-color: var(--cc-status-warning);
     color: #000;
 }
+
+/* Analytics */
+.cc-scroll-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.cc-scroll-tabs .nav-link {
+    white-space: nowrap;
+}
+
+.cc-sort-button {
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.cc-sort-button::after {
+    content: "\2195";
+    margin-left: 0.25rem;
+    opacity: 0.35;
+}
+
+th[aria-sort="ascending"] .cc-sort-button::after {
+    content: "\2191";
+    opacity: 1;
+}
+
+th[aria-sort="descending"] .cc-sort-button::after {
+    content: "\2193";
+    opacity: 1;
+}
+
+.cc-analytics-chart {
+    height: 360px;
+    position: relative;
+}
+
+.cc-min-matches-input {
+    width: 6rem;
+}
