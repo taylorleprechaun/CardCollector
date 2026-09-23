@@ -71,7 +71,7 @@ namespace CardCollector.Pages.Tournaments.Events
             if (summary is null)
                 return RespondNotFound("That round no longer exists.");
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
             {
                 TempData["Success"] = "Round deleted.";
                 return RedirectToRounds();
@@ -142,15 +142,12 @@ namespace CardCollector.Pages.Tournaments.Events
                 .ToList();
         }
 
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
         private IActionResult RedirectToRounds() =>
             RedirectToPage(null, null, new { id = ID }, ROUNDS_FRAGMENT);
 
         private IActionResult RejectSave(IReadOnlyList<string> errors)
         {
-            if (IsAjaxRequest())
+            if (Request.IsAjaxRequest())
                 return BadRequest(new { errors });
 
             TempData["Error"] = string.Join(" ", errors);
@@ -162,7 +159,7 @@ namespace CardCollector.Pages.Tournaments.Events
 
         private IActionResult RespondNotFound(string message)
         {
-            if (IsAjaxRequest())
+            if (Request.IsAjaxRequest())
                 return NotFound();
 
             TempData["Error"] = message;
@@ -177,7 +174,7 @@ namespace CardCollector.Pages.Tournaments.Events
             if (!result.Succeeded)
                 return RejectSave(result.Errors);
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
             {
                 TempData["Success"] = successMessage;
                 return RedirectToRounds();

@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -55,7 +56,7 @@ namespace CardCollector.Pages
 
             await _collectionRepository.UpdateAsync(entry);
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
                 return RedirectToPage();
 
             var orders = await _cardService.GetEnrichedOrdersAsync();
@@ -72,8 +73,5 @@ namespace CardCollector.Pages
             await _collectionRepository.UpdateStatusAsync(entryID, CollectionStatus.Owned, quantity < 1 ? 1 : quantity);
             return RedirectToPage();
         }
-
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
     }
 }

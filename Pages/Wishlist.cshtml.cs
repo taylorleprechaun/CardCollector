@@ -169,12 +169,9 @@ namespace CardCollector.Pages
             sortDescending = SortDescending
         };
 
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
         private async Task<IActionResult> RespondAfterMutationAsync(int preferredVersionID)
         {
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
 
             var result = await _cardService.SearchWishlistAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);

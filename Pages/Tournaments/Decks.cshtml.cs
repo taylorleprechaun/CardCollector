@@ -1,3 +1,4 @@
+using CardCollector.Extensions;
 using CardCollector.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -100,15 +101,12 @@ namespace CardCollector.Pages.Tournaments
             return message;
         }
 
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
         private IActionResult RedirectBack(string? returnURL) =>
             !string.IsNullOrEmpty(returnURL) && Url.IsLocalUrl(returnURL) ? LocalRedirect(returnURL) : RedirectToPage();
 
         private IActionResult RespondFailure(IReadOnlyList<string> errors, string? returnURL, bool notFound = false)
         {
-            if (IsAjaxRequest())
+            if (Request.IsAjaxRequest())
                 return notFound ? NotFound(new { errors }) : BadRequest(new { errors });
 
             TempData["Error"] = string.Join(" ", errors);
@@ -119,7 +117,7 @@ namespace CardCollector.Pages.Tournaments
         private IActionResult RespondSuccess(string message, string? returnURL)
         {
             TempData["Success"] = message;
-            return IsAjaxRequest() ? new JsonResult(new { ok = true }) : RedirectBack(returnURL);
+            return Request.IsAjaxRequest() ? new JsonResult(new { ok = true }) : RedirectBack(returnURL);
         }
     }
 }

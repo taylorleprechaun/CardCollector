@@ -228,15 +228,12 @@ namespace CardCollector.Pages
             Request.Query["edition"].FirstOrDefault(),
             Request.Query["rarityName"].FirstOrDefault());
 
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
         private static bool? ParseFilter(string? value) =>
             value == "yes" ? true : value == "no" ? false : null;
 
         private async Task<IActionResult> RespondAfterMutationAsync(int cardID, string setCode, string? rarityName, string? printVariant)
         {
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
 
             var groups = await _cardService.SearchGroupedOwnedAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
