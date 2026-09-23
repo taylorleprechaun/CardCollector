@@ -16,7 +16,11 @@ namespace CardCollector.Services
         private readonly ILogger<CatalogWarmupHostedService> _logger;
         private readonly IPricingDataCache _pricingDataCache;
         private readonly ITCGCatalogCache _tcgCatalogCache;
-        private Task _warmupTask = Task.CompletedTask;
+        
+        /// <summary>
+        /// Set on the ApplicationStarted callback and read when the host stops, which can be on another thread.
+        /// </summary>
+        private volatile Task _warmupTask = Task.CompletedTask;
 
         public CatalogWarmupHostedService(
             IBanlistRepository banlistRepository,
@@ -42,7 +46,21 @@ namespace CardCollector.Services
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>
+        /// Lets an in-progress warm-up finish writing its caches, for as long as the host's shutdown timeout allows.
+        /// The warm-up handles its own failures, so the only thing to catch here is that timeout.
+        /// </summary>
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _warmupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Startup cache warm-up still running at the shutdown timeout; stopping without waiting for it");
+            }
+        }
 
         [ExcludeFromCodeCoverage(Justification = "Orchestrates real singleton I/O warm-up; a mocked test would only re-assert mock setup, not real behavior — same rationale as PriceRefreshBackgroundService.RunNightlyRefreshAsync.")]
         private async Task RunWarmupAsync()
