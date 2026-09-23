@@ -4,6 +4,7 @@ namespace CardCollector.ViewModels
     public enum DeckLegalityView
     {
         AtEvent,
+
         Current
     }
 }

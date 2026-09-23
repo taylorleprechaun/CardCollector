@@ -13,11 +13,6 @@ namespace CardCollector.Pages.Tournaments
     {
         private readonly IFormatService _formatService;
 
-        public FormatsModel(IFormatService formatService)
-        {
-            _formatService = formatService;
-        }
-
         /// <summary>The format whose date range contains today, or null when none does.</summary>
         public int? CurrentFormatID { get; private set; }
 
@@ -30,6 +25,11 @@ namespace CardCollector.Pages.Tournaments
 
         /// <summary>True when a failed save should reopen the Add/Edit modal with the submitted values.</summary>
         public bool ShowFormModal { get; private set; }
+
+        public FormatsModel(IFormatService formatService)
+        {
+            _formatService = formatService;
+        }
 
         public async Task OnGetAsync(CancellationToken cancellationToken)
         {

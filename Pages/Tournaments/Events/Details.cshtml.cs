@@ -18,14 +18,6 @@ namespace CardCollector.Pages.Tournaments.Events
         private readonly IMatchService _matchService;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
-        public DetailsModel(IDeckService deckService, IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
-        {
-            _deckService = deckService;
-            _eventService = eventService;
-            _matchService = matchService;
-            _razorPartialRenderer = razorPartialRenderer;
-        }
-
         /// <summary>True when the stored order of the rounds doesn't match their round labels.</summary>
         public bool AreRoundsOutOfOrder { get; private set; }
 
@@ -41,6 +33,14 @@ namespace CardCollector.Pages.Tournaments.Events
         public MatchInputModel Input { get; set; } = new();
 
         public IReadOnlyList<string> OpponentDecks { get; private set; } = [];
+
+        public DetailsModel(IDeckService deckService, IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
+        {
+            _deckService = deckService;
+            _eventService = eventService;
+            _matchService = matchService;
+            _razorPartialRenderer = razorPartialRenderer;
+        }
 
         public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {

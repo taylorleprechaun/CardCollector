@@ -131,7 +131,7 @@ namespace CardCollector.Tests.Rules
         [DataRow("http://example.test/deck", DisplayName = "http URL")]
         [DataRow("https://example.test/deck?id=1", DisplayName = "https URL")]
         [DataRow(null, DisplayName = "No URL")]
-        public void Validate_AcceptableDecklistUrl_ReturnsNoErrors(string? url)
+        public void Validate_AcceptableDecklistURL_ReturnsNoErrors(string? url)
         {
             var errors = EventRules.Validate(BuildEvent(decklistURL: url));
 
@@ -139,7 +139,7 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Validate_DecklistUrlTooLong_ReturnsLengthError()
+        public void Validate_DecklistURLTooLong_ReturnsLengthError()
         {
             var url = "https://example.test/" + new string('a', EventRules.MAX_URL_LENGTH);
 
@@ -259,7 +259,7 @@ namespace CardCollector.Tests.Rules
         [DataRow("/relative/deck", DisplayName = "relative path")]
         [DataRow("example.test/deck", DisplayName = "no scheme")]
         [DataRow("not a url", DisplayName = "free text")]
-        public void Validate_UnacceptableDecklistUrl_ReturnsError(string url)
+        public void Validate_UnacceptableDecklistURL_ReturnsError(string url)
         {
             var errors = EventRules.Validate(BuildEvent(decklistURL: url));
 

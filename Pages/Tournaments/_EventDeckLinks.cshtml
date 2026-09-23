@@ -2,7 +2,7 @@
 @{
     var tournamentEvent = Model.Event;
     var hasDeck = tournamentEvent.DeckID is not null;
-    var hasUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+    var hasURL = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
 }
 <span class="d-inline-flex flex-wrap align-items-center column-gap-3">
     @if (tournamentEvent.DeckID is { } deckID)
@@ -17,6 +17,6 @@
             data-event-others="@Model.OtherUnlinkedEventsWithSameURL"
             data-event-url="@tournamentEvent.DecklistURL"
             onclick="openDeckImportModal(this)">
-        @(hasDeck ? "Change" : hasUrl ? "Import deck" : "Add deck")
+        @(hasDeck ? "Change" : hasURL ? "Import deck" : "Add deck")
     </button>
 </span>

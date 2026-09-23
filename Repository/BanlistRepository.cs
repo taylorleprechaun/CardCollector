@@ -16,12 +16,13 @@ namespace CardCollector.Repository
         private const int MAX_CONCURRENT_LIST_FETCHES = 8;
 
         private readonly string _cachePath;
+        private BanlistCollection? _collection;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SemaphoreSlim _loadLock = new(1, 1);
         private readonly ILogger<BanlistRepository> _logger;
         private readonly BanlistSettings _settings;
         private readonly string _timestampPath;
-        private BanlistCollection? _collection;
+
         /// <param name="cacheDirectory">Overrides the cache location for tests; defaults to the app's <c>Data</c> directory.</param>
         public BanlistRepository(
             ILogger<BanlistRepository> logger,

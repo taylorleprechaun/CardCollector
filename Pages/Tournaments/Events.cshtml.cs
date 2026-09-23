@@ -19,13 +19,6 @@ namespace CardCollector.Pages.Tournaments
         private readonly IEventService _eventService;
         private readonly IFormatService _formatService;
 
-        public EventsModel(IDeckService deckService, IEventService eventService, IFormatService formatService)
-        {
-            _deckService = deckService;
-            _eventService = eventService;
-            _formatService = formatService;
-        }
-
         [BindProperty(SupportsGet = true)]
         public DateOnly? DateFrom { get; set; }
 
@@ -76,6 +69,13 @@ namespace CardCollector.Pages.Tournaments
 
         [BindProperty(SupportsGet = true)]
         public EventType? Type { get; set; }
+
+        public EventsModel(IDeckService deckService, IEventService eventService, IFormatService formatService)
+        {
+            _deckService = deckService;
+            _eventService = eventService;
+            _formatService = formatService;
+        }
 
         /// <summary>The active filters as query-string values, without paging.</summary>
         public IReadOnlyDictionary<string, string?> GetFilterParams()

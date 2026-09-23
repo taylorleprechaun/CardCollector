@@ -7,11 +7,10 @@ namespace CardCollector.Services
 {
     public sealed class FormatService : IFormatService
     {
-        private readonly IFormatRepository _repository;
-
         // Scoped, so this lives for one request: the page, EventService and AnalyticsService all read the formats,
         // and they are loaded once instead of once per caller. Any write through this service clears it.
         private IReadOnlyList<Format>? _formats;
+        private readonly IFormatRepository _repository;
 
         public FormatService(IFormatRepository repository)
         {

@@ -146,24 +146,24 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task ImportAsync_LinkOthersOn_LinksOnlyEventsWithTheSameUrlAndNoDeck()
+        public async Task ImportAsync_LinkOthersOn_LinksOnlyEventsWithTheSameURLAndNoDeck()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
             var eventID = await AddEventAsync(context, SHARED_URL);
             var peerID = await AddEventAsync(context, SHARED_URL);
             var alreadyLinkedID = await AddEventAsync(context, SHARED_URL, deckID: 77);
-            var otherUrlID = await AddEventAsync(context, "https://decks.example.test/other");
-            var noUrlID = await AddEventAsync(context);
+            var otherURLID = await AddEventAsync(context, "https://decks.example.test/other");
+            var noURLID = await AddEventAsync(context);
 
-            var result = await service.ImportAsync(new DeckImportRequest { EventID = eventID, LinkOtherEventsWithSameUrl = true, Text = Ydk(100) });
+            var result = await service.ImportAsync(new DeckImportRequest { EventID = eventID, LinkOtherEventsWithSameURL = true, Text = Ydk(100) });
 
             Assert.AreEqual(2, result.LinkedEventCount);
             Assert.AreEqual(result.DeckID, (await context.Events.SingleAsync(e => e.ID == eventID)).DeckID);
             Assert.AreEqual(result.DeckID, (await context.Events.SingleAsync(e => e.ID == peerID)).DeckID);
             Assert.AreEqual(77, (await context.Events.SingleAsync(e => e.ID == alreadyLinkedID)).DeckID);
-            Assert.IsNull((await context.Events.SingleAsync(e => e.ID == otherUrlID)).DeckID);
-            Assert.IsNull((await context.Events.SingleAsync(e => e.ID == noUrlID)).DeckID);
+            Assert.IsNull((await context.Events.SingleAsync(e => e.ID == otherURLID)).DeckID);
+            Assert.IsNull((await context.Events.SingleAsync(e => e.ID == noURLID)).DeckID);
         }
 
         [TestMethod]
@@ -277,7 +277,7 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task LinkEventAsync_LinkOthersOn_LinksTheEventAndItsUnlinkedUrlPeers()
+        public async Task LinkEventAsync_LinkOthersOn_LinksTheEventAndItsUnlinkedURLPeers()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
@@ -285,7 +285,7 @@ namespace CardCollector.Tests.Services
             var eventID = await AddEventAsync(context, SHARED_URL);
             var peerID = await AddEventAsync(context, SHARED_URL);
 
-            var linked = await service.LinkEventAsync(eventID, deckID, linkOtherEventsWithSameUrl: true);
+            var linked = await service.LinkEventAsync(eventID, deckID, linkOtherEventsWithSameURL: true);
 
             Assert.AreEqual(2, linked);
             Assert.AreEqual(deckID, (await context.Events.SingleAsync(e => e.ID == peerID)).DeckID);
@@ -379,7 +379,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("a note", deck.Notes);
         }
 
-        private static async Task<int> AddEventAsync(AppDBContext context, string? decklistUrl = null, int? deckID = null, string deckName = "Sample Deck")
+        private static async Task<int> AddEventAsync(AppDBContext context, string? decklistURL = null, int? deckID = null, string deckName = "Sample Deck")
         {
             var tournamentEvent = new Event
             {
@@ -388,7 +388,7 @@ namespace CardCollector.Tests.Services
                 DateModified = DateTime.UtcNow,
                 DeckID = deckID,
                 DeckName = deckName,
-                DecklistURL = decklistUrl,
+                DecklistURL = decklistURL,
                 Location = "Test Hobby Shop"
             };
             context.Events.Add(tournamentEvent);

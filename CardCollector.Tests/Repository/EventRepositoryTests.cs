@@ -192,16 +192,16 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetUnlinkedByDecklistUrlAsync_BlankUrl_ThrowsArgumentException()
+        public async Task GetUnlinkedByDecklistURLAsync_BlankURL_ThrowsArgumentException()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new EventRepository(context);
 
-            await Assert.ThrowsExactlyAsync<ArgumentException>(() => repository.GetUnlinkedByDecklistUrlAsync("  ", 1));
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => repository.GetUnlinkedByDecklistURLAsync("  ", 1));
         }
 
         [TestMethod]
-        public async Task GetUnlinkedByDecklistUrlAsync_SharedUrl_ReturnsOnlyOtherEventsWithNoDeck()
+        public async Task GetUnlinkedByDecklistURLAsync_SharedURL_ReturnsOnlyOtherEventsWithNoDeck()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new EventRepository(context);
@@ -212,34 +212,34 @@ namespace CardCollector.Tests.Repository
             await AddEventAsync(context, "2024-01-31", "https://decks.example.test/two");
             await AddEventAsync(context, "2024-02-07");
 
-            var events = await repository.GetUnlinkedByDecklistUrlAsync(url, excluded);
+            var events = await repository.GetUnlinkedByDecklistURLAsync(url, excluded);
 
             CollectionAssert.AreEqual(new[] { unlinkedPeer }, events.Select(e => e.ID).ToArray());
         }
 
         [TestMethod]
-        public async Task GetUnlinkedUrlCountsAsync_NoUrls_ReturnsEmpty()
+        public async Task GetUnlinkedURLCountsAsync_NoURLs_ReturnsEmpty()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new EventRepository(context);
             await AddEventAsync(context, "2024-01-10", "https://decks.example.test/one");
 
-            var counts = await repository.GetUnlinkedUrlCountsAsync([]);
+            var counts = await repository.GetUnlinkedURLCountsAsync([]);
 
             Assert.AreEqual(0, counts.Count);
         }
 
         [TestMethod]
-        public async Task GetUnlinkedUrlCountsAsync_NullUrls_ThrowsArgumentNullException()
+        public async Task GetUnlinkedURLCountsAsync_NullURLs_ThrowsArgumentNullException()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new EventRepository(context);
 
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.GetUnlinkedUrlCountsAsync(null!));
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.GetUnlinkedURLCountsAsync(null!));
         }
 
         [TestMethod]
-        public async Task GetUnlinkedUrlCountsAsync_SharedUrls_CountsOnlyEventsWithNoDeck()
+        public async Task GetUnlinkedURLCountsAsync_SharedURLs_CountsOnlyEventsWithNoDeck()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new EventRepository(context);
@@ -249,7 +249,7 @@ namespace CardCollector.Tests.Repository
             await AddEventAsync(context, "2024-01-31", "https://decks.example.test/two", deckID: 3);
             await AddEventAsync(context, "2024-02-07", "https://decks.example.test/other");
 
-            var counts = await repository.GetUnlinkedUrlCountsAsync(["https://decks.example.test/one", "https://decks.example.test/two"]);
+            var counts = await repository.GetUnlinkedURLCountsAsync(["https://decks.example.test/one", "https://decks.example.test/two"]);
 
             Assert.AreEqual(1, counts.Count);
             Assert.AreEqual(2, counts["https://decks.example.test/one"]);
@@ -514,10 +514,10 @@ namespace CardCollector.Tests.Repository
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         }
-        private static async Task<int> AddEventAsync(AppDBContext context, string date, string? decklistUrl = null, int? deckID = null)
+        private static async Task<int> AddEventAsync(AppDBContext context, string date, string? decklistURL = null, int? deckID = null)
         {
             var tournamentEvent = BuildEvent(date, "Test Hobby Shop", "Sample Deck");
-            tournamentEvent.DecklistURL = decklistUrl;
+            tournamentEvent.DecklistURL = decklistURL;
             tournamentEvent.DeckID = deckID;
             context.Events.Add(tournamentEvent);
             await context.SaveChangesAsync();

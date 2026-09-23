@@ -7,17 +7,17 @@ namespace CardCollector.Models
     {
         private readonly IReadOnlyList<Banlist> _listsNewestFirst;
 
+        public Banlist? Current { get; }
+
+        /// <summary>Effective dates of every dated list, newest first.</summary>
+        public IReadOnlyList<DateOnly> Dates { get; }
+
         private BanlistCollection(IReadOnlyList<Banlist> listsNewestFirst, Banlist? current)
         {
             _listsNewestFirst = listsNewestFirst;
             Current = current;
             Dates = listsNewestFirst.Select(l => l.EffectiveDate).ToList();
         }
-
-        public Banlist? Current { get; }
-
-        /// <summary>Effective dates of every dated list, newest first.</summary>
-        public IReadOnlyList<DateOnly> Dates { get; }
 
         /// <summary>
         /// Builds the collection from source-dated lists and the current list. An override in

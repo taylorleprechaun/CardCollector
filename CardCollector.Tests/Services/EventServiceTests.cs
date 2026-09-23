@@ -90,14 +90,14 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_EventSharesUrlWithUnlinkedEvents_CountsOnlyTheOthers()
+        public async Task GetAsync_EventSharesURLWithUnlinkedEvents_CountsOnlyTheOthers()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
-            var eventID = AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-31", "https://decks.example.test/one", deckID: 3);
+            var eventID = AddEventWithURL(context, "2024-01-10", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-24", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-31", "https://decks.example.test/one", deckID: 3);
 
             var detail = await service.GetAsync(eventID);
 
@@ -105,7 +105,7 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_EventWithNoUrl_HasNoOtherUnlinkedEvents()
+        public async Task GetAsync_EventWithNoURL_HasNoOtherUnlinkedEvents()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
@@ -355,13 +355,13 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
         [TestMethod]
-        public async Task SearchAsync_LinkedEventSharesUrlWithUnlinkedEvents_CountsAllUnlinkedEvents()
+        public async Task SearchAsync_LinkedEventSharesURLWithUnlinkedEvents_CountsAllUnlinkedEvents()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
-            AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one", deckID: 3);
-            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-10", "https://decks.example.test/one", deckID: 3);
+            AddEventWithURL(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-24", "https://decks.example.test/one");
 
             var result = await service.SearchAsync(new EventSearchCriteria { Page = 1, PageSize = 25 });
 
@@ -458,14 +458,14 @@ namespace CardCollector.Tests.Services
             return entity.ID;
         }
 
-        private static int AddEventWithUrl(AppDBContext context, string date, string decklistUrl, int? deckID = null)
+        private static int AddEventWithURL(AppDBContext context, string date, string decklistURL, int? deckID = null)
         {
             var entity = new Event
             {
                 Date = DateOnly.Parse(date),
                 DeckID = deckID,
                 DeckName = "Sample Deck",
-                DecklistURL = decklistUrl,
+                DecklistURL = decklistURL,
                 EventType = EventType.Locals,
                 Location = "Test Hobby Shop"
             };

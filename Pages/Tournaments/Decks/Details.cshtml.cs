@@ -10,12 +10,6 @@ namespace CardCollector.Pages.Tournaments.Decks
         private readonly IDeckLegalityService _deckLegalityService;
         private readonly IDeckService _deckService;
 
-        public DetailsModel(IDeckLegalityService deckLegalityService, IDeckService deckService)
-        {
-            _deckLegalityService = deckLegalityService;
-            _deckService = deckService;
-        }
-
         public DeckDetailViewModel? Detail { get; private set; }
 
         /// <summary>Which of the deck's events the At event tab resolves its list from.</summary>
@@ -36,6 +30,12 @@ namespace CardCollector.Pages.Tournaments.Decks
 
         [BindProperty(SupportsGet = true)]
         public DeckLegalityView? View { get; set; }
+
+        public DetailsModel(IDeckLegalityService deckLegalityService, IDeckService deckService)
+        {
+            _deckLegalityService = deckLegalityService;
+            _deckService = deckService;
+        }
 
         public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {

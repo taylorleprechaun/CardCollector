@@ -7,7 +7,7 @@ namespace CardCollector.Models
         public int? EventID { get; init; }
 
         /// <summary>Also link other events that have the same decklist URL as <see cref="EventID"/> and no deck yet.</summary>
-        public bool LinkOtherEventsWithSameUrl { get; init; }
+        public bool LinkOtherEventsWithSameURL { get; init; }
 
         /// <summary>The deck's name; falls back to the linked event's deck name when blank.</summary>
         public string? Name { get; init; }

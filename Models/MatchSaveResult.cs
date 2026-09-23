@@ -5,15 +5,6 @@ namespace CardCollector.Models
     /// <summary>Outcome of saving a round; validation failures are reported here instead of thrown.</summary>
     public sealed class MatchSaveResult
     {
-        private MatchSaveResult(IReadOnlyList<string> errors, Match? match, bool notFound, int? previousMatchID, bool succeeded)
-        {
-            Errors = errors;
-            Match = match;
-            NotFound = notFound;
-            PreviousMatchID = previousMatchID;
-            Succeeded = succeeded;
-        }
-
         public IReadOnlyList<string> Errors { get; }
 
         /// <summary>The saved round; null unless the save succeeded.</summary>
@@ -26,6 +17,15 @@ namespace CardCollector.Models
         public int? PreviousMatchID { get; }
 
         public bool Succeeded { get; }
+
+        private MatchSaveResult(IReadOnlyList<string> errors, Match? match, bool notFound, int? previousMatchID, bool succeeded)
+        {
+            Errors = errors;
+            Match = match;
+            NotFound = notFound;
+            PreviousMatchID = previousMatchID;
+            Succeeded = succeeded;
+        }
 
         public static MatchSaveResult Failure(IReadOnlyList<string> errors) => new(errors, null, false, null, false);
 

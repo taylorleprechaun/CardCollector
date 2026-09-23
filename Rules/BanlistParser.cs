@@ -8,6 +8,14 @@ namespace CardCollector.Rules
     /// <summary>Pure parsing of yaml-yugi-limit-regulation data: one banlist file and the GitHub directory listing that indexes them.</summary>
     public static partial class BanlistParser
     {
+        /// <summary>Filters file names down to dated TCG lists ("YYYY-MM-DD.vector.json"), ignoring "current", "options" and ".raw" siblings.</summary>
+        public static IReadOnlyList<string> FilterDatedListNames(IEnumerable<string> fileNames)
+        {
+            if (fileNames is null) throw new ArgumentNullException(nameof(fileNames));
+
+            return fileNames.Where(name => DatedListNameRegex().IsMatch(name)).ToList();
+        }
+
         /// <summary>Parses one list payload. Null if the JSON is malformed or has no parseable date; a bad regulation entry is skipped and logged.</summary>
         public static Banlist? ParseList(string json, ILogger? logger = null)
         {
@@ -50,14 +58,6 @@ namespace CardCollector.Rules
             }
 
             return new Banlist { EffectiveDate = date, LimitsByKonamiID = limits };
-        }
-
-        /// <summary>Filters file names down to dated TCG lists ("YYYY-MM-DD.vector.json"), ignoring "current", "options" and ".raw" siblings.</summary>
-        public static IReadOnlyList<string> FilterDatedListNames(IEnumerable<string> fileNames)
-        {
-            if (fileNames is null) throw new ArgumentNullException(nameof(fileNames));
-
-            return fileNames.Where(name => DatedListNameRegex().IsMatch(name)).ToList();
         }
 
         [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}\.vector\.json$")]

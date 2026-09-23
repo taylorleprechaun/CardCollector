@@ -83,14 +83,14 @@ namespace CardCollector.Services
                 if (tournamentEvent is null)
                     return;
 
-                var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, request.LinkOtherEventsWithSameUrl, cancellationToken).ConfigureAwait(false);
+                var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, request.LinkOtherEventsWithSameURL, cancellationToken).ConfigureAwait(false);
                 linkedEventCount = await _eventRepository.SetDeckAsync(eventIDs, deckID, cancellationToken).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
             return Summarize(cards, deckID, linkedEventCount);
         }
 
-        public async Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameUrl = false, CancellationToken cancellationToken = default)
+        public async Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameURL = false, CancellationToken cancellationToken = default)
         {
             var deck = await _deckRepository.GetAsync(deckID, includeCards: false, cancellationToken).ConfigureAwait(false);
             if (deck is null)
@@ -100,7 +100,7 @@ namespace CardCollector.Services
             if (tournamentEvent is null)
                 return 0;
 
-            var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, linkOtherEventsWithSameUrl, cancellationToken).ConfigureAwait(false);
+            var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, linkOtherEventsWithSameURL, cancellationToken).ConfigureAwait(false);
             return await _eventRepository.SetDeckAsync(eventIDs, deckID, cancellationToken).ConfigureAwait(false);
         }
 
@@ -125,9 +125,6 @@ namespace CardCollector.Services
             return updated ? SaveResult.Success() : SaveResult.Missing("Deck not found.");
         }
 
-        private static int CountCopies(IEnumerable<DeckCard> cards, DeckSection section) =>
-            cards.Where(c => c.Section == section).Sum(c => c.Quantity);
-
         private DeckSectionViewModel BuildSection(Deck deck, DeckSection section) =>
             new()
             {
@@ -141,14 +138,17 @@ namespace CardCollector.Services
                     }))
             };
 
-        private async Task<IReadOnlyList<int>> GetEventIDsToLinkAsync(Event tournamentEvent, bool includeOthersWithSameUrl, CancellationToken cancellationToken)
+        private static int CountCopies(IEnumerable<DeckCard> cards, DeckSection section) =>
+            cards.Where(c => c.Section == section).Sum(c => c.Quantity);
+
+        private async Task<IReadOnlyList<int>> GetEventIDsToLinkAsync(Event tournamentEvent, bool includeOthersWithSameURL, CancellationToken cancellationToken)
         {
             var eventIDs = new List<int> { tournamentEvent.ID };
-            if (!includeOthersWithSameUrl || string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL))
+            if (!includeOthersWithSameURL || string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL))
                 return eventIDs;
 
             var others = await _eventRepository
-                .GetUnlinkedByDecklistUrlAsync(tournamentEvent.DecklistURL, tournamentEvent.ID, cancellationToken)
+                .GetUnlinkedByDecklistURLAsync(tournamentEvent.DecklistURL, tournamentEvent.ID, cancellationToken)
                 .ConfigureAwait(false);
             eventIDs.AddRange(others.Select(e => e.ID));
             return eventIDs;

@@ -33,7 +33,7 @@ namespace CardCollector.Services
         /// Points an existing event, and optionally the other events with the same decklist URL and no deck, at an existing deck.
         /// Returns how many events were linked; 0 when the event or the deck does not exist.
         /// </summary>
-        Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameUrl = false, CancellationToken cancellationToken = default);
+        Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameURL = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Parses a pasted deck list without storing anything, so its size and any cards that can't be matched can be shown first.

@@ -46,12 +46,12 @@ namespace CardCollector.Repository
         /// <summary>
         /// Returns the events that have exactly this decklist URL and no deck, other than the one excluded, without their rounds.
         /// </summary>
-        Task<IReadOnlyList<Event>> GetUnlinkedByDecklistUrlAsync(string decklistUrl, int excludeEventID, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Event>> GetUnlinkedByDecklistURLAsync(string decklistURL, int excludeEventID, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns, for each of the given decklist URLs that some event has, how many events have that URL and no deck.
         /// </summary>
-        Task<IReadOnlyDictionary<string, int>> GetUnlinkedUrlCountsAsync(IReadOnlyCollection<string> decklistUrls, CancellationToken cancellationToken = default);
+        Task<IReadOnlyDictionary<string, int>> GetUnlinkedURLCountsAsync(IReadOnlyCollection<string> decklistURLs, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns one page of events matching the criteria, newest first, each with its rounds.

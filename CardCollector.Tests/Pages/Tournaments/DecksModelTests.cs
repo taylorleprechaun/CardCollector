@@ -89,13 +89,13 @@ namespace CardCollector.Tests.Pages.Tournaments
             await model.OnPostImportAsync(8, true, "Sample Deck", null, "pasted text", CancellationToken.None);
 
             Assert.AreEqual(8, sent!.EventID);
-            Assert.IsTrue(sent.LinkOtherEventsWithSameUrl);
+            Assert.IsTrue(sent.LinkOtherEventsWithSameURL);
             Assert.AreEqual("Sample Deck", sent.Name);
             Assert.AreEqual("pasted text", sent.Text);
         }
 
         [TestMethod]
-        public async Task OnPostImportAsync_LocalReturnUrl_RedirectsThere()
+        public async Task OnPostImportAsync_LocalReturnURL_RedirectsThere()
         {
             var (model, decks) = CreateModel();
             var url = new Mock<IUrlHelper>();

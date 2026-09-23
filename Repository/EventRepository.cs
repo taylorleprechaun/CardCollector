@@ -97,24 +97,24 @@ namespace CardCollector.Repository
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyList<Event>> GetUnlinkedByDecklistUrlAsync(string decklistUrl, int excludeEventID, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Event>> GetUnlinkedByDecklistURLAsync(string decklistURL, int excludeEventID, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(decklistUrl)) throw new ArgumentException("A decklist URL is required.", nameof(decklistUrl));
+            if (string.IsNullOrWhiteSpace(decklistURL)) throw new ArgumentException("A decklist URL is required.", nameof(decklistURL));
 
             return await _context.Events
                 .AsNoTracking()
-                .Where(e => e.DeckID == null && e.DecklistURL == decklistUrl && e.ID != excludeEventID)
+                .Where(e => e.DeckID == null && e.DecklistURL == decklistURL && e.ID != excludeEventID)
                 .OrderBy(e => e.Date)
                 .ThenBy(e => e.ID)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyDictionary<string, int>> GetUnlinkedUrlCountsAsync(IReadOnlyCollection<string> decklistUrls, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyDictionary<string, int>> GetUnlinkedURLCountsAsync(IReadOnlyCollection<string> decklistURLs, CancellationToken cancellationToken = default)
         {
-            if (decklistUrls is null) throw new ArgumentNullException(nameof(decklistUrls));
+            if (decklistURLs is null) throw new ArgumentNullException(nameof(decklistURLs));
 
-            var urls = decklistUrls.Distinct().ToList();
+            var urls = decklistURLs.Distinct().ToList();
             if (urls.Count == 0)
                 return new Dictionary<string, int>();
 
@@ -122,8 +122,8 @@ namespace CardCollector.Repository
                 .AsNoTracking()
                 .Where(e => e.DeckID == null && e.DecklistURL != null && urls.Contains(e.DecklistURL))
                 .GroupBy(e => e.DecklistURL!)
-                .Select(g => new { Url = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Url, x => x.Count, cancellationToken)
+                .Select(g => new { URL = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.URL, x => x.Count, cancellationToken)
                 .ConfigureAwait(false);
         }
 

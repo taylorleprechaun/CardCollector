@@ -3,7 +3,7 @@
 @using CardCollector.Models
 @{
     var title = (string)ViewData["Title"]!;
-    var returnUrl = Uri.EscapeDataString((string)ViewData["ReturnURL"]!);
+    var returnURL = Uri.EscapeDataString((string)ViewData["ReturnURL"]!);
     var columns = (int)ViewData["Columns"]!;
     var cardStatuses = ViewData["CardStatuses"] as IReadOnlyDictionary<int, DeckLegalityCardStatus>;
 }
@@ -32,14 +32,14 @@
                     }
                     else if (card.ImageURL is null)
                     {
-                        <a class="cc-deck-tile cc-deck-tile-empty @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                        <a class="cc-deck-tile cc-deck-tile-empty @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnURL">
                             <span>@card.Card!.Name</span>
                             <partial name="_DeckLegalityBadge" model="status" />
                         </a>
                     }
                     else
                     {
-                        <a class="cc-deck-tile @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnUrl">
+                        <a class="cc-deck-tile @(status?.IsViolation == true ? "cc-deck-tile-violation" : string.Empty)" href="/Card?id=@card.CardID&returnURL=@returnURL">
                             <img src="@card.ImageURL" alt="@card.Card!.Name" width="168" height="246" loading="lazy" />
                             <partial name="_DeckLegalityBadge" model="status" />
                         </a>

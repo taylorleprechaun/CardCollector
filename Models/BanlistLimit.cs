@@ -6,10 +6,12 @@ namespace CardCollector.Models
     public enum BanlistLimit
     {
         Forbidden = 0,
+
         Limited = 1,
 
         [Display(Name = "Semi-Limited")]
         SemiLimited = 2,
+
         Unlimited = 3
     }
 }

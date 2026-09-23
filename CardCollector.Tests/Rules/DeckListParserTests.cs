@@ -202,7 +202,7 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
-        public void Parse_YdkeUrlSafeAlphabet_DecodesLikeStandardAlphabet()
+        public void Parse_YdkeURLSafeAlphabet_DecodesLikeStandardAlphabet()
         {
             // 0x0FFFFFFB encodes to "+///Dw==" in the standard alphabet.
             var standard = DeckListParser.Parse("ydke://+///Dw==!!!").Deck!;

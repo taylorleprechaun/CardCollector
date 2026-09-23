@@ -10,7 +10,7 @@
     ViewData["Title"] = $"{tournamentEvent.Location} Event";
 
     var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
-    var hasDecklistUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+    var hasDecklistURL = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
     var hasRounds = detail.Summary.RoundCount > 0;
 }
 
@@ -44,7 +44,7 @@
         <dt class="col-sm-3">Deck</dt>
         <dd class="col-sm-9 mb-0">
             <span class="text-break">@tournamentEvent.DeckName</span>
-            @if (hasDecklistUrl)
+            @if (hasDecklistURL)
             {
                 <div><a href="@tournamentEvent.DecklistURL" target="_blank" rel="noopener noreferrer" class="text-break">Decklist <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a></div>
             }
