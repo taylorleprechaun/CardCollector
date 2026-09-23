@@ -40,6 +40,12 @@ builder.Services.AddHttpClient("TcgCsv", client =>
     client.Timeout = TimeSpan.FromSeconds(120);
     client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0 (personal Yu-Gi-Oh collection tracker)");
 });
+builder.Services.AddHttpClient("YamlYugiLimitRegulation", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+    client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0 (personal Yu-Gi-Oh collection tracker)");
+});
+builder.Services.Configure<BanlistSettings>(builder.Configuration.GetSection("BanlistSettings"));
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ICardDataRepository, CardDataRepository>();

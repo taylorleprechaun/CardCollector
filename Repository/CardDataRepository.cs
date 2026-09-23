@@ -285,11 +285,20 @@ namespace CardCollector.Repository
 
             if (!forceRefresh && FileCacheHelper.IsCacheFresh(cardDataPath, timestampPath, TimeSpan.FromDays(_cacheTtlDays)))
             {
-                _logger.LogInformation("Loading card data from cache ({Path})", cardDataPath);
-                return LoadCardsFromJson(cardDataPath);
+                var cachedCards = LoadCardsFromJson(cardDataPath);
+                if (cachedCards.Count == 0 || CardDataMapper.HasKonamiIDs(cachedCards))
+                {
+                    _logger.LogInformation("Loading card data from cache ({Path})", cardDataPath);
+                    return cachedCards;
+                }
+
+                _logger.LogInformation("Card data cache predates Konami IDs — forcing a refresh from yaml-yugi so banlist data can resolve");
+            }
+            else
+            {
+                _logger.LogInformation("Card data cache is missing or stale — fetching from yaml-yugi");
             }
 
-            _logger.LogInformation("Card data cache is missing or stale — fetching from yaml-yugi");
             var yamlCards = await FetchFromYamlYugiAsync().ConfigureAwait(false);
 
             if (yamlCards is not null)

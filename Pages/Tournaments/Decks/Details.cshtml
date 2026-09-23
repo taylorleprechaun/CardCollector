@@ -8,7 +8,7 @@
 
     var types = detail.MainTypes;
     ViewDataDictionary SectionData(string title, int columns) =>
-        new(ViewData) { ["Columns"] = columns, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
+        new(ViewData) { ["Columns"] = columns, ["Legality"] = Model.Legality!.ActiveLegality, ["ReturnURL"] = Model.ReturnURL, ["Title"] = title };
 
     // A 40 to 60 card main deck reads as 4 to 6 rows of 10; extra and side are one row of 15.
     var mainData = SectionData("Main", 10);
@@ -20,8 +20,12 @@
     <a href="/Tournaments/Decks" class="small"><i class="bi bi-arrow-left me-1"></i>All decks</a>
 </nav>
 
-<div class="mb-3">
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
     <h1 class="mb-1 text-break">@detail.Deck.Name</h1>
+    <partial name="_DeckLegalityControls" model="Model.Legality" />
+</div>
+
+<div class="mb-3">
     <div class="text-muted">
         @detail.Main.Count main &middot; @detail.Extra.Count extra &middot; @detail.Side.Count side
     </div>
@@ -29,9 +33,6 @@
         Main deck: @types.Monsters monsters &middot; @types.Spells spells &middot; @types.Traps traps
     </div>
 </div>
-
-@* Reserved for the banlist legality banner. *@
-<div id="deckLegality" data-legality-placeholder></div>
 
 @if (detail.UnknownCardCount > 0)
 {
@@ -71,3 +72,7 @@
 <partial name="_DeckSection" model="detail.Main" view-data="mainData" />
 <partial name="_DeckSection" model="detail.Extra" view-data="extraData" />
 <partial name="_DeckSection" model="detail.Side" view-data="sideData" />
+
+@section Scripts {
+    <script src="~/js/deck-legality.js" asp-append-version="true"></script>
+}

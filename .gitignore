@@ -24,6 +24,8 @@ Data/setscache.json
 Data/setscache.json.timestamp
 Data/carddata.json
 Data/carddata.json.timestamp
+Data/banlistcache.json
+Data/banlistcache.json.timestamp
 
 ## .NET secrets
 appsettings.Development.json

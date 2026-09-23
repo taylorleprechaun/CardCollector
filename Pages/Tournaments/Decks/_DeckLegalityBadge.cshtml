@@ -1,0 +1,17 @@
+@model CardCollector.Services.DeckLegalityCardStatus?
+@using CardCollector.Extensions
+@using CardCollector.Services
+@if (Model is not null)
+{
+    <span class="cc-deck-tile-badge cc-deck-tile-badge--@Model.Limit.ToString().ToLowerInvariant()" title="@Model.Limit.GetDisplayName()">
+        @if (Model.Limit == BanlistLimit.Forbidden)
+        {
+            <i class="bi bi-slash-circle-fill" aria-hidden="true"></i>
+        }
+        else
+        {
+            @((int)Model.Limit)
+        }
+        <span class="visually-hidden">@Model.Limit.GetDisplayName()</span>
+    </span>
+}

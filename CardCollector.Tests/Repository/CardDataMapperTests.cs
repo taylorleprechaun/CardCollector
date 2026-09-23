@@ -207,6 +207,26 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public void ConvertYamlCards_KonamiIDMissing_IsNull()
+        {
+            var yamlCards = new List<YamlCard> { new() { Password = 1, KonamiID = null } };
+
+            var result = CardDataMapper.ConvertYamlCards(yamlCards);
+
+            Assert.IsNull(result[0].KonamiID);
+        }
+
+        [TestMethod]
+        public void ConvertYamlCards_KonamiIDPresent_CarriesToCard()
+        {
+            var yamlCards = new List<YamlCard> { new() { Password = 1, KonamiID = 21470 } };
+
+            var result = CardDataMapper.ConvertYamlCards(yamlCards);
+
+            Assert.AreEqual(21470, result[0].KonamiID);
+        }
+
+        [TestMethod]
         public void ConvertYamlCards_LevelIsNullButRankIsSet_UsesRank()
         {
             var yamlCards = new List<YamlCard> { new() { Password = 1, Level = null, Rank = 4 } };
@@ -619,6 +639,34 @@ namespace CardCollector.Tests.Repository
             var result = CardDataMapper.GetSetPrefix(code);
 
             Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void HasKonamiIDs_AtLeastOneCardHasKonamiID_ReturnsTrue()
+        {
+            var cards = new List<Card> { new() { ID = 1, KonamiID = null }, new() { ID = 2, KonamiID = 100 } };
+
+            var result = CardDataMapper.HasKonamiIDs(cards);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void HasKonamiIDs_EmptyList_ReturnsFalse()
+        {
+            var result = CardDataMapper.HasKonamiIDs([]);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void HasKonamiIDs_NoCardHasKonamiID_ReturnsFalse()
+        {
+            var cards = new List<Card> { new() { ID = 1, KonamiID = null }, new() { ID = 2, KonamiID = null } };
+
+            var result = CardDataMapper.HasKonamiIDs(cards);
+
+            Assert.IsFalse(result);
         }
 
         [TestMethod]

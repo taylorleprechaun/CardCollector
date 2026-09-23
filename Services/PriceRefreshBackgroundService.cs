@@ -8,17 +8,20 @@ namespace CardCollector.Services
         private static readonly TimeZoneInfo EasternTz =
             TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
+        private readonly IBanlistRepository _banlistRepository;
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ILogger<PriceRefreshBackgroundService> _logger;
         private readonly IPricingDataCache _pricingDataCache;
         private readonly IServiceScopeFactory _scopeFactory;
 
         public PriceRefreshBackgroundService(
+            IBanlistRepository banlistRepository,
             ICardDataRepository cardDataRepository,
             ILogger<PriceRefreshBackgroundService> logger,
             IPricingDataCache pricingDataCache,
             IServiceScopeFactory scopeFactory)
         {
+            _banlistRepository = banlistRepository;
             _cardDataRepository = cardDataRepository;
             _logger = logger;
             _pricingDataCache = pricingDataCache;
@@ -69,6 +72,7 @@ namespace CardCollector.Services
             {
                 await _pricingDataCache.RefreshAsync();
                 await _cardDataRepository.RefreshAsync();
+                await _banlistRepository.LoadIfStaleAsync();
 
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var cardService = scope.ServiceProvider.GetRequiredService<ICardService>();

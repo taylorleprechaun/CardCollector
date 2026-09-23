@@ -1,3 +1,5 @@
+using YamlDotNet.Serialization;
+
 namespace CardCollector.DTO.YamlYugi
 {
     public sealed class YamlCard
@@ -6,6 +8,10 @@ namespace CardCollector.DTO.YamlYugi
         public string? Attribute { get; set; }
         public string? CardType { get; set; }
         public string? Def { get; set; }
+
+        [YamlMember(Alias = "konami_id")]
+        public int? KonamiID { get; set; }
+
         public int? Level { get; set; }
         public List<string>? LinkArrows { get; set; }
         public string? MonsterTypeLine { get; set; }

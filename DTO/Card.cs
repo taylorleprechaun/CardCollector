@@ -31,6 +31,9 @@ namespace CardCollector.DTO
         [JsonProperty("id")]
         public int ID { get; set; }
 
+        [JsonProperty("konami_id")]
+        public int? KonamiID { get; set; }
+
         [JsonProperty("level")]
         public int? Level { get; set; }
 
