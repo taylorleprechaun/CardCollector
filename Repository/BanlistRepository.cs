@@ -9,7 +9,8 @@ namespace CardCollector.Repository
 {
     /// <summary>
     /// Fetches and caches banlist data from yaml-yugi-limit-regulation. Singleton: holds the parsed lists in
-    /// memory and swaps them atomically on refresh; overrides are applied at read time, so a config-only change needs no refetch.
+    /// memory and swaps them atomically on refresh. Date overrides are applied when the cache is loaded, not stored in it,
+    /// so a config-only change takes effect on restart without a refetch.
     /// </summary>
     public sealed class BanlistRepository : IBanlistRepository
     {

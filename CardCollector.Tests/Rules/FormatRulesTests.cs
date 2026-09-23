@@ -76,6 +76,17 @@ namespace CardCollector.Tests.Rules
         }
 
         [TestMethod]
+        public void Normalize_NullName_BecomesEmpty()
+        {
+            var format = Build(0, "Alpha Era", "2024-01-01", null);
+            format.Name = null!;
+
+            var result = FormatRules.Normalize(format);
+
+            Assert.AreEqual(string.Empty, result.Name);
+        }
+
+        [TestMethod]
         public void Normalize_PaddedName_TrimsName()
         {
             var result = FormatRules.Normalize(Build(0, "  Alpha Era  ", "2024-01-01", null));

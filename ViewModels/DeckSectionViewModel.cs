@@ -1,6 +1,6 @@
 namespace CardCollector.ViewModels
 {
-    /// <summary>The cards of one section of a deck, in the order they were arranged.</summary>
+    /// <summary>The cards of one section of a deck, in display order (by type, then name).</summary>
     public sealed class DeckSectionViewModel
     {
         public required IReadOnlyList<DeckCardViewModel> Cards { get; init; }

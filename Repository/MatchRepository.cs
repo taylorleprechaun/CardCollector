@@ -147,8 +147,6 @@ namespace CardCollector.Repository
         /// <summary>
         /// The owning event and the round's position are managed by the repository, so a form-driven save must not overwrite them.
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
         private static void CopyFields(Match source, Match target)
         {
             target.GamesLost = source.GamesLost;

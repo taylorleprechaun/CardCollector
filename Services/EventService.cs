@@ -102,9 +102,6 @@ namespace CardCollector.Services
         }
 
         /// <summary>The event itself is left out of the count of events sharing its URL.</summary>
-        /// <param name="tournamentEvent"></param>
-        /// <param name="unlinkedURLCounts"></param>
-        /// <returns></returns>
         private static int CountOtherUnlinkedEvents(Event tournamentEvent, IReadOnlyDictionary<string, int> unlinkedURLCounts)
         {
             if (string.IsNullOrEmpty(tournamentEvent.DecklistURL))
@@ -130,9 +127,6 @@ namespace CardCollector.Services
         /// Format is derived from an event's date, so filtering by format means filtering to that format's date range.
         /// Returns null when nothing can match (unknown format, or a range that misses the format entirely).
         /// </summary>
-        /// <param name="criteria"></param>
-        /// <param name="formats"></param>
-        /// <returns></returns>
         private static EventSearchCriteria? ResolveFormatFilter(EventSearchCriteria criteria, IReadOnlyList<Format> formats)
         {
             if (criteria.FormatID is not { } formatID)

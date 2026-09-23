@@ -235,8 +235,6 @@ namespace CardCollector.Repository
         /// <summary>
         /// DeckID and the rounds are managed elsewhere, so a form-driven update must not overwrite them.
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
         private static void CopyFields(Event source, Event target)
         {
             target.Date = source.Date;
