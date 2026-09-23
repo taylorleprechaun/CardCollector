@@ -70,8 +70,8 @@ namespace CardCollector.Services
             {
                 return new PagedResult<EventListItemViewModel>
                 {
-                    Page = Math.Max(1, criteria.Page),
-                    PageSize = criteria.PageSize
+                    Page = Paging.ClampPage(criteria.Page),
+                    PageSize = Paging.ClampPageSize(criteria.PageSize)
                 };
             }
 

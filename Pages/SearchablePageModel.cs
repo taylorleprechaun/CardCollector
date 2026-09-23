@@ -1,4 +1,5 @@
 using CardCollector.Services;
+using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,8 +7,6 @@ namespace CardCollector.Pages
 {
     public abstract class SearchablePageModel : PageModel
     {
-        protected static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
         public virtual int ActiveFilterCount =>
             (string.IsNullOrWhiteSpace(CardType) ? 0 : 1)
             + (string.IsNullOrWhiteSpace(RarityName) ? 0 : 1)
@@ -25,7 +24,7 @@ namespace CardCollector.Pages
         public int PageNumber { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = 25;
+        public int PageSize { get; set; } = Paging.DEFAULT_PAGE_SIZE;
 
         [BindProperty(SupportsGet = true)]
         public string? Query { get; set; }
@@ -54,8 +53,8 @@ namespace CardCollector.Pages
 
         protected void NormalizeSearchParameters()
         {
-            if (PageNumber < 1) PageNumber = 1;
-            if (!ValidPageSizes.Contains(PageSize)) PageSize = 25;
+            PageNumber = Paging.ClampPage(PageNumber);
+            PageSize = Paging.NormalizePageSize(PageSize);
 
             Query = Query?.Trim();
             CardType = CardType?.Trim();

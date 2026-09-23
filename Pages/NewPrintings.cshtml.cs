@@ -7,7 +7,6 @@ namespace CardCollector.Pages
 {
     public sealed class NewPrintingsModel : PageModel
     {
-        private static readonly int[] _validPageSizes = [10, 25, 50, 100];
         private readonly ICardService _cardService;
 
         public NewPrintingsModel(ICardService cardService)
@@ -33,7 +32,7 @@ namespace CardCollector.Pages
         public int PageNumber { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = 25;
+        public int PageSize { get; set; } = Paging.DEFAULT_PAGE_SIZE;
 
         [BindProperty]
         public int PreferredVersionID { get; set; }
@@ -57,8 +56,8 @@ namespace CardCollector.Pages
         public IReadOnlyList<string> SetCodes { get; set; } = [];
         public async Task OnGetAsync()
         {
-            if (PageNumber < 1) PageNumber = 1;
-            if (!_validPageSizes.Contains(PageSize)) PageSize = 25;
+            PageNumber = Paging.ClampPage(PageNumber);
+            PageSize = Paging.NormalizePageSize(PageSize);
 
             var all = await _cardService.GetNewPrintingOpportunitiesAsync();
             Opportunities = new PagedResult<NewPrintingOpportunityViewModel>

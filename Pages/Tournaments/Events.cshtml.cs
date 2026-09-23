@@ -11,10 +11,6 @@ namespace CardCollector.Pages.Tournaments
 {
     public sealed class EventsModel : PageModel
     {
-        private const int DEFAULT_PAGE_SIZE = 25;
-
-        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
         private readonly IDeckService _deckService;
         private readonly IEventService _eventService;
         private readonly IFormatService _formatService;
@@ -60,7 +56,7 @@ namespace CardCollector.Pages.Tournaments
         public int PageNumber { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = DEFAULT_PAGE_SIZE;
+        public int PageSize { get; set; } = Paging.DEFAULT_PAGE_SIZE;
 
         public PagedResult<EventListItemViewModel> Results { get; private set; } = new();
 
@@ -209,8 +205,8 @@ namespace CardCollector.Pages.Tournaments
 
         private void NormalizeParameters()
         {
-            if (PageNumber < 1) PageNumber = 1;
-            if (!ValidPageSizes.Contains(PageSize)) PageSize = DEFAULT_PAGE_SIZE;
+            PageNumber = Paging.ClampPage(PageNumber);
+            PageSize = Paging.NormalizePageSize(PageSize);
         }
 
         private Task<SaveResult> SaveAsync(CancellationToken cancellationToken)

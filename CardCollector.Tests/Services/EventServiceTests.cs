@@ -379,6 +379,21 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        [DataRow(0, 0, 1, 25, DisplayName = "Zero page and size")]
+        [DataRow(-2, 500, 1, 25, DisplayName = "Negative page, oversized size")]
+        [DataRow(2, 50, 2, 50, DisplayName = "Valid values kept")]
+        public async Task SearchAsync_UnknownFormat_ClampsPagingLikeANormalSearch(int page, int pageSize, int expectedPage, int expectedPageSize)
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+
+            var result = await service.SearchAsync(new EventSearchCriteria { FormatID = 999, Page = page, PageSize = pageSize });
+
+            Assert.AreEqual(expectedPage, result.Page);
+            Assert.AreEqual(expectedPageSize, result.PageSize);
+        }
+
+        [TestMethod]
         public async Task SearchAsync_UnknownFormat_ReturnsNothing()
         {
             using var context = InMemoryDbContextFactory.Create();

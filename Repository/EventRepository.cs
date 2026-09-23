@@ -7,9 +7,7 @@ namespace CardCollector.Repository
 {
     public sealed class EventRepository : IEventRepository
     {
-        private const int DEFAULT_PAGE_SIZE = 25;
         private const string LIKE_ESCAPE = "\\";
-        private const int MAX_PAGE_SIZE = 100;
 
         private readonly AppDBContext _context;
 
@@ -131,8 +129,8 @@ namespace CardCollector.Repository
         {
             if (criteria is null) throw new ArgumentNullException(nameof(criteria));
 
-            var page = Math.Max(1, criteria.Page);
-            var pageSize = criteria.PageSize is < 1 or > MAX_PAGE_SIZE ? DEFAULT_PAGE_SIZE : criteria.PageSize;
+            var page = Paging.ClampPage(criteria.Page);
+            var pageSize = Paging.ClampPageSize(criteria.PageSize);
 
             var query = ApplyFilters(_context.Events.AsNoTracking(), criteria);
 

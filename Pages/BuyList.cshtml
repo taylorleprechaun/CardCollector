@@ -47,7 +47,7 @@
         <div class="col-auto">
             <label for="pageSize" class="form-label small mb-1">Page Size</label>
             <select name="pageSize" id="pageSize" class="form-select form-select-sm">
-                @foreach (var size in new[] { 10, 25, 50, 100 })
+                @foreach (var size in Paging.PageSizeOptions)
                 {
                     @if (Model.PageSize == size)
                     {
