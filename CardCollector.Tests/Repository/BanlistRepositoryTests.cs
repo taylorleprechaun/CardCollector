@@ -59,6 +59,16 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetCurrentAsync_FetchTimesOut_ReturnsNullWithoutThrowing()
+        {
+            var repo = CreateRepository(new FakeHttpMessageHandler(_ => throw new TaskCanceledException("timed out")));
+
+            var current = await repo.GetCurrentAsync(CancellationToken.None);
+
+            Assert.IsNull(current);
+        }
+
+        [TestMethod]
         public async Task GetCurrentAsync_IndexDeserializesToNull_ReturnsNullWithoutThrowing()
         {
             var handler = new FakeHttpMessageHandler(request =>
@@ -101,6 +111,18 @@ namespace CardCollector.Tests.Repository
             var current = await repo.GetCurrentAsync();
 
             Assert.IsNull(current);
+        }
+
+        [TestMethod]
+        public async Task GetCurrentAsync_NoCacheAndCallerCancelled_ThrowsAndWritesNoCache()
+        {
+            var repo = CreateRepository(BuildHandler(indexNames: [], currentJson: BuildListJson("2024-01-01")));
+            using var cancelled = new CancellationTokenSource();
+            await cancelled.CancelAsync();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => repo.GetCurrentAsync(cancelled.Token));
+
+            Assert.IsFalse(File.Exists(Path.Combine(_cacheDir, "banlistcache.json")));
         }
 
         [TestMethod]
@@ -167,6 +189,19 @@ namespace CardCollector.Tests.Repository
             var current = await repo.GetCurrentAsync();
 
             Assert.AreEqual(new DateOnly(2024, 1, 1), current!.EffectiveDate);
+        }
+
+        [TestMethod]
+        public async Task LoadIfStaleAsync_CacheExpiredAndCallerCancelled_ThrowsAndKeepsTheOldCache()
+        {
+            SeedCache(new DateOnly(2024, 1, 1), ageDays: 30, (100, BanlistLimit.Limited));
+            var repo = CreateRepository(BuildHandler(indexNames: [], currentJson: BuildListJson("2025-01-01", (100, 0))));
+            using var cancelled = new CancellationTokenSource();
+            await cancelled.CancelAsync();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => repo.LoadIfStaleAsync(cancelled.Token));
+
+            Assert.AreEqual(BanlistLimit.Limited, (await repo.GetCurrentAsync())!.GetLimit(100));
         }
 
         [TestMethod]

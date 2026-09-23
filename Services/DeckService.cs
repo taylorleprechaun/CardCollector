@@ -88,7 +88,7 @@ namespace CardCollector.Services
 
                 var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, request.LinkOtherEventsWithSameURL, cancellationToken).ConfigureAwait(false);
                 linkedEventCount = await _eventRepository.SetDeckAsync(eventIDs, deckID, cancellationToken).ConfigureAwait(false);
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             return Summarize(cards, deckID, linkedEventCount);
         }
