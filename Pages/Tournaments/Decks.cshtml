@@ -9,7 +9,7 @@
     <h1>Decks</h1>
 </div>
 
-<p class="text-muted mb-3">Deck lists imported from DuelingBook. To add one, use <strong>Add deck</strong> on an event.</p>
+<p class="text-muted mb-3">Decks imported from DuelingBook. To add one, use <strong>Add deck</strong> on an event.</p>
 
 @if (!hasDecks)
 {
@@ -36,7 +36,7 @@ else
                 @foreach (var deck in Model.Decks)
                 {
                     <tr>
-                        <td><a class="fw-semibold text-break" href="/Tournaments/Decks/Details?id=@deck.ID">@deck.Name</a></td>
+                        <td><a class="fw-semibold text-break" asp-page="/Tournaments/Decks/Details" asp-route-id="@deck.ID">@deck.Name</a></td>
                         <td class="text-end">@deck.MainCount</td>
                         <td class="text-end">@deck.ExtraCount</td>
                         <td class="text-end">@deck.SideCount</td>
@@ -54,7 +54,7 @@ else
             <div class="list-group-item">
                 <div class="d-flex flex-column gap-2 py-1">
                     <div>
-                        <a class="fw-semibold text-break" href="/Tournaments/Decks/Details?id=@deck.ID">@deck.Name</a>
+                        <a class="fw-semibold text-break" asp-page="/Tournaments/Decks/Details" asp-route-id="@deck.ID">@deck.Name</a>
                         <div class="text-muted small">
                             @deck.MainCount main &middot; @deck.ExtraCount extra &middot; @deck.SideCount side
                             &middot; @deck.EventCount @(deck.EventCount == 1 ? "event" : "events")
@@ -80,7 +80,7 @@ else
                     <input type="hidden" name="id" id="renameDeckID" />
                     <div class="mb-3">
                         <label for="renameDeckName" class="form-label">Name</label>
-                        <input type="text" name="name" id="renameDeckName" class="form-control" maxlength="@CardCollector.Services.DeckRules.MAX_NAME_LENGTH" autocomplete="off" required />
+                        <input type="text" name="name" id="renameDeckName" class="form-control" maxlength="@CardCollector.Rules.DeckRules.MAX_NAME_LENGTH" autocomplete="off" required />
                     </div>
                     <div class="mb-0">
                         <label for="renameDeckNotes" class="form-label">Notes</label>

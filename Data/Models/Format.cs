@@ -1,7 +1,7 @@
 namespace CardCollector.Data.Models
 {
     /// <summary>A metagame period: a named date range with its top strategies.</summary>
-    public class Format
+    public sealed class Format
     {
         public DateTime DateCreated { get; set; }
 

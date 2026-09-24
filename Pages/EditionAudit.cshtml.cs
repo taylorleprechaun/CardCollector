@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
@@ -123,7 +124,7 @@ namespace CardCollector.Pages
 
             await _collectionRepository.UpdateAsync(entry);
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
 
             var groups = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
@@ -170,7 +171,5 @@ namespace CardCollector.Pages
             rarityName = Request.Query["rarityName"].FirstOrDefault(),
             setName = SetName
         };
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
     }
 }

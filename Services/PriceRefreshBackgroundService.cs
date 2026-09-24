@@ -72,7 +72,7 @@ namespace CardCollector.Services
             {
                 await _pricingDataCache.RefreshAsync();
                 await _cardDataRepository.RefreshAsync();
-                await _banlistRepository.LoadIfStaleAsync();
+                await _banlistRepository.LoadIfStaleAsync(stoppingToken);
 
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var cardService = scope.ServiceProvider.GetRequiredService<ICardService>();

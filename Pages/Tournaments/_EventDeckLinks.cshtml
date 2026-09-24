@@ -2,12 +2,12 @@
 @{
     var tournamentEvent = Model.Event;
     var hasDeck = tournamentEvent.DeckID is not null;
-    var hasUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+    var hasURL = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
 }
 <span class="d-inline-flex flex-wrap align-items-center column-gap-3">
     @if (tournamentEvent.DeckID is { } deckID)
     {
-        <a class="small" href="/Tournaments/Decks/Details?id=@deckID">View deck</a>
+        <a class="small" asp-page="/Tournaments/Decks/Details" asp-route-id="@deckID">View deck</a>
     }
     <button type="button"
             class="btn btn-link btn-sm p-0 cc-tap-target"
@@ -17,6 +17,6 @@
             data-event-others="@Model.OtherUnlinkedEventsWithSameURL"
             data-event-url="@tournamentEvent.DecklistURL"
             onclick="openDeckImportModal(this)">
-        @(hasDeck ? "Change" : hasUrl ? "Import deck" : "Add deck")
+        @(hasDeck ? "Change" : hasURL ? "Import deck" : "Add deck")
     </button>
 </span>

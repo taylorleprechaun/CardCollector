@@ -46,8 +46,8 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(Enumerable.Empty<Card>());
             _cardDataRepositoryMock.Setup(r => r.GetAllCards()).Returns(Enumerable.Empty<Card>());
             _unitOfWorkMock
-                .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
-                .Returns((Func<Task> op) => op());
+                .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+                .Returns((Func<Task> op, CancellationToken _) => op());
 
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>());

@@ -1,6 +1,6 @@
-@model CardCollector.Services.DeckLegalityCardStatus?
+@model CardCollector.Models.DeckLegalityCardStatus?
 @using CardCollector.Extensions
-@using CardCollector.Services
+@using CardCollector.Models
 @if (Model is not null)
 {
     <span class="cc-deck-tile-badge cc-deck-tile-badge--@Model.Limit.ToString().ToLowerInvariant()" title="@Model.Limit.GetDisplayName()">

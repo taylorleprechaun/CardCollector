@@ -6,6 +6,10 @@ namespace CardCollector.Repository
     /// </summary>
     public interface IUnitOfWork
     {
-        Task ExecuteInTransactionAsync(Func<Task> operation);
+        /// <summary>
+        /// Runs <paramref name="operation"/> in a transaction. The token cancels starting and committing it; a failed or
+        /// cancelled operation is always rolled back.
+        /// </summary>
+        Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default);
     }
 }

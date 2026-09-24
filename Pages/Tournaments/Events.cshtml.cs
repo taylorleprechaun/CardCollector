@@ -1,29 +1,19 @@
 using System.Globalization;
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
+using CardCollector.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages.Tournaments
 {
     public sealed class EventsModel : PageModel
     {
-        private const int DEFAULT_PAGE_SIZE = 25;
-
-        private static readonly int[] ValidPageSizes = [10, 25, 50, 100];
-
         private readonly IDeckService _deckService;
         private readonly IEventService _eventService;
         private readonly IFormatService _formatService;
-
-        public EventsModel(IDeckService deckService, IEventService eventService, IFormatService formatService)
-        {
-            _deckService = deckService;
-            _eventService = eventService;
-            _formatService = formatService;
-        }
 
         [BindProperty(SupportsGet = true)]
         public DateOnly? DateFrom { get; set; }
@@ -37,7 +27,7 @@ namespace CardCollector.Pages.Tournaments
         public IReadOnlyList<string> DeckNames { get; private set; } = [];
 
         /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
-        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
+        public IReadOnlyList<DeckOption> DeckOptions { get; private set; } = [];
 
         public IReadOnlyList<string> Errors { get; private set; } = [];
 
@@ -66,7 +56,7 @@ namespace CardCollector.Pages.Tournaments
         public int PageNumber { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = DEFAULT_PAGE_SIZE;
+        public int PageSize { get; set; } = Paging.DEFAULT_PAGE_SIZE;
 
         public PagedResult<EventListItemViewModel> Results { get; private set; } = new();
 
@@ -76,12 +66,19 @@ namespace CardCollector.Pages.Tournaments
         [BindProperty(SupportsGet = true)]
         public EventType? Type { get; set; }
 
+        public EventsModel(IDeckService deckService, IEventService eventService, IFormatService formatService)
+        {
+            _deckService = deckService;
+            _eventService = eventService;
+            _formatService = formatService;
+        }
+
         /// <summary>The active filters as query-string values, without paging.</summary>
         public IReadOnlyDictionary<string, string?> GetFilterParams()
         {
             var values = new Dictionary<string, string?>();
-            AddIfPresent(values, "dateFrom", DateFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            AddIfPresent(values, "dateTo", DateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            AddIfPresent(values, "dateFrom", TournamentDisplay.IsoDate(DateFrom));
+            AddIfPresent(values, "dateTo", TournamentDisplay.IsoDate(DateTo));
             AddIfPresent(values, "deck", Deck?.Trim());
             AddIfPresent(values, "formatID", FormatID?.ToString(CultureInfo.InvariantCulture));
             AddIfPresent(values, "location", Location?.Trim());
@@ -148,12 +145,6 @@ namespace CardCollector.Pages.Tournaments
                 values[key] = value;
         }
 
-        private void AddBindingError(List<string> errors, string field, string message)
-        {
-            if (HasBindingError(field))
-                errors.Add(message);
-        }
-
         private Event BuildEvent() =>
             new()
             {
@@ -174,22 +165,24 @@ namespace CardCollector.Pages.Tournaments
         {
             var errors = new List<string>();
 
-            AddBindingError(errors, nameof(Input.Date), "Date is not a valid date.");
-            if (Input.Date is null && !HasBindingError(nameof(Input.Date)))
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Date)))
+                errors.Add("Date is not a valid date.");
+            else if (Input.Date is null)
                 errors.Add("Date is required.");
 
-            AddBindingError(errors, nameof(Input.EventType), "Event type is not valid.");
-            if (Input.EventType is null && !HasBindingError(nameof(Input.EventType)))
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.EventType)))
+                errors.Add("Event type is not valid.");
+            else if (Input.EventType is null)
                 errors.Add("Event type is required.");
 
-            AddBindingError(errors, nameof(Input.Finish), "Finish must be a whole number.");
-            AddBindingError(errors, nameof(Input.Players), "Players must be a whole number.");
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Finish)))
+                errors.Add("Finish must be a whole number.");
+
+            if (ModelState.IsFieldInvalid(nameof(Input), nameof(Input.Players)))
+                errors.Add("Players must be a whole number.");
 
             return errors;
         }
-
-        private bool HasBindingError(string field) =>
-            ModelState.GetFieldValidationState($"{nameof(Input)}.{field}") == ModelValidationState.Invalid;
 
         private async Task LoadAsync(CancellationToken cancellationToken)
         {
@@ -197,7 +190,7 @@ namespace CardCollector.Pages.Tournaments
 
             Formats = await _formatService.GetAllAsync(cancellationToken).ConfigureAwait(false);
             DeckNames = await _eventService.GetDeckNamesAsync(cancellationToken).ConfigureAwait(false);
-            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
             Locations = await _eventService.GetLocationsAsync(cancellationToken).ConfigureAwait(false);
 
             Results = await SearchAsync(cancellationToken).ConfigureAwait(false);
@@ -212,11 +205,11 @@ namespace CardCollector.Pages.Tournaments
 
         private void NormalizeParameters()
         {
-            if (PageNumber < 1) PageNumber = 1;
-            if (!ValidPageSizes.Contains(PageSize)) PageSize = DEFAULT_PAGE_SIZE;
+            PageNumber = Paging.ClampPage(PageNumber);
+            PageSize = Paging.NormalizePageSize(PageSize);
         }
 
-        private Task<EventSaveResult> SaveAsync(CancellationToken cancellationToken)
+        private Task<SaveResult> SaveAsync(CancellationToken cancellationToken)
         {
             var tournamentEvent = BuildEvent();
             return tournamentEvent.ID == 0

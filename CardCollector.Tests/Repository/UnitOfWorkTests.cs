@@ -20,6 +20,15 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task ExecuteInTransactionAsync_NullOperation_ThrowsArgumentNullException()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var unitOfWork = new UnitOfWork(context);
+
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => unitOfWork.ExecuteInTransactionAsync(null!));
+        }
+
+        [TestMethod]
         public async Task ExecuteInTransactionAsync_OperationThrows_PropagatesException()
         {
             using var context = InMemoryDbContextFactory.Create();

@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.DTO;
 using CardCollector.DTO.YamlYugi;
+using CardCollector.Rules;
 using CardCollector.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

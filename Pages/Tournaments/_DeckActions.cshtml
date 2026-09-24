@@ -1,6 +1,6 @@
 @model CardCollector.ViewModels.DeckListItemViewModel
 <div class="d-flex gap-1 flex-shrink-0 justify-content-md-end">
-    <a class="btn btn-sm btn-outline-primary" href="/Tournaments/Decks/Details?id=@Model.ID">View</a>
+    <a class="btn btn-sm btn-outline-primary" asp-page="/Tournaments/Decks/Details" asp-route-id="@Model.ID">View</a>
     <button type="button"
             class="btn btn-sm btn-outline-secondary"
             data-deck-id="@Model.ID"

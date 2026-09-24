@@ -1,3 +1,4 @@
+using CardCollector.Models;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -23,6 +24,11 @@ namespace CardCollector.Services
         Task<DeckDetailViewModel?> GetAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns every deck's ID and name, sorted by name, for pickers that don't need the card counts.
+        /// </summary>
+        Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Parses a pasted deck list and stores it as a new deck, linking it to the requested event. A list that can't
         /// be parsed is reported in the result rather than thrown, and nothing is stored.
         /// </summary>
@@ -32,7 +38,7 @@ namespace CardCollector.Services
         /// Points an existing event, and optionally the other events with the same decklist URL and no deck, at an existing deck.
         /// Returns how many events were linked; 0 when the event or the deck does not exist.
         /// </summary>
-        Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameUrl = false, CancellationToken cancellationToken = default);
+        Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameURL = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Parses a pasted deck list without storing anything, so its size and any cards that can't be matched can be shown first.
@@ -47,6 +53,6 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and updates a deck's name and notes. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<DeckSaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default);
+        Task<SaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default);
     }
 }

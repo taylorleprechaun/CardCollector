@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 
 namespace CardCollector.Services
 {
@@ -10,7 +11,7 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and adds a new format. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<FormatSaveResult> AddAsync(Format format, CancellationToken cancellationToken = default);
+        Task<SaveResult> AddAsync(Format format, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes the format. Returns false if it does not exist.
@@ -25,6 +26,6 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and updates an existing format. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<FormatSaveResult> UpdateAsync(Format format, CancellationToken cancellationToken = default);
+        Task<SaveResult> UpdateAsync(Format format, CancellationToken cancellationToken = default);
     }
 }

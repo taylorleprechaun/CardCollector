@@ -2,6 +2,7 @@ using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
+using Moq;
 
 namespace CardCollector.Tests.Services
 {
@@ -83,6 +84,34 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetAllAsync_CalledTwice_LoadsFromRepositoryOnce()
+        {
+            var repository = new Mock<IFormatRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([new Format { ID = 1, Name = "Alpha Era" }]);
+            var service = new FormatService(repository.Object);
+
+            var first = await service.GetAllAsync();
+            var second = await service.GetAllAsync();
+
+            Assert.AreSame(first, second);
+            repository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task UpdateAsync_FormatDeletedBeforeSave_ReturnsNotFound()
+        {
+            var repository = new Mock<IFormatRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([Build(5, "Alpha Era", "2024-01-01", null)]);
+            repository.Setup(r => r.UpdateAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var service = new FormatService(repository.Object);
+
+            var result = await service.UpdateAsync(Build(5, "Alpha Era II", "2024-01-01", null));
+
+            Assert.IsTrue(result.NotFound);
+            Assert.AreEqual("Format not found.", result.Errors.Single());
+        }
+
+        [TestMethod]
         public async Task UpdateAsync_MissingFormat_ReturnsNotFound()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -92,6 +121,7 @@ namespace CardCollector.Tests.Services
 
             Assert.IsFalse(result.Succeeded);
             Assert.AreEqual("Format not found.", result.Errors.Single());
+            Assert.IsTrue(result.NotFound);
         }
 
         [TestMethod]

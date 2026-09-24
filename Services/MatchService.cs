@@ -1,17 +1,17 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
 {
     public sealed class MatchService : IMatchService
     {
-        private readonly IEventRepository _eventRepository;
         private readonly IMatchRepository _matchRepository;
 
-        public MatchService(IEventRepository eventRepository, IMatchRepository matchRepository)
+        public MatchService(IMatchRepository matchRepository)
         {
-            _eventRepository = eventRepository;
             _matchRepository = matchRepository;
         }
 
@@ -19,35 +19,33 @@ namespace CardCollector.Services
         {
             if (match is null) throw new ArgumentNullException(nameof(match));
 
-            var tournamentEvent = await _eventRepository.GetAsync(eventID, includeMatches: false, cancellationToken).ConfigureAwait(false);
-            if (tournamentEvent is null)
-                return MatchSaveResult.Missing("Event not found.");
-
             var normalized = MatchRules.Normalize(match);
 
             var errors = MatchRules.Validate(normalized);
             if (errors.Count > 0)
                 return MatchSaveResult.Failure(errors);
 
-            var existing = await _matchRepository.GetByEventAsync(eventID, cancellationToken).ConfigureAwait(false);
-            var position = MatchRules.GetInsertPosition(existing.Select(m => m.Round).ToList(), normalized.Round);
+            var added = await _matchRepository
+                .AddAsync(eventID, normalized, rounds => MatchRules.GetInsertPosition(rounds.Select(m => m.Round).ToList(), normalized.Round), cancellationToken)
+                .ConfigureAwait(false);
 
-            normalized.ID = await _matchRepository.AddAsync(eventID, normalized, position, cancellationToken).ConfigureAwait(false);
-            normalized.EventID = eventID;
-            return MatchSaveResult.Success(normalized, position > 0 ? existing[position - 1].ID : null);
+            if (added is not { } result)
+                return MatchSaveResult.Missing("Event not found.");
+
+            var (position, rounds) = result;
+
+            var previousMatchID = position > 0 ? rounds[position - 1].ID : (int?)null;
+            return MatchSaveResult.Success(rounds[position], MatchRules.Summarize(rounds), previousMatchID);
         }
 
-        public Task<bool> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default) =>
-            _matchRepository.DeleteAsync(eventID, id, cancellationToken);
+        public async Task<MatchSummaryViewModel?> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default)
+        {
+            var remaining = await _matchRepository.DeleteAsync(eventID, id, cancellationToken).ConfigureAwait(false);
+            return remaining is null ? null : MatchRules.Summarize(remaining);
+        }
 
         public Task<IReadOnlyList<string>> GetOpponentDecksAsync(CancellationToken cancellationToken = default) =>
             _matchRepository.GetOpponentDecksAsync(cancellationToken);
-
-        public async Task<MatchSummaryViewModel> GetSummaryAsync(int eventID, CancellationToken cancellationToken = default)
-        {
-            var matches = await _matchRepository.GetByEventAsync(eventID, cancellationToken).ConfigureAwait(false);
-            return MatchRules.Summarize(matches);
-        }
 
         public async Task<bool> SortAsync(int eventID, CancellationToken cancellationToken = default)
         {
@@ -70,12 +68,11 @@ namespace CardCollector.Services
             if (errors.Count > 0)
                 return MatchSaveResult.Failure(errors);
 
-            var updated = await _matchRepository.UpdateAsync(eventID, normalized, cancellationToken).ConfigureAwait(false);
-            if (!updated)
+            var rounds = await _matchRepository.UpdateAsync(eventID, normalized, cancellationToken).ConfigureAwait(false);
+            if (rounds is null)
                 return MatchSaveResult.Missing("Round not found.");
 
-            normalized.EventID = eventID;
-            return MatchSaveResult.Success(normalized);
+            return MatchSaveResult.Success(rounds.First(m => m.ID == normalized.ID), MatchRules.Summarize(rounds));
         }
     }
 }

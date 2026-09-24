@@ -49,11 +49,7 @@ async function persistCartLineQuantity(pendingOrderLineID, quantity) {
     if (token) formData.append('__RequestVerificationToken', token);
 
     try {
-        const response = await fetch('/Cart?handler=UpdateQuantity', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax('/Cart?handler=UpdateQuantity', formData);
         if (!response.ok) console.warn('Failed to save cart line quantity, status', response.status);
     } catch (err) {
         console.warn('Failed to save cart line quantity:', err);

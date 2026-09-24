@@ -1,4 +1,5 @@
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services

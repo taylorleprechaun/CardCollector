@@ -2,6 +2,7 @@ using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
+using CardCollector.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Tests.Repository
@@ -106,7 +107,7 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetAsync_IncludeCards_ReturnsCardsInSortOrder()
+        public async Task GetAsync_IncludeCards_ReturnsEveryCard()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DeckRepository(context);
@@ -114,7 +115,20 @@ namespace CardCollector.Tests.Repository
 
             var deck = await repository.GetAsync(id, includeCards: true);
 
-            CollectionAssert.AreEqual(new[] { 100, 200, 300 }, deck!.Cards.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEquivalent(new[] { 100, 200, 300 }, deck!.Cards.Select(c => c.CardID).ToArray());
+        }
+
+        [TestMethod]
+        public async Task GetOptionsAsync_Decks_ReturnsIDAndNameSortedByName()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new DeckRepository(context);
+            var zetaID = await repository.AddAsync(BuildDeck("Zeta Deck", Card(100, DeckSection.Main, 1, 0)));
+            var alphaID = await repository.AddAsync(BuildDeck("Alpha Deck"));
+
+            var options = await repository.GetOptionsAsync();
+
+            CollectionAssert.AreEqual(new[] { new DeckOption(alphaID, "Alpha Deck"), new DeckOption(zetaID, "Zeta Deck") }, options.ToArray());
         }
 
         [TestMethod]

@@ -28,6 +28,7 @@ function buildDom({ withExistingDecks = true } = {}) {
         <button type="submit" id="deckImportSubmit">Save</button>
       </form>
     </div>`;
+  loadScript('site.js');
   loadScript('deck-import.js');
   globalThis.reloadDeckPage = vi.fn();
 }

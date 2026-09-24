@@ -23,11 +23,6 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<Format>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns the format with its strategies in ranked order, or null if not found.
-        /// </summary>
-        Task<Format?> GetAsync(int id, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Updates the format's fields and replaces its strategies with the supplied list. Returns false if the format does not exist.
         /// </summary>
         Task<bool> UpdateAsync(Format format, CancellationToken cancellationToken = default);

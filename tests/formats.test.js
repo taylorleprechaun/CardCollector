@@ -22,6 +22,7 @@ function buildDom({ initial = '[]', max = 10, openOnLoad = 'false' } = {}) {
     <div id="deleteFormatModal"></div>
     <input id="deleteFormatID" />
     <span id="deleteFormatName"></span>`;
+  globalThis.setPickerDate = vi.fn((id, value) => { document.getElementById(id).value = value; });
   loadScript('formats.js');
 }
 
@@ -42,6 +43,7 @@ function makeTrigger(data) {
 describe('formats.js', () => {
   afterEach(() => {
     document.body.innerHTML = '';
+    delete globalThis.setPickerDate;
     vi.restoreAllMocks();
   });
 

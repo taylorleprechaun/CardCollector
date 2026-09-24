@@ -15,8 +15,6 @@ namespace CardCollector.ViewModels
         /// <summary>Newest format first, then deck name.</summary>
         public IReadOnlyList<DeckFormatRow> DeckFormats { get; init; } = [];
 
-        public AnalyticsRecordRow DeckFormatTotal { get; init; } = new("Total", 0, new WinLossTie(0, 0, 0));
-
         /// <summary>Match records when the dice roll was won, lost, or not recorded. Byes are left out.</summary>
         public IReadOnlyList<AnalyticsRecordRow> Dice { get; init; } = [];
 

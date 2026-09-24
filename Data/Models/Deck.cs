@@ -1,7 +1,7 @@
 namespace CardCollector.Data.Models
 {
     /// <summary>A stored deck list. Events point at it through <see cref="Event.DeckID"/>.</summary>
-    public class Deck
+    public sealed class Deck
     {
         public IReadOnlyList<DeckCard> Cards { get; set; } = new List<DeckCard>();
 

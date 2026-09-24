@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -11,7 +12,7 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and adds a new event. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<EventSaveResult> AddAsync(Event tournamentEvent, CancellationToken cancellationToken = default);
+        Task<SaveResult> AddAsync(Event tournamentEvent, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes the event and its rounds. Returns false if it does not exist.
@@ -42,6 +43,6 @@ namespace CardCollector.Services
         /// <summary>
         /// Validates and updates an existing event. Validation failures are returned in the result rather than thrown.
         /// </summary>
-        Task<EventSaveResult> UpdateAsync(Event tournamentEvent, CancellationToken cancellationToken = default);
+        Task<SaveResult> UpdateAsync(Event tournamentEvent, CancellationToken cancellationToken = default);
     }
 }

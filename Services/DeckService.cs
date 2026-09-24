@@ -1,5 +1,7 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -45,6 +47,9 @@ namespace CardCollector.Services
             };
         }
 
+        public Task<IReadOnlyList<DeckOption>> GetOptionsAsync(CancellationToken cancellationToken = default) =>
+            _deckRepository.GetOptionsAsync(cancellationToken);
+
         public async Task<DeckImportResult> ImportAsync(DeckImportRequest request, CancellationToken cancellationToken = default)
         {
             if (request is null) throw new ArgumentNullException(nameof(request));
@@ -81,14 +86,14 @@ namespace CardCollector.Services
                 if (tournamentEvent is null)
                     return;
 
-                var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, request.LinkOtherEventsWithSameUrl, cancellationToken).ConfigureAwait(false);
+                var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, request.LinkOtherEventsWithSameURL, cancellationToken).ConfigureAwait(false);
                 linkedEventCount = await _eventRepository.SetDeckAsync(eventIDs, deckID, cancellationToken).ConfigureAwait(false);
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             return Summarize(cards, deckID, linkedEventCount);
         }
 
-        public async Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameUrl = false, CancellationToken cancellationToken = default)
+        public async Task<int> LinkEventAsync(int eventID, int deckID, bool linkOtherEventsWithSameURL = false, CancellationToken cancellationToken = default)
         {
             var deck = await _deckRepository.GetAsync(deckID, includeCards: false, cancellationToken).ConfigureAwait(false);
             if (deck is null)
@@ -98,7 +103,7 @@ namespace CardCollector.Services
             if (tournamentEvent is null)
                 return 0;
 
-            var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, linkOtherEventsWithSameUrl, cancellationToken).ConfigureAwait(false);
+            var eventIDs = await GetEventIDsToLinkAsync(tournamentEvent, linkOtherEventsWithSameURL, cancellationToken).ConfigureAwait(false);
             return await _eventRepository.SetDeckAsync(eventIDs, deckID, cancellationToken).ConfigureAwait(false);
         }
 
@@ -111,20 +116,17 @@ namespace CardCollector.Services
         public async Task<bool> UnlinkEventAsync(int eventID, CancellationToken cancellationToken = default) =>
             await _eventRepository.SetDeckAsync([eventID], null, cancellationToken).ConfigureAwait(false) > 0;
 
-        public async Task<DeckSaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default)
+        public async Task<SaveResult> UpdateAsync(int id, string? name, string? notes, CancellationToken cancellationToken = default)
         {
             var normalized = DeckRules.Normalize(new Deck { ID = id, Name = name ?? string.Empty, Notes = notes });
 
             var errors = DeckRules.Validate(normalized);
             if (errors.Count > 0)
-                return DeckSaveResult.Failure(errors);
+                return SaveResult.Failure(errors);
 
             var updated = await _deckRepository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
-            return updated ? DeckSaveResult.Success() : DeckSaveResult.Missing("Deck not found.");
+            return updated ? SaveResult.Success() : SaveResult.Missing("Deck not found.");
         }
-
-        private static int CountCopies(IEnumerable<DeckCard> cards, DeckSection section) =>
-            cards.Where(c => c.Section == section).Sum(c => c.Quantity);
 
         private DeckSectionViewModel BuildSection(Deck deck, DeckSection section) =>
             new()
@@ -139,14 +141,17 @@ namespace CardCollector.Services
                     }))
             };
 
-        private async Task<IReadOnlyList<int>> GetEventIDsToLinkAsync(Event tournamentEvent, bool includeOthersWithSameUrl, CancellationToken cancellationToken)
+        private static int CountCopies(IEnumerable<DeckCard> cards, DeckSection section) =>
+            cards.Where(c => c.Section == section).Sum(c => c.Quantity);
+
+        private async Task<IReadOnlyList<int>> GetEventIDsToLinkAsync(Event tournamentEvent, bool includeOthersWithSameURL, CancellationToken cancellationToken)
         {
             var eventIDs = new List<int> { tournamentEvent.ID };
-            if (!includeOthersWithSameUrl || string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL))
+            if (!includeOthersWithSameURL || string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL))
                 return eventIDs;
 
             var others = await _eventRepository
-                .GetUnlinkedByDecklistUrlAsync(tournamentEvent.DecklistURL, tournamentEvent.ID, cancellationToken)
+                .GetUnlinkedByDecklistURLAsync(tournamentEvent.DecklistURL, tournamentEvent.ID, cancellationToken)
                 .ConfigureAwait(false);
             eventIDs.AddRange(others.Select(e => e.ID));
             return eventIDs;

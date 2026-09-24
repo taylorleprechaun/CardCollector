@@ -1,5 +1,7 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -22,26 +24,23 @@ namespace CardCollector.Services
         {
             if (deck is null) throw new ArgumentNullException(nameof(deck));
 
-            var current = await _banlistRepository.GetCurrentAsync().ConfigureAwait(false);
-            var availableListDates = await _banlistRepository.GetAvailableListsAsync().ConfigureAwait(false);
+            var current = await _banlistRepository.GetCurrentAsync(cancellationToken).ConfigureAwait(false);
+            var availableListDates = await _banlistRepository.GetAvailableListsAsync(cancellationToken).ConfigureAwait(false);
             var isAvailable = current is not null || availableListDates.Count > 0;
 
             var atEventSource = ResolveSourceEvent(deck.Events, eventID);
             var activeView = view ?? (atEventSource is not null ? DeckLegalityView.AtEvent : DeckLegalityView.Current);
 
             var activeList = activeView == DeckLegalityView.Current
-                ? await ResolveCurrentListAsync(current, listDate).ConfigureAwait(false)
-                : await ResolveAtEventListAsync(atEventSource, listDate).ConfigureAwait(false);
-
-            var cards = deck.Main.Cards.Concat(deck.Extra.Cards).Concat(deck.Side.Cards);
-            var activeLegality = activeList is null ? null : DeckLegalityEvaluator.Evaluate(cards, activeList);
+                ? await ResolveCurrentListAsync(current, listDate, cancellationToken).ConfigureAwait(false)
+                : await ResolveAtEventListAsync(atEventSource, listDate, cancellationToken).ConfigureAwait(false);
 
             return new DeckLegalityViewModel
             {
-                ActiveLegality = activeLegality,
                 ActiveView = activeView,
                 AtEventSource = atEventSource,
                 AvailableListDates = availableListDates,
+                CardStatuses = activeList is null ? null : DeckLegalityEvaluator.Evaluate(deck.AllCards, activeList),
                 DeckID = deck.Deck.ID,
                 Events = deck.Events,
                 IsAvailable = isAvailable,
@@ -49,18 +48,18 @@ namespace CardCollector.Services
             };
         }
 
-        private Task<Banlist?> ResolveAtEventListAsync(Event? sourceEvent, DateOnly? listDate)
+        private Task<Banlist?> ResolveAtEventListAsync(Event? sourceEvent, DateOnly? listDate, CancellationToken cancellationToken)
         {
             if (listDate is { } date)
-                return _banlistRepository.GetListAsync(date);
+                return _banlistRepository.GetListAsync(date, cancellationToken);
 
             return sourceEvent is null
                 ? Task.FromResult<Banlist?>(null)
-                : _banlistRepository.GetListForDateAsync(sourceEvent.Date);
+                : _banlistRepository.GetListForDateAsync(sourceEvent.Date, cancellationToken);
         }
 
-        private Task<Banlist?> ResolveCurrentListAsync(Banlist? current, DateOnly? listDate) =>
-            listDate is { } date ? _banlistRepository.GetListAsync(date) : Task.FromResult(current);
+        private Task<Banlist?> ResolveCurrentListAsync(Banlist? current, DateOnly? listDate, CancellationToken cancellationToken) =>
+            listDate is { } date ? _banlistRepository.GetListAsync(date, cancellationToken) : Task.FromResult(current);
 
         private static Event? ResolveSourceEvent(IReadOnlyList<Event> events, int? eventID)
         {

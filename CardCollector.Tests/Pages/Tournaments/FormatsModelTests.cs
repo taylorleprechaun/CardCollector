@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
@@ -73,7 +74,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostSaveAsync_EditingExistingFormat_CallsUpdate()
         {
             var (model, service) = CreateModel();
-            service.Setup(s => s.UpdateAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(FormatSaveResult.Success());
+            service.Setup(s => s.UpdateAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
             model.Input = new FormatInputModel { ID = 9, Name = "Alpha Era", StartDate = new DateOnly(2024, 1, 1) };
 
             var result = await model.OnPostSaveAsync(CancellationToken.None);
@@ -128,7 +129,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostSaveAsync_NewFormat_CallsAddAndRedirects()
         {
             var (model, service) = CreateModel();
-            service.Setup(s => s.AddAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(FormatSaveResult.Success());
+            service.Setup(s => s.AddAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
             model.Input = new FormatInputModel { Name = "Alpha Era", StartDate = new DateOnly(2024, 1, 1), Strategies = ["First", null, "Second"] };
 
             var result = await model.OnPostSaveAsync(CancellationToken.None);
@@ -147,7 +148,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Format? saved = null;
             service.Setup(s => s.AddAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>()))
                 .Callback<Format, CancellationToken>((f, _) => saved = f)
-                .ReturnsAsync(FormatSaveResult.Success());
+                .ReturnsAsync(SaveResult.Success());
             model.Input = new FormatInputModel
             {
                 EndDate = new DateOnly(2024, 6, 1),
@@ -166,7 +167,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         {
             var (model, service) = CreateModel(BuildFormat(1, "Existing", new DateOnly(2024, 1, 1), null));
             service.Setup(s => s.AddAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(FormatSaveResult.Failure(["Dates overlap with \"Existing\"."]));
+                .ReturnsAsync(SaveResult.Failure(["Dates overlap with \"Existing\"."]));
             model.Input = new FormatInputModel { Name = "Clashing", StartDate = new DateOnly(2024, 2, 1) };
 
             var result = await model.OnPostSaveAsync(CancellationToken.None);

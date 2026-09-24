@@ -1,8 +1,10 @@
 using CardCollector.Data.Models;
+using CardCollector.Extensions;
+using CardCollector.Models;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Pages.Tournaments.Events
@@ -16,19 +18,8 @@ namespace CardCollector.Pages.Tournaments.Events
         private readonly IMatchService _matchService;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
-        public DetailsModel(IDeckService deckService, IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
-        {
-            _deckService = deckService;
-            _eventService = eventService;
-            _matchService = matchService;
-            _razorPartialRenderer = razorPartialRenderer;
-        }
-
-        /// <summary>True when the stored order of the rounds doesn't match their round labels.</summary>
-        public bool AreRoundsOutOfOrder { get; private set; }
-
         /// <summary>The decks an event can be pointed at instead of importing a new one.</summary>
-        public IReadOnlyList<DeckListItemViewModel> DeckOptions { get; private set; } = [];
+        public IReadOnlyList<DeckOption> DeckOptions { get; private set; } = [];
 
         public EventDetailViewModel? Detail { get; private set; }
 
@@ -40,7 +31,13 @@ namespace CardCollector.Pages.Tournaments.Events
 
         public IReadOnlyList<string> OpponentDecks { get; private set; } = [];
 
-        public MatchSummaryViewModel Summary { get; private set; } = MatchRules.Summarize([]);
+        public DetailsModel(IDeckService deckService, IEventService eventService, IMatchService matchService, IRazorPartialRenderer razorPartialRenderer)
+        {
+            _deckService = deckService;
+            _eventService = eventService;
+            _matchService = matchService;
+            _razorPartialRenderer = razorPartialRenderer;
+        }
 
         public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {
@@ -48,10 +45,8 @@ namespace CardCollector.Pages.Tournaments.Events
             if (Detail is null)
                 return NotFound();
 
-            AreRoundsOutOfOrder = !MatchRules.IsInRoundOrder(Detail.Event.Matches.Select(m => m.Round));
-            Summary = MatchRules.Summarize(Detail.Event.Matches);
             OpponentDecks = await _matchService.GetOpponentDecksAsync(cancellationToken).ConfigureAwait(false);
-            DeckOptions = await _deckService.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            DeckOptions = await _deckService.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
 
             return Page();
         }
@@ -63,22 +58,21 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RejectSave(errors);
 
             var result = await _matchService.AddAsync(ID, BuildMatch(), cancellationToken).ConfigureAwait(false);
-            return await RespondToSaveAsync(result, "Round added.", cancellationToken).ConfigureAwait(false);
+            return await RespondToSaveAsync(result, "Round added.").ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostDeleteMatchAsync(int matchID, CancellationToken cancellationToken)
         {
-            var deleted = await _matchService.DeleteAsync(ID, matchID, cancellationToken).ConfigureAwait(false);
-            if (!deleted)
+            var summary = await _matchService.DeleteAsync(ID, matchID, cancellationToken).ConfigureAwait(false);
+            if (summary is null)
                 return RespondNotFound("That round no longer exists.");
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
             {
                 TempData["Success"] = "Round deleted.";
                 return RedirectToRounds();
             }
 
-            var summary = await _matchService.GetSummaryAsync(ID, cancellationToken).ConfigureAwait(false);
             return new JsonResult(new
             {
                 nextRound = summary.NextRound,
@@ -94,7 +88,7 @@ namespace CardCollector.Pages.Tournaments.Events
                 return RejectSave(errors);
 
             var result = await _matchService.UpdateAsync(ID, BuildMatch(), cancellationToken).ConfigureAwait(false);
-            return await RespondToSaveAsync(result, "Round updated.", cancellationToken).ConfigureAwait(false);
+            return await RespondToSaveAsync(result, "Round updated.").ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostSortMatchesAsync(CancellationToken cancellationToken)
@@ -103,12 +97,6 @@ namespace CardCollector.Pages.Tournaments.Events
 
             TempData["Success"] = sorted ? "Rounds sorted." : "Rounds were already in order.";
             return RedirectToRounds();
-        }
-
-        private void AddBindingError(List<string> errors, string field, string message)
-        {
-            if (HasBindingError(field))
-                errors.Add(message);
         }
 
         private Match BuildMatch()
@@ -135,29 +123,27 @@ namespace CardCollector.Pages.Tournaments.Events
 
         private List<string> GetBindingErrors()
         {
-            var errors = new List<string>();
+            (string Field, string Message)[] checks =
+            [
+                (nameof(Input.GamesWon), "Games won must be a whole number."),
+                (nameof(Input.GamesLost), "Games lost must be a whole number."),
+                (nameof(Input.GamesTied), "Games tied must be a whole number."),
+                (nameof(Input.Result), "Result is not valid."),
+                (nameof(Input.WonDiceRoll), "Dice roll is not valid.")
+            ];
 
-            AddBindingError(errors, nameof(Input.GamesWon), "Games won must be a whole number.");
-            AddBindingError(errors, nameof(Input.GamesLost), "Games lost must be a whole number.");
-            AddBindingError(errors, nameof(Input.GamesTied), "Games tied must be a whole number.");
-            AddBindingError(errors, nameof(Input.Result), "Result is not valid.");
-            AddBindingError(errors, nameof(Input.WonDiceRoll), "Dice roll is not valid.");
-
-            return errors;
+            return checks
+                .Where(check => ModelState.IsFieldInvalid(nameof(Input), check.Field))
+                .Select(check => check.Message)
+                .ToList();
         }
-
-        private bool HasBindingError(string field) =>
-            ModelState.GetFieldValidationState($"{nameof(Input)}.{field}") == ModelValidationState.Invalid;
-
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
         private IActionResult RedirectToRounds() =>
             RedirectToPage(null, null, new { id = ID }, ROUNDS_FRAGMENT);
 
         private IActionResult RejectSave(IReadOnlyList<string> errors)
         {
-            if (IsAjaxRequest())
+            if (Request.IsAjaxRequest())
                 return BadRequest(new { errors });
 
             TempData["Error"] = string.Join(" ", errors);
@@ -169,14 +155,14 @@ namespace CardCollector.Pages.Tournaments.Events
 
         private IActionResult RespondNotFound(string message)
         {
-            if (IsAjaxRequest())
+            if (Request.IsAjaxRequest())
                 return NotFound();
 
             TempData["Error"] = message;
             return RedirectToRounds();
         }
 
-        private async Task<IActionResult> RespondToSaveAsync(MatchSaveResult result, string successMessage, CancellationToken cancellationToken)
+        private async Task<IActionResult> RespondToSaveAsync(MatchSaveResult result, string successMessage)
         {
             if (result.NotFound)
                 return RespondNotFound(result.Errors[0]);
@@ -184,13 +170,13 @@ namespace CardCollector.Pages.Tournaments.Events
             if (!result.Succeeded)
                 return RejectSave(result.Errors);
 
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
             {
                 TempData["Success"] = successMessage;
                 return RedirectToRounds();
             }
 
-            var summary = await _matchService.GetSummaryAsync(ID, cancellationToken).ConfigureAwait(false);
+            var summary = result.Summary!;
             return new JsonResult(new
             {
                 nextRound = summary.NextRound,

@@ -1,6 +1,7 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.Repository;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -89,14 +90,14 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_EventSharesUrlWithUnlinkedEvents_CountsOnlyTheOthers()
+        public async Task GetAsync_EventSharesURLWithUnlinkedEvents_CountsOnlyTheOthers()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
-            var eventID = AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-31", "https://decks.example.test/one", deckID: 3);
+            var eventID = AddEventWithURL(context, "2024-01-10", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-24", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-31", "https://decks.example.test/one", deckID: 3);
 
             var detail = await service.GetAsync(eventID);
 
@@ -104,7 +105,7 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetAsync_EventWithNoUrl_HasNoOtherUnlinkedEvents()
+        public async Task GetAsync_EventWithNoURL_HasNoOtherUnlinkedEvents()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
@@ -132,9 +133,11 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Alpha Era", detail!.Format!.Name);
             CollectionAssert.AreEqual(new[] { "First", "Second" }, detail.Format.Strategies.Select(s => s.Name).ToArray());
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, detail.Event.Matches.Select(m => m.Sequence).ToArray());
-            Assert.AreEqual("2-1-0", detail.MatchRecord.ToString());
-            Assert.AreEqual("2-3-0", detail.GameRecord.ToString());
-            Assert.AreEqual("1-1", detail.DiceRecord.ToString());
+            Assert.AreEqual("2-1-0", detail.Summary.MatchRecord.ToString());
+            Assert.AreEqual("2-3-0", detail.Summary.GameRecord.ToString());
+            Assert.AreEqual("1-1", detail.Summary.DiceRecord.ToString());
+            Assert.AreEqual(3, detail.Summary.RoundCount);
+            Assert.AreEqual("4", detail.Summary.NextRound);
         }
 
         [TestMethod]
@@ -149,6 +152,37 @@ namespace CardCollector.Tests.Services
             var detail = await service.GetAsync(id);
 
             Assert.IsNull(detail!.Format);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_RoundsInOrder_DoesNotFlagThem()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var id = AddEvent(context, "2024-05-04", "Test Hobby Shop");
+            AddRound(context, id, 1, "1");
+            AddRound(context, id, 2, "2");
+            AddRound(context, id, 3, "Top 8");
+            await context.SaveChangesAsync();
+            var service = CreateService(context);
+
+            var detail = await service.GetAsync(id);
+
+            Assert.IsFalse(detail!.AreRoundsOutOfOrder);
+        }
+
+        [TestMethod]
+        public async Task GetAsync_RoundsOutOfOrder_FlagsThem()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var id = AddEvent(context, "2024-05-04", "Test Hobby Shop");
+            AddRound(context, id, 1, "2");
+            AddRound(context, id, 2, "1");
+            await context.SaveChangesAsync();
+            var service = CreateService(context);
+
+            var detail = await service.GetAsync(id);
+
+            Assert.IsTrue(detail!.AreRoundsOutOfOrder);
         }
 
         [TestMethod]
@@ -189,7 +223,7 @@ namespace CardCollector.Tests.Services
 
             var result = await service.SearchAsync(new EventSearchCriteria());
 
-            Assert.AreEqual(EventService.NO_FORMAT_NAME, result.Items.Single().FormatName);
+            Assert.AreEqual(FormatRules.NO_FORMAT_NAME, result.Items.Single().FormatName);
         }
 
         [TestMethod]
@@ -352,13 +386,13 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
         [TestMethod]
-        public async Task SearchAsync_LinkedEventSharesUrlWithUnlinkedEvents_CountsAllUnlinkedEvents()
+        public async Task SearchAsync_LinkedEventSharesURLWithUnlinkedEvents_CountsAllUnlinkedEvents()
         {
             using var context = InMemoryDbContextFactory.Create();
             var service = CreateService(context);
-            AddEventWithUrl(context, "2024-01-10", "https://decks.example.test/one", deckID: 3);
-            AddEventWithUrl(context, "2024-01-17", "https://decks.example.test/one");
-            AddEventWithUrl(context, "2024-01-24", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-10", "https://decks.example.test/one", deckID: 3);
+            AddEventWithURL(context, "2024-01-17", "https://decks.example.test/one");
+            AddEventWithURL(context, "2024-01-24", "https://decks.example.test/one");
 
             var result = await service.SearchAsync(new EventSearchCriteria { Page = 1, PageSize = 25 });
 
@@ -373,6 +407,21 @@ namespace CardCollector.Tests.Services
             var service = CreateService(context);
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => service.SearchAsync(null!));
+        }
+
+        [TestMethod]
+        [DataRow(0, 0, 1, 25, DisplayName = "Zero page and size")]
+        [DataRow(-2, 500, 1, 25, DisplayName = "Negative page, oversized size")]
+        [DataRow(2, 50, 2, 50, DisplayName = "Valid values kept")]
+        public async Task SearchAsync_UnknownFormat_ClampsPagingLikeANormalSearch(int page, int pageSize, int expectedPage, int expectedPageSize)
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+
+            var result = await service.SearchAsync(new EventSearchCriteria { FormatID = 999, Page = page, PageSize = pageSize });
+
+            Assert.AreEqual(expectedPage, result.Page);
+            Assert.AreEqual(expectedPageSize, result.PageSize);
         }
 
         [TestMethod]
@@ -398,6 +447,7 @@ namespace CardCollector.Tests.Services
 
             Assert.IsFalse(result.Succeeded);
             Assert.AreEqual("Event not found.", result.Errors.Single());
+            Assert.IsTrue(result.NotFound);
         }
 
         [TestMethod]
@@ -455,14 +505,14 @@ namespace CardCollector.Tests.Services
             return entity.ID;
         }
 
-        private static int AddEventWithUrl(AppDBContext context, string date, string decklistUrl, int? deckID = null)
+        private static int AddEventWithURL(AppDBContext context, string date, string decklistURL, int? deckID = null)
         {
             var entity = new Event
             {
                 Date = DateOnly.Parse(date),
                 DeckID = deckID,
                 DeckName = "Sample Deck",
-                DecklistURL = decklistUrl,
+                DecklistURL = decklistURL,
                 EventType = EventType.Locals,
                 Location = "Test Hobby Shop"
             };
@@ -507,6 +557,16 @@ namespace CardCollector.Tests.Services
                 WonDiceRoll = wonDiceRoll
             });
         }
+
+        private static void AddRound(AppDBContext context, int eventID, int sequence, string round) =>
+            context.Matches.Add(new Match
+            {
+                EventID = eventID,
+                OpponentDeck = "Sample Opponent",
+                Result = MatchResult.Win,
+                Round = round,
+                Sequence = sequence
+            });
 
         private static Event BuildEvent(int id, string date) =>
             new()

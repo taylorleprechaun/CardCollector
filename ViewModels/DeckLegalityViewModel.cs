@@ -1,20 +1,21 @@
 using CardCollector.Data.Models;
-using CardCollector.Services;
+using CardCollector.Models;
 
 namespace CardCollector.ViewModels
 {
-    /// <summary>The active tab's legality result plus what the tabs and pickers need to render.</summary>
+    /// <summary>The active tab's per-card legality plus what the tabs and pickers need to render.</summary>
     public sealed class DeckLegalityViewModel
     {
-        public DeckLegality? ActiveLegality { get; init; }
-
         public required DeckLegalityView ActiveView { get; init; }
+
+        /// <summary>The event "At event" resolves its list from. Null when the deck has no events.</summary>
+        public Event? AtEventSource { get; init; }
 
         /// <summary>Every known list's effective date, newest first, for the list picker.</summary>
         public required IReadOnlyList<DateOnly> AvailableListDates { get; init; }
 
-        /// <summary>The event "At event" resolves its list from. Null when the deck has no events.</summary>
-        public Event? AtEventSource { get; init; }
+        /// <summary>Each restricted card's status against the active tab's list, keyed by card ID; null when no list applies.</summary>
+        public IReadOnlyDictionary<int, DeckLegalityCardStatus>? CardStatuses { get; init; }
 
         public required int DeckID { get; init; }
 
@@ -23,8 +24,7 @@ namespace CardCollector.ViewModels
 
         public required bool IsAvailable { get; init; }
 
-        /// <summary>The list date explicitly requested for the active view, if any — distinct from
-        /// <see cref="ActiveLegality"/>'s resolved date, so the picker shows "Auto" until the viewer actually picks one.</summary>
+        /// <summary>The list date the viewer picked for the active view, if any; null shows "Auto" in the picker.</summary>
         public DateOnly? RequestedListDate { get; init; }
     }
 }

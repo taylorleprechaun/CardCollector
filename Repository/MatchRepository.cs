@@ -15,64 +15,59 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task<int> AddAsync(int eventID, Match match, int? position = null, CancellationToken cancellationToken = default)
+        public async Task<(int Position, IReadOnlyList<Match> Rounds)?> AddAsync(
+            int eventID,
+            Match match,
+            Func<IReadOnlyList<Match>, int> choosePosition,
+            CancellationToken cancellationToken = default)
         {
             if (match is null) throw new ArgumentNullException(nameof(match));
+            if (choosePosition is null) throw new ArgumentNullException(nameof(choosePosition));
 
-            var rounds = await _context.Matches
-                .Where(m => m.EventID == eventID)
-                .OrderBy(m => m.Sequence)
-                .ThenBy(m => m.ID)
-                .ToListAsync(cancellationToken)
+            var tournamentEvent = await _context.Events
+                .Include(e => e.Matches)
+                .FirstOrDefaultAsync(e => e.ID == eventID, cancellationToken)
                 .ConfigureAwait(false);
 
-            var index = Math.Clamp(position ?? rounds.Count, 0, rounds.Count);
-            for (var current = 0; current < rounds.Count; current++)
-                rounds[current].Sequence = current < index ? current + 1 : current + 2;
+            if (tournamentEvent is null)
+                return null;
+
+            // Sorted here rather than in the Include: an Include doesn't reorder a collection the context already tracks.
+            var rounds = tournamentEvent.Matches.OrderBy(m => m.Sequence).ThenBy(m => m.ID).ToList();
+            var index = Math.Clamp(choosePosition(rounds), 0, rounds.Count);
 
             var now = DateTime.UtcNow;
             var entity = new Match
             {
                 DateCreated = now,
                 DateModified = now,
-                EventID = eventID,
-                Sequence = index + 1
+                EventID = eventID
             };
             CopyFields(match, entity);
 
+            rounds.Insert(index, entity);
+            Renumber(rounds, now);
+
             _context.Matches.Add(entity);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return entity.ID;
+            return (index, rounds);
         }
 
-        public async Task<bool> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Match>?> DeleteAsync(int eventID, int id, CancellationToken cancellationToken = default)
         {
-            var rounds = await _context.Matches
-                .Where(m => m.EventID == eventID)
-                .OrderBy(m => m.Sequence)
-                .ThenBy(m => m.ID)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+            var rounds = await LoadRoundsForUpdateAsync(eventID, cancellationToken).ConfigureAwait(false);
 
             var target = rounds.FirstOrDefault(m => m.ID == id);
             if (target is null)
-                return false;
+                return null;
 
             rounds.Remove(target);
             _context.Matches.Remove(target);
-
-            for (var index = 0; index < rounds.Count; index++)
-                rounds[index].Sequence = index + 1;
+            Renumber(rounds, DateTime.UtcNow);
 
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return true;
+            return rounds;
         }
-
-        public async Task<Match?> GetAsync(int eventID, int id, CancellationToken cancellationToken = default) =>
-            await _context.Matches
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.EventID == eventID && m.ID == id, cancellationToken)
-                .ConfigureAwait(false);
 
         public async Task<IReadOnlyList<Match>> GetByEventAsync(int eventID, CancellationToken cancellationToken = default) =>
             await _context.Matches
@@ -105,6 +100,7 @@ namespace CardCollector.Repository
                 .ToDictionaryAsync(m => m.ID, cancellationToken)
                 .ConfigureAwait(false);
 
+            var now = DateTime.UtcNow;
             var moved = 0;
             var position = 0;
             foreach (var id in orderedIDs)
@@ -116,6 +112,7 @@ namespace CardCollector.Repository
                 if (round.Sequence == position)
                     continue;
 
+                round.DateModified = now;
                 round.Sequence = position;
                 moved++;
             }
@@ -126,29 +123,26 @@ namespace CardCollector.Repository
             return moved;
         }
 
-        public async Task<bool> UpdateAsync(int eventID, Match match, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Match>?> UpdateAsync(int eventID, Match match, CancellationToken cancellationToken = default)
         {
             if (match is null) throw new ArgumentNullException(nameof(match));
 
-            var entity = await _context.Matches
-                .FirstOrDefaultAsync(m => m.EventID == eventID && m.ID == match.ID, cancellationToken)
-                .ConfigureAwait(false);
+            var rounds = await LoadRoundsForUpdateAsync(eventID, cancellationToken).ConfigureAwait(false);
 
+            var entity = rounds.FirstOrDefault(m => m.ID == match.ID);
             if (entity is null)
-                return false;
+                return null;
 
             CopyFields(match, entity);
             entity.DateModified = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return true;
+            return rounds;
         }
 
         /// <summary>
         /// The owning event and the round's position are managed by the repository, so a form-driven save must not overwrite them.
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
         private static void CopyFields(Match source, Match target)
         {
             target.GamesLost = source.GamesLost;
@@ -160,6 +154,27 @@ namespace CardCollector.Repository
             target.Result = source.Result;
             target.Round = source.Round;
             target.WonDiceRoll = source.WonDiceRoll;
+        }
+
+        private Task<List<Match>> LoadRoundsForUpdateAsync(int eventID, CancellationToken cancellationToken) =>
+            _context.Matches
+                .Where(m => m.EventID == eventID)
+                .OrderBy(m => m.Sequence)
+                .ThenBy(m => m.ID)
+                .ToListAsync(cancellationToken);
+
+        /// <summary>Keeps the event's rounds numbered 1 to n in their list order; a round whose number changes is marked modified.</summary>
+        private static void Renumber(IReadOnlyList<Match> rounds, DateTime now)
+        {
+            for (var index = 0; index < rounds.Count; index++)
+            {
+                var round = rounds[index];
+                if (round.Sequence == index + 1)
+                    continue;
+
+                round.DateModified = now;
+                round.Sequence = index + 1;
+            }
         }
     }
 }

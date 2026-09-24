@@ -60,6 +60,18 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task AddAsync_InvalidRoundForMissingEvent_ReportsTheValidationErrors()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context);
+
+            var result = await service.AddAsync(999, BuildMatch(string.Empty, "Test Opponent"));
+
+            Assert.IsFalse(result.NotFound);
+            CollectionAssert.Contains(result.Errors.ToArray(), "Round is required.");
+        }
+
+        [TestMethod]
         public async Task AddAsync_InvalidRound_ReturnsErrorsAndPersistsNothing()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -149,7 +161,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Top 8", (await new MatchRepository(context).GetByEventAsync(eventID))[2].Round);
         }
         [TestMethod]
-        public async Task DeleteAsync_MiddleRound_ResequencesAndUpdatesTheSummary()
+        public async Task DeleteAsync_MiddleRound_ResequencesAndReturnsTheNewSummary()
         {
             using var context = InMemoryDbContextFactory.Create();
             var eventID = await AddEventAsync(context);
@@ -158,12 +170,23 @@ namespace CardCollector.Tests.Services
             var middle = await service.AddAsync(eventID, BuildMatch("2", "Second"));
             await service.AddAsync(eventID, BuildMatch("3", "Third"));
 
-            var deleted = await service.DeleteAsync(eventID, middle.Match!.ID);
+            var summary = await service.DeleteAsync(eventID, middle.Match!.ID);
 
-            var summary = await service.GetSummaryAsync(eventID);
-            Assert.IsTrue(deleted);
-            Assert.AreEqual(2, summary.RoundCount);
+            Assert.AreEqual(2, summary!.RoundCount);
+            Assert.AreEqual("4", summary.NextRound);
             CollectionAssert.AreEqual(new[] { 1, 2 }, await context.Matches.OrderBy(m => m.Sequence).Select(m => m.Sequence).ToArrayAsync());
+        }
+
+        [TestMethod]
+        public async Task DeleteAsync_UnknownRound_ReturnsNull()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var eventID = await AddEventAsync(context);
+            var service = CreateService(context);
+
+            var summary = await service.DeleteAsync(eventID, 999);
+
+            Assert.IsNull(summary);
         }
 
         [TestMethod]
@@ -182,7 +205,7 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetSummaryAsync_RoundsExist_ReflectsTheStoredResultsNotTheScores()
+        public async Task AddAsync_ResultOverridesTheScore_SummaryReflectsTheStoredResult()
         {
             using var context = InMemoryDbContextFactory.Create();
             var eventID = await AddEventAsync(context);
@@ -191,10 +214,9 @@ namespace CardCollector.Tests.Services
             overridden.GamesLost = 2;
             overridden.GamesWon = 1;
             overridden.Result = MatchResult.Win;
-            await service.AddAsync(eventID, overridden);
+            var result = await service.AddAsync(eventID, overridden);
 
-            var summary = await service.GetSummaryAsync(eventID);
-
+            var summary = result.Summary!;
             Assert.AreEqual("1-0-0", summary.MatchRecord.ToString());
             Assert.AreEqual("1-2-0", summary.GameRecord.ToString());
             Assert.AreEqual("2", summary.NextRound);
@@ -369,11 +391,13 @@ namespace CardCollector.Tests.Services
             edited.ID = added.Match!.ID;
             edited.Result = MatchResult.Win;
 
-            await service.UpdateAsync(eventID, edited);
+            var result = await service.UpdateAsync(eventID, edited);
 
             var saved = await context.Matches.SingleAsync();
             Assert.AreEqual(MatchResult.Win, saved.Result);
             Assert.AreEqual(2, saved.GamesLost);
+            Assert.AreEqual(saved.ID, result.Match!.ID);
+            Assert.AreEqual("1-2-0", result.Summary!.GameRecord.ToString());
         }
         private static async Task<int> AddEventAsync(AppDBContext context)
         {
@@ -392,6 +416,6 @@ namespace CardCollector.Tests.Services
             };
 
         private static MatchService CreateService(AppDBContext context) =>
-            new(new EventRepository(context), new MatchRepository(context));
+            new(new MatchRepository(context));
     }
 }

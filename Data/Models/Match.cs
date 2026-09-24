@@ -1,7 +1,7 @@
 namespace CardCollector.Data.Models
 {
     /// <summary>One round of an <see cref="Event"/>.</summary>
-    public class Match
+    public sealed class Match
     {
         public DateTime DateCreated { get; set; }
 

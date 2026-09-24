@@ -16,14 +16,6 @@ namespace CardCollector.Pages.Tournaments
         private readonly IFormatService _formatService;
         private readonly IMatchService _matchService;
 
-        public AnalyticsModel(IAnalyticsService analyticsService, IEventService eventService, IFormatService formatService, IMatchService matchService)
-        {
-            _analyticsService = analyticsService;
-            _eventService = eventService;
-            _formatService = formatService;
-            _matchService = matchService;
-        }
-
         [BindProperty(SupportsGet = true)]
         public DateOnly? DateFrom { get; set; }
 
@@ -75,6 +67,14 @@ namespace CardCollector.Pages.Tournaments
 
         [BindProperty(SupportsGet = true)]
         public EventType? Type { get; set; }
+
+        public AnalyticsModel(IAnalyticsService analyticsService, IEventService eventService, IFormatService formatService, IMatchService matchService)
+        {
+            _analyticsService = analyticsService;
+            _eventService = eventService;
+            _formatService = formatService;
+            _matchService = matchService;
+        }
 
         public async Task OnGetAsync(CancellationToken cancellationToken)
         {

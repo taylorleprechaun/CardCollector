@@ -7,9 +7,7 @@ namespace CardCollector.Repository
 {
     public sealed class EventRepository : IEventRepository
     {
-        private const int DEFAULT_PAGE_SIZE = 25;
         private const string LIKE_ESCAPE = "\\";
-        private const int MAX_PAGE_SIZE = 100;
 
         private readonly AppDBContext _context;
 
@@ -97,24 +95,24 @@ namespace CardCollector.Repository
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyList<Event>> GetUnlinkedByDecklistUrlAsync(string decklistUrl, int excludeEventID, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Event>> GetUnlinkedByDecklistURLAsync(string decklistURL, int excludeEventID, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(decklistUrl)) throw new ArgumentException("A decklist URL is required.", nameof(decklistUrl));
+            if (string.IsNullOrWhiteSpace(decklistURL)) throw new ArgumentException("A decklist URL is required.", nameof(decklistURL));
 
             return await _context.Events
                 .AsNoTracking()
-                .Where(e => e.DeckID == null && e.DecklistURL == decklistUrl && e.ID != excludeEventID)
+                .Where(e => e.DeckID == null && e.DecklistURL == decklistURL && e.ID != excludeEventID)
                 .OrderBy(e => e.Date)
                 .ThenBy(e => e.ID)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyDictionary<string, int>> GetUnlinkedUrlCountsAsync(IReadOnlyCollection<string> decklistUrls, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyDictionary<string, int>> GetUnlinkedURLCountsAsync(IReadOnlyCollection<string> decklistURLs, CancellationToken cancellationToken = default)
         {
-            if (decklistUrls is null) throw new ArgumentNullException(nameof(decklistUrls));
+            if (decklistURLs is null) throw new ArgumentNullException(nameof(decklistURLs));
 
-            var urls = decklistUrls.Distinct().ToList();
+            var urls = decklistURLs.Distinct().ToList();
             if (urls.Count == 0)
                 return new Dictionary<string, int>();
 
@@ -122,8 +120,8 @@ namespace CardCollector.Repository
                 .AsNoTracking()
                 .Where(e => e.DeckID == null && e.DecklistURL != null && urls.Contains(e.DecklistURL))
                 .GroupBy(e => e.DecklistURL!)
-                .Select(g => new { Url = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Url, x => x.Count, cancellationToken)
+                .Select(g => new { URL = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.URL, x => x.Count, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -131,8 +129,8 @@ namespace CardCollector.Repository
         {
             if (criteria is null) throw new ArgumentNullException(nameof(criteria));
 
-            var page = Math.Max(1, criteria.Page);
-            var pageSize = criteria.PageSize is < 1 or > MAX_PAGE_SIZE ? DEFAULT_PAGE_SIZE : criteria.PageSize;
+            var page = Paging.ClampPage(criteria.Page);
+            var pageSize = Paging.ClampPageSize(criteria.PageSize);
 
             var query = ApplyFilters(_context.Events.AsNoTracking(), criteria);
 
@@ -235,8 +233,6 @@ namespace CardCollector.Repository
         /// <summary>
         /// DeckID and the rounds are managed elsewhere, so a form-driven update must not overwrite them.
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
         private static void CopyFields(Event source, Event target)
         {
             target.Date = source.Date;

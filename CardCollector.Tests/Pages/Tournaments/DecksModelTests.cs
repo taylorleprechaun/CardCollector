@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CardCollector.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
@@ -88,13 +89,13 @@ namespace CardCollector.Tests.Pages.Tournaments
             await model.OnPostImportAsync(8, true, "Sample Deck", null, "pasted text", CancellationToken.None);
 
             Assert.AreEqual(8, sent!.EventID);
-            Assert.IsTrue(sent.LinkOtherEventsWithSameUrl);
+            Assert.IsTrue(sent.LinkOtherEventsWithSameURL);
             Assert.AreEqual("Sample Deck", sent.Name);
             Assert.AreEqual("pasted text", sent.Text);
         }
 
         [TestMethod]
-        public async Task OnPostImportAsync_LocalReturnUrl_RedirectsThere()
+        public async Task OnPostImportAsync_LocalReturnURL_RedirectsThere()
         {
             var (model, decks) = CreateModel();
             var url = new Mock<IUrlHelper>();
@@ -182,7 +183,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_DeckMissing_ReturnsNotFoundForAjax()
         {
             var (model, decks) = CreateModel(ajax: true);
-            decks.Setup(s => s.UpdateAsync(3, "Name", null, It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Missing("Deck not found."));
+            decks.Setup(s => s.UpdateAsync(3, "Name", null, It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Missing("Deck not found."));
 
             var result = await model.OnPostRenameAsync(3, "Name", null, null, CancellationToken.None);
 
@@ -193,7 +194,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_InvalidName_SetsErrorAndRedirects()
         {
             var (model, decks) = CreateModel();
-            decks.Setup(s => s.UpdateAsync(3, " ", null, It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Failure(["Deck name is required."]));
+            decks.Setup(s => s.UpdateAsync(3, " ", null, It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Failure(["Deck name is required."]));
 
             var result = await model.OnPostRenameAsync(3, " ", null, null, CancellationToken.None);
 
@@ -205,7 +206,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostRenameAsync_ValidValues_SetsMessage()
         {
             var (model, decks) = CreateModel();
-            decks.Setup(s => s.UpdateAsync(3, "Name", "Note", It.IsAny<CancellationToken>())).ReturnsAsync(DeckSaveResult.Success());
+            decks.Setup(s => s.UpdateAsync(3, "Name", "Note", It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
 
             await model.OnPostRenameAsync(3, "Name", "Note", null, CancellationToken.None);
 

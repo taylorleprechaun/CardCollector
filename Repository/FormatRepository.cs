@@ -58,13 +58,6 @@ namespace CardCollector.Repository
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-        public async Task<Format?> GetAsync(int id, CancellationToken cancellationToken = default) =>
-            await _context.Formats
-                .AsNoTracking()
-                .Include(f => f.Strategies.OrderBy(s => s.Position))
-                .FirstOrDefaultAsync(f => f.ID == id, cancellationToken)
-                .ConfigureAwait(false);
-
         public async Task<bool> UpdateAsync(Format format, CancellationToken cancellationToken = default)
         {
             if (format is null) throw new ArgumentNullException(nameof(format));

@@ -11,13 +11,15 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task ExecuteInTransactionAsync(Func<Task> operation)
+        public async Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default)
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync().ConfigureAwait(false);
+            if (operation is null) throw new ArgumentNullException(nameof(operation));
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 await operation().ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch
             {

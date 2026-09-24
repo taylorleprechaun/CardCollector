@@ -1,6 +1,8 @@
 using System.Text.Json;
 using CardCollector.Data.Models;
+using CardCollector.Models;
 using CardCollector.Pages.Tournaments.Events;
+using CardCollector.Rules;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -17,7 +19,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         [TestMethod]
         public async Task OnGetAsync_DecksExist_ExposesThemAsDeckOptions()
         {
-            var options = new[] { new DeckListItemViewModel { EventCount = 0, ExtraCount = 15, ID = 3, MainCount = 60, Name = "Sample Deck", SideCount = 15 } };
+            var options = new[] { new DeckOption(3, "Sample Deck") };
             var context = CreateModel(5, BuildDetail(5), deckOptions: options);
 
             await context.Model.OnGetAsync(CancellationToken.None);
@@ -26,7 +28,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         }
 
         [TestMethod]
-        public async Task OnGetAsync_EventExists_ReturnsPageWithDetailSummaryAndOpponents()
+        public async Task OnGetAsync_EventExists_ReturnsPageWithDetailAndOpponents()
         {
             var detail = BuildDetail(5, new Match { Result = MatchResult.Win, Round = "1" });
             var context = CreateModel(5, detail);
@@ -36,8 +38,6 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.IsInstanceOfType<PageResult>(result);
             Assert.AreSame(detail, context.Model.Detail);
-            Assert.AreEqual(1, context.Model.Summary.RoundCount);
-            Assert.AreEqual("2", context.Model.Summary.NextRound);
             CollectionAssert.AreEqual(new[] { "Test Opponent" }, context.Model.OpponentDecks.ToArray());
         }
         [TestMethod]
@@ -59,30 +59,8 @@ namespace CardCollector.Tests.Pages.Tournaments
             var result = await context.Model.OnGetAsync(CancellationToken.None);
 
             Assert.IsInstanceOfType<NotFoundResult>(result);
-            context.Events.Verify(s => s.GetAsync(0, It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [TestMethod]
-        public async Task OnGetAsync_RoundsInOrder_DoesNotFlagThem()
-        {
-            var detail = BuildDetail(5, new Match { Round = "1" }, new Match { Round = "2" }, new Match { Round = "Top 8" });
-            var context = CreateModel(5, detail);
-
-            await context.Model.OnGetAsync(CancellationToken.None);
-
-            Assert.IsFalse(context.Model.AreRoundsOutOfOrder);
-        }
-
-        [TestMethod]
-        public async Task OnGetAsync_RoundsOutOfOrder_FlagsThem()
-        {
-            var detail = BuildDetail(5, new Match { Round = "2" }, new Match { Round = "1" });
-            var context = CreateModel(5, detail);
-
-            await context.Model.OnGetAsync(CancellationToken.None);
-
-            Assert.IsTrue(context.Model.AreRoundsOutOfOrder);
-        }
         [TestMethod]
         public async Task OnPostAddMatchAsync_AjaxBindingError_ReturnsBadRequestWithoutCallingTheService()
         {
@@ -112,8 +90,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         {
             var context = CreateModel(5, null, ajax: true);
             context.Model.Input = new MatchInputModel { GamesWon = 2, OpponentDeck = "Test Opponent", Result = MatchResult.Win, Round = "1" };
-            context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, previousMatchID: 3));
-            context.SetupSummary(5, roundCount: 1, nextRound: "2");
+            context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 1, nextRound: "2"), previousMatchID: 3));
 
             var result = await context.Model.OnPostAddMatchAsync(CancellationToken.None);
 
@@ -144,7 +121,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Match? sent = null;
             context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>()))
                 .Callback<int, Match, CancellationToken>((_, match, _) => sent = match)
-                .ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }));
+                .ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 1, nextRound: "2")));
             context.Model.Input = new MatchInputModel { OpponentDeck = "Test Opponent", Round = "1" };
 
             await context.Model.OnPostAddMatchAsync(CancellationToken.None);
@@ -169,7 +146,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostAddMatchAsync_NonAjaxSuccess_SetsSuccessAndRedirectsToRounds()
         {
             var context = CreateModel(5, null);
-            context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }));
+            context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 1, nextRound: "2")));
 
             var result = await context.Model.OnPostAddMatchAsync(CancellationToken.None);
 
@@ -196,7 +173,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Match? sent = null;
             context.Matches.Setup(s => s.AddAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>()))
                 .Callback<int, Match, CancellationToken>((_, match, _) => sent = match)
-                .ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }));
+                .ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 1, nextRound: "2")));
             context.Model.Input = new MatchInputModel { GamesLost = 2, GamesWon = 0, OpponentDeck = "Test Opponent", Round = "1" };
 
             await context.Model.OnPostAddMatchAsync(CancellationToken.None);
@@ -207,7 +184,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostDeleteMatchAsync_AjaxRoundMissing_ReturnsNotFound()
         {
             var context = CreateModel(5, null, ajax: true);
-            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync((MatchSummaryViewModel?)null);
 
             var result = await context.Model.OnPostDeleteMatchAsync(7, CancellationToken.None);
 
@@ -218,8 +195,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostDeleteMatchAsync_AjaxSuccess_ReturnsSummaryWithoutARow()
         {
             var context = CreateModel(5, null, ajax: true);
-            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            context.SetupSummary(5, roundCount: 0, nextRound: "1");
+            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(BuildSummary(roundCount: 0, nextRound: "1"));
 
             var result = await context.Model.OnPostDeleteMatchAsync(7, CancellationToken.None);
 
@@ -233,7 +209,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostDeleteMatchAsync_NonAjaxRoundMissing_SetsErrorAndRedirects()
         {
             var context = CreateModel(5, null);
-            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync((MatchSummaryViewModel?)null);
 
             var result = await context.Model.OnPostDeleteMatchAsync(7, CancellationToken.None);
 
@@ -245,13 +221,27 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostDeleteMatchAsync_NonAjaxSuccess_SetsSuccessAndRedirects()
         {
             var context = CreateModel(5, null);
-            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            context.Matches.Setup(s => s.DeleteAsync(5, 7, It.IsAny<CancellationToken>())).ReturnsAsync(BuildSummary(roundCount: 0, nextRound: "1"));
 
             var result = await context.Model.OnPostDeleteMatchAsync(7, CancellationToken.None);
 
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
             Assert.AreEqual("Round deleted.", context.Model.TempData["Success"]);
         }
+
+        [TestMethod]
+        public async Task OnPostEditMatchAsync_AjaxBindingError_ReturnsBadRequestWithoutCallingTheService()
+        {
+            var context = CreateModel(5, null, ajax: true);
+            context.Model.ModelState.AddModelError("Input.Result", "not a result");
+
+            var result = await context.Model.OnPostEditMatchAsync(CancellationToken.None);
+
+            var badRequest = Assert.IsInstanceOfType<BadRequestObjectResult>(result);
+            Assert.AreEqual("Result is not valid.", JsonSerializer.SerializeToElement(badRequest.Value).GetProperty("errors")[0].GetString());
+            context.Matches.Verify(s => s.UpdateAsync(It.IsAny<int>(), It.IsAny<Match>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [TestMethod]
         public async Task OnPostEditMatchAsync_AjaxRoundBelongsToAnotherEvent_ReturnsNotFound()
         {
@@ -269,8 +259,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         {
             var context = CreateModel(5, null, ajax: true);
             context.Model.Input = new MatchInputModel { ID = 7, OpponentDeck = "Test Opponent", Result = MatchResult.Loss, Round = "1" };
-            context.Matches.Setup(s => s.UpdateAsync(5, It.Is<Match>(m => m.ID == 7), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }));
-            context.SetupSummary(5, roundCount: 3, nextRound: "4");
+            context.Matches.Setup(s => s.UpdateAsync(5, It.Is<Match>(m => m.ID == 7), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 3, nextRound: "4")));
 
             var result = await context.Model.OnPostEditMatchAsync(CancellationToken.None);
 
@@ -293,7 +282,7 @@ namespace CardCollector.Tests.Pages.Tournaments
         public async Task OnPostEditMatchAsync_NonAjaxSuccess_SetsSuccessAndRedirects()
         {
             var context = CreateModel(5, null);
-            context.Matches.Setup(s => s.UpdateAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }));
+            context.Matches.Setup(s => s.UpdateAsync(5, It.IsAny<Match>(), It.IsAny<CancellationToken>())).ReturnsAsync(MatchSaveResult.Success(new Match { ID = 7 }, BuildSummary(roundCount: 1, nextRound: "2")));
 
             var result = await context.Model.OnPostEditMatchAsync(CancellationToken.None);
 
@@ -328,16 +317,24 @@ namespace CardCollector.Tests.Pages.Tournaments
         private static EventDetailViewModel BuildDetail(int id, params Match[] rounds) =>
             new()
             {
-                DiceRecord = new DiceRecord(0, 0),
                 Event = new Event { ID = id, Location = "Test Hobby Shop", Matches = rounds },
-                GameRecord = new WinLossTie(0, 0, 0),
-                MatchRecord = new WinLossTie(0, 0, 0)
+                Summary = MatchRules.Summarize(rounds)
             };
 
-        private static PageTestContext CreateModel(int id, EventDetailViewModel? detail, bool ajax = false, IReadOnlyList<DeckListItemViewModel>? deckOptions = null)
+        private static MatchSummaryViewModel BuildSummary(int roundCount, string nextRound) =>
+            new()
+            {
+                DiceRecord = new DiceRecord(0, 0),
+                GameRecord = new WinLossTie(0, 0, 0),
+                MatchRecord = new WinLossTie(0, 0, 0),
+                NextRound = nextRound,
+                RoundCount = roundCount
+            };
+
+        private static PageTestContext CreateModel(int id, EventDetailViewModel? detail, bool ajax = false, IReadOnlyList<DeckOption>? deckOptions = null)
         {
             var decks = new Mock<IDeckService>();
-            decks.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(deckOptions ?? []);
+            decks.Setup(s => s.GetOptionsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(deckOptions ?? []);
 
             var events = new Mock<IEventService>();
             events.Setup(s => s.GetAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
@@ -365,17 +362,6 @@ namespace CardCollector.Tests.Pages.Tournaments
             return JsonSerializer.SerializeToElement(json.Value);
         }
 
-        private sealed record PageTestContext(DetailsModel Model, Mock<IEventService> Events, Mock<IMatchService> Matches)
-        {
-            public void SetupSummary(int eventID, int roundCount, string nextRound) =>
-                Matches.Setup(s => s.GetSummaryAsync(eventID, It.IsAny<CancellationToken>())).ReturnsAsync(new MatchSummaryViewModel
-                {
-                    DiceRecord = new DiceRecord(0, 0),
-                    GameRecord = new WinLossTie(0, 0, 0),
-                    MatchRecord = new WinLossTie(0, 0, 0),
-                    NextRound = nextRound,
-                    RoundCount = roundCount
-                });
-        }
+        private sealed record PageTestContext(DetailsModel Model, Mock<IEventService> Events, Mock<IMatchService> Matches);
     }
 }

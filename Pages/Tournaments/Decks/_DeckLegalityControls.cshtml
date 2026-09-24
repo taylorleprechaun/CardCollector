@@ -1,5 +1,4 @@
 @model CardCollector.ViewModels.DeckLegalityViewModel
-@using System.Globalization
 @using CardCollector.ViewModels
 @{
     var showAtEventOption = Model.Events.Count > 0;
@@ -33,7 +32,7 @@
                 @foreach (var tournamentEvent in Model.Events)
                 {
                     <option value="@tournamentEvent.ID" selected="@(tournamentEvent.ID == Model.AtEventSource?.ID)">
-                        @tournamentEvent.Location (@tournamentEvent.Date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture))
+                        @tournamentEvent.Location (@TournamentDisplay.Date(tournamentEvent.Date))
                     </option>
                 }
             </select>
@@ -45,7 +44,7 @@
                 <option value="">Auto</option>
                 @foreach (var date in Model.AvailableListDates)
                 {
-                    <option value="@date.ToString("yyyy-MM-dd")" selected="@(Model.RequestedListDate == date)">@date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)</option>
+                    <option value="@TournamentDisplay.IsoDate(date)" selected="@(Model.RequestedListDate == date)">@TournamentDisplay.Date(date)</option>
                 }
             </select>
         }

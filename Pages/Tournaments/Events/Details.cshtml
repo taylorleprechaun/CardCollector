@@ -2,20 +2,20 @@
 @model CardCollector.Pages.Tournaments.Events.DetailsModel
 @using System.Globalization
 @using CardCollector.Data.Models
-@using CardCollector.Services
+@using CardCollector.Rules
 @using CardCollector.ViewModels
 @{
     var detail = Model.Detail!;
     var tournamentEvent = detail.Event;
     ViewData["Title"] = $"{tournamentEvent.Location} Event";
 
-    var finishText = tournamentEvent.Finish?.ToString() ?? tournamentEvent.FinishNote;
-    var hasDecklistUrl = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
-    var hasRounds = Model.Summary.RoundCount > 0;
+    var finishText = tournamentEvent.FinishText;
+    var hasDecklistURL = !string.IsNullOrWhiteSpace(tournamentEvent.DecklistURL);
+    var hasRounds = detail.Summary.RoundCount > 0;
 }
 
 <nav aria-label="breadcrumb" class="mb-2">
-    <a href="/Tournaments/Events" class="small"><i class="bi bi-arrow-left me-1"></i>All events</a>
+    <a asp-page="/Tournaments/Events" class="small"><i class="bi bi-arrow-left me-1"></i>All events</a>
 </nav>
 
 <div class="mb-3">
@@ -32,7 +32,7 @@
         <dd class="col-sm-9 mb-0">
             @if (detail.Format is null)
             {
-                <span class="text-muted">@EventService.NO_FORMAT_NAME</span>
+                <span class="text-muted">@FormatRules.NO_FORMAT_NAME</span>
             }
             else
             {
@@ -44,7 +44,7 @@
         <dt class="col-sm-3">Deck</dt>
         <dd class="col-sm-9 mb-0">
             <span class="text-break">@tournamentEvent.DeckName</span>
-            @if (hasDecklistUrl)
+            @if (hasDecklistURL)
             {
                 <div><a href="@tournamentEvent.DecklistURL" target="_blank" rel="noopener noreferrer" class="text-break">Decklist <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a></div>
             }
@@ -78,10 +78,10 @@
 <h2 class="h4" id="rounds">Rounds</h2>
 
 <p class="mb-3" id="matchSummary" role="status" hidden="@(!hasRounds)">
-    <partial name="_MatchSummary" model="Model.Summary" />
+    <partial name="_MatchSummary" model="detail.Summary" />
 </p>
 
-@if (Model.AreRoundsOutOfOrder)
+@if (detail.AreRoundsOutOfOrder)
 {
     <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
         <span>These rounds aren&rsquo;t in round order.</span>
@@ -99,7 +99,7 @@
     </button>
     <div class="collapse" id="addRoundPanel">
         <form method="post" asp-page-handler="AddMatch" asp-route-id="@Model.ID" class="p-3 pt-2" data-match-form="add">
-            <partial name="_MatchFormFields" model='new MatchFormViewModel { IDPrefix = "add", InitialRound = Model.Summary.NextRound }' />
+            <partial name="_MatchFormFields" model='new MatchFormViewModel { IDPrefix = "add", InitialRound = detail.Summary.NextRound }' />
             <div class="mt-3">
                 <button type="submit" class="btn btn-primary cc-tap-target">Add round</button>
             </div>

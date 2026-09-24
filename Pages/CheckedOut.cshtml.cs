@@ -1,3 +1,4 @@
+using CardCollector.Extensions;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -72,12 +73,9 @@ namespace CardCollector.Pages
             Request.Query["rarityName"].FirstOrDefault(),
             Request.Query["setName"].FirstOrDefault());
 
-        private bool IsAjaxRequest() =>
-            Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
         private async Task<IActionResult> RespondAfterMutationAsync(int cardID, string setCode, string? rarityName, string? printVariant)
         {
-            if (!IsAjaxRequest())
+            if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
 
             var (cardType, filterRarityName, setName) = GetSafeFilterQueryValues();
