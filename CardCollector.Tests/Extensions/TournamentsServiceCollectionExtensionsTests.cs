@@ -21,7 +21,7 @@ namespace CardCollector.Tests.Extensions
             using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("YamlYugiLimitRegulation");
 
             Assert.AreEqual(TimeSpan.FromSeconds(60), client.Timeout);
-            Assert.IsTrue(client.DefaultRequestHeaders.UserAgent.Count > 0);
+            Assert.AreEqual(HttpClientExtensions.USER_AGENT, client.DefaultRequestHeaders.UserAgent.ToString());
         }
 
         [TestMethod]

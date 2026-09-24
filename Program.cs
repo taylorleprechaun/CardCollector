@@ -31,14 +31,12 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddHttpClient("YGOProDeck", client =>
 {
     client.BaseAddress = new Uri("https://db.ygoprodeck.com/");
-    client.Timeout = TimeSpan.FromSeconds(120);
-    client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0");
+    client.ApplyAppDefaults(TimeSpan.FromSeconds(120));
 });
 builder.Services.AddHttpClient("TcgCsv", client =>
 {
     client.BaseAddress = new Uri("https://tcgcsv.com/");
-    client.Timeout = TimeSpan.FromSeconds(120);
-    client.DefaultRequestHeaders.Add("User-Agent", "CardCollector/1.0 (personal Yu-Gi-Oh collection tracker)");
+    client.ApplyAppDefaults(TimeSpan.FromSeconds(120));
 });
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
