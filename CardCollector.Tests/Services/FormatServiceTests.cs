@@ -98,6 +98,20 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task UpdateAsync_FormatDeletedBeforeSave_ReturnsNotFound()
+        {
+            var repository = new Mock<IFormatRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([Build(5, "Alpha Era", "2024-01-01", null)]);
+            repository.Setup(r => r.UpdateAsync(It.IsAny<Format>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var service = new FormatService(repository.Object);
+
+            var result = await service.UpdateAsync(Build(5, "Alpha Era II", "2024-01-01", null));
+
+            Assert.IsTrue(result.NotFound);
+            Assert.AreEqual("Format not found.", result.Errors.Single());
+        }
+
+        [TestMethod]
         public async Task UpdateAsync_MissingFormat_ReturnsNotFound()
         {
             using var context = InMemoryDbContextFactory.Create();

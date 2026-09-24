@@ -7,10 +7,11 @@ namespace CardCollector.Services
 {
     public sealed class FormatService : IFormatService
     {
+        private readonly IFormatRepository _repository;
+
         // Scoped, so this lives for one request: the page, EventService and AnalyticsService all read the formats,
         // and they are loaded once instead of once per caller. Any write through this service clears it.
         private IReadOnlyList<Format>? _formats;
-        private readonly IFormatRepository _repository;
 
         public FormatService(IFormatRepository repository)
         {
@@ -58,9 +59,9 @@ namespace CardCollector.Services
             if (errors.Count > 0)
                 return SaveResult.Failure(errors);
 
-            await _repository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
+            var updated = await _repository.UpdateAsync(normalized, cancellationToken).ConfigureAwait(false);
             _formats = null;
-            return SaveResult.Success();
+            return updated ? SaveResult.Success() : SaveResult.Missing("Format not found.");
         }
     }
 }

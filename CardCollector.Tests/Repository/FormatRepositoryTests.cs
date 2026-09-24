@@ -110,18 +110,21 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateAsync_FormatExists_AdvancesDateModifiedOnly()
         {
             using var context = InMemoryDbContextFactory.Create();
+            var seededAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            var seeded = BuildFormat("Alpha Era", new DateOnly(2024, 1, 1), null);
+            seeded.DateCreated = seededAt;
+            seeded.DateModified = seededAt;
+            context.Formats.Add(seeded);
+            await context.SaveChangesAsync();
             var repository = new FormatRepository(context);
-            var id = await repository.AddAsync(BuildFormat("Alpha Era", new DateOnly(2024, 1, 1), null));
-            var before = await FindAsync(repository, id);
-            await Task.Delay(10);
             var edited = BuildFormat("Alpha Era 2", new DateOnly(2024, 1, 1), null);
-            edited.ID = id;
+            edited.ID = seeded.ID;
 
             await repository.UpdateAsync(edited);
 
-            var after = await FindAsync(repository, id);
-            Assert.AreEqual(before!.DateCreated, after!.DateCreated);
-            Assert.IsTrue(after.DateModified > before.DateModified);
+            var after = await FindAsync(repository, seeded.ID);
+            Assert.AreEqual(seededAt, after!.DateCreated);
+            Assert.IsTrue(after.DateModified > seededAt);
         }
 
         [TestMethod]

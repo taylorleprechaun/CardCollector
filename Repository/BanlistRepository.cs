@@ -17,26 +17,36 @@ namespace CardCollector.Repository
     {
         private const int MAX_CONCURRENT_LIST_FETCHES = 8;
 
+        /// <summary>How long a failed first-use fetch is trusted before a request tries the network again.</summary>
+        private static readonly TimeSpan FailedFetchRetryDelay = TimeSpan.FromMinutes(5);
+
         private readonly string _cachePath;
-        private volatile BanlistCollection? _collection;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SemaphoreSlim _loadLock = new(1, 1);
         private readonly ILogger<BanlistRepository> _logger;
         private readonly BanlistSettings _settings;
+        private readonly TimeProvider _timeProvider;
         private readonly string _timestampPath;
+        private volatile BanlistCollection? _collection;
+
+        /// <summary>When the last first-use fetch failed; only read or written while holding <see cref="_loadLock"/>.</summary>
+        private DateTimeOffset? _lastFailedFetch;
 
         /// <param name="cacheDirectory">Overrides the cache location for tests; defaults to the app's <c>Data</c> directory.</param>
+        /// <param name="timeProvider">Overrides the clock for tests; defaults to the system clock.</param>
         public BanlistRepository(
             ILogger<BanlistRepository> logger,
             IHttpClientFactory httpClientFactory,
             IOptions<BanlistSettings> options,
-            string? cacheDirectory = null)
+            string? cacheDirectory = null,
+            TimeProvider? timeProvider = null)
         {
             if (options is null) throw new ArgumentNullException(nameof(options));
 
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _settings = options.Value;
+            _timeProvider = timeProvider ?? TimeProvider.System;
 
             var cacheDir = cacheDirectory ?? Path.Combine(Directory.GetCurrentDirectory(), "Data");
             _cachePath = Path.Combine(cacheDir, "banlistcache.json");
@@ -93,8 +103,16 @@ namespace CardCollector.Repository
             }
         }
 
-        /// <summary>Fetches on first use only, when nothing was on disk at startup. An existing (even stale) cache is
-        /// served as-is; only <see cref="LoadIfStaleAsync"/> refreshes a stale one, so requests never block on the network.</summary>
+        /// <summary>The cache is app-written, but a truncated or hand-edited file can still leave a list or its limits null.</summary>
+        private static bool IsComplete([NotNullWhen(true)] Banlist? list) =>
+            list?.LimitsByKonamiID is not null;
+
+        /// <summary>
+        /// Fetches on first use when nothing was on disk at startup. An existing (even stale) cache is served as-is;
+        /// only <see cref="LoadIfStaleAsync"/> refreshes a stale one. If the fetch fails, requests don't try again
+        /// until <see cref="FailedFetchRetryDelay"/> has passed, so an unreachable source can't stall every page that
+        /// needs a banlist.
+        /// </summary>
         private async Task EnsureLoadedAsync(CancellationToken cancellationToken)
         {
             if (_collection is not null)
@@ -103,11 +121,16 @@ namespace CardCollector.Repository
             await _loadLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if (_collection is null)
-                {
-                    _logger.LogInformation("No banlist cache on disk — fetching from yaml-yugi-limit-regulation");
-                    await RefreshFromSourceAsync(cancellationToken).ConfigureAwait(false);
-                }
+                if (_collection is not null)
+                    return;
+
+                var now = _timeProvider.GetUtcNow();
+                if (_lastFailedFetch is { } failedAt && now - failedAt < FailedFetchRetryDelay)
+                    return;
+
+                _logger.LogInformation("No banlist cache on disk — fetching from yaml-yugi-limit-regulation");
+                await RefreshFromSourceAsync(cancellationToken).ConfigureAwait(false);
+                _lastFailedFetch = _collection is null ? now : null;
             }
             finally
             {
@@ -177,10 +200,6 @@ namespace CardCollector.Repository
                 return null;
             }
         }
-
-        /// <summary>The cache is app-written, but a truncated or hand-edited file can still leave a list or its limits null.</summary>
-        private static bool IsComplete([NotNullWhen(true)] Banlist? list) =>
-            list?.LimitsByKonamiID is not null;
 
         private BanlistCollection? LoadFromDisk()
         {

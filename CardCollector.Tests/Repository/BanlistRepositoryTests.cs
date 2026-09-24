@@ -69,6 +69,40 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetCurrentAsync_FirstUseFetchFailedAndRetryDelayPassed_FetchesAgain()
+        {
+            var isSourceUp = false;
+            var indexCallCount = 0;
+            var clock = new FakeTimeProvider(new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero));
+            var repo = CreateRepository(BuildCountingHandler(() => isSourceUp, () => indexCallCount++), timeProvider: clock);
+            await repo.GetCurrentAsync();
+            isSourceUp = true;
+            clock.Advance(TimeSpan.FromMinutes(6));
+
+            var current = await repo.GetCurrentAsync();
+
+            Assert.AreEqual(2, indexCallCount);
+            Assert.AreEqual(new DateOnly(2024, 1, 1), current!.EffectiveDate);
+        }
+
+        [TestMethod]
+        public async Task GetCurrentAsync_FirstUseFetchFailedRecently_DoesNotFetchAgain()
+        {
+            var indexCallCount = 0;
+            var clock = new FakeTimeProvider(new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero));
+            var repo = CreateRepository(BuildCountingHandler(() => false, () => indexCallCount++), timeProvider: clock);
+            await repo.GetCurrentAsync();
+            clock.Advance(TimeSpan.FromMinutes(4));
+
+            var current = await repo.GetCurrentAsync();
+            var dates = await repo.GetAvailableListsAsync();
+
+            Assert.AreEqual(1, indexCallCount);
+            Assert.IsNull(current);
+            Assert.AreEqual(0, dates.Count);
+        }
+
+        [TestMethod]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}}}", DisplayName = "Lists missing")]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":null}", DisplayName = "Lists null")]
         [DataRow("{\"Current\":{\"EffectiveDate\":\"2020-01-01\",\"LimitsByKonamiID\":{}},\"Lists\":[null]}", DisplayName = "Null list entry")]
@@ -282,6 +316,23 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task LoadIfStaleAsync_FirstUseFetchFailedRecently_StillFetches()
+        {
+            var isSourceUp = false;
+            var indexCallCount = 0;
+            var clock = new FakeTimeProvider(new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero));
+            var repo = CreateRepository(BuildCountingHandler(() => isSourceUp, () => indexCallCount++), timeProvider: clock);
+            await repo.GetCurrentAsync();
+            isSourceUp = true;
+
+            await repo.LoadIfStaleAsync();
+            var current = await repo.GetCurrentAsync();
+
+            Assert.AreEqual(2, indexCallCount);
+            Assert.AreEqual(new DateOnly(2024, 1, 1), current!.EffectiveDate);
+        }
+
+        [TestMethod]
         public async Task LoadIfStaleAsync_OneDatedListFetchFails_KeepsExistingCache()
         {
             SeedCache(new DateOnly(2020, 1, 1), ageDays: 30, (999, BanlistLimit.Forbidden));
@@ -323,6 +374,23 @@ namespace CardCollector.Tests.Repository
         {
             _cacheDir = Path.Combine(Path.GetTempPath(), "BanlistRepositoryTests_" + Guid.NewGuid().ToString("N"));
         }
+
+        /// <summary>Serves one dated list while <paramref name="isSourceUp"/> is true and fails every request otherwise.</summary>
+        private static FakeHttpMessageHandler BuildCountingHandler(Func<bool> isSourceUp, Action onIndexFetch) =>
+            new(request =>
+            {
+                var url = request.RequestUri!.ToString();
+                if (url.EndsWith("/index", StringComparison.Ordinal))
+                    onIndexFetch();
+
+                if (!isSourceUp())
+                    return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
+                return url.EndsWith("/index", StringComparison.Ordinal)
+                    ? JsonResponse(JsonConvert.SerializeObject(new[] { new { name = "2024-01-01.vector.json" } }))
+                    : JsonResponse(BuildListJson("2024-01-01", (100, 0)));
+            });
+
         private static FakeHttpMessageHandler BuildHandler(
             IReadOnlyList<string>? indexNames = null,
             string? currentJson = null,
@@ -362,7 +430,7 @@ namespace CardCollector.Tests.Repository
         private static HttpResponseMessage JsonResponse(string json) =>
             new(HttpStatusCode.OK) { Content = new StringContent(json) };
 
-        private BanlistRepository CreateRepository(HttpMessageHandler handler, int cacheTtlDays = 7)
+        private BanlistRepository CreateRepository(HttpMessageHandler handler, int cacheTtlDays = 7, TimeProvider? timeProvider = null)
         {
             var httpClient = new HttpClient(handler);
             var factory = new Mock<IHttpClientFactory>();
@@ -375,7 +443,7 @@ namespace CardCollector.Tests.Repository
                 IndexUrl = "https://fake.example/index"
             };
 
-            return new BanlistRepository(new Mock<ILogger<BanlistRepository>>().Object, factory.Object, Options.Create(settings), _cacheDir);
+            return new BanlistRepository(new Mock<ILogger<BanlistRepository>>().Object, factory.Object, Options.Create(settings), _cacheDir, timeProvider);
         }
         // Writes in the on-disk cache shape BanlistRepository.WriteCache produces (Current/Lists of Banlist,
         // not the raw {date, regulation} vector-file shape BuildListJson fakes for HTTP responses).
