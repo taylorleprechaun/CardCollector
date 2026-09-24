@@ -66,6 +66,11 @@ function updateCartBadge(rawCount, rawTotal) {
     badge.classList.toggle('d-none', count === 0);
 }
 
+// Every AJAX POST goes through here, so the X-Requested-With header the server checks for is never left off.
+function postAjax(url, body) {
+    return fetch(url, { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+}
+
 function setPickerDate(id, value) {
     var el = document.getElementById(id);
     if (!el) return;

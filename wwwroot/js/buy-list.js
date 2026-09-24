@@ -67,11 +67,7 @@ async function submitAddToCart() {
 
     addToCartBtn.disabled = true;
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax(url, formData);
 
         if (!response.ok) {
             alert('Something went wrong adding this to your cart. Please try again.');

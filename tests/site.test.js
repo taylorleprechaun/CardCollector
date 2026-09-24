@@ -247,6 +247,25 @@ describe('site.js', () => {
     });
   });
 
+  describe('postAjax', () => {
+    it('posts the body with the AJAX header and returns the response', async () => {
+      loadScript('site.js');
+      const response = { ok: true };
+      globalThis.fetch = vi.fn().mockResolvedValue(response);
+      const body = new FormData();
+      body.append('id', '7');
+
+      const result = await postAjax('/Page?handler=Save', body);
+
+      expect(result).toBe(response);
+      expect(globalThis.fetch).toHaveBeenCalledWith('/Page?handler=Save', {
+        method: 'POST',
+        body,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+    });
+  });
+
   describe('selectQuantity', () => {
     it('sets the hidden input value and marks only the clicked button active', () => {
       document.body.innerHTML = `

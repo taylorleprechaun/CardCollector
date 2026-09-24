@@ -57,11 +57,7 @@ async function postDeckImport(url, form) {
     buttons.forEach((button) => { button.disabled = true; });
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax(url, new FormData(form));
 
         if (response.status === 400) {
             showDeckImportErrors((await response.json()).errors);
@@ -99,11 +95,7 @@ async function previewDeckList() {
     }
 
     try {
-        const response = await fetch(form.dataset.parseUrl, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax(form.dataset.parseUrl, new FormData(form));
         const body = response.ok || response.status === 400 ? await response.json() : null;
         if (request !== deckPreviewRequest) return;
 

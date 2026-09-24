@@ -266,11 +266,7 @@ async function submitMatchForm(form) {
     buttons.forEach((button) => { button.disabled = true; });
 
     try {
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax(form.action, new FormData(form));
 
         if (response.status === 400) {
             showMatchErrors(form, (await response.json()).errors);

@@ -64,11 +64,7 @@ async function submitAjaxForm(form, submitter) {
     const formData = new FormData(form, submitter ?? undefined);
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const response = await postAjax(url, formData);
 
         if (!response.ok) {
             alert('Something went wrong saving your change. Please refresh and try again.');

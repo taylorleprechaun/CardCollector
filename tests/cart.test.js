@@ -33,6 +33,7 @@ describe('cart.js', () => {
   describe('persistCartLineQuantity', () => {
     it('logs a warning and does not throw when fetch rejects', async () => {
       document.body.innerHTML = '';
+      loadScript('site.js');
       loadScript('cart.js');
       globalThis.fetch = vi.fn().mockRejectedValue(new Error('offline'));
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -43,6 +44,7 @@ describe('cart.js', () => {
 
     it('logs a warning when the server responds with a non-ok status', async () => {
       document.body.innerHTML = '';
+      loadScript('site.js');
       loadScript('cart.js');
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -54,6 +56,7 @@ describe('cart.js', () => {
 
     it('omits the token field when no token is present on the page', async () => {
       document.body.innerHTML = '';
+      loadScript('site.js');
       loadScript('cart.js');
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
 
@@ -66,6 +69,7 @@ describe('cart.js', () => {
     it('sends id, quantity, and the anti-forgery token when present', async () => {
       document.body.innerHTML = `
         <form id="cartSubmitForm"><input name="__RequestVerificationToken" value="tok123" /></form>`;
+      loadScript('site.js');
       loadScript('cart.js');
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
 

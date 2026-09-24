@@ -61,6 +61,7 @@ function buildDom({ rows = '', summary = '', round = '3' } = {}) {
   const addRound = document.querySelector('#addForm [data-match-field="round"]');
   addRound.value = round;
   addRound.dataset.suggested = round;
+  loadScript('site.js');
   loadScript('event-matches.js');
 }
 
