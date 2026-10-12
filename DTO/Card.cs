@@ -2,7 +2,11 @@ using Newtonsoft.Json;
 
 namespace CardCollector.DTO
 {
-    public sealed class Card
+    /// <summary>
+    /// The app's card shape, deserialized from both yaml-yugi (after mapping) and YGOProDeck. Not sealed so
+    /// <see cref="YGOProDeck.YGOProDeckCard"/> can add the YGOProDeck-only fields to the same parse.
+    /// </summary>
+    public class Card
     {
         [JsonProperty("archetype")]
         public string? Archetype { get; set; }

@@ -1,48 +1,40 @@
-using CardCollector.Data;
 using CardCollector.DTO;
 using CardCollector.DTO.YamlYugi;
+using CardCollector.DTO.YGOProDeck;
+using CardCollector.Repository.Sources;
 using CardCollector.Rules;
 using CardCollector.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace CardCollector.Repository
 {
     public sealed class CardDataRepository : ICardDataRepository
     {
-        private const string CardInfoApiPath = "api/v7/cardinfo.php";
-
-        private readonly int _cacheTtlDays;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly int _imageCacheTtlDays;
         private readonly ILogger<CardDataRepository> _logger;
         private readonly ITCGCatalogCache _tcgCatalogCache;
-        private readonly string _yamlYugiUrl;
+        private readonly IYamlYugiSource _yamlYugiSource;
+        private readonly IYGOProDeckSource _ygoProDeckSource;
         private IReadOnlyList<Card> _browseableCards = default!;
         private IReadOnlyDictionary<int, Card> _cardIndex = default!;
         private IReadOnlyList<Card> _cards = default!;
         private IReadOnlyDictionary<int, int> _passcodeAliases = default!;
         private IReadOnlyDictionary<string, string> _setNamesByCode = default!;
         private IReadOnlyDictionary<string, string> _setPrefixByName = default!;
-        public CardDataRepository(ILogger<CardDataRepository> logger, IHttpClientFactory httpClientFactory, ITCGCatalogCache tcgCatalogCache, IConfiguration config)
+
+        public CardDataRepository(
+            ILogger<CardDataRepository> logger,
+            ITCGCatalogCache tcgCatalogCache,
+            IYamlYugiSource yamlYugiSource,
+            IYGOProDeckSource ygoProDeckSource)
         {
             _logger = logger;
-            _httpClientFactory = httpClientFactory;
             _tcgCatalogCache = tcgCatalogCache;
-            _cacheTtlDays = config.GetValue<int>("CardDataSettings:CacheTtlDays", 7);
-            _imageCacheTtlDays = config.GetValue<int>("CardDataSettings:ImageCacheTtlDays", 30);
-            _yamlYugiUrl = config.GetValue<string>("CardDataSettings:YamlYugiUrl")
-                ?? "https://dawnbrandbots.github.io/yaml-yugi/cards.yaml";
+            _yamlYugiSource = yamlYugiSource;
+            _ygoProDeckSource = ygoProDeckSource;
 
-            // Images load first: BuildCards() reads the same cardcache.json that image loading writes.
             // Disk-only, no network, so construction never blocks startup.
-            var images = LoadImagesFromDisk();
-            Initialize(BuildCards(LoadYamlCardsFromDisk()), images);
+            Initialize(_yamlYugiSource.ReadCached(), _ygoProDeckSource.ReadCached());
         }
 
         public IReadOnlyList<string> DistinctRarityNames { get; private set; } = default!;
@@ -63,30 +55,20 @@ namespace CardCollector.Repository
 
         public async Task LoadIfStaleAsync()
         {
-            var images = await LoadImagesAsync(forceRefresh: false).ConfigureAwait(false);
-            var yamlCards = await LoadYamlCardsAsync(forceRefresh: false).ConfigureAwait(false);
-            Initialize(BuildCards(yamlCards), images);
+            var ygoProDeckCards = await _ygoProDeckSource.LoadAsync(forceRefresh: false).ConfigureAwait(false);
+            var yamlCards = await _yamlYugiSource.LoadAsync(forceRefresh: false).ConfigureAwait(false);
+            Initialize(yamlCards, ygoProDeckCards);
         }
 
         public async Task RefreshAsync()
         {
-            var images = await LoadImagesAsync(forceRefresh: true).ConfigureAwait(false);
-            var yamlCards = await LoadYamlCardsAsync(forceRefresh: true).ConfigureAwait(false);
-            Initialize(BuildCards(yamlCards), images);
+            var ygoProDeckCards = await _ygoProDeckSource.LoadAsync(forceRefresh: true).ConfigureAwait(false);
+            var yamlCards = await _yamlYugiSource.LoadAsync(forceRefresh: true).ConfigureAwait(false);
+            Initialize(yamlCards, ygoProDeckCards);
         }
 
-        private static void SkipToNextDocument(IParser parser)
+        private IReadOnlyList<Card> BuildCards(IReadOnlyList<Card> yamlCards, IReadOnlyList<Card> ygoProDeckCards)
         {
-            while (parser.Current is not null and not DocumentEnd and not StreamEnd)
-                parser.MoveNext();
-            if (parser.Current is DocumentEnd)
-                parser.MoveNext();
-        }
-
-        private IReadOnlyList<Card> BuildCards(IReadOnlyList<Card> yamlCards)
-        {
-            var ygoProDeckCards = LoadRawYGOProDeckCards();
-
             // Built before the merge: afterwards YGOProDeck's alternate primary ids exist as cards of their own,
             // and the yaml-yugi ids are what tell the real card from its duplicate.
             _passcodeAliases = PasscodeAliasResolver.BuildAliases(yamlCards.Select(c => c.ID), ygoProDeckCards);
@@ -116,38 +98,14 @@ namespace CardCollector.Repository
             return mergedCards;
         }
 
-        private async Task<IReadOnlyList<YamlCard>?> FetchFromYamlYugiAsync()
+        private void Initialize(IReadOnlyList<YamlCard> yamlCards, IReadOnlyList<YGOProDeckCard> ygoProDeckCards)
         {
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                _logger.LogInformation("Downloading yaml-yugi card data from {Url}", _yamlYugiUrl);
-                var yaml = await client.GetStringAsync(_yamlYugiUrl).ConfigureAwait(false);
-                return ParseYamlCards(yaml);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch card data from yaml-yugi");
-                return null;
-            }
-        }
+            // Captured before BuildCards, which merges these same card objects into the result.
+            var imagesByCardID = ygoProDeckCards
+                .Where(c => c.CardImages?.Any() == true)
+                .ToDictionary(c => c.ID, c => c.CardImages!);
 
-        private async Task<string?> FetchImageCacheAsync()
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("YGOProDeck");
-                return await client.GetStringAsync(CardInfoApiPath).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch image cache from YGOProDeck API");
-                return null;
-            }
-        }
-
-        private void Initialize(IReadOnlyList<Card> rawCards, IReadOnlyDictionary<int, IReadOnlyList<Image>> imagesByCardID)
-        {
+            var rawCards = BuildCards(CardDataMapper.ConvertYamlCards(yamlCards), ygoProDeckCards);
             CardDataMapper.AttachImages(rawCards, imagesByCardID);
 
             var newRarityRowCount = CardDataMapper.EnrichWithPrintVariants(rawCards, _tcgCatalogCache.GetAllPrintings());
@@ -186,55 +144,6 @@ namespace CardCollector.Repository
                 .OrderBy(n => n)
                 .ToList();
         }
-        private IReadOnlyList<Card> LoadCardsFromJson(string path)
-        {
-            try
-            {
-                var json = File.ReadAllText(path);
-                return JsonConvert.DeserializeObject<List<Card>>(json) ?? [];
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to deserialize card data from {Path}", path);
-                return [];
-            }
-        }
-
-        private async Task<IReadOnlyDictionary<int, IReadOnlyList<Image>>> LoadImagesAsync(bool forceRefresh)
-        {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cachePath = Path.Combine(cacheDir, "cardcache.json");
-            var timestampPath = cachePath + ".timestamp";
-
-            if (!forceRefresh && FileCacheHelper.IsCacheFresh(cachePath, timestampPath, TimeSpan.FromDays(_imageCacheTtlDays)))
-            {
-                _logger.LogInformation("Loading image data from cache ({Path})", cachePath);
-            }
-            else
-            {
-                _logger.LogInformation("Image cache is missing or stale — fetching from YGOProDeck API");
-                var json = await FetchImageCacheAsync().ConfigureAwait(false);
-                if (json is not null)
-                {
-                    Directory.CreateDirectory(cacheDir);
-                    File.WriteAllText(cachePath, json);
-                    FileCacheHelper.WriteTimestamp(timestampPath);
-                    _logger.LogInformation("Image cache saved to {Path}", cachePath);
-                }
-                else if (File.Exists(cachePath))
-                {
-                    _logger.LogWarning("Image cache fetch failed — falling back to stale image cache");
-                }
-            }
-
-            return ParseImagesFromDisk(cachePath);
-        }
-
-        private IReadOnlyDictionary<int, IReadOnlyList<Image>> LoadImagesFromDisk()
-        {
-            var cachePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "cardcache.json");
-            return ParseImagesFromDisk(cachePath);
-        }
 
         private IReadOnlyDictionary<(string SetCode, string RarityName), string> LoadRarityCorrections()
         {
@@ -259,142 +168,6 @@ namespace CardCollector.Repository
             }
         }
 
-        private IReadOnlyList<Card> LoadRawYGOProDeckCards()
-        {
-            var cachePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "cardcache.json");
-            if (!File.Exists(cachePath))
-                return [];
-
-            try
-            {
-                var json = File.ReadAllText(cachePath);
-                var root = JsonConvert.DeserializeObject<RawCardCacheRoot>(json);
-                return root?.Data ?? [];
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to parse raw YGOProDeck card cache for card-completeness merge");
-                return [];
-            }
-        }
-
-        private async Task<IReadOnlyList<Card>> LoadYamlCardsAsync(bool forceRefresh)
-        {
-            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
-            var cardDataPath = Path.Combine(cacheDir, "carddata.json");
-            var timestampPath = cardDataPath + ".timestamp";
-
-            if (!forceRefresh && FileCacheHelper.IsCacheFresh(cardDataPath, timestampPath, TimeSpan.FromDays(_cacheTtlDays)))
-            {
-                var cachedCards = LoadCardsFromJson(cardDataPath);
-                if (cachedCards.Count == 0 || CardDataMapper.HasKonamiIDs(cachedCards))
-                {
-                    _logger.LogInformation("Loading card data from cache ({Path})", cardDataPath);
-                    return cachedCards;
-                }
-
-                _logger.LogInformation("Card data cache predates Konami IDs — forcing a refresh from yaml-yugi so banlist data can resolve");
-            }
-            else
-            {
-                _logger.LogInformation("Card data cache is missing or stale — fetching from yaml-yugi");
-            }
-
-            var yamlCards = await FetchFromYamlYugiAsync().ConfigureAwait(false);
-
-            if (yamlCards is not null)
-            {
-                var cards = CardDataMapper.ConvertYamlCards(yamlCards);
-                Directory.CreateDirectory(cacheDir);
-                File.WriteAllText(cardDataPath, JsonConvert.SerializeObject(cards));
-                FileCacheHelper.WriteTimestamp(timestampPath);
-                _logger.LogInformation("Card data cached to {Path} ({Count} cards)", cardDataPath, cards.Count);
-                return cards;
-            }
-
-            if (File.Exists(cardDataPath))
-            {
-                _logger.LogWarning("yaml-yugi fetch failed — falling back to stale card data cache");
-                return LoadCardsFromJson(cardDataPath);
-            }
-
-            _logger.LogError("No card data available — yaml-yugi fetch failed and no cache exists");
-            return [];
-        }
-
-        private IReadOnlyList<Card> LoadYamlCardsFromDisk()
-        {
-            var cardDataPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "carddata.json");
-            return File.Exists(cardDataPath) ? LoadCardsFromJson(cardDataPath) : [];
-        }
-
-        private IReadOnlyDictionary<int, IReadOnlyList<Image>> ParseImagesFromDisk(string cachePath)
-        {
-            if (!File.Exists(cachePath))
-            {
-                _logger.LogWarning("No image cache available — card images will use fallback URLs");
-                return new Dictionary<int, IReadOnlyList<Image>>();
-            }
-
-            try
-            {
-                var json = File.ReadAllText(cachePath);
-                var root = JsonConvert.DeserializeObject<ImageCacheRoot>(json);
-                return (root?.Data ?? [])
-                    .Where(c => c.CardImages?.Any() == true)
-                    .ToDictionary(c => c.ID, c => (IReadOnlyList<Image>)c.CardImages!.ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to parse image cache — card images will use fallback URLs");
-                return new Dictionary<int, IReadOnlyList<Image>>();
-            }
-        }
-        private IReadOnlyList<YamlCard> ParseYamlCards(string yaml)
-        {
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                .IgnoreUnmatchedProperties()
-                .Build();
-
-            var cards = new List<YamlCard>();
-            using var reader = new StringReader(yaml);
-            var parser = new Parser(reader);
-            parser.Consume<StreamStart>();
-
-            while (parser.Accept<DocumentStart>(out _))
-            {
-                try
-                {
-                    var card = deserializer.Deserialize<YamlCard>(parser);
-                    if (card is not null)
-                        cards.Add(card);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Skipping unparseable yaml-yugi card document");
-                    SkipToNextDocument(parser);
-                }
-            }
-
-            _logger.LogInformation("Parsed {Count} card documents from yaml-yugi", cards.Count);
-            return cards;
-        }
-        private sealed class ImageCacheCard
-        {
-            [JsonProperty("card_images")]
-            public IEnumerable<Image>? CardImages { get; set; }
-
-            [JsonProperty("id")]
-            public int ID { get; set; }
-        }
-
-        private sealed class ImageCacheRoot
-        {
-            [JsonProperty("data")]
-            public IEnumerable<ImageCacheCard>? Data { get; set; }
-        }
-
         private sealed class RarityCorrectionEntry
         {
             public string? NewRarityName { get; set; }
@@ -402,12 +175,6 @@ namespace CardCollector.Repository
             public string? OldRarityName { get; set; }
 
             public string? SetCode { get; set; }
-        }
-
-        private sealed class RawCardCacheRoot
-        {
-            [JsonProperty("data")]
-            public IReadOnlyList<Card>? Data { get; set; }
         }
     }
 }

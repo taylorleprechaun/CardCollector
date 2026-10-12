@@ -241,10 +241,6 @@ namespace CardCollector.Repository
             return hyphen > 0 ? code[..hyphen] : code;
         }
 
-        /// <summary>True when at least one card has a Konami ID; false means the cache predates the field.</summary>
-        public static bool HasKonamiIDs(IEnumerable<Card> cards) =>
-            cards.Any(c => c.KonamiID.HasValue);
-
         public static bool IsSpeedDuelSet(string? setName) =>
             setName?.Contains("Speed Duel", StringComparison.OrdinalIgnoreCase) == true;
 

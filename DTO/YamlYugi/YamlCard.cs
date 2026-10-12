@@ -9,6 +9,13 @@ namespace CardCollector.DTO.YamlYugi
         public string? CardType { get; set; }
         public string? Def { get; set; }
 
+        /// <summary>
+        /// The id YGOProDeck uses for a card with no real passcode (e.g. the Egyptian God cards' 10000000). Null for
+        /// every card that has a <see cref="Password"/>.
+        /// </summary>
+        [YamlMember(Alias = "fake_password")]
+        public int? FakePassword { get; set; }
+
         [YamlMember(Alias = "konami_id")]
         public int? KonamiID { get; set; }
 

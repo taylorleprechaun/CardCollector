@@ -141,6 +141,31 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public void BuildGroupEntries_ProductWithGroup_CarriesProductAndGroupIDs()
+        {
+            var products = new List<TCGCatalogProduct>
+            {
+                new()
+                {
+                    GroupID = 24822,
+                    ProductID = 713500,
+                    Name = "Synthetic Dragon (Extended Art)",
+                    ExtendedData = [new() { Name = "Number", Value = "SYN-EN001" }, new() { Name = "Rarity", Value = "Ultra Rare" }]
+                }
+            };
+            var prices = new List<TCGCatalogPrice>
+            {
+                new() { ProductID = 713500, MarketPrice = 3m, SubTypeName = "1st Edition" },
+                new() { ProductID = 713500, MarketPrice = 2m, SubTypeName = "Unlimited" }
+            };
+
+            var result = TCGCatalogCache.BuildGroupEntries(products, prices).ToList();
+
+            Assert.AreEqual(2, result.Count);
+            Assert.IsTrue(result.All(r => r.ProductID == 713500 && r.GroupID == 24822));
+        }
+
+        [TestMethod]
         public void BuildGroupEntries_QualifierIsProductsOwnSetCode_PrintVariantIsNull()
         {
             var products = new List<TCGCatalogProduct>
@@ -159,6 +184,27 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Tri-Horned Dragon", result[0].CardName);
             Assert.IsNull(result[0].PrintVariant);
         }
+
+        [TestMethod]
+        public void HasProductIDs_CacheWrittenBeforeProductIDs_ReturnsFalse()
+        {
+            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002" } };
+
+            var result = TCGCatalogCache.HasProductIDs(printings);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void HasProductIDs_PrintingHasProductID_ReturnsTrue()
+        {
+            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002", ProductID = 713500 } };
+
+            var result = TCGCatalogCache.HasProductIDs(printings);
+
+            Assert.IsTrue(result);
+        }
+
         [TestMethod]
         public void ParseProductName_NoParentheticalQualifier_ReturnsNameUnchangedAndNullVariant()
         {

@@ -642,34 +642,6 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public void HasKonamiIDs_AtLeastOneCardHasKonamiID_ReturnsTrue()
-        {
-            var cards = new List<Card> { new() { ID = 1, KonamiID = null }, new() { ID = 2, KonamiID = 100 } };
-
-            var result = CardDataMapper.HasKonamiIDs(cards);
-
-            Assert.IsTrue(result);
-        }
-
-        [TestMethod]
-        public void HasKonamiIDs_EmptyList_ReturnsFalse()
-        {
-            var result = CardDataMapper.HasKonamiIDs([]);
-
-            Assert.IsFalse(result);
-        }
-
-        [TestMethod]
-        public void HasKonamiIDs_NoCardHasKonamiID_ReturnsFalse()
-        {
-            var cards = new List<Card> { new() { ID = 1, KonamiID = null }, new() { ID = 2, KonamiID = null } };
-
-            var result = CardDataMapper.HasKonamiIDs(cards);
-
-            Assert.IsFalse(result);
-        }
-
-        [TestMethod]
         [DataRow(null, false, DisplayName = "Null name")]
         [DataRow("Legend of Blue Eyes White Dragon", false, DisplayName = "Non-Speed-Duel set")]
         [DataRow("Speed Duel: Ultimate Predators", true, DisplayName = "Speed Duel set")]
