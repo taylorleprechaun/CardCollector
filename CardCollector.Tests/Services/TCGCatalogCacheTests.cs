@@ -224,6 +224,18 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        [DataRow("Synthetic Clown (Starfoil)", "Starfoil Rare", DisplayName = "Starfoil")]
+        [DataRow("Synthetic Clown (Shatterfoil)", "Shatterfoil Rare", DisplayName = "Shatterfoil")]
+        [DataRow("Synthetic Dragon (Secret)", "Secret Rare", DisplayName = "Secret")]
+        public void ParseProductName_QualifierIsRarityWithoutRareSuffix_TreatedAsRedundant(string productName, string rarityName)
+        {
+            var (cardName, printVariant) = TCGCatalogCache.ParseProductName(productName, rarityName);
+
+            Assert.IsNull(printVariant);
+            Assert.IsFalse(cardName.Contains('('));
+        }
+
+        [TestMethod]
         public void ParseProductName_QualifierMatchesOwnSetCode_TreatedAsRedundant()
         {
             var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Tri-Horned Dragon (LOB-000)", "Secret Rare", "LOB-000");
@@ -247,6 +259,15 @@ namespace CardCollector.Tests.Services
             var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Sphere Mode (Secret Rare)", "Secret Rare");
 
             Assert.AreEqual("Sphere Mode", cardName);
+            Assert.IsNull(printVariant);
+        }
+
+        [TestMethod]
+        public void ParseProductName_QualifierMatchesRarityWithDifferentApostrophe_TreatedAsRedundant()
+        {
+            var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Synthetic God (Ultra Pharaoh's Rare)", "Ultra Pharaoh’s Rare");
+
+            Assert.AreEqual("Synthetic God", cardName);
             Assert.IsNull(printVariant);
         }
 

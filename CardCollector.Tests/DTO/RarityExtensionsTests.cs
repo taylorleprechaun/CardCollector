@@ -70,6 +70,16 @@ namespace CardCollector.Tests.DTO
         }
 
         [TestMethod]
+        [DataRow("Starfoil", DisplayName = "Bare Starfoil")]
+        [DataRow("starfoil", DisplayName = "Case-insensitive match")]
+        public void NormalizeRarityName_BareStarfoil_ReturnsStarfoilRare(string rarityName)
+        {
+            var result = RarityExtensions.NormalizeRarityName(rarityName);
+
+            Assert.AreEqual("Starfoil Rare", result);
+        }
+
+        [TestMethod]
         [DataRow(null, DisplayName = "Null")]
         [DataRow("", DisplayName = "Empty")]
         [DataRow("Common", DisplayName = "Already Common")]
