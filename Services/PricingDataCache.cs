@@ -7,7 +7,7 @@ namespace CardCollector.Services
     {
         private readonly ICardDataRepository _cardDataRepository;
         private readonly ITCGCatalogCache _tcgCatalogCache;
-        private IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> _pricingIndex;
+        private volatile IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> _pricingIndex;
 
         public PricingDataCache(ICardDataRepository cardDataRepository, ITCGCatalogCache tcgCatalogCache)
         {
@@ -17,28 +17,24 @@ namespace CardCollector.Services
         }
 
         /// <summary>
-        /// Groups printings by (SetCode, RarityName, PrintVariant) into a lookup index (public for direct unit
-        /// testing). Cross-set-code collisions within the same key (e.g. old reprints sharing a set code across
-        /// different tcgcsv groups) resolve by last-group-wins, since <see cref="ITCGCatalogCache"/> has no
-        /// concept of which group "owns" a set code.
+        /// Groups price rows (one per product and edition) by TCGPlayer product id (public for direct unit testing). Rows
+        /// without a product id, from a cache written before it was captured, are left out.
         /// </summary>
-        public static IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> BuildIndex(
-            IEnumerable<TCGPriceSet> printings)
-        {
-            var index = new Dictionary<(string, string, string?), List<TCGPriceSet>>();
-            foreach (var group in printings.GroupBy(e => BuildKey(e.Code, e.RarityName, e.PrintVariant)))
-                index[group.Key] = group.ToList();
+        public static IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> BuildIndex(IEnumerable<TCGPriceSet> printings) =>
+            printings
+                .Where(p => p.ProductID > 0)
+                .GroupBy(p => p.ProductID)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<TCGPriceSet>)g.ToList());
 
-            return index.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<TCGPriceSet>)kv.Value);
-        }
+        public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
+            LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
 
         /// <summary>
-        /// Looks up a card's known printings (via <see cref="ICardDataRepository"/>) in the pricing index, since
-        /// tcgcsv.com has no concept of the card's numeric ID (public for direct unit testing).
+        /// Returns the price rows of every TCGPlayer product linked to the card's printings (public for direct unit testing).
+        /// Each row is relabeled with its printing's set code, rarity, and variant, so callers match prices to printings by
+        /// the catalog's values even when TCGPlayer words the product differently.
         /// </summary>
-        public static IReadOnlyList<TCGPriceSet> LookupCardSets(
-            Card? card,
-            IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlyList<TCGPriceSet>> pricingIndex)
+        public static IReadOnlyList<TCGPriceSet> LookupCardSets(Card? card, IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> pricingIndex)
         {
             if (card?.CardSets is null)
                 return [];
@@ -49,26 +45,28 @@ namespace CardCollector.Services
                 if (string.IsNullOrWhiteSpace(set.Code))
                     continue;
 
-                var key = BuildKey(set.Code, set.RarityName, set.PrintVariant);
-                if (pricingIndex.TryGetValue(key, out var priceSets))
-                    matches.AddRange(priceSets);
+                foreach (var productID in set.TCGProductIDs)
+                {
+                    if (!pricingIndex.TryGetValue(productID, out var rows))
+                        continue;
+
+                    matches.AddRange(rows.Select(row => new TCGPriceSet
+                    {
+                        CardName = row.CardName,
+                        Code = set.Code,
+                        Edition = row.Edition,
+                        GroupID = row.GroupID,
+                        PriceRaw = row.PriceRaw,
+                        PrintVariant = set.PrintVariant,
+                        ProductID = row.ProductID,
+                        RarityName = set.RarityName ?? row.RarityName
+                    }));
+                }
             }
 
             return matches;
         }
 
-        public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
-            LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
-
         public void RebuildIndex() => _pricingIndex = BuildIndex(_tcgCatalogCache.GetAllPrintings());
-
-        public async Task RefreshAsync()
-        {
-            await _tcgCatalogCache.RefreshAsync().ConfigureAwait(false);
-            _pricingIndex = BuildIndex(_tcgCatalogCache.GetAllPrintings());
-        }
-
-        private static (string SetCode, string RarityName, string? PrintVariant) BuildKey(string setCode, string? rarityName, string? printVariant) =>
-            (setCode.ToUpperInvariant(), (RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName ?? string.Empty).ToUpperInvariant(), printVariant?.ToUpperInvariant());
     }
 }

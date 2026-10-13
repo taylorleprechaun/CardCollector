@@ -20,9 +20,20 @@ namespace CardCollector.Tests.Rules.Catalog
                 new() { CardName = "Synthetic Dragon", Code = "SYN-EN001", Edition = "Unlimited", ProductID = 500, RarityName = "Ultra Rare" }
             };
 
-            var products = CatalogSourceNormalizer.FromTCGPlayer(rows);
+            var products = CatalogSourceNormalizer.FromTCGPlayer(rows, NoCorrections);
 
             Assert.AreEqual(500, products.Single().ProductID);
+        }
+
+        [TestMethod]
+        public void FromTCGPlayer_RarityInCorrectionTable_IsCorrected()
+        {
+            var rows = new List<TCGPriceSet> { new() { CardName = "Synthetic Fairy", Code = "BP03-EN076", ProductID = 500, RarityName = "Shatterfoil Rare" } };
+            var corrections = new Dictionary<(string, string), string> { [("BP03-EN076", "SHATTERFOIL RARE")] = "Rare" };
+
+            var products = CatalogSourceNormalizer.FromTCGPlayer(rows, corrections);
+
+            Assert.AreEqual("Rare", products.Single().RarityName);
         }
 
         [TestMethod]
@@ -30,7 +41,7 @@ namespace CardCollector.Tests.Rules.Catalog
         {
             var rows = new List<TCGPriceSet> { new() { CardName = "Synthetic Dragon", Code = "SYN-EN001", RarityName = "Ultra Rare" } };
 
-            var products = CatalogSourceNormalizer.FromTCGPlayer(rows);
+            var products = CatalogSourceNormalizer.FromTCGPlayer(rows, NoCorrections);
 
             Assert.AreEqual(0, products.Count);
         }
@@ -40,7 +51,7 @@ namespace CardCollector.Tests.Rules.Catalog
         {
             var rows = new List<TCGPriceSet> { new() { CardName = "Synthetic Dragon", Code = "SYN-EN001", ProductID = 500, RarityName = "Short Print" } };
 
-            var products = CatalogSourceNormalizer.FromTCGPlayer(rows);
+            var products = CatalogSourceNormalizer.FromTCGPlayer(rows, NoCorrections);
 
             Assert.AreEqual("Common", products.Single().RarityName);
         }

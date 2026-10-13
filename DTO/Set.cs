@@ -13,10 +13,13 @@ namespace CardCollector.DTO
         [JsonProperty("set_price")]
         public decimal Price { get; set; }
 
+        /// <summary>The catalog printing this row is; 0 for rows that don't come from the catalog.</summary>
+        [JsonIgnore]
+        public int PrintingID { get; set; }
+
         /// <summary>
-        /// Null for a normal/base print. Populated by <see cref="Repository.CardDataMapper.EnrichWithPrintVariants"/>
-        /// from the tcgcsv catalog, since yaml-yugi and YGOProDeck's own set data track rarity but not distinct
-        /// sellable print variants (e.g. "Extended Art") of the same rarity.
+        /// Null for a normal/base print; otherwise TCGPlayer's label for a distinct product of the same rarity (e.g.
+        /// "Extended Art"), since yaml-yugi and YGOProDeck track rarity but not sellable print variants.
         /// </summary>
         [JsonProperty("print_variant")]
         public string? PrintVariant { get; set; }
@@ -31,5 +34,9 @@ namespace CardCollector.DTO
         // Raw string from JSON — used for display and as the source for Rarity parsing.
         [JsonProperty("set_rarity")]
         public string? RarityName { get; set; }
+
+        /// <summary>The TCGPlayer products linked to this printing; prices come from these.</summary>
+        [JsonIgnore]
+        public IReadOnlyList<int> TCGProductIDs { get; set; } = [];
     }
 }

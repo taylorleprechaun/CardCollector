@@ -13,121 +13,69 @@ namespace CardCollector.Tests.Services
         private Mock<ITCGCatalogCache> _tcgCatalogCacheMock = null!;
 
         [TestMethod]
-        public void BuildIndex_DifferentPrintVariants_KeyedSeparately()
+        public void BuildIndex_MultipleEditionsOfOneProduct_GroupsTogether()
         {
             var printings = new List<TCGPriceSet>
             {
-                new() { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "5", PrintVariant = null },
-                new() { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82", PrintVariant = "Extended Art" }
+                new() { Edition = "1st Edition", PriceRaw = "5", ProductID = 500 },
+                new() { Edition = "Unlimited", PriceRaw = "3", ProductID = 500 }
             };
 
             var index = PricingDataCache.BuildIndex(printings);
 
-            Assert.AreEqual(5m, index[("MAMO-EN003", "ULTRA RARE", null)].Single().Price);
-            Assert.AreEqual(12.82m, index[("MAMO-EN003", "ULTRA RARE", "EXTENDED ART")].Single().Price);
+            Assert.AreEqual(2, index[500].Count);
         }
 
         [TestMethod]
-        public void BuildIndex_DuplicateKeyAcrossEntries_GroupsThemTogether()
+        public void BuildIndex_RowWithoutProductID_IsLeftOut()
         {
-            // Two tcgcsv groups can legitimately share a set code (e.g. old reprints) and each contribute an
-            // entry for the same (SetCode, RarityName, PrintVariant) key — both are kept; PricingService.FindMatch
-            // picks one deterministically rather than this layer silently dropping either.
-            var printings = new List<TCGPriceSet>
-            {
-                new() { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "50" },
-                new() { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12" }
-            };
+            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001", PriceRaw = "5" } };
 
             var index = PricingDataCache.BuildIndex(printings);
 
-            var entries = index[("MAMO-EN003", "ULTRA RARE", null)];
-            Assert.AreEqual(2, entries.Count);
-            CollectionAssert.AreEquivalent(new[] { 50m, 12m }, entries.Select(e => e.Price).ToArray());
+            Assert.AreEqual(0, index.Count);
         }
 
         [TestMethod]
-        public void BuildIndex_MultipleEditionsSameKey_GroupsTogether()
+        public void GetCardSets_CardWithLinkedProduct_ReturnsItsPrice()
         {
-            var printings = new List<TCGPriceSet>
-            {
-                new() { Code = "LOB-001", RarityName = "Ultra Rare", Edition = "1st Edition", PriceRaw = "100" },
-                new() { Code = "LOB-001", RarityName = "Ultra Rare", Edition = "Unlimited", PriceRaw = "50" }
-            };
-
-            var index = PricingDataCache.BuildIndex(printings);
-
-            Assert.AreEqual(2, index[("LOB-001", "ULTRA RARE", null)].Count);
-        }
-
-        [TestMethod]
-        public void BuildIndex_ShortPrintRarity_NormalizesToCommonKey()
-        {
-            var printings = new List<TCGPriceSet> { new() { Code = "ABC-EN001", RarityName = "Short Print", PriceRaw = "1" } };
-
-            var index = PricingDataCache.BuildIndex(printings);
-
-            Assert.IsTrue(index.ContainsKey(("ABC-EN001", "COMMON", null)));
-        }
-
-        [TestMethod]
-        public void GetCardSets_CardExistsWithMatchingPrinting_ReturnsPriceFromCatalog()
-        {
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
+            var card = new Card { ID = 1, CardSets = [new Set { Code = "SYN-EN003", RarityName = "Ultra Rare", TCGProductIDs = [500] }] };
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(card);
             _tcgCatalogCacheMock.Setup(c => c.GetAllPrintings())
-                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82" }]);
+                .Returns([new TCGPriceSet { Code = "SYN-EN003", PriceRaw = "12.82", ProductID = 500, RarityName = "Ultra Rare" }]);
             var cache = new PricingDataCache(_cardDataRepositoryMock.Object, _tcgCatalogCacheMock.Object);
 
             var result = cache.GetCardSets(1);
 
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(12.82m, result[0].Price);
+            Assert.AreEqual(12.82m, result.Single().Price);
         }
 
         [TestMethod]
         public void LookupCardSets_CardWithNullCardSets_ReturnsEmptyList()
         {
             var card = new Card { ID = 1, CardSets = null };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>();
 
-            var result = PricingDataCache.LookupCardSets(card, index);
+            var result = PricingDataCache.LookupCardSets(card, new Dictionary<int, IReadOnlyList<TCGPriceSet>>());
 
             Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
-        public void LookupCardSets_MatchingSet_ReturnsIndexedPriceSets()
-        {
-            var priceSet = new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82" };
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>
-            {
-                [("MAMO-EN003", "ULTRA RARE", null)] = [priceSet]
-            };
-
-            var result = PricingDataCache.LookupCardSets(card, index);
-
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(12.82m, result[0].Price);
-        }
-
-        [TestMethod]
-        public void LookupCardSets_MultipleSets_AggregatesMatchesAcrossAll()
+        public void LookupCardSets_MultiplePrintings_AggregatesEveryLinkedProduct()
         {
             var card = new Card
             {
                 ID = 1,
                 CardSets =
                 [
-                    new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" },
-                    new Set { Code = "MAMO-EN003", RarityName = "Secret Rare" }
+                    new Set { Code = "SYN-EN003", RarityName = "Ultra Rare", TCGProductIDs = [500] },
+                    new Set { Code = "SYN-EN003", RarityName = "Secret Rare", TCGProductIDs = [501] }
                 ]
             };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>
+            var index = new Dictionary<int, IReadOnlyList<TCGPriceSet>>
             {
-                [("MAMO-EN003", "ULTRA RARE", null)] = [new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12" }],
-                [("MAMO-EN003", "SECRET RARE", null)] = [new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Secret Rare", PriceRaw = "40" }]
+                [500] = [new TCGPriceSet { PriceRaw = "12", ProductID = 500 }],
+                [501] = [new TCGPriceSet { PriceRaw = "40", ProductID = 501 }]
             };
 
             var result = PricingDataCache.LookupCardSets(card, index);
@@ -138,18 +86,16 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public void LookupCardSets_NullCard_ReturnsEmptyList()
         {
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>();
-
-            var result = PricingDataCache.LookupCardSets(null, index);
+            var result = PricingDataCache.LookupCardSets(null, new Dictionary<int, IReadOnlyList<TCGPriceSet>>());
 
             Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
-        public void LookupCardSets_SetWithNoMatchInIndex_IsSkipped()
+        public void LookupCardSets_PrintingWithoutLinkedProduct_IsSkipped()
         {
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>();
+            var card = new Card { ID = 1, CardSets = [new Set { Code = "SYN-EN003", RarityName = "Ultra Rare" }] };
+            var index = new Dictionary<int, IReadOnlyList<TCGPriceSet>> { [500] = [new TCGPriceSet { PriceRaw = "5", ProductID = 500 }] };
 
             var result = PricingDataCache.LookupCardSets(card, index);
 
@@ -157,71 +103,39 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public void LookupCardSets_SetWithPrintVariant_MatchesVariantSpecificEntryOnly()
+        public void LookupCardSets_ProductWordedDifferently_RelabelsRowWithPrintingValues()
         {
-            var basePrint = new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "5" };
-            var extendedArt = new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82", PrintVariant = "Extended Art" };
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare", PrintVariant = "Extended Art" }] };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>
+            var card = new Card
             {
-                [("MAMO-EN003", "ULTRA RARE", null)] = [basePrint],
-                [("MAMO-EN003", "ULTRA RARE", "EXTENDED ART")] = [extendedArt]
+                ID = 1,
+                CardSets = [new Set { Code = "RA05-EN146", PrintVariant = "Extended Art", RarityName = "Ultra Rare", TCGProductIDs = [687324] }]
+            };
+            var index = new Dictionary<int, IReadOnlyList<TCGPriceSet>>
+            {
+                [687324] = [new TCGPriceSet { Code = "RA05-EN146", PriceRaw = "8.65", ProductID = 687324, RarityName = "Ultra Rare" }]
             };
 
-            var result = PricingDataCache.LookupCardSets(card, index);
+            var row = PricingDataCache.LookupCardSets(card, index).Single();
 
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(12.82m, result[0].Price);
+            Assert.AreEqual("Extended Art", row.PrintVariant);
+            Assert.AreEqual("RA05-EN146", row.Code);
+            Assert.AreEqual(8.65m, row.Price);
         }
 
         [TestMethod]
-        public void LookupCardSets_ShortPrintRarityOnCard_MatchesCommonNormalizedKey()
-        {
-            var priceSet = new TCGPriceSet { Code = "ABC-EN001", RarityName = "Common", PriceRaw = "1" };
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "ABC-EN001", RarityName = "Short Print" }] };
-            var index = new Dictionary<(string, string, string?), IReadOnlyList<TCGPriceSet>>
-            {
-                [("ABC-EN001", "COMMON", null)] = [priceSet]
-            };
-
-            var result = PricingDataCache.LookupCardSets(card, index);
-
-            Assert.AreEqual(1, result.Count);
-        }
-
-        [TestMethod]
-        public void RebuildIndex_CalledAfterCatalogPrintingsChange_ReflectsNewPrintings()
+        public void RebuildIndex_CalledAfterCatalogPricesChange_ReflectsNewPrices()
         {
             _tcgCatalogCacheMock.SetupSequence(c => c.GetAllPrintings())
-                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "5" }])
-                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82" }]);
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
+                .Returns([new TCGPriceSet { PriceRaw = "5", ProductID = 500 }])
+                .Returns([new TCGPriceSet { PriceRaw = "12.82", ProductID = 500 }]);
+            var card = new Card { ID = 1, CardSets = [new Set { Code = "SYN-EN003", RarityName = "Ultra Rare", TCGProductIDs = [500] }] };
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(card);
             var cache = new PricingDataCache(_cardDataRepositoryMock.Object, _tcgCatalogCacheMock.Object);
 
             cache.RebuildIndex();
             var result = cache.GetCardSets(1);
 
-            _tcgCatalogCacheMock.Verify(c => c.RefreshAsync(), Times.Never);
-            Assert.AreEqual(12.82m, result[0].Price);
-        }
-
-        [TestMethod]
-        public async Task RefreshAsync_RebuildsIndexFromRefreshedCatalog()
-        {
-            _tcgCatalogCacheMock.SetupSequence(c => c.GetAllPrintings())
-                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "5" }])
-                .Returns([new TCGPriceSet { Code = "MAMO-EN003", RarityName = "Ultra Rare", PriceRaw = "12.82" }]);
-            _tcgCatalogCacheMock.Setup(c => c.RefreshAsync()).Returns(Task.CompletedTask);
-            var card = new Card { ID = 1, CardSets = [new Set { Code = "MAMO-EN003", RarityName = "Ultra Rare" }] };
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(card);
-            var cache = new PricingDataCache(_cardDataRepositoryMock.Object, _tcgCatalogCacheMock.Object);
-
-            await cache.RefreshAsync();
-            var result = cache.GetCardSets(1);
-
-            _tcgCatalogCacheMock.Verify(c => c.RefreshAsync(), Times.Once);
-            Assert.AreEqual(12.82m, result[0].Price);
+            Assert.AreEqual(12.82m, result.Single().Price);
         }
 
         [TestInitialize]

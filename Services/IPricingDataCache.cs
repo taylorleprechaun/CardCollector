@@ -3,8 +3,8 @@ using CardCollector.DTO;
 namespace CardCollector.Services
 {
     /// <summary>
-    /// Caches TCGPlayer pricing (crawled from tcgcsv.com's catalog mirror, set by set) to disk with a TTL,
-    /// so pricing lookups don't need a live HTTP call per card.
+    /// Holds TCGPlayer prices (crawled from tcgcsv.com's catalog mirror) in memory, indexed so a card's prices can be found
+    /// without a live HTTP call per card.
     /// </summary>
     public interface IPricingDataCache
     {
@@ -14,14 +14,8 @@ namespace CardCollector.Services
         IReadOnlyList<TCGPriceSet> GetCardSets(int cardID);
 
         /// <summary>
-        /// Rebuilds the pricing index from the catalog's current snapshot, without forcing a refetch
-        /// (unlike <see cref="RefreshAsync"/>).
+        /// Rebuilds the pricing index from the price data currently loaded, without fetching anything.
         /// </summary>
         void RebuildIndex();
-
-        /// <summary>
-        /// Re-downloads the full pricing dataset regardless of cache freshness.
-        /// </summary>
-        Task RefreshAsync();
     }
 }

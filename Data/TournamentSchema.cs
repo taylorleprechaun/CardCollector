@@ -94,6 +94,7 @@ namespace CardCollector.Data
                 CREATE TABLE IF NOT EXISTS "DeckCards" (
                     "ID" INTEGER NOT NULL CONSTRAINT "PK_DeckCards" PRIMARY KEY AUTOINCREMENT,
                     "CardID" INTEGER NOT NULL,
+                    "CatalogCardID" INTEGER NULL,
                     "DeckID" INTEGER NOT NULL,
                     "Quantity" INTEGER NOT NULL,
                     "Section" TEXT NOT NULL,

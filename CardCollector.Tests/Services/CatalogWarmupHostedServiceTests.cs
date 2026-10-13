@@ -34,7 +34,7 @@ namespace CardCollector.Tests.Services
 
             await context.Service.StopAsync(timedOut.Token).WaitAsync(TestTimeout);
 
-            Assert.IsFalse(context.CatalogLoad.Task.IsCompleted);
+            Assert.IsFalse(context.CardDataLoad.Task.IsCompleted);
         }
 
         [TestMethod]
@@ -46,14 +46,14 @@ namespace CardCollector.Tests.Services
 
             var stopping = context.Service.StopAsync(CancellationToken.None);
             var finishedBeforeWarmup = stopping.IsCompleted;
-            context.CatalogLoad.SetResult();
+            context.CardDataLoad.SetResult();
             await stopping.WaitAsync(TestTimeout);
 
             Assert.IsFalse(finishedBeforeWarmup);
         }
 
         /// <summary>
-        /// The catalog load is held open until the test completes it, so the warm-up stays in progress after
+        /// The card data load is held open until the test completes it, so the warm-up stays in progress after
         /// <see cref="WarmupTestContext.Started"/> fires. Every other load finishes at once.
         /// </summary>
         private static WarmupTestContext CreateService()
@@ -64,29 +64,23 @@ namespace CardCollector.Tests.Services
             lifetime.Setup(l => l.ApplicationStarted).Returns(started.Token);
             lifetime.Setup(l => l.ApplicationStopping).Returns(stopping.Token);
 
-            var catalogLoad = new TaskCompletionSource();
-            var catalog = new Mock<ITCGCatalogCache>();
-            catalog.Setup(c => c.LoadIfStaleAsync()).Returns(catalogLoad.Task);
+            var cardDataLoad = new TaskCompletionSource();
 
             var banlist = new Mock<IBanlistRepository>();
             banlist.Setup(b => b.LoadIfStaleAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             var cardData = new Mock<ICardDataRepository>();
-            cardData.Setup(c => c.LoadIfStaleAsync()).Returns(Task.CompletedTask);
-            var cardSets = new Mock<ICardSetRepository>();
-            cardSets.Setup(c => c.LoadIfStaleAsync()).Returns(Task.CompletedTask);
+            cardData.Setup(c => c.LoadIfStaleAsync()).Returns(cardDataLoad.Task);
 
             var service = new CatalogWarmupHostedService(
                 banlist.Object,
                 cardData.Object,
-                cardSets.Object,
                 lifetime.Object,
                 new Mock<ILogger<CatalogWarmupHostedService>>().Object,
-                new Mock<IPricingDataCache>().Object,
-                catalog.Object);
+                new Mock<IPricingDataCache>().Object);
 
-            return new WarmupTestContext(service, started, catalogLoad);
+            return new WarmupTestContext(service, started, cardDataLoad);
         }
 
-        private sealed record WarmupTestContext(CatalogWarmupHostedService Service, CancellationTokenSource Started, TaskCompletionSource CatalogLoad);
+        private sealed record WarmupTestContext(CatalogWarmupHostedService Service, CancellationTokenSource Started, TaskCompletionSource CardDataLoad);
     }
 }

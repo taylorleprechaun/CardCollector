@@ -32,6 +32,7 @@ namespace CardCollector.DTO
         [JsonProperty("desc")]
         public string? Description { get; set; }
 
+        /// <summary>The catalog card id: permanent, and unrelated to any passcode.</summary>
         [JsonProperty("id")]
         public int ID { get; set; }
 
@@ -49,6 +50,10 @@ namespace CardCollector.DTO
 
         [JsonProperty("name")]
         public string? Name { get; set; }
+
+        /// <summary>The passcode to show for the card. <see cref="ID"/> is the catalog card id, which is not a passcode.</summary>
+        [JsonIgnore]
+        public int? Passcode { get; set; }
 
         [JsonProperty("race")]
         public string? Type { get; set; }

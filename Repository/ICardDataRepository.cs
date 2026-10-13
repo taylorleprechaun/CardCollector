@@ -3,7 +3,8 @@ using CardCollector.DTO;
 namespace CardCollector.Repository
 {
     /// <summary>
-    /// Provides read-only access to card data parsed from the JSON source file.
+    /// Provides read-only access to the card catalog. Card ids are catalog ids, which never change; passcodes are looked up
+    /// through <see cref="GetCardByPasscode"/>.
     /// </summary>
     public interface ICardDataRepository
     {
@@ -28,13 +29,18 @@ namespace CardCollector.Repository
         IEnumerable<Card> GetBrowseableCards();
 
         /// <summary>
-        /// Returns the card with the given ID, or null if not found.
+        /// Returns the card with the given catalog id, or null if not found.
         /// </summary>
         Card? GetCardByID(int cardID);
 
         /// <summary>
-        /// Returns a dictionary mapping each alternate passcode of a card (a second primary id, an alternate artwork id)
-        /// to the card's <see cref="Card.ID"/>. A passcode with no entry is not an alias.
+        /// Returns the card a passcode (or any other id a source has used for it) belongs to, or null if no card has it.
+        /// </summary>
+        Card? GetCardByPasscode(int passcode);
+
+        /// <summary>
+        /// Returns a dictionary mapping every known passcode and source id to the catalog id of its card. A passcode with no
+        /// entry is unknown.
         /// </summary>
         IReadOnlyDictionary<int, int> GetPasscodeAliases();
 
@@ -49,15 +55,18 @@ namespace CardCollector.Repository
         string? GetSetPrefixByName(string canonicalName);
 
         /// <summary>
-        /// Refreshes stale local caches and re-initializes in-memory state. Call after the card catalog
-        /// has loaded, or print-variant enrichment will run against empty catalog data.
+        /// Brings the catalog up to date with any source whose cache is stale, then reloads the in-memory card data.
         /// </summary>
         Task LoadIfStaleAsync();
 
         /// <summary>
-        /// Forces a redownload of card data from yaml-yugi and images from YGOProDeck,
-        /// then replaces the in-memory state immediately.
+        /// Downloads every source again, brings the catalog up to date, then reloads the in-memory card data.
         /// </summary>
         Task RefreshAsync();
+
+        /// <summary>
+        /// Reloads the in-memory card data from the catalog without touching the sources, e.g. after a catalog edit.
+        /// </summary>
+        Task ReloadAsync();
     }
 }

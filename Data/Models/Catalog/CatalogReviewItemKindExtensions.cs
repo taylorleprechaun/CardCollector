@@ -31,6 +31,7 @@ namespace CardCollector.Data.Models.Catalog
             CatalogReviewItemKind.AliasAdded => false,
             CatalogReviewItemKind.CardAdded => false,
             CatalogReviewItemKind.CardTextChanged => false,
+            CatalogReviewItemKind.LegacyDismissalUnmapped => false,
             CatalogReviewItemKind.LegacyRowAutoMapped => false,
             CatalogReviewItemKind.PasscodeAssigned => false,
             CatalogReviewItemKind.PrintingAdded => false,

@@ -97,20 +97,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task ImportAsync_AliasedPasscode_IsStoredAsTheAppCardID()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var service = CreateService(context, aliases: new Dictionary<int, int> { [83764719] = 83764718 });
-
-            var result = await service.ImportAsync(new DeckImportRequest { Name = "Sample", Text = Ydk(83764718, 83764719) });
-
-            var card = await context.DeckCards.SingleAsync();
-            Assert.AreEqual(83764718, card.CardID);
-            Assert.AreEqual(2, card.Quantity);
-            Assert.AreEqual(0, result.UnknownPasscodes.Count);
-        }
-
-        [TestMethod]
         public async Task ImportAsync_EventMissing_ReturnsFailureAndStoresNothing()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -254,6 +240,21 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.LinkedEventCount);
             Assert.AreEqual(0, result.UnknownPasscodes.Count);
             Assert.AreEqual(result.DeckID, (await context.Events.SingleAsync()).DeckID);
+        }
+
+        [TestMethod]
+        public async Task ImportAsync_TwoPasscodesOfOneCard_AreStoredAsOneCatalogCard()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var service = CreateService(context, aliases: new Dictionary<int, int> { [83764718] = 12063, [83764719] = 12063 });
+
+            var result = await service.ImportAsync(new DeckImportRequest { Name = "Sample", Text = Ydk(83764718, 83764719) });
+
+            var card = await context.DeckCards.SingleAsync();
+            Assert.AreEqual(83764718, card.CardID);
+            Assert.AreEqual(12063, card.CatalogCardID);
+            Assert.AreEqual(2, card.Quantity);
+            Assert.AreEqual(0, result.UnknownPasscodes.Count);
         }
 
         [TestMethod]
@@ -427,11 +428,11 @@ namespace CardCollector.Tests.Services
             var unknown = unknownCardIDs ?? [];
             var cardData = new Mock<ICardDataRepository>();
             cardData.Setup(r => r.GetPasscodeAliases()).Returns(aliases ?? new Dictionary<int, int>());
-            cardData
-                .Setup(r => r.GetCardByID(It.IsAny<int>()))
-                .Returns((int id) => unknown.Contains(id)
-                    ? null
-                    : new Card { CardType = "Effect Monster", ID = id, Name = names?.GetValueOrDefault(id) ?? $"Card {id}" });
+            Card? Lookup(int id) => unknown.Contains(id)
+                ? null
+                : new Card { CardType = "Effect Monster", ID = id, Name = names?.GetValueOrDefault(id) ?? $"Card {id}" };
+            cardData.Setup(r => r.GetCardByID(It.IsAny<int>())).Returns((int id) => Lookup(id));
+            cardData.Setup(r => r.GetCardByPasscode(It.IsAny<int>())).Returns((int passcode) => Lookup(passcode));
             return cardData;
         }
 

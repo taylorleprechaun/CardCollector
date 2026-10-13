@@ -30,6 +30,9 @@ namespace CardCollector.Repository.Catalog
         /// <summary>Returns every review item, tracked so changes to them are saved.</summary>
         Task<IReadOnlyList<CatalogReviewItem>> GetReviewItemsAsync(CancellationToken cancellationToken = default);
 
+        /// <summary>Loads the whole catalog (cards with aliases, images, printings, and their sources and sets) for reading only.</summary>
+        Task<CatalogState> LoadSnapshotAsync(CancellationToken cancellationToken = default);
+
         /// <summary>Loads the whole catalog (cards with aliases, images, printings, and their sources and sets), tracked.</summary>
         Task<CatalogState> LoadStateAsync(CancellationToken cancellationToken = default);
 

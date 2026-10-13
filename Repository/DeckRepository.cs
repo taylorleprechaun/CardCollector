@@ -25,6 +25,7 @@ namespace CardCollector.Repository
                     .Select(c => new DeckCard
                     {
                         CardID = c.CardID,
+                        CatalogCardID = c.CatalogCardID,
                         Quantity = c.Quantity,
                         Section = c.Section,
                         SortOrder = c.SortOrder

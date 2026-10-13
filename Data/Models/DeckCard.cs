@@ -3,8 +3,14 @@ namespace CardCollector.Data.Models
     /// <summary>One distinct card in one section of a <see cref="Deck"/>, with how many copies it holds.</summary>
     public sealed class DeckCard
     {
-        /// <summary>The app's <c>Card.ID</c>. A passcode the card data doesn't know is stored as it was pasted.</summary>
+        /// <summary>The passcode as pasted (the first one, when several passcodes of one card were collapsed into this row).</summary>
         public int CardID { get; set; }
+
+        /// <summary>
+        /// The catalog card the passcode resolved to on import. Null when the card data didn't know the passcode; such a row is
+        /// resolved again from <see cref="CardID"/> each time the deck is read.
+        /// </summary>
+        public int? CatalogCardID { get; set; }
 
         public int DeckID { get; set; }
 

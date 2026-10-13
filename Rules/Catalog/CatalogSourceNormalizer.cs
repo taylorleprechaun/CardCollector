@@ -19,11 +19,15 @@ namespace CardCollector.Rules.Catalog
     {
         /// <summary>
         /// Groups tcgcsv price rows (one per product and edition) into products. Rows written before product ids were
-        /// captured, or missing a card name, are skipped.
+        /// captured, or missing a card name, are skipped. Rarities go through the same correction table as the card
+        /// sources' (e.g. BP03-EN076 "Shatterfoil Rare" reads as "Rare"), so a product lands on the same printing.
         /// </summary>
-        public static IReadOnlyList<SourceTCGProduct> FromTCGPlayer(IEnumerable<TCGPriceSet> priceRows)
+        public static IReadOnlyList<SourceTCGProduct> FromTCGPlayer(
+            IEnumerable<TCGPriceSet> priceRows,
+            IReadOnlyDictionary<(string SetCode, string RarityName), string> rarityCorrections)
         {
             if (priceRows is null) throw new ArgumentNullException(nameof(priceRows));
+            if (rarityCorrections is null) throw new ArgumentNullException(nameof(rarityCorrections));
 
             return priceRows
                 .Where(r => r.ProductID > 0 && !string.IsNullOrWhiteSpace(r.CardName) && !string.IsNullOrWhiteSpace(r.Code))
@@ -31,12 +35,13 @@ namespace CardCollector.Rules.Catalog
                 .Select(g =>
                 {
                     var row = g.First();
+                    var corrected = rarityCorrections.GetValueOrDefault((row.Code.ToUpperInvariant(), row.RarityName.ToUpperInvariant()), row.RarityName);
                     return new SourceTCGProduct(
                         row.ProductID,
                         row.GroupID,
                         row.CardName!,
                         row.Code,
-                        RarityExtensions.NormalizeRarityName(row.RarityName) ?? row.RarityName,
+                        RarityExtensions.NormalizeRarityName(corrected) ?? corrected,
                         string.IsNullOrWhiteSpace(row.PrintVariant) ? null : row.PrintVariant);
                 })
                 .ToList();

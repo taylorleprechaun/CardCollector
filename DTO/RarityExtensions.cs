@@ -73,6 +73,29 @@ namespace CardCollector.DTO
             _ => null
         };
 
+        /// <summary>
+        /// True when a qualifier (a product-name parenthetical or a stored print variant) only restates the rarity: the full name, the name without its
+        /// trailing " Rare" (e.g. "Starfoil" for "Starfoil Rare"), or the rarity code.
+        /// </summary>
+        /// <remarks>
+        /// Apostrophes are compared loosely because TCGPlayer writes "Ultra Pharaoh's Rare" with a straight apostrophe in
+        /// product names but a curly one (U+2019) in the rarity field.
+        /// </remarks>
+        public static bool IsRarityRestatement(string qualifier, string? rarityName)
+        {
+            if (string.IsNullOrWhiteSpace(rarityName))
+                return false;
+
+            var normalizedQualifier = NormalizeApostrophes(qualifier);
+            var normalizedRarity = NormalizeApostrophes(rarityName);
+            if (string.Equals(normalizedQualifier, normalizedRarity, StringComparison.OrdinalIgnoreCase)
+                || string.Equals($"{normalizedQualifier} Rare", normalizedRarity, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var code = GetRarityCode(rarityName)?.Trim('(', ')');
+            return code is not null && string.Equals(qualifier, code, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string? NormalizeRarityName(string? rarityName) =>
             rarityName is not null && _rarityAliases.TryGetValue(rarityName, out var canonical) ? canonical : rarityName;
 
@@ -100,5 +123,7 @@ namespace CardCollector.DTO
 
             return map;
         }
+
+        private static string NormalizeApostrophes(string text) => text.Replace('’', '\'').Replace('‘', '\'');
     }
 }

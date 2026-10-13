@@ -7,6 +7,9 @@ namespace CardCollector.Data.Models
         [Required]
         public int CardID { get; set; }
 
+        /// <summary>The catalog printing this row refers to. Set by the legacy migration; the app switches to it from the set code, rarity, and variant columns in a later phase.</summary>
+        public int? CatalogPrintingID { get; set; }
+
         public DateTime DateCreated { get; set; }
 
         public DateTime DateModified { get; set; }

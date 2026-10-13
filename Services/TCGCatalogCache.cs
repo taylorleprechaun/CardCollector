@@ -95,7 +95,7 @@ namespace CardCollector.Services
                 var qualifier = match.Groups[1].Value.Trim();
                 name = name[..match.Index].TrimEnd();
 
-                if (!IsRedundantRarityQualifier(qualifier, rarityName) && !IsRedundantSetCodeQualifier(qualifier, setCode))
+                if (!RarityExtensions.IsRarityRestatement(qualifier, rarityName) && !IsRedundantSetCodeQualifier(qualifier, setCode))
                     variants.Insert(0, qualifier);
 
                 match = TrailingParenRegex().Match(name);
@@ -158,33 +158,8 @@ namespace CardCollector.Services
             return (cacheDir, cachePath, cachePath + ".timestamp");
         }
 
-        /// <summary>
-        /// True when a product name qualifier only restates the product's own rarity: the full name, the name without its
-        /// trailing " Rare" (e.g. "Starfoil" for "Starfoil Rare"), or the rarity code.
-        /// </summary>
-        /// <remarks>
-        /// Apostrophes are compared loosely because TCGPlayer writes "Ultra Pharaoh's Rare" with a straight apostrophe in
-        /// product names but a curly one (U+2019) in the rarity field.
-        /// </remarks>
-        private static bool IsRedundantRarityQualifier(string qualifier, string? rarityName)
-        {
-            if (string.IsNullOrWhiteSpace(rarityName))
-                return false;
-
-            var normalizedQualifier = NormalizeApostrophes(qualifier);
-            var normalizedRarity = NormalizeApostrophes(rarityName);
-            if (string.Equals(normalizedQualifier, normalizedRarity, StringComparison.OrdinalIgnoreCase)
-                || string.Equals($"{normalizedQualifier} Rare", normalizedRarity, StringComparison.OrdinalIgnoreCase))
-                return true;
-
-            var code = RarityExtensions.GetRarityCode(rarityName)?.Trim('(', ')');
-            return code is not null && string.Equals(qualifier, code, StringComparison.OrdinalIgnoreCase);
-        }
-
         private static bool IsRedundantSetCodeQualifier(string qualifier, string? setCode) =>
             !string.IsNullOrWhiteSpace(setCode) && string.Equals(qualifier, setCode, StringComparison.OrdinalIgnoreCase);
-
-        private static string NormalizeApostrophes(string text) => text.Replace('’', '\'').Replace('‘', '\'');
 
         [GeneratedRegex(@"\(([^()]+)\)\s*$")]
         private static partial Regex TrailingParenRegex();

@@ -13,12 +13,13 @@ namespace CardCollector.Tests.Rules
         public void Build_AliasedPasscodes_AreResolvedThenAddedTogether()
         {
             var deck = Deck(main: [83764718, 83764719, 83764719]);
-            var aliases = new Dictionary<int, int> { [83764719] = 83764718 };
+            var aliases = new Dictionary<int, int> { [83764718] = 12063, [83764719] = 12063 };
 
             var rows = DeckListBuilder.Build(deck, aliases);
 
             Assert.AreEqual(1, rows.Count);
             Assert.AreEqual(83764718, rows[0].CardID);
+            Assert.AreEqual(12063, rows[0].CatalogCardID);
             Assert.AreEqual(3, rows[0].Quantity);
         }
 
@@ -75,6 +76,7 @@ namespace CardCollector.Tests.Rules
             var rows = DeckListBuilder.Build(deck, NoAliases);
 
             Assert.AreEqual(424242, rows.Single().CardID);
+            Assert.IsNull(rows.Single().CatalogCardID);
         }
 
         private static ParsedDeckList Deck(int[]? main = null, int[]? extra = null, int[]? side = null) =>

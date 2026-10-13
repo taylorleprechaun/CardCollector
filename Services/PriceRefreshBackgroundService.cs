@@ -70,8 +70,9 @@ namespace CardCollector.Services
             _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price and card data refresh");
             try
             {
-                await _pricingDataCache.RefreshAsync();
+                // Downloads every source again (including TCGPlayer prices), syncs them into the catalog, and reloads.
                 await _cardDataRepository.RefreshAsync();
+                _pricingDataCache.RebuildIndex();
                 await _banlistRepository.LoadIfStaleAsync(stoppingToken);
 
                 await using var scope = _scopeFactory.CreateAsyncScope();

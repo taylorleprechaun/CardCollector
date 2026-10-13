@@ -26,6 +26,10 @@ namespace CardCollector.Data.Models.Catalog
         [Display(Name = "Card Text Changed")]
         CardTextChanged,
 
+        /// <summary>A legacy "dismissed new printing" flag for a printing the catalog doesn't have; there is nothing left to dismiss.</summary>
+        [Display(Name = "Legacy Dismissal Unmapped")]
+        LegacyDismissalUnmapped,
+
         [Display(Name = "Legacy Row Auto-Mapped")]
         LegacyRowAutoMapped,
 

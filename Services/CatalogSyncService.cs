@@ -157,7 +157,8 @@ namespace CardCollector.Services
             CancellationToken cancellationToken)
         {
             var (yamlCards, ygoProDeckCards, tcgRows) = await LoadSourcesAsync(sourceMode).ConfigureAwait(false);
-            var products = CatalogSourceNormalizer.FromTCGPlayer(tcgRows);
+            var corrections = RarityCorrectionLoader.Load(_logger);
+            var products = CatalogSourceNormalizer.FromTCGPlayer(tcgRows, corrections);
 
             run.YamlYugiCardCount = yamlCards.Count;
             run.YGOProDeckCardCount = ygoProDeckCards.Count;
@@ -208,7 +209,6 @@ namespace CardCollector.Services
 
             if (context.YamlYugiSucceeded || context.YGOProDeckSucceeded)
             {
-                var corrections = RarityCorrectionLoader.Load(_logger);
                 var observed = CatalogCardMatcher.Combine(
                     context.YamlYugiSucceeded ? CatalogSourceNormalizer.FromYamlYugi(yamlCards, corrections) : [],
                     context.YGOProDeckSucceeded ? CatalogSourceNormalizer.FromYGOProDeck(ygoProDeckCards, corrections) : []);
