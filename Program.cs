@@ -7,9 +7,16 @@ using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+// A maintenance command (e.g. catalog-sync) runs against its own database and exits instead of starting the server.
+var catalogCommand = CardCollector.CatalogCommandLine.Parse(args);
+var builder = WebApplication.CreateBuilder(catalogCommand is null ? args : []);
 
 builder.Configuration.AddJsonFile("appsettings-private.json", optional: true, reloadOnChange: true);
+if (catalogCommand is not null)
+{
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = catalogCommand.ConnectionString;
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+}
 
 builder.Services.AddAuthentication("CardCollectorCookie")
     .AddCookie("CardCollectorCookie", options =>
@@ -60,6 +67,7 @@ builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IWishlistValueRepository, WishlistValueRepository>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddTournamentsModule(builder.Configuration);
 builder.Services.AddHostedService<CatalogWarmupHostedService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
@@ -414,6 +422,12 @@ using (var scope = app.Services.CreateScope())
     db.SaveChanges();
 
     TournamentSchema.Apply(db);
+}
+
+if (catalogCommand is not null)
+{
+    Environment.ExitCode = await catalogCommand.RunAsync(app.Services);
+    return;
 }
 
 if (!app.Environment.IsDevelopment())

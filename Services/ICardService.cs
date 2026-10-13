@@ -128,14 +128,14 @@ namespace CardCollector.Services
         /// any candidate too expensive to fit so a cheaper, lower-priority one further down can still be taken.
         /// Each candidate's cost accounts for the quantity still needed to complete that printing.
         /// </summary>
-        Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
+        Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUTC = null);
 
         /// <summary>
         /// Single-item counterpart to <see cref="GetPurchasePriorityCandidatesAsync"/> — no budget-fill, no
         /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
         /// </summary>
         Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
-            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
+            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUTC = null);
 
         /// <summary>
         /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
@@ -145,7 +145,7 @@ namespace CardCollector.Services
         /// fully collected. When <paramref name="maxPrice"/> is given, only printings currently priced at or
         /// below it are returned.
         /// </summary>
-        Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null);
+        Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUTC = null, decimal? maxPrice = null);
 
         /// <summary>
         /// Returns a random card that has no preferred version set for any of its artworks.

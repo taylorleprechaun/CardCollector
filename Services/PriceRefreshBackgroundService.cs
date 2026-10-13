@@ -30,12 +30,12 @@ namespace CardCollector.Services
 
         // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
         // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
-        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUtc)
+        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUTC)
         {
-            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
+            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUTC, EasternTz);
             var nextMidnightEastern = nowEastern.Date.AddDays(1);
-            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
-            var delay = nextMidnightUtc - nowUtc;
+            var nextMidnightUTC = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
+            var delay = nextMidnightUTC - nowUTC;
             return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
         }
 

@@ -5,7 +5,6 @@ using CardCollector.Repository.Sources;
 using CardCollector.Rules;
 using CardCollector.Services;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace CardCollector.Repository
 {
@@ -73,7 +72,7 @@ namespace CardCollector.Repository
             // and the yaml-yugi ids are what tell the real card from its duplicate.
             _passcodeAliases = PasscodeAliasResolver.BuildAliases(yamlCards.Select(c => c.ID), ygoProDeckCards);
 
-            var corrections = LoadRarityCorrections();
+            var corrections = RarityCorrectionLoader.Load(_logger);
             var correctedCount = CardDataMapper.ApplyRarityCorrections(yamlCards, corrections)
                 + CardDataMapper.ApplyRarityCorrections(ygoProDeckCards, corrections);
             if (correctedCount > 0)
@@ -143,38 +142,6 @@ namespace CardCollector.Repository
                 .Select(kvp => kvp.Key)
                 .OrderBy(n => n)
                 .ToList();
-        }
-
-        private IReadOnlyDictionary<(string SetCode, string RarityName), string> LoadRarityCorrections()
-        {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "Config", "RarityCorrections.json");
-            if (!File.Exists(path))
-                return new Dictionary<(string, string), string>();
-
-            try
-            {
-                var json = File.ReadAllText(path);
-                var entries = JsonConvert.DeserializeObject<List<RarityCorrectionEntry>>(json) ?? [];
-                return entries
-                    .Where(e => !string.IsNullOrWhiteSpace(e.SetCode) && !string.IsNullOrWhiteSpace(e.OldRarityName) && !string.IsNullOrWhiteSpace(e.NewRarityName))
-                    .ToDictionary(
-                        e => (e.SetCode!.ToUpperInvariant(), e.OldRarityName!.ToUpperInvariant()),
-                        e => e.NewRarityName!);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to parse rarity correction table — no corrections will be applied");
-                return new Dictionary<(string, string), string>();
-            }
-        }
-
-        private sealed class RarityCorrectionEntry
-        {
-            public string? NewRarityName { get; set; }
-
-            public string? OldRarityName { get; set; }
-
-            public string? SetCode { get; set; }
         }
     }
 }

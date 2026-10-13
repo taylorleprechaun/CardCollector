@@ -7,7 +7,7 @@ namespace CardCollector.Tests.Services
 {
     public partial class CardServiceTests
     {
-        private static readonly DateTime AsOfUtc = new(2026, 7, 20);
+        private static readonly DateTime AsOfUTC = new(2026, 7, 20);
 
         [TestMethod]
         public async Task GetPurchasePlanAsync_CandidateOverBudget_IsSkippedNotStopped()
@@ -26,7 +26,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(2, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(5.00m);
 
-            var plan = await _service.GetPurchasePlanAsync(totalBudget: 20.00m, asOfUtc: AsOfUtc);
+            var plan = await _service.GetPurchasePlanAsync(totalBudget: 20.00m, asOfUTC: AsOfUTC);
 
             Assert.AreEqual(1, plan.Items.Count);
             Assert.AreEqual(15.00m, plan.TotalCost);
@@ -45,7 +45,7 @@ namespace CardCollector.Tests.Services
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(2, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
 
-            var plan = await _service.GetPurchasePlanAsync(maxCards: 1, asOfUtc: AsOfUtc);
+            var plan = await _service.GetPurchasePlanAsync(maxCards: 1, asOfUTC: AsOfUTC);
 
             Assert.AreEqual(1, plan.Items.Count);
         }
@@ -60,7 +60,7 @@ namespace CardCollector.Tests.Services
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition)).ReturnsAsync(5.00m);
 
-            var plan = await _service.GetPurchasePlanAsync(asOfUtc: AsOfUtc);
+            var plan = await _service.GetPurchasePlanAsync(asOfUTC: AsOfUTC);
 
             Assert.AreEqual(1, plan.Items.Count);
             Assert.AreEqual(15.00m, plan.TotalCost);
@@ -69,7 +69,7 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetPurchasePriorityCandidateAsync_CardNotFound_ReturnsNull()
         {
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUTC: AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -82,7 +82,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(50.00m);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUTC: AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -95,7 +95,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync((decimal?)null);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", maxPrice: 10.00m, asOfUTC: AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -110,7 +110,7 @@ namespace CardCollector.Tests.Services
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
                 .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUTC: AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -125,7 +125,7 @@ namespace CardCollector.Tests.Services
             _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
                 .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Secret Rare")] = 1 });
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUTC: AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -138,7 +138,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUtc: AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidateAsync(1, "LOB-EN001", "Secret Rare", asOfUTC: AsOfUTC);
 
             Assert.IsNotNull(result);
             Assert.AreEqual(9.99m, result!.Price);
@@ -148,7 +148,7 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetPurchasePriorityCandidatesAsync_NoPreferredVersions_ReturnsEmpty()
         {
-            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUTC);
 
             Assert.AreEqual(0, result.Count);
         }
@@ -175,7 +175,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN002", "Ultra Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUTC);
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual("LOB-EN002", result[0].SetCode);
@@ -193,7 +193,7 @@ namespace CardCollector.Tests.Services
                 .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
                 .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
 
-            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUTC);
 
             Assert.AreEqual(0, result.Count);
         }
@@ -209,7 +209,7 @@ namespace CardCollector.Tests.Services
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Secret Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUtc);
+            var result = await _service.GetPurchasePriorityCandidatesAsync(AsOfUTC);
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual("Dark Magician", result[0].CardName);

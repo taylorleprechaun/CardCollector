@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Data.Models.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Data
@@ -6,6 +7,22 @@ namespace CardCollector.Data
     public class AppDBContext : DbContext
     {
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
+
+        public DbSet<CatalogCardAlias> CatalogCardAliases { get; set; }
+
+        public DbSet<CatalogCardImage> CatalogCardImages { get; set; }
+
+        public DbSet<CatalogCard> CatalogCards { get; set; }
+
+        public DbSet<CatalogPrinting> CatalogPrintings { get; set; }
+
+        public DbSet<CatalogPrintingSource> CatalogPrintingSources { get; set; }
+
+        public DbSet<CatalogReviewItem> CatalogReviewItems { get; set; }
+
+        public DbSet<CatalogSet> CatalogSets { get; set; }
+
+        public DbSet<CatalogSyncRun> CatalogSyncRuns { get; set; }
 
         public DbSet<CheckedOutCard> CheckedOutCards { get; set; }
 
@@ -39,6 +56,88 @@ namespace CardCollector.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CatalogCard>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.KonamiID).IsUnique();
+                entity.HasIndex(e => e.Name);
+                entity.Property(e => e.Status).HasConversion<string>();
+                entity.HasMany(e => e.Aliases)
+                    .WithOne()
+                    .HasForeignKey(a => a.CatalogCardID)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.Images)
+                    .WithOne()
+                    .HasForeignKey(i => i.CatalogCardID)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.Printings)
+                    .WithOne(p => p.Card)
+                    .HasForeignKey(p => p.CatalogCardID)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<CatalogCardAlias>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.Source, e.Kind, e.Value, e.CatalogCardID }).IsUnique();
+                entity.HasIndex(e => e.Value);
+                entity.Property(e => e.Kind).HasConversion<string>();
+                entity.Property(e => e.Source).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<CatalogCardImage>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.CatalogCardID, e.ImageID }).IsUnique();
+            });
+
+            modelBuilder.Entity<CatalogPrinting>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.CatalogCardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
+                entity.HasIndex(e => e.SetCode);
+                entity.Property(e => e.Status).HasConversion<string>();
+                entity.HasOne(e => e.Set)
+                    .WithMany()
+                    .HasForeignKey(e => e.CatalogSetID)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasMany(e => e.Sources)
+                    .WithOne()
+                    .HasForeignKey(s => s.CatalogPrintingID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<CatalogPrintingSource>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.Source, e.ExternalKey }).IsUnique();
+                entity.Property(e => e.Source).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<CatalogReviewItem>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => new { e.Kind, e.SubjectKey }).IsUnique();
+                entity.HasIndex(e => e.Status);
+                entity.Property(e => e.Kind).HasConversion<string>();
+                entity.Property(e => e.Status).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<CatalogSet>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.Prefix).IsUnique();
+            });
+
+            modelBuilder.Entity<CatalogSyncRun>(entity =>
+            {
+                entity.HasKey(e => e.ID);
+                entity.Property(e => e.Status).HasConversion<string>();
+                entity.Property(e => e.TCGPlayerStatus).HasConversion<string>();
+                entity.Property(e => e.YamlYugiStatus).HasConversion<string>();
+                entity.Property(e => e.YGOProDeckStatus).HasConversion<string>();
+            });
+
             modelBuilder.Entity<CheckedOutCard>(entity =>
             {
                 entity.HasKey(e => e.ID);

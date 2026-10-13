@@ -1,19 +1,18 @@
 using CardCollector.DTO;
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Services
 {
     [TestClass]
     public sealed class PurchasePriorityAnalyzerTests
     {
-        private static readonly DateTime AsOfUtc = new(2026, 7, 20);
+        private static readonly DateTime AsOfUTC = new(2026, 7, 20);
 
         [TestMethod]
         public void Evaluate_CardIsNull_ThrowsArgumentNullException()
         {
             Assert.ThrowsExactly<ArgumentNullException>(() =>
-                PurchasePriorityAnalyzer.Evaluate(null!, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUtc));
+                PurchasePriorityAnalyzer.Evaluate(null!, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUTC));
         }
 
         [TestMethod]
@@ -22,7 +21,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Secret Rare", _ => "2026-01-01", AsOfUtc);
+                card, "LOB-EN001", "Secret Rare", _ => "2026-01-01", AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -36,7 +35,7 @@ namespace CardCollector.Tests.Services
                 ("LOB-EN003", "Ghost Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -47,7 +46,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Common"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Common", _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", "Common", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -57,7 +56,7 @@ namespace CardCollector.Tests.Services
         {
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
-            var result = PurchasePriorityAnalyzer.Evaluate(card, "LOB-EN001", "Secret Rare", _ => null, AsOfUtc);
+            var result = PurchasePriorityAnalyzer.Evaluate(card, "LOB-EN001", "Secret Rare", _ => null, AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -68,7 +67,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Normal Parallel Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Normal Parallel Rare", _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", "Normal Parallel Rare", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result!.FoilCount);
@@ -80,7 +79,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"), ("LOB-EN001", "Common"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Common", _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", "Common", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -91,7 +90,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Secret Rare", code => code == "LOB-EN001" ? "2024-01-01" : null, AsOfUtc);
+                card, "LOB-EN001", "Secret Rare", code => code == "LOB-EN001" ? "2024-01-01" : null, AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -102,7 +101,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", null, _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", null, _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNotNull(result);
         }
@@ -113,7 +112,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "DOES-NOT-EXIST", "Secret Rare", _ => "2015-01-01", AsOfUtc);
+                card, "DOES-NOT-EXIST", "Secret Rare", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNull(result);
         }
@@ -124,7 +123,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             Assert.ThrowsExactly<ArgumentNullException>(() =>
-                PurchasePriorityAnalyzer.Evaluate(card, null!, "Secret Rare", _ => "2015-01-01", AsOfUtc));
+                PurchasePriorityAnalyzer.Evaluate(card, null!, "Secret Rare", _ => "2015-01-01", AsOfUTC));
         }
 
         [TestMethod]
@@ -135,7 +134,7 @@ namespace CardCollector.Tests.Services
             card.Name = "Blue-Eyes White Dragon";
 
             var result = PurchasePriorityAnalyzer.Evaluate(
-                card, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUtc);
+                card, "LOB-EN001", "Secret Rare", _ => "2015-01-01", AsOfUTC);
 
             Assert.IsNotNull(result);
             Assert.AreEqual(42, result!.CardID);
@@ -151,7 +150,7 @@ namespace CardCollector.Tests.Services
             var card = MakeCard(("LOB-EN001", "Secret Rare"));
 
             Assert.ThrowsExactly<ArgumentNullException>(() =>
-                PurchasePriorityAnalyzer.Evaluate(card, "LOB-EN001", "Secret Rare", null!, AsOfUtc));
+                PurchasePriorityAnalyzer.Evaluate(card, "LOB-EN001", "Secret Rare", null!, AsOfUTC));
         }
         private static Card MakeCard(params (string Code, string RarityName)[] sets) => new()
         {

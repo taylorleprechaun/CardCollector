@@ -677,9 +677,9 @@ namespace CardCollector.Services
             return viewModels;
         }
 
-        public async Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null)
+        public async Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUTC = null)
         {
-            var candidates = await GetPurchasePriorityCandidatesAsync(asOfUtc, maxPricePerCard).ConfigureAwait(false);
+            var candidates = await GetPurchasePriorityCandidatesAsync(asOfUTC, maxPricePerCard).ConfigureAwait(false);
 
             var items = new List<PurchasePriorityCandidateViewModel>();
             var remainingBudget = totalBudget;
@@ -707,9 +707,9 @@ namespace CardCollector.Services
 
 
         public async Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
-            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null)
+            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUTC = null)
         {
-            var asOf = asOfUtc ?? DateTime.UtcNow;
+            var asOf = asOfUTC ?? DateTime.UtcNow;
 
             var card = _cardDataRepository.GetCardByID(cardID);
             if (card is null)
@@ -733,9 +733,9 @@ namespace CardCollector.Services
                 ownedQuantities, orderedQuantities, stagedQuantities, matched?.DesiredQuantity ?? 3).ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null)
+        public async Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUTC = null, decimal? maxPrice = null)
         {
-            var asOf = asOfUtc ?? DateTime.UtcNow;
+            var asOf = asOfUTC ?? DateTime.UtcNow;
             var allPreferred = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false)).ToList();
             var preferredByCardID = allPreferred
                 .GroupBy(pv => pv.CardID)

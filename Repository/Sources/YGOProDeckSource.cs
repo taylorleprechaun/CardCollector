@@ -39,7 +39,7 @@ namespace CardCollector.Repository.Sources
         {
             try
             {
-                var cards = JsonConvert.DeserializeObject<CardInfoResponse>(json)?.Data ?? [];
+                var cards = JsonConvert.DeserializeObject<YGOProDeckCardInfoResponse>(json)?.Data ?? [];
                 foreach (var card in cards)
                     card.KonamiID ??= card.MiscInfo?.FirstOrDefault()?.KonamiID;
 
@@ -123,11 +123,6 @@ namespace CardCollector.Repository.Sources
                 _logger.LogError(ex, "Failed to fetch card data from YGOProDeck API");
                 return null;
             }
-        }
-        private sealed class CardInfoResponse
-        {
-            [JsonProperty("data")]
-            public List<YGOProDeckCard>? Data { get; set; }
         }
     }
 }

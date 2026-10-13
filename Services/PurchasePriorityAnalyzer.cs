@@ -63,7 +63,7 @@ namespace CardCollector.Services
             string preferredSetCode,
             string? preferredRarityName,
             Func<string, string?> resolveTcgDate,
-            DateTime asOfUtc)
+            DateTime asOfUTC)
         {
             if (card is null) throw new ArgumentNullException(nameof(card));
             if (preferredSetCode is null) throw new ArgumentNullException(nameof(preferredSetCode));
@@ -74,7 +74,7 @@ namespace CardCollector.Services
                 return null;
 
             var debutDate = datedSets.Min(x => x.Date)!;
-            if (IsAfterCutoff(debutDate, asOfUtc, MinDebutAgeYears))
+            if (IsAfterCutoff(debutDate, asOfUTC, MinDebutAgeYears))
                 return null;
 
             var foilPool = GetFoilPool(datedSets);
@@ -92,7 +92,7 @@ namespace CardCollector.Services
             if (!IsFoilRarity(preferredEntry.Set.Rarity))
                 return null; // the preferred printing isn't a foil at all — no scarcity risk to prioritize
 
-            if (IsAfterCutoff(preferredEntry.Date!, asOfUtc, MinFoilAgeYears))
+            if (IsAfterCutoff(preferredEntry.Date!, asOfUTC, MinFoilAgeYears))
                 return null; // the printing being chased isn't stale enough yet
 
             return new PurchasePriorityCandidate
@@ -121,9 +121,9 @@ namespace CardCollector.Services
             return datedSets.Where(x => _secondaryFoilRarities.Contains(x.Set.Rarity)).ToList();
         }
 
-        private static bool IsAfterCutoff(string date, DateTime asOfUtc, int minAgeYears)
+        private static bool IsAfterCutoff(string date, DateTime asOfUTC, int minAgeYears)
         {
-            var cutoff = asOfUtc.AddYears(-minAgeYears).ToString(DateFormat);
+            var cutoff = asOfUTC.AddYears(-minAgeYears).ToString(DateFormat);
             return string.Compare(date, cutoff, StringComparison.Ordinal) > 0;
         }
 
