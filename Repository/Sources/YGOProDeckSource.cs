@@ -21,6 +21,9 @@ namespace CardCollector.Repository.Sources
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<YGOProDeckSource> _logger;
 
+        [ExcludeFromCodeCoverage(Justification = "Reads a timestamp file on disk; I/O, not testable logic.")]
+        public DateTime? CachedAtUTC => FileCacheHelper.ReadTimestamp(GetCachePaths().TimestampPath);
+
         public YGOProDeckSource(ILogger<YGOProDeckSource> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;

@@ -28,6 +28,9 @@ namespace CardCollector.Services
         private readonly ILogger<TCGCatalogCache> _logger;
         private IReadOnlyList<TCGPriceSet> _printings;
 
+        [ExcludeFromCodeCoverage(Justification = "Reads a timestamp file on disk; I/O, not testable logic.")]
+        public DateTime? CachedAtUTC => FileCacheHelper.ReadTimestamp(GetCachePaths().TimestampPath);
+
         [ExcludeFromCodeCoverage(Justification = "Loads cached catalog data from disk on construction; I/O, not testable logic.")]
         public TCGCatalogCache(ILogger<TCGCatalogCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {

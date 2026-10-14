@@ -66,6 +66,30 @@ namespace CardCollector.Services
         {
             var now = _timeProvider.GetUtcNow().UtcDateTime;
             var recentRuns = await _catalogRepository.GetRecentSyncRunsAsync(RECENT_RUNS_TO_COMPARE, cancellationToken).ConfigureAwait(false);
+
+            // At start-up the sources are loaded either way (prices need the TCGPlayer cache in memory), but the catalog
+            // only needs syncing when a cache was rewritten after the last successful run.
+            CatalogSourceData? preloaded = null;
+            if (sourceMode == CatalogSourceMode.IfStale)
+            {
+                try
+                {
+                    preloaded = await LoadSourcesAsync(sourceMode).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Loading the catalog sources before the start-up sync failed; the sync will retry and record the failure");
+                }
+
+                var lastSucceeded = recentRuns.FirstOrDefault(r => r.Status == CatalogSyncRunStatus.Succeeded);
+                if (preloaded is not null
+                    && CatalogSourceFreshness.IsAlreadySynced(lastSucceeded, [_yamlYugiSource.CachedAtUTC, _ygoProDeckSource.CachedAtUTC, _tcgCatalogCache.CachedAtUTC]))
+                {
+                    _logger.LogInformation("Catalog sync skipped: the cached sources haven't changed since run {RunID} finished at {FinishedUTC:O}", lastSucceeded!.ID, lastSucceeded.FinishedUTC);
+                    return new CatalogSyncResult { Run = lastSucceeded, Skipped = true };
+                }
+            }
+
             var run = new CatalogSyncRun
             {
                 DateCreated = now,
@@ -79,7 +103,7 @@ namespace CardCollector.Services
             IReadOnlyDictionary<CatalogReviewItemKind, int> openedByKind = new Dictionary<CatalogReviewItemKind, int>();
             try
             {
-                openedByKind = await RunAsync(run, recentRuns, sourceMode, now, cancellationToken).ConfigureAwait(false);
+                openedByKind = await RunAsync(run, recentRuns, sourceMode, preloaded, now, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -115,11 +139,10 @@ namespace CardCollector.Services
             recentRuns.FirstOrDefault(r => status(r) == CatalogSourceStatus.Succeeded) is { } last ? count(last) : null;
 
         [ExcludeFromCodeCoverage(Justification = "Thin dispatch over the source caches' own load methods; I/O, not testable logic.")]
-        private async Task<(IReadOnlyList<YamlCard> YamlYugi, IReadOnlyList<YGOProDeckCard> YGOProDeck, IReadOnlyList<TCGPriceSet> TCGPlayer)> LoadSourcesAsync(
-            CatalogSourceMode sourceMode)
+        private async Task<CatalogSourceData> LoadSourcesAsync(CatalogSourceMode sourceMode)
         {
             if (sourceMode == CatalogSourceMode.CacheOnly)
-                return (_yamlYugiSource.ReadCached(), _ygoProDeckSource.ReadCached(), _tcgCatalogCache.GetAllPrintings());
+                return new CatalogSourceData(_yamlYugiSource.ReadCached(), _ygoProDeckSource.ReadCached(), _tcgCatalogCache.GetAllPrintings());
 
             var force = sourceMode == CatalogSourceMode.Force;
             if (force)
@@ -130,7 +153,7 @@ namespace CardCollector.Services
 
             var yamlYugi = await _yamlYugiSource.LoadAsync(force).ConfigureAwait(false);
             var ygoProDeck = await _ygoProDeckSource.LoadAsync(force).ConfigureAwait(false);
-            return (yamlYugi, ygoProDeck, _tcgCatalogCache.GetAllPrintings());
+            return new CatalogSourceData(yamlYugi, ygoProDeck, _tcgCatalogCache.GetAllPrintings());
         }
 
         /// <summary>Records a guardrail stop as its own review item, after the run's real changes were thrown away.</summary>
@@ -153,10 +176,11 @@ namespace CardCollector.Services
             CatalogSyncRun run,
             IReadOnlyList<CatalogSyncRun> recentRuns,
             CatalogSourceMode sourceMode,
+            CatalogSourceData? preloaded,
             DateTime now,
             CancellationToken cancellationToken)
         {
-            var (yamlCards, ygoProDeckCards, tcgRows) = await LoadSourcesAsync(sourceMode).ConfigureAwait(false);
+            var (yamlCards, ygoProDeckCards, tcgRows) = preloaded ?? await LoadSourcesAsync(sourceMode).ConfigureAwait(false);
             var corrections = RarityCorrectionLoader.Load(_logger);
             var products = CatalogSourceNormalizer.FromTCGPlayer(tcgRows, corrections);
 

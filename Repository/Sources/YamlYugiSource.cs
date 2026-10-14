@@ -18,6 +18,9 @@ namespace CardCollector.Repository.Sources
         private readonly ILogger<YamlYugiSource> _logger;
         private readonly string _yamlYugiURL;
 
+        [ExcludeFromCodeCoverage(Justification = "Reads a timestamp file on disk; I/O, not testable logic.")]
+        public DateTime? CachedAtUTC => FileCacheHelper.ReadTimestamp(GetCachePaths().TimestampPath);
+
         public YamlYugiSource(ILogger<YamlYugiSource> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _logger = logger;

@@ -11,6 +11,9 @@ namespace CardCollector.Services
     /// </summary>
     public interface ITCGCatalogCache
     {
+        /// <summary>When the cache file on disk was last written; null when there is none.</summary>
+        DateTime? CachedAtUTC { get; }
+
         /// <summary>Returns every known printing in the catalog.</summary>
         IReadOnlyList<TCGPriceSet> GetAllPrintings();
 

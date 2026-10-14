@@ -128,6 +128,11 @@ namespace CardCollector
             var syncService = scope.ServiceProvider.GetRequiredService<ICatalogSyncService>();
             var result = await syncService.SyncAsync(sourceMode).ConfigureAwait(false);
             var run = result.Run;
+            if (result.Skipped)
+            {
+                Console.WriteLine($"Catalog sync skipped: the cached sources haven't changed since run {run.ID} finished.");
+                return 0;
+            }
 
             Console.WriteLine($"Catalog sync {run.ID}: {run.Status}{(run.IsBootstrap ? " (bootstrap)" : string.Empty)}");
             if (!string.IsNullOrWhiteSpace(run.Message))

@@ -132,6 +132,31 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task SyncAsync_StartUpWithCacheWrittenAfterLastRun_Syncs()
+        {
+            await RunSyncAsync();
+
+            var result = await RunSyncAsync(sourceMode: CatalogSourceMode.IfStale, cachedAtUTC: new DateTime(2026, 10, 12, 5, 0, 0, DateTimeKind.Utc));
+
+            Assert.IsFalse(result.Skipped);
+            using var context = NewContext();
+            Assert.AreEqual(2, await context.CatalogSyncRuns.CountAsync());
+        }
+
+        [TestMethod]
+        public async Task SyncAsync_StartUpWithSourcesUnchangedSinceLastRun_SkipsWithoutRecordingARun()
+        {
+            var first = await RunSyncAsync();
+
+            var result = await RunSyncAsync(sourceMode: CatalogSourceMode.IfStale, cachedAtUTC: new DateTime(2026, 10, 11, 23, 0, 0, DateTimeKind.Utc));
+
+            Assert.IsTrue(result.Skipped);
+            Assert.AreEqual(first.Run.ID, result.Run.ID);
+            using var context = NewContext();
+            Assert.AreEqual(1, await context.CatalogSyncRuns.CountAsync());
+        }
+
+        [TestMethod]
         public async Task SyncAsync_TooManyActionableItems_RollsBackAndRecordsAnomaly()
         {
             await RunSyncAsync();
@@ -177,14 +202,25 @@ namespace CardCollector.Tests.Services
         private AppDBContext NewContext() =>
             new(new DbContextOptionsBuilder<AppDBContext>().UseSqlite(_connection).Options);
 
-        private async Task<CatalogSyncResult> RunSyncAsync(int maxNewActionableItems = 250)
+        /// <param name="maxNewActionableItems">The guardrail on newly opened actionable items.</param>
+        /// <param name="sourceMode">How the run reads its sources; the start-up mode reads <paramref name="cachedAtUTC"/>.</param>
+        /// <param name="cachedAtUTC">When every source's cache file was written, as the sources report it.</param>
+        private async Task<CatalogSyncResult> RunSyncAsync(
+            int maxNewActionableItems = 250,
+            CatalogSourceMode sourceMode = CatalogSourceMode.CacheOnly,
+            DateTime? cachedAtUTC = null)
         {
             var yamlSource = new Mock<IYamlYugiSource>();
             yamlSource.Setup(s => s.ReadCached()).Returns(_yamlCards.ToList());
+            yamlSource.Setup(s => s.LoadAsync(false)).ReturnsAsync(_yamlCards.ToList());
+            yamlSource.Setup(s => s.CachedAtUTC).Returns(cachedAtUTC);
             var ygoProDeckSource = new Mock<IYGOProDeckSource>();
             ygoProDeckSource.Setup(s => s.ReadCached()).Returns(_ygoProDeckCards.ToList());
+            ygoProDeckSource.Setup(s => s.LoadAsync(false)).ReturnsAsync(_ygoProDeckCards.ToList());
+            ygoProDeckSource.Setup(s => s.CachedAtUTC).Returns(cachedAtUTC);
             var tcgCatalogCache = new Mock<ITCGCatalogCache>();
             tcgCatalogCache.Setup(c => c.GetAllPrintings()).Returns(_tcgRows.ToList());
+            tcgCatalogCache.Setup(c => c.CachedAtUTC).Returns(cachedAtUTC);
 
             using var context = NewContext();
             var service = new CatalogSyncService(
@@ -198,7 +234,7 @@ namespace CardCollector.Tests.Services
                 ygoProDeckSource.Object,
                 new FakeTimeProvider(new DateTimeOffset(2026, 10, 12, 4, 0, 0, TimeSpan.Zero).AddDays(_runCount++)));
 
-            return await service.SyncAsync(CatalogSourceMode.CacheOnly);
+            return await service.SyncAsync(sourceMode);
         }
     }
 }
