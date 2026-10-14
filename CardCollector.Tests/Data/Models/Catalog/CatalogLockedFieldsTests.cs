@@ -32,5 +32,21 @@ namespace CardCollector.Tests.Data.Models.Catalog
 
             Assert.AreEqual(expected, result);
         }
+
+        [TestMethod]
+        public void Remove_LastLockedField_ReturnsNull()
+        {
+            var result = CatalogLockedFields.Remove("Name", "name");
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public void Remove_OneOfSeveral_KeepsTheOthersInOrder()
+        {
+            var result = CatalogLockedFields.Remove("Name, Passcode,ATK", CatalogCardField.PASSCODE);
+
+            Assert.AreEqual("Name,ATK", result);
+        }
     }
 }

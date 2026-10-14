@@ -7,6 +7,7 @@ namespace CardCollector.Rules.Catalog
     /// Reports active cards and printings that no source mentioned this run. Nothing is retired automatically; the review
     /// item lets the user decide. Only runs whose relevant sources all succeeded can tell "gone" from "not downloaded".
     /// </summary>
+    /// <remarks>Printings added by hand are skipped: no source is expected to list them.</remarks>
     public static class CatalogNotSeenRules
     {
         public static void Detect(CatalogState state, CatalogSyncContext context, CatalogDiffResult result)
@@ -36,7 +37,7 @@ namespace CardCollector.Rules.Catalog
                 if (!context.TCGPlayerSucceeded)
                     continue;
 
-                foreach (var printing in card.Printings.Where(p => p.Status == CatalogStatus.Active && p.LastSeenUTC < now))
+                foreach (var printing in card.Printings.Where(p => p.Status == CatalogStatus.Active && p.LastSeenUTC < now && !p.Sources.Any(s => s.Source == CatalogSource.Manual)))
                 {
                     result.Items.Add(new DetectedReviewItem
                     {

@@ -1,0 +1,118 @@
+@page
+@model CardCollector.Pages.Catalog.SyncsModel
+@using CardCollector.Data.Models.Catalog
+@{
+    ViewData["Title"] = "Catalog Syncs";
+    var runs = Model.History.Runs;
+    string StatusClass(CatalogSyncRunStatus status) => status switch
+    {
+        CatalogSyncRunStatus.Succeeded => "text-bg-success",
+        CatalogSyncRunStatus.Running => "text-bg-info",
+        CatalogSyncRunStatus.Aborted => "text-bg-warning",
+        _ => "text-bg-danger"
+    };
+    string SourceClass(CatalogSourceStatus? status) => status switch
+    {
+        CatalogSourceStatus.Succeeded => "text-success",
+        CatalogSourceStatus.Skipped => "text-warning",
+        CatalogSourceStatus.Failed => "text-danger",
+        _ => "text-muted"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Catalog Syncs</h1>
+    <span class="badge-neutral fs-6">@runs.TotalCount runs</span>
+</div>
+
+@foreach (var streak in Model.History.FailureStreaks)
+{
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        <strong>@streak.Source</strong> hasn't been read successfully in the last @streak.RunCount syncs
+        @(streak.LastSucceededUTC is DateTime last ? $"(last success {last:MMM d, yyyy})" : "(no recorded success)").
+        The catalog keeps its data from that source unchanged until it recovers.
+    </div>
+}
+
+@if (!runs.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">No sync has run yet.</div>
+}
+else
+{
+    <div class="table-responsive cc-table-card mb-4">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Started</th>
+                    <th>Result</th>
+                    <th class="d-none d-md-table-cell">Sources</th>
+                    <th class="d-none d-md-table-cell text-end">Added</th>
+                    <th class="d-none d-md-table-cell text-end">Products</th>
+                    <th class="d-none d-md-table-cell text-end">Review items</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var run in runs.Items)
+                {
+                    <tr>
+                        <td class="text-nowrap">
+                            @run.StartedUTC.ToString("MMM d, yyyy HH:mm") UTC
+                            @if (run.FinishedUTC is DateTime finished)
+                            {
+                                <div class="small text-muted">@((int)Math.Round((finished - run.StartedUTC).TotalSeconds))s</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @StatusClass(run.Status)">@run.Status</span>
+                            @if (run.IsBootstrap)
+                            {
+                                <span class="badge text-bg-light border">Bootstrap</span>
+                            }
+                            @if (!string.IsNullOrEmpty(run.Message))
+                            {
+                                <div class="small text-muted text-break">@run.Message</div>
+                            }
+                            <div class="small text-muted d-md-none mt-1">
+                                @foreach (var source in run.Sources)
+                                {
+                                    <span class="@SourceClass(source.Status) me-2">@source.Label @(source.Status?.ToString() ?? "not read")</span>
+                                }
+                                <div>+@run.CardsAdded cards, +@run.PrintingsAdded printings &middot; @run.ItemsOpened opened, @run.ItemsAutoResolved auto-resolved</div>
+                            </div>
+                        </td>
+                        <td class="d-none d-md-table-cell small">
+                            @foreach (var source in run.Sources)
+                            {
+                                <div>
+                                    <span class="@SourceClass(source.Status)">@source.Label: @(source.Status?.ToString() ?? "not read")</span>
+                                    @if (source.Count > 0)
+                                    {
+                                        <span class="text-muted">(@source.Count.ToString("N0"))</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="d-none d-md-table-cell text-end small">
+                            <div>@run.CardsAdded cards</div>
+                            <div>@run.PrintingsAdded printings</div>
+                            <div class="text-muted">@run.CardsUpdated cards updated</div>
+                        </td>
+                        <td class="d-none d-md-table-cell text-end small">
+                            <div>@run.ProductsLinked.ToString("N0") linked</div>
+                            <div>@run.ProductsUnmapped unmapped</div>
+                            <div class="text-muted">@run.ProductsIgnored.ToString("N0") ignored</div>
+                        </td>
+                        <td class="d-none d-md-table-cell text-end small">
+                            <div>@run.ItemsOpened opened</div>
+                            <div>@run.ItemsAutoResolved auto-resolved</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Sync history pagination", PageName = "/Catalog/Syncs", PageNumber = Model.PageNumber, PageSize = Model.PageSize, TotalPages = runs.TotalPages, HasPreviousPage = runs.HasPreviousPage, HasNextPage = runs.HasNextPage }' />
+}

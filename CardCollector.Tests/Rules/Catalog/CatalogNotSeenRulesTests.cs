@@ -29,6 +29,19 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void Detect_ManualPrintingNotSeen_IsNotReported()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            card.LastSeenUTC = NowUTC;
+            var printing = Printing(card, 10, "SYN-EN001", "Ultra Rare");
+            printing.Sources.Add(new CatalogPrintingSource { ExternalKey = "manual:10", Source = CatalogSource.Manual });
+
+            var result = Run(State(card), Context());
+
+            Assert.AreEqual(0, result.Items.Count);
+        }
+
+        [TestMethod]
         public void Detect_PrintingNotSeenOnSeenCard_ReportsPrintingOnlyWhenTCGPlayerSucceeded()
         {
             var card = Card(1, "Synthetic Dragon");

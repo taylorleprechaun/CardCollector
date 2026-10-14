@@ -58,6 +58,10 @@ else if (Model.CurrentCard is not null && primaryImage is not null)
             }
             <p class="mt-2">@Model.CurrentCard.Description</p>
 
+            <p class="small mb-2">
+                <a href="/Catalog/CardDetails?id=@Model.CurrentCard.ID"><i class="bi bi-pencil-square me-1"></i>Edit catalog record</a>
+            </p>
+
             @if (Model.IsIgnored)
             {
                 <div class="d-flex align-items-center gap-2 mb-3">

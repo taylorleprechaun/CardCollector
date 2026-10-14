@@ -14,5 +14,8 @@ namespace CardCollector.Models.Catalog
         /// run, on the assumption the download was partial.
         /// </summary>
         public double MinSourceRatio { get; set; } = 0.9;
+
+        /// <summary>The sync history page warns about a source once it has failed or been skipped this many runs in a row.</summary>
+        public int SourceFailureWarningRuns { get; set; } = 3;
     }
 }

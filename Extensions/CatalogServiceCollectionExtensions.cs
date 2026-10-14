@@ -15,6 +15,8 @@ namespace CardCollector.Extensions
             services.Configure<CatalogSyncSettings>(configuration.GetSection("CatalogSync"));
 
             services.AddSingleton<ICardDataRepository, CatalogCardDataRepository>();
+            services.AddScoped<ICatalogAdminRepository, CatalogAdminRepository>();
+            services.AddScoped<ICatalogAdminService, CatalogAdminService>();
             services.AddScoped<ICatalogRepository, CatalogRepository>();
             services.AddScoped<ICatalogReviewRepository, CatalogReviewRepository>();
             services.AddScoped<ICatalogReviewService, CatalogReviewService>();

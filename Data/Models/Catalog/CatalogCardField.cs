@@ -16,5 +16,9 @@ namespace CardCollector.Data.Models.Catalog
         public const string PASSCODE = nameof(CatalogCard.Passcode);
         public const string TYPE = nameof(CatalogCard.Type);
         public const string TYPE_LINE = nameof(CatalogCard.TypeLine);
+
+        /// <summary>Every lockable field name.</summary>
+        public static readonly IReadOnlyList<string> All =
+            [ARCHETYPE, ATK, ATTRIBUTE, CARD_TYPE, DEF, DESCRIPTION, LEVEL, LINK_MARKERS, LINK_RATING, NAME, PASSCODE, TYPE, TYPE_LINE];
     }
 }
