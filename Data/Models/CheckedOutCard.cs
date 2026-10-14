@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public class CheckedOutCard
+    public class CheckedOutCard : IPrintingKeyedRow
     {
         [Required]
         public int CardID { get; set; }
@@ -28,5 +28,11 @@ namespace CardCollector.Data.Models
 
         [Required]
         public string SetCode { get; set; } = string.Empty;
+
+        string? IPrintingKeyedRow.RarityName
+        {
+            get => RarityName;
+            set => RarityName = value ?? string.Empty;
+        }
     }
 }

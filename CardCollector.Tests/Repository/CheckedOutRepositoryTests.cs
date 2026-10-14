@@ -17,65 +17,65 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Short Print", Quantity = 1 });
-
-            var result = await repository.GetAsync(10, "LOB-EN001", "Common");
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
         public async Task AddAsync_ThenGetAsync_RoundTrips()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 2 });
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 2 });
 
-            var result = await repository.GetAsync(10, "LOB-EN001", "Ultra Rare");
+            var result = await repository.GetAsync(101);
 
-            Assert.IsNotNull(result);
             Assert.AreEqual(2, result!.Quantity);
         }
+
         [TestMethod]
         public async Task GetAllAsync_OrdersByCheckedOutDateDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 1, SetCode = "OLD-EN001", RarityName = "A", CheckedOutDate = new DateTime(2020, 1, 1) });
-            await repository.AddAsync(new CheckedOutCard { CardID = 2, SetCode = "NEW-EN001", RarityName = "B", CheckedOutDate = new DateTime(2026, 1, 1) });
+            await repository.AddAsync(new CheckedOutCard { CardID = 1, CatalogPrintingID = 101, CheckedOutDate = new DateTime(2020, 1, 1) });
+            await repository.AddAsync(new CheckedOutCard { CardID = 2, CatalogPrintingID = 201, CheckedOutDate = new DateTime(2026, 1, 1) });
 
             var result = await repository.GetAllAsync();
 
-            Assert.AreEqual("NEW-EN001", result[0].SetCode);
+            Assert.AreEqual(201, result[0].CatalogPrintingID);
         }
 
         [TestMethod]
-        public async Task GetAsync_LookupByRawShortPrintRarityName_FindsNormalizedStoredRow()
+        public async Task GetAsync_OtherPrintingOfSameCard_ReturnsNull()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Short Print", Quantity = 1 });
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 1 });
 
-            var result = await repository.GetAsync(10, "LOB-EN001", "Short Print");
+            var result = await repository.GetAsync(102);
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Common", result!.RarityName);
+            Assert.IsNull(result);
         }
+
         [TestMethod]
-        public async Task GetCheckedOutLookupAsync_KeyedByCardSetRarityVariant()
+        public async Task GetCheckedOutLookupAsync_KeyedByPrintingID()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
             var date = new DateTime(2026, 1, 1);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", CheckedOutDate = date, Quantity = 2 });
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, CheckedOutDate = date, Quantity = 2 });
 
             var result = await repository.GetCheckedOutLookupAsync();
 
-            Assert.AreEqual((date, 2), result[(10, "LOB-EN001", "Ultra Rare", null)]);
+            Assert.AreEqual((date, 2), result[101]);
+        }
+
+        [TestMethod]
+        public async Task GetCheckedOutLookupAsync_RowWithoutPrintingID_IsLeftOut()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new CheckedOutRepository(context);
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 2 });
+
+            var result = await repository.GetCheckedOutLookupAsync();
+
+            Assert.AreEqual(0, result.Count);
         }
 
         [TestMethod]
@@ -83,12 +83,12 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101 });
 
-            var result = await repository.RemoveAsync(10, "LOB-EN001", "Ultra Rare");
+            var result = await repository.RemoveAsync(101);
 
             Assert.IsTrue(result);
-            Assert.IsNull(await repository.GetAsync(10, "LOB-EN001", "Ultra Rare"));
+            Assert.IsNull(await repository.GetAsync(101));
         }
 
         [TestMethod]
@@ -97,7 +97,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
 
-            var result = await repository.RemoveAsync(999, "LOB-EN001", "Ultra Rare");
+            var result = await repository.RemoveAsync(999);
 
             Assert.IsFalse(result);
         }
@@ -107,11 +107,11 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 });
+            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 1 });
 
-            await repository.UpdateAsync(10, "LOB-EN001", "Ultra Rare", 5);
+            await repository.UpdateAsync(101, 5);
 
-            var result = await repository.GetAsync(10, "LOB-EN001", "Ultra Rare");
+            var result = await repository.GetAsync(101);
             Assert.AreEqual(5, result!.Quantity);
         }
 
@@ -121,7 +121,7 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new CheckedOutRepository(context);
 
-            await repository.UpdateAsync(999, "LOB-EN001", "Ultra Rare", 1);
+            await repository.UpdateAsync(999, 1);
         }
     }
 }

@@ -24,6 +24,9 @@ namespace CardCollector.Models.Catalog
         /// <summary>Every known passcode or source id, mapped to the catalog card it belongs to.</summary>
         public IReadOnlyDictionary<int, int> PasscodeAliases { get; init; } = new Dictionary<int, int>();
 
+        /// <summary>Every active printing of an active card, by catalog printing ID.</summary>
+        public IReadOnlyDictionary<int, CatalogPrintingRef> PrintingsByID { get; init; } = new Dictionary<int, CatalogPrintingRef>();
+
         public IReadOnlyDictionary<string, string> SetNamesByCode { get; init; } = new Dictionary<string, string>();
 
         public IReadOnlyDictionary<string, string> SetPrefixByName { get; init; } = new Dictionary<string, string>();

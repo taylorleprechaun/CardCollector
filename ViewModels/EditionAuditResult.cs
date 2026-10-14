@@ -31,6 +31,7 @@ namespace CardCollector.ViewModels
             CollectionEntryID = collectionEntryID,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             RarityCode = printing.RarityCode,
             RarityName = printing.RarityName,

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public class CollectionEntry
+    public class CollectionEntry : IPrintingKeyedRow
     {
         public AcquisitionMethod? AcquisitionMethod { get; set; }
 

@@ -8,6 +8,21 @@ namespace CardCollector.Tests.Rules.Catalog
     public sealed class CatalogReadModelBuilderTests
     {
         [TestMethod]
+        public void Build_ActivePrinting_IsIndexedByIDWithItsCard()
+        {
+            var card = Card(42, "Synthetic Dragon");
+            Printing(card, 7, "RA05-EN146", "Ultra Rare", "Extended Art");
+            Printing(card, 8, "RA05-EN146", "Ultra Rare").Status = CatalogStatus.Retired;
+
+            var model = CatalogReadModelBuilder.Build(State(card));
+
+            var printing = model.PrintingsByID[7];
+            Assert.AreEqual(42, printing.Card.ID);
+            Assert.AreEqual("Extended Art", printing.Printing.PrintVariant);
+            Assert.IsFalse(model.PrintingsByID.ContainsKey(8));
+        }
+
+        [TestMethod]
         public void Build_CardWithoutImages_FallsBackToPasscodeImage()
         {
             var card = Card(1, "Synthetic Dragon", passcode: 11111111);

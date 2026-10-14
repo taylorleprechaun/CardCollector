@@ -14,12 +14,10 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddOrUpdateAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null)
+        public async Task AddOrUpdateAsync(int printingID, int cardID, int? desiredQuantity = null)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName);
-
             var existing = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID && pv.SetCode == setCode && pv.RarityName == rarityName && pv.PrintVariant == printVariant)
+                .FirstOrDefaultAsync(pv => pv.CatalogPrintingID == printingID)
                 .ConfigureAwait(false);
 
             if (existing is null)
@@ -27,12 +25,10 @@ namespace CardCollector.Repository
                 _context.PreferredVersions.Add(new PreferredVersion
                 {
                     CardID = cardID,
-                    DesiredQuantity = desiredQuantity ?? 3,
-                    PrintVariant = printVariant,
-                    RarityName = rarityName,
-                    SetCode = setCode,
+                    CatalogPrintingID = printingID,
                     DateCreated = DateTime.UtcNow,
-                    DateModified = DateTime.UtcNow
+                    DateModified = DateTime.UtcNow,
+                    DesiredQuantity = desiredQuantity ?? 3
                 });
             }
             else

@@ -18,6 +18,7 @@ namespace CardCollector.ViewModels
             CheckedOutQuantity = checkedOutQuantity,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             RarityCode = printing.RarityCode,
             RarityName = printing.RarityName,

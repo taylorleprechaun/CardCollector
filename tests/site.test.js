@@ -81,6 +81,30 @@ describe('site.js', () => {
     }
   });
 
+  describe('buildPriceURL', () => {
+    it('printing ID builds a lookup by printing and edition', () => {
+      loadScript('site.js');
+
+      const url = buildPriceURL({ printingID: 101, cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }, '0');
+
+      expect(url).toBe('/api/price?printingID=101&edition=0');
+    });
+
+    it('card, set code, and rarity without a printing ID builds the column lookup', () => {
+      loadScript('site.js');
+
+      const url = buildPriceURL({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare', printVariant: 'Extended Art' }, '2');
+
+      expect(url).toBe('/api/price?cardID=1&setCode=LOB-EN001&rarityName=Ultra%20Rare&edition=2&printVariant=Extended%20Art');
+    });
+
+    it('neither a printing ID nor a full set of columns returns null', () => {
+      loadScript('site.js');
+
+      expect(buildPriceURL({ cardID: 1, setCode: 'LOB-EN001' }, '0')).toBeNull();
+    });
+  });
+
   describe('buildTypeahead', () => {
     function setupTypeahead() {
       document.body.innerHTML = '<input id="input" /><div id="dropdown"></div>';

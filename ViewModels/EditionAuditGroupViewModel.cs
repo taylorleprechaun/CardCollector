@@ -23,6 +23,7 @@ namespace CardCollector.ViewModels
             FlaggedCount = entries.Count(e => e.Category.HasValue),
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             RarityCode = printing.RarityCode,
             RarityName = printing.RarityName,

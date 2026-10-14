@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public sealed class DismissedNewPrinting
+    public sealed class DismissedNewPrinting : IPrintingKeyedRow
     {
         [Required]
         public int CardID { get; set; }
@@ -24,5 +24,11 @@ namespace CardCollector.Data.Models
 
         [Required]
         public string SetCode { get; set; } = string.Empty;
+
+        string? IPrintingKeyedRow.RarityName
+        {
+            get => RarityName;
+            set => RarityName = value ?? string.Empty;
+        }
     }
 }

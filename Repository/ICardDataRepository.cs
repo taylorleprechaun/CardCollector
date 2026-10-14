@@ -1,4 +1,5 @@
 using CardCollector.DTO;
+using CardCollector.Models.Catalog;
 
 namespace CardCollector.Repository
 {
@@ -43,6 +44,12 @@ namespace CardCollector.Repository
         /// entry is unknown.
         /// </summary>
         IReadOnlyDictionary<int, int> GetPasscodeAliases();
+
+        /// <summary>
+        /// Returns an active catalog printing with its card, or null when the ID is unknown or the printing (or its card) is
+        /// retired.
+        /// </summary>
+        CatalogPrintingRef? GetPrintingByID(int printingID);
 
         /// <summary>
         /// Returns a dictionary mapping full card code (e.g. "LOB-EN001") to canonical set name (e.g. "Legend of Blue Eyes White Dragon").

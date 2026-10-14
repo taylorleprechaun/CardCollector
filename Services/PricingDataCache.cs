@@ -26,8 +26,19 @@ namespace CardCollector.Services
                 .GroupBy(p => p.ProductID)
                 .ToDictionary(g => g.Key, g => (IReadOnlyList<TCGPriceSet>)g.ToList());
 
-        public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) =>
-            LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
+        public IReadOnlyList<TCGPriceSet> GetCardSets(int cardID) => LookupCardSets(_cardDataRepository.GetCardByID(cardID), _pricingIndex);
+
+        public IReadOnlyList<TCGPriceSet> GetPrintingRows(int printingID) => LookupPrintingRows(_cardDataRepository.GetPrintingByID(printingID)?.Printing, _pricingIndex);
+
+        public IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> GetPrintingRowsByCard(int cardID)
+        {
+            var index = _pricingIndex;
+            return (_cardDataRepository.GetCardByID(cardID)?.CardSets ?? [])
+                .Where(s => s.PrintingID > 0)
+                .Select(s => (s.PrintingID, Rows: LookupPrintingRows(s, index)))
+                .Where(x => x.Rows.Count > 0)
+                .ToDictionary(x => x.PrintingID, x => x.Rows);
+        }
 
         /// <summary>
         /// Returns the price rows of every TCGPlayer product linked to the card's printings (public for direct unit testing).
@@ -66,6 +77,12 @@ namespace CardCollector.Services
 
             return matches;
         }
+
+        /// <summary>Returns the price rows of the printing's linked TCGPlayer products (public for direct unit testing).</summary>
+        public static IReadOnlyList<TCGPriceSet> LookupPrintingRows(Set? printing, IReadOnlyDictionary<int, IReadOnlyList<TCGPriceSet>> pricingIndex) =>
+            printing is null
+                ? []
+                : printing.TCGProductIDs.SelectMany(productID => pricingIndex.TryGetValue(productID, out var rows) ? rows : []).ToList();
 
         public void RebuildIndex() => _pricingIndex = BuildIndex(_tcgCatalogCache.GetAllPrintings());
     }

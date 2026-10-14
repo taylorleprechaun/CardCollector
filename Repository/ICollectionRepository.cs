@@ -81,20 +81,21 @@ namespace CardCollector.Repository
         Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync();
 
         /// <summary>
-        /// Returns the (cardID, setCode, rarityName) of every Owned entry, for cross-referencing against
-        /// tracked printings at the individual-printing level.
+        /// Returns each distinct (card, catalog printing) that has an Owned entry, for cross-referencing against tracked
+        /// printings.
         /// </summary>
-        Task<IReadOnlyList<(int CardID, string SetCode, string? RarityName)>> GetOwnedCardPrintingsAsync();
+        Task<IReadOnlyList<(int CardID, int PrintingID)>> GetOwnedCardPrintingsAsync();
 
         /// <summary>
-        /// Returns the set of (cardID, setCode) pairs present in Owned entries only.
+        /// Returns the catalog printing IDs that have at least one Owned entry.
         /// </summary>
-        Task<IReadOnlySet<(int CardID, string SetCode)>> GetOwnedPairsAsync();
+        Task<IReadOnlySet<int>> GetOwnedPrintingIDsAsync();
+
         /// <summary>
-        /// Returns the total owned quantity per (cardID, setCode, rarityName) combination for the given set of combinations.
-        /// Combinations with no owned entries are omitted from the result.
+        /// Returns the total owned quantity of each of the given catalog printings. Printings with no owned entries are
+        /// omitted from the result.
         /// </summary>
-        Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int CardID, string SetCode, string RarityName)> pairs);
+        Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByPrintingAsync(IEnumerable<int> printingIDs);
 
         /// <summary>
         /// Returns the rarity-aware owned quantity per (cardID, setCode) pair for the given preferred versions.

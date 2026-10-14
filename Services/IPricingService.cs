@@ -15,6 +15,12 @@ namespace CardCollector.Services
         Task<IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>> GetCardEditionMapAsync(int cardID);
 
         /// <summary>
+        /// Returns the editions TCGPlayer lists for each of the card's printings, keyed by catalog printing ID. A printing
+        /// with no linked TCGPlayer product is left out.
+        /// </summary>
+        Task<IReadOnlyDictionary<int, IReadOnlySet<CardEdition>>> GetEditionsByPrintingAsync(int cardID);
+
+        /// <summary>
         /// Returns the current TCGPlayer market price for the specified card printing, or null if unavailable.
         /// <paramref name="printVariant"/> distinguishes a base print (null) from a distinct sellable variant of
         /// the same rarity (e.g. "Extended Art"). When <paramref name="edition"/> is provided, matches the
@@ -22,5 +28,11 @@ namespace CardCollector.Services
         /// edition-qualified printing is found.
         /// </summary>
         Task<decimal?> GetPrintingPriceAsync(int cardID, string setCode, string rarityName, CardEdition? edition = null, string? printVariant = null);
+
+        /// <summary>
+        /// Returns the current TCGPlayer market price of a catalog printing, or null if unavailable. When
+        /// <paramref name="edition"/> is provided, that edition's listing is preferred, falling back to any edition.
+        /// </summary>
+        Task<decimal?> GetPrintingPriceAsync(int printingID, CardEdition? edition = null);
     }
 }

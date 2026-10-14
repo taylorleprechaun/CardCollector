@@ -92,12 +92,11 @@ else if (Model.CurrentCard is not null)
                                 <tr>
                                     <td>@set.Name</td>
                                     <td><code>@set.Code</code></td>
-                                    <td>@rarityKey</td>
+                                    <td>@rarityKey@(string.IsNullOrEmpty(set.PrintVariant) ? string.Empty : $" ({set.PrintVariant})")</td>
                                     <td>
                                         <form method="post" asp-page-handler="SetPreferred">
                                             <input type="hidden" name="CardID" value="@Model.CurrentCard.ID" />
-                                            <input type="hidden" name="SetCode" value="@set.Code" />
-                                            <input type="hidden" name="RarityName" value="@rarityKey" />
+                                            <input type="hidden" name="PrintingID" value="@set.PrintingID" />
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 Track This Printing
                                             </button>

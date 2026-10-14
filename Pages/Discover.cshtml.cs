@@ -21,10 +21,7 @@ namespace CardCollector.Pages
         public bool IsComplete { get; private set; }
 
         [BindProperty]
-        public string? RarityName { get; set; }
-
-        [BindProperty]
-        public string SetCode { get; set; } = string.Empty;
+        public int PrintingID { get; set; }
 
         public DiscoverModel(ICardService cardService, ICardSetRepository cardSetRepository)
         {
@@ -56,7 +53,7 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
-            await _cardService.SavePreferredVersionAsync(CardID, SetCode, RarityName);
+            await _cardService.SavePreferredVersionAsync(PrintingID);
             return RedirectToPage();
         }
     }

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public class PreferredVersion
+    public class PreferredVersion : IPrintingKeyedRow
     {
         [Required]
         public int CardID { get; set; }

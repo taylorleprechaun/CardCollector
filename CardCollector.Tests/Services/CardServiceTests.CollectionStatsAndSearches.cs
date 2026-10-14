@@ -170,15 +170,20 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task SearchGroupedOwnedAsync_IsCheckedOutFilter_MatchesOnlyCheckedOutGroups()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
+            {
+                ID = 1,
+                Name = "Dark Magician",
+                CardSets = [new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" }]
+            });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
             ]);
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>
+                .ReturnsAsync(new Dictionary<int, (DateTime Date, int Quantity)>
                 {
-                    [(1, "LOB-EN001", "", null)] = (DateTime.UtcNow, 1)
+                    [101] = (DateTime.UtcNow, 1)
                 });
 
             var result = await _service.SearchGroupedOwnedAsync(new CollectionSearchCriteria { IsCheckedOut = true });

@@ -43,6 +43,27 @@ namespace CardCollector.Tests
         }
 
         [TestMethod]
+        public async Task GetPriceAsync_NeitherPrintingNorCard_ReturnsBadRequest()
+        {
+            var result = await APIEndpoints.GetPriceAsync(null, null, null, null, "FirstEdition", null, new Mock<IPricingService>().Object);
+
+            Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+            Assert.AreEqual(400, ((IStatusCodeHttpResult)result).StatusCode);
+        }
+
+        [TestMethod]
+        public async Task GetPriceAsync_PrintingID_ReturnsPrintingPriceForEdition()
+        {
+            var pricingServiceMock = new Mock<IPricingService>();
+            pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(4210, CardEdition.Unlimited)).ReturnsAsync(3.25m);
+
+            var result = await APIEndpoints.GetPriceAsync(4210, null, null, null, "Unlimited", null, pricingServiceMock.Object);
+
+            var json = result as IValueHttpResult;
+            Assert.AreEqual(3.25m, GetPropertyValue(json!.Value, "price"));
+        }
+
+        [TestMethod]
         public async Task GetPriceAsync_UnparsableEditionString_TreatsEditionAsNull()
         {
             var pricingServiceMock = new Mock<IPricingService>();
@@ -50,7 +71,7 @@ namespace CardCollector.Tests
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
                 .ReturnsAsync(5.00m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "not-a-real-edition", null, pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(null, 1, "LOB-EN001", "Ultra Rare", "not-a-real-edition", null, pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);
@@ -65,7 +86,7 @@ namespace CardCollector.Tests
                 .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition))
                 .ReturnsAsync(9.99m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "FirstEdition", null, pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(null, 1, "LOB-EN001", "Ultra Rare", "FirstEdition", null, pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);

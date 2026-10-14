@@ -108,23 +108,19 @@ else if (Model.CurrentCard is not null)
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2">
                                     @{
-                                        var setCodeKey = set.Code ?? string.Empty;
                                         var rarityKey = RarityExtensions.NormalizeRarityName(set.RarityName) ?? string.Empty;
                                         var printVariantKey = set.PrintVariant ?? string.Empty;
                                     }
-                                    @if (Model.CollectionEntriesBySetCode.TryGetValue((setCodeKey, rarityKey, printVariantKey), out var collectionSummary))
+                                    @if (Model.CollectionByPrinting.TryGetValue(set.PrintingID, out var collectionSummary))
                                     {
-                                        var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, setCodeKey, rarityKey, printVariantKey) ?? CollectionCompletionStatus.Placeholder;
+                                        var completionStatus = Model.GetCompletionStatus(collectionSummary.Status, collectionSummary.TotalQuantity, set.PrintingID) ?? CollectionCompletionStatus.Placeholder;
                                         var isOrdered = collectionSummary.Status == CollectionStatus.Ordered;
                                         var badgeClass = isOrdered ? CollectionStatus.Ordered.GetBadgeClass() : completionStatus.GetBadgeClass();
                                         var badgeLabel = isOrdered ? "Ordered" : completionStatus.GetDisplayName();
                                         <span class="badge @badgeClass">@badgeLabel &times; @collectionSummary.TotalQuantity</span>
                                     }
                                     @{
-                                        var tracked = Model.TrackedPrintings.FirstOrDefault(pv =>
-                                            string.Equals(pv.SetCode, set.Code, StringComparison.OrdinalIgnoreCase)
-                                            && (pv.RarityName is null || string.Equals(pv.RarityName, rarityKey, StringComparison.OrdinalIgnoreCase))
-                                            && string.Equals(pv.PrintVariant ?? string.Empty, printVariantKey, StringComparison.OrdinalIgnoreCase));
+                                        var tracked = Model.GetTrackedPrinting(set.PrintingID);
                                     }
                                     @if (tracked is not null)
                                     {
@@ -158,10 +154,7 @@ else if (Model.CurrentCard is not null)
                                     else
                                     {
                                         <form method="post" asp-page-handler="SetPreferred" class="d-inline">
-                                            <input type="hidden" name="CardID" value="@Model.CurrentCard!.ID" />
-                                            <input type="hidden" name="SetCode" value="@set.Code" />
-                                            <input type="hidden" name="RarityName" value="@rarityKey" />
-                                            <input type="hidden" name="PrintVariant" value="@printVariantKey" />
+                                            <input type="hidden" name="PrintingID" value="@set.PrintingID" />
                                             <input type="hidden" name="ID" value="@Model.ID" />
                                             @if (!string.IsNullOrEmpty(Model.ReturnURL))
                                             {
@@ -174,12 +167,12 @@ else if (Model.CurrentCard is not null)
                                 <div class="d-flex gap-1 flex-shrink-0">
                                     <button type="button"
                                             class="btn btn-sm btn-primary"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
+                                            onclick="openModal(@set.PrintingID, '@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Order', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
                                         Order
                                     </button>
                                     <button type="button"
                                             class="btn btn-sm btn-success"
-                                            onclick="openModal('@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
+                                            onclick="openModal(@set.PrintingID, '@(set.Code ?? string.Empty)', '@((set.Name ?? string.Empty).Replace("'", "\\'"))', 'Own', '@rarityKey.Replace("'", "\\'")', '@Model.GetTCGDate(set.Code ?? string.Empty)', '@printVariantKey.Replace("'", "\\'")')">
                                         Add to Collection
                                     </button>
                                 </div>

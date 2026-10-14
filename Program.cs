@@ -438,6 +438,10 @@ using (var scope = app.Services.CreateScope())
     db.SaveChanges();
 
     TournamentSchema.Apply(db);
+
+    var backfilled = PrintingKeyBackfill.Apply(db);
+    if (backfilled > 0)
+        logger.LogInformation("Filled in the catalog printing ID of {Count} user rows from their set code, rarity, and variant", backfilled);
 }
 
 if (catalogCommand is not null)

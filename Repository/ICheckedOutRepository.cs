@@ -3,7 +3,7 @@ using CardCollector.Data.Models;
 namespace CardCollector.Repository
 {
     /// <summary>
-    /// Provides data access for checked-out card records.
+    /// Provides data access for checked-out card records, one per catalog printing.
     /// </summary>
     public interface ICheckedOutRepository
     {
@@ -18,23 +18,23 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<CheckedOutCard>> GetAllAsync();
 
         /// <summary>
-        /// Returns the checked-out record for the given (cardID, setCode, rarityName, printVariant) combination, or null if not found.
+        /// Returns the checked-out record for the catalog printing, or null if it isn't checked out.
         /// </summary>
-        Task<CheckedOutCard?> GetAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        Task<CheckedOutCard?> GetAsync(int printingID);
 
         /// <summary>
-        /// Returns a lookup mapping (cardID, setCode, rarityName, printVariant) combinations to their checked-out date and quantity.
+        /// Returns each checked-out catalog printing's checkout date and quantity, keyed by printing ID.
         /// </summary>
-        Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync();
+        Task<IReadOnlyDictionary<int, (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync();
 
         /// <summary>
-        /// Deletes the checked-out record for the given (cardID, setCode, rarityName, printVariant) combination. Returns false if not found.
+        /// Deletes the checked-out record for the catalog printing. Returns false if it wasn't checked out.
         /// </summary>
-        Task<bool> RemoveAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        Task<bool> RemoveAsync(int printingID);
 
         /// <summary>
-        /// Updates the quantity on an existing checked-out record.
+        /// Updates the quantity on the catalog printing's checked-out record, if there is one.
         /// </summary>
-        Task UpdateAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null);
+        Task UpdateAsync(int printingID, int quantity);
     }
 }

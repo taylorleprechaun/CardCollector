@@ -19,13 +19,23 @@ function setQuantityButtons(targetId, value) {
     });
 }
 
+// The price lookup URL for a printing: by catalog printingID when the page has one, else (pages not yet moved to
+// printing IDs) by card, set code, rarity, and variant. Null when there isn't enough to look a price up.
+function buildPriceURL({ printingID, cardID, setCode, rarityName, printVariant }, edition) {
+    const editionParam = `edition=${encodeURIComponent(edition)}`;
+    if (printingID) return `/api/price?printingID=${encodeURIComponent(printingID)}&${editionParam}`;
+    if (!(cardID && setCode && rarityName)) return null;
+
+    const variantParam = printVariant ? `&printVariant=${encodeURIComponent(printVariant)}` : '';
+    return `/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&${editionParam}${variantParam}`;
+}
+
 function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     async function refreshPrice() {
-        const { cardID, setCode, rarityName, printVariant } = getParams();
-        if (!(cardID && setCode && rarityName)) return;
+        const url = buildPriceURL(getParams(), editionSelect.value);
+        if (!url) return;
         try {
-            const variantParam = printVariant ? `&printVariant=${encodeURIComponent(printVariant)}` : '';
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}${variantParam}`);
+            const resp = await fetch(url);
             if (resp.ok) {
                 const { price } = await resp.json();
                 if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);

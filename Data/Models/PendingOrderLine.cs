@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public class PendingOrderLine
+    public class PendingOrderLine : IPrintingKeyedRow
     {
         public AcquisitionMethod? AcquisitionMethod { get; set; }
 

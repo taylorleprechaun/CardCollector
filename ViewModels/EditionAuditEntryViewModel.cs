@@ -30,6 +30,7 @@ namespace CardCollector.ViewModels
             ImageURLSmall = entry.ImageURLSmall,
             MarketPriceAtEntry = entry.MarketPriceAtEntry,
             Price = entry.Price,
+            PrintingID = entry.PrintingID,
             PrintVariant = entry.PrintVariant,
             PurchaseDate = entry.PurchaseDate,
             PurchasePrice = entry.PurchasePrice,

@@ -85,11 +85,11 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: false);
 
-            var result = await page.OnPostAddPurchaseAsync(1, "LOB-EN001", 2, null, null, null, null, null, null);
+            var result = await page.OnPostAddPurchaseAsync(101, 2, null, null, null, null, null, null);
 
             _cardServiceMock.Verify(s => s.AddEntryAsync(
-                1, "LOB-EN001", CollectionStatus.Owned, 2,
-                null, null, null, null, null, null, null, null), Times.Once);
+                101, CollectionStatus.Owned, 2,
+                null, null, null, null, null, null), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 
@@ -100,9 +100,9 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: false);
 
-            await page.OnPostAddPurchaseAsync(1, "LOB-EN001", 2, null, null, null, null, null, null, setAsPreferred: true);
+            await page.OnPostAddPurchaseAsync(101, 2, null, null, null, null, null, null, setAsPreferred: true);
 
-            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(1, "LOB-EN001", null, null), Times.Once);
+            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(101, null), Times.Once);
         }
 
         [TestMethod]
@@ -112,7 +112,7 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: true);
 
-            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare") as ContentResult;
+            var result = await page.OnPostCheckInAsync(101) as ContentResult;
 
             Assert.AreEqual(string.Empty, result!.Content);
         }
@@ -124,9 +124,9 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: false);
 
-            var result = await page.OnPostCheckInAsync(10, "LOB-EN001", "Ultra Rare");
+            var result = await page.OnPostCheckInAsync(101);
 
-            _cardServiceMock.Verify(s => s.CheckInCardAsync(10, "LOB-EN001", "Ultra Rare"), Times.Once);
+            _cardServiceMock.Verify(s => s.CheckInCardAsync(101), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 
@@ -137,9 +137,9 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: false);
 
-            await page.OnPostCheckOutAsync(1, "LOB-EN001", "Ultra Rare", 3);
+            await page.OnPostCheckOutAsync(101, 3);
 
-            _cardServiceMock.Verify(s => s.CheckOutCardAsync(1, "LOB-EN001", "Ultra Rare", 3, null), Times.Once);
+            _cardServiceMock.Verify(s => s.CheckOutCardAsync(101, 3), Times.Once);
         }
 
         [TestMethod]
@@ -149,22 +149,21 @@ namespace CardCollector.Tests.Pages
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>());
             var page = CreatePage(isAjax: false);
 
-            await page.OnPostCheckOutAsync(1, "LOB-EN001", "Ultra Rare", 0);
+            await page.OnPostCheckOutAsync(101, 0);
 
-            _cardServiceMock.Verify(s => s.CheckOutCardAsync(
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
+            _cardServiceMock.Verify(s => s.CheckOutCardAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         }
 
         [TestMethod]
         public async Task OnPostDeleteAsync_AjaxWithMatch_ReturnsRenderedPartialAndSetsHeader()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
-                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
             _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>
                 {
                     TotalCount = 1,
-                    Items = [new CollectionGroupViewModel { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]
+                    Items = [new CollectionGroupViewModel { CardID = 1, PrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]
                 });
             _razorPartialRendererMock
                 .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_CollectionGroupRow", It.IsAny<CollectionGroupRowViewModel>()))

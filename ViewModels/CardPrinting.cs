@@ -16,6 +16,9 @@ namespace CardCollector.ViewModels
 
         public decimal? Price { get; init; }
 
+        /// <summary>The catalog printing; 0 when the row's printing isn't in the catalog.</summary>
+        public int PrintingID { get; init; }
+
         /// <summary>Null for a normal/base print; a distinct sellable variant of the same rarity otherwise (e.g. "Extended Art").</summary>
         public string? PrintVariant { get; init; }
 
@@ -35,6 +38,7 @@ namespace CardCollector.ViewModels
             CardType = CardType,
             ImageURLSmall = ImageURLSmall,
             Price = price,
+            PrintingID = PrintingID,
             PrintVariant = PrintVariant,
             RarityCode = RarityCode,
             RarityName = RarityName,

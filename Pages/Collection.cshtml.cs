@@ -109,39 +109,38 @@ namespace CardCollector.Pages
         }
 
         public async Task<IActionResult> OnPostAddPurchaseAsync(
-            int cardID, string setCode,
+            int printingID,
             int quantity,
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry,
-            bool setAsPreferred = false,
-            string? rarityName = null, string? printVariant = null)
+            bool setAsPreferred = false)
         {
-            await this.WarnIfEditionMismatchAsync(_cardService, cardID, setCode, rarityName, edition);
+            await this.WarnIfEditionMismatchAsync(_cardService, printingID, edition);
 
             await _cardService.AddEntryAsync(
-                cardID, setCode, CollectionStatus.Owned,
+                printingID, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod,
-                purchaseDate, purchasePrice, marketPriceAtEntry, rarityName, printVariant);
+                purchaseDate, purchasePrice, marketPriceAtEntry);
 
             if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(cardID, setCode, rarityName, printVariant);
+                await _cardService.SavePreferredVersionAsync(printingID);
 
-            return await RespondAfterMutationAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(printingID).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckInAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
+        public async Task<IActionResult> OnPostCheckInAsync(int printingID)
         {
-            await _cardService.CheckInCardAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
+            await _cardService.CheckInCardAsync(printingID).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(printingID).ConfigureAwait(false);
         }
 
-        public async Task<IActionResult> OnPostCheckOutAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null)
+        public async Task<IActionResult> OnPostCheckOutAsync(int printingID, int quantity)
         {
             if (quantity >= 1)
-                await _cardService.CheckOutCardAsync(cardID, setCode, rarityName, quantity, printVariant).ConfigureAwait(false);
-            return await RespondAfterMutationAsync(cardID, setCode, rarityName, printVariant).ConfigureAwait(false);
+                await _cardService.CheckOutCardAsync(printingID, quantity).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(printingID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int entryID)
@@ -150,9 +149,7 @@ namespace CardCollector.Pages
 
             await _collectionRepository.DeleteAsync(entryID);
 
-            return existing is null
-                ? await RespondAfterMutationAsync(0, string.Empty, null, null).ConfigureAwait(false)
-                : await RespondAfterMutationAsync(existing.CardID, existing.SetCode, existing.RarityName, existing.PrintVariant).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(existing?.CatalogPrintingID ?? 0).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostEditAsync(
@@ -160,7 +157,7 @@ namespace CardCollector.Pages
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice,
-            decimal? marketPriceAtEntry, string? rarityName = null)
+            decimal? marketPriceAtEntry)
         {
             var existing = await _collectionRepository.GetByIDAsync(entryID).ConfigureAwait(false);
 
@@ -173,15 +170,12 @@ namespace CardCollector.Pages
                 MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
-                Quantity = quantity < 1 ? 1 : quantity,
-                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName
+                Quantity = quantity < 1 ? 1 : quantity
             };
 
             await _collectionRepository.UpdateAsync(entry);
 
-            return existing is null
-                ? await RespondAfterMutationAsync(0, string.Empty, null, null).ConfigureAwait(false)
-                : await RespondAfterMutationAsync(existing.CardID, existing.SetCode, entry.RarityName, existing.PrintVariant).ConfigureAwait(false);
+            return await RespondAfterMutationAsync(existing?.CatalogPrintingID ?? 0).ConfigureAwait(false);
         }
 
         private CollectionSearchCriteria BuildCurrentCriteria(int page, int pageSize)
@@ -228,10 +222,13 @@ namespace CardCollector.Pages
             Request.Query["edition"].FirstOrDefault(),
             Request.Query["rarityName"].FirstOrDefault());
 
-        private static bool? ParseFilter(string? value) =>
-            value == "yes" ? true : value == "no" ? false : null;
+        private static bool? ParseFilter(string? value) => value == "yes" ? true : value == "no" ? false : null;
 
-        private async Task<IActionResult> RespondAfterMutationAsync(int cardID, string setCode, string? rarityName, string? printVariant)
+        /// <summary>
+        /// After a change: a full-page post redirects back; an AJAX post gets the printing's row re-rendered, or nothing
+        /// when the printing no longer has a row under the current filters.
+        /// </summary>
+        private async Task<IActionResult> RespondAfterMutationAsync(int printingID)
         {
             if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
@@ -239,10 +236,7 @@ namespace CardCollector.Pages
             var groups = await _cardService.SearchGroupedOwnedAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
             Response.Headers["X-Total-Count"] = groups.TotalCount.ToString();
 
-            var match = groups.Items.FirstOrDefault(g =>
-                g.CardID == cardID && g.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
-                && (rarityName is null || g.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase))
-                && string.Equals(g.PrintVariant ?? string.Empty, printVariant ?? string.Empty, StringComparison.OrdinalIgnoreCase));
+            var match = printingID > 0 ? groups.Items.FirstOrDefault(g => g.PrintingID == printingID) : null;
             if (match is null)
                 return Content(string.Empty, "text/html");
 

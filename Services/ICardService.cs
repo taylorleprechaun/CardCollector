@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Models.Catalog;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -10,7 +11,18 @@ namespace CardCollector.Services
     public interface ICardService
     {
         /// <summary>
-        /// Adds a new entry to the collection.
+        /// Adds a new entry for the catalog printing to the collection.
+        /// </summary>
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task AddEntryAsync(
+            int printingID, CollectionStatus status,
+            int quantity, CardCondition? condition, CardEdition? edition,
+            AcquisitionMethod? acquisitionMethod,
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null);
+
+        /// <summary>
+        /// Adds a new entry to the collection for a printing identified by its card, set code, rarity, and variant, for
+        /// callers that don't have the catalog printing ID.
         /// </summary>
         Task AddEntryAsync(
             int cardID, string setCode, CollectionStatus status,
@@ -46,14 +58,23 @@ namespace CardCollector.Services
         Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition, string? printVariant = null);
 
         /// <summary>
-        /// Clears the checked-out status for the given (cardID, setCode, rarityName, printVariant) group.
+        /// Checks whether TCGPlayer lists the catalog printing in the given edition. Returns null if it does,
+        /// <see cref="EditionAuditCategory.EditionMismatch"/> if it lists other editions only, and
+        /// <see cref="EditionAuditCategory.Unverifiable"/> if the printing has no linked TCGPlayer product.
         /// </summary>
-        Task CheckInCardAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        Task<EditionAuditCategory?> CheckEntryEditionAsync(int printingID, CardEdition edition);
 
         /// <summary>
-        /// Sets the checked-out quantity for the given group. Creates a new record if none exists (recording today as the checkout date); updates quantity on an existing record.
+        /// Clears the checked-out status of the catalog printing.
         /// </summary>
-        Task CheckOutCardAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null);
+        Task CheckInCardAsync(int printingID);
+
+        /// <summary>
+        /// Sets the checked-out quantity of the catalog printing. Creates a new record if none exists (recording today as
+        /// the checkout date); updates the quantity on an existing record.
+        /// </summary>
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task CheckOutCardAsync(int printingID, int quantity);
 
         /// <summary>
         /// Records the given card set+rarity+variant combination as dismissed so it no longer appears as an upgrade opportunity.
@@ -64,6 +85,11 @@ namespace CardCollector.Services
         /// Returns the card with the given ID from the in-memory card data, or null if not found.
         /// </summary>
         Card? GetCardByID(int cardID);
+
+        /// <summary>
+        /// Returns an active catalog printing with its card, or null when the ID names none.
+        /// </summary>
+        CatalogPrintingRef? GetPrintingByID(int printingID);
 
         /// <summary>
         /// Returns up to maxResults card name suggestions whose names contain the given query string.
@@ -194,13 +220,13 @@ namespace CardCollector.Services
         Task RemoveFromWishlistAsync(int preferredVersionID);
 
         /// <summary>
-        /// Tracks the given (cardID, setCode, rarityName) printing, inserting a new tracked printing if
-        /// that exact printing isn't already tracked, or updating it in place if it is. A card can have
-        /// any number of tracked printings at once. When <paramref name="desiredQuantity"/> is null, a
-        /// newly-created tracked printing defaults to wanting 3 copies and an existing one keeps its
-        /// current target.
+        /// Tracks the catalog printing, inserting a new tracked printing if it isn't already tracked, or updating it in
+        /// place if it is. A card can have any number of tracked printings at once. When
+        /// <paramref name="desiredQuantity"/> is null, a newly-created tracked printing defaults to wanting 3 copies and
+        /// an existing one keeps its current target.
         /// </summary>
-        Task SavePreferredVersionAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task SavePreferredVersionAsync(int printingID, int? desiredQuantity = null);
 
         /// <summary>
         /// Returns a paginated, filtered page of browseable cards matching the given criteria.

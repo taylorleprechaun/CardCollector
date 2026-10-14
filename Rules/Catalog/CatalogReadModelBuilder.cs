@@ -46,6 +46,10 @@ namespace CardCollector.Rules.Catalog
                     .OrderBy(n => n)
                     .ToList(),
                 PasscodeAliases = BuildPasscodeAliases(state.Cards),
+                PrintingsByID = cards
+                    .SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s)))
+                    .Where(r => r.Printing.PrintingID > 0)
+                    .ToDictionary(r => r.Printing.PrintingID),
                 SetNamesByCode = setNamesByCode,
                 SetPrefixByName = setPrefixByName
             };

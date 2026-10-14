@@ -42,6 +42,8 @@ namespace CardCollector.Repository.Catalog
 
         public IReadOnlyDictionary<int, int> GetPasscodeAliases() => _model.PasscodeAliases;
 
+        public CatalogPrintingRef? GetPrintingByID(int printingID) => _model.PrintingsByID.GetValueOrDefault(printingID);
+
         public IReadOnlyDictionary<string, string> GetSetNamesByCode() => _model.SetNamesByCode;
 
         public string? GetSetPrefixByName(string canonicalName) =>

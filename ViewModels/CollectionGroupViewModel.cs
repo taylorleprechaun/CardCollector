@@ -56,6 +56,7 @@ namespace CardCollector.ViewModels
             CompleteThreshold = completeThreshold,
             ImageURLSmall = printing.ImageURLSmall,
             Price = printing.Price,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             RarityCode = printing.RarityCode,
             RarityName = printing.RarityName,

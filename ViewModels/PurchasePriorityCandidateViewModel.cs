@@ -41,6 +41,7 @@ namespace CardCollector.ViewModels
             OrderedQuantity = orderedQuantity,
             Price = printing.Price,
             PrintingDate = candidate.PrintingDate,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             QuantityOwned = quantityOwned,
             RarityCode = printing.RarityCode,

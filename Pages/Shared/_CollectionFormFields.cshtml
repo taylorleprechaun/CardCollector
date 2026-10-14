@@ -4,6 +4,7 @@
 <div class="row g-2 mb-3">
     <div class="col-12 col-sm-4">
         <label class="form-label">Rarity</label>
+        <input type="hidden" name="printingID" id="@(Model.Prefix)PrintingID" />
         <input type="hidden" name="rarityName" id="@(Model.Prefix)RarityName" />
         <input type="hidden" name="printVariant" id="@(Model.Prefix)PrintVariant" />
         <div id="@(Model.Prefix)RarityDisplay" class="form-control-plaintext form-control-sm"></div>
