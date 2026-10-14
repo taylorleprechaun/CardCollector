@@ -66,6 +66,19 @@ function updateCartBadge(rawCount, rawTotal) {
     badge.classList.toggle('d-none', count === 0);
 }
 
+// Shows how many catalog review items need a decision; the header comes back on every review-inbox AJAX post.
+function updateReviewBadge(rawCount) {
+    if (rawCount === null || rawCount === undefined) return;
+
+    const badge = document.getElementById('navReviewBadge');
+    const countEl = document.getElementById('navReviewCount');
+    if (!badge || !countEl) return;
+
+    const count = Number(rawCount) || 0;
+    countEl.textContent = count;
+    badge.classList.toggle('d-none', count === 0);
+}
+
 // Every AJAX POST goes through here, so the X-Requested-With header the server checks for is never left off.
 function postAjax(url, body) {
     return fetch(url, { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } });

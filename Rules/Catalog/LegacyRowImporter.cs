@@ -27,23 +27,98 @@ namespace CardCollector.Rules.Catalog
             _report = report ?? throw new ArgumentNullException(nameof(report));
         }
 
+        /// <summary>Builds the CheckedOutCard for a legacy row, pointed at the catalog printing it maps to.</summary>
+        public static CheckedOutCard BuildCheckedOutCard(LegacyRow row, LegacyPrintingTarget target) =>
+            new()
+            {
+                CardID = target.CardID,
+                CatalogPrintingID = target.PrintingID,
+                CheckedOutDate = row.GetDateTime("CheckedOutDate"),
+                DateCreated = row.GetDateTime("DateCreated"),
+                DateModified = row.GetDateTime("DateModified"),
+                ID = row.GetInt("ID"),
+                PrintVariant = target.PrintVariant,
+                Quantity = row.GetInt("Quantity"),
+                RarityName = target.RarityName,
+                SetCode = target.SetCode
+            };
+
+        /// <summary>Builds the CollectionEntry for a legacy row, pointed at the catalog printing it maps to.</summary>
+        public static CollectionEntry BuildCollectionEntry(LegacyRow row, LegacyPrintingTarget target) =>
+            new()
+            {
+                AcquisitionMethod = row.GetEnum<AcquisitionMethod>("AcquisitionMethod"),
+                CardID = target.CardID,
+                CatalogPrintingID = target.PrintingID,
+                Condition = row.GetEnum<CardCondition>("Condition"),
+                DateCreated = row.GetDateTime("DateCreated"),
+                DateModified = row.GetDateTime("DateModified"),
+                Edition = row.GetEnum<CardEdition>("Edition"),
+                ID = row.GetInt("ID"),
+                MarketPriceAtEntry = row.GetDecimal("MarketPriceAtEntry"),
+                PrintVariant = target.PrintVariant,
+                PurchaseDate = row.GetNullableDateTime("PurchaseDate"),
+                PurchasePrice = row.GetDecimal("PurchasePrice"),
+                Quantity = row.GetInt("Quantity"),
+                RarityName = target.RarityName,
+                SetCode = target.SetCode,
+                Status = row.GetEnum<CollectionStatus>("Status") ?? throw new InvalidOperationException($"CollectionEntries #{row.GetInt("ID")} has no status.")
+            };
+
+        /// <summary>Builds the DismissedNewPrinting for a legacy row, pointed at the catalog printing it maps to.</summary>
+        public static DismissedNewPrinting BuildDismissedNewPrinting(LegacyRow row, LegacyPrintingTarget target) =>
+            new()
+            {
+                CardID = target.CardID,
+                CatalogPrintingID = target.PrintingID,
+                DateCreated = row.GetDateTime("DateCreated"),
+                DateModified = row.GetDateTime("DateModified"),
+                ID = row.GetInt("ID"),
+                PrintVariant = target.PrintVariant,
+                RarityName = target.RarityName,
+                SetCode = target.SetCode
+            };
+
+        /// <summary>Builds the PendingOrderLine for a legacy row, pointed at the catalog printing it maps to.</summary>
+        public static PendingOrderLine BuildPendingOrderLine(LegacyRow row, LegacyPrintingTarget target) =>
+            new()
+            {
+                AcquisitionMethod = row.GetEnum<AcquisitionMethod>("AcquisitionMethod"),
+                CardID = target.CardID,
+                CatalogPrintingID = target.PrintingID,
+                Condition = row.GetEnum<CardCondition>("Condition"),
+                DateCreated = row.GetDateTime("DateCreated"),
+                Edition = row.GetEnum<CardEdition>("Edition"),
+                ID = row.GetInt("ID"),
+                MarketPriceAtEntry = row.GetDecimal("MarketPriceAtEntry"),
+                PrintVariant = target.PrintVariant,
+                PurchaseDate = row.GetNullableDateTime("PurchaseDate"),
+                PurchasePrice = row.GetDecimal("PurchasePrice"),
+                Quantity = row.GetInt("Quantity"),
+                RarityName = target.RarityName,
+                SetCode = target.SetCode
+            };
+
+        /// <summary>Builds the PreferredVersion for a legacy row, pointed at the catalog printing it maps to.</summary>
+        public static PreferredVersion BuildPreferredVersion(LegacyRow row, LegacyPrintingTarget target) =>
+            new()
+            {
+                CardID = target.CardID,
+                CatalogPrintingID = target.PrintingID,
+                DateCreated = row.GetDateTime("DateCreated"),
+                DateModified = row.GetDateTime("DateModified"),
+                DesiredQuantity = row.GetNullableInt("DesiredQuantity") ?? 3,
+                ID = row.GetInt("ID"),
+                PrintVariant = target.PrintVariant,
+                RarityName = target.RarityName,
+                SetCode = target.SetCode
+            };
+
         public IReadOnlyList<CheckedOutCard> ImportCheckedOutCards(IReadOnlyList<LegacyRow> rows) =>
             ImportPrintingRows(
                 "CheckedOutCards",
                 rows,
-                (row, target) => new CheckedOutCard
-                {
-                    CardID = target.CardID,
-                    CatalogPrintingID = target.PrintingID,
-                    CheckedOutDate = row.GetDateTime("CheckedOutDate"),
-                    DateCreated = row.GetDateTime("DateCreated"),
-                    DateModified = row.GetDateTime("DateModified"),
-                    ID = row.GetInt("ID"),
-                    PrintVariant = target.PrintVariant,
-                    Quantity = row.GetInt("Quantity"),
-                    RarityName = target.RarityName,
-                    SetCode = target.SetCode
-                },
+                BuildCheckedOutCard,
                 c => c.CatalogPrintingID,
                 (kept, folded) =>
                 {
@@ -55,25 +130,7 @@ namespace CardCollector.Rules.Catalog
             ImportPrintingRows(
                 "CollectionEntries",
                 rows,
-                (row, target) => new CollectionEntry
-                {
-                    AcquisitionMethod = row.GetEnum<AcquisitionMethod>("AcquisitionMethod"),
-                    CardID = target.CardID,
-                    CatalogPrintingID = target.PrintingID,
-                    Condition = row.GetEnum<CardCondition>("Condition"),
-                    DateCreated = row.GetDateTime("DateCreated"),
-                    DateModified = row.GetDateTime("DateModified"),
-                    Edition = row.GetEnum<CardEdition>("Edition"),
-                    ID = row.GetInt("ID"),
-                    MarketPriceAtEntry = row.GetDecimal("MarketPriceAtEntry"),
-                    PrintVariant = target.PrintVariant,
-                    PurchaseDate = row.GetNullableDateTime("PurchaseDate"),
-                    PurchasePrice = row.GetDecimal("PurchasePrice"),
-                    Quantity = row.GetInt("Quantity"),
-                    RarityName = target.RarityName,
-                    SetCode = target.SetCode,
-                    Status = row.GetEnum<CollectionStatus>("Status") ?? throw new InvalidOperationException($"CollectionEntries #{row.GetInt("ID")} has no status.")
-                });
+                BuildCollectionEntry);
 
         /// <summary>Deck rows keep the passcode they were pasted with and gain the catalog card it resolves to, when one does.</summary>
         public IReadOnlyList<DeckCard> ImportDeckCards(IReadOnlyList<LegacyRow> rows)
@@ -101,17 +158,7 @@ namespace CardCollector.Rules.Catalog
             ImportPrintingRows(
                 DISMISSED_NEW_PRINTINGS,
                 rows,
-                (row, target) => new DismissedNewPrinting
-                {
-                    CardID = target.CardID,
-                    CatalogPrintingID = target.PrintingID,
-                    DateCreated = row.GetDateTime("DateCreated"),
-                    DateModified = row.GetDateTime("DateModified"),
-                    ID = row.GetInt("ID"),
-                    PrintVariant = target.PrintVariant,
-                    RarityName = target.RarityName,
-                    SetCode = target.SetCode
-                },
+                BuildDismissedNewPrinting,
                 d => d.CatalogPrintingID,
                 (_, _) => { });
 
@@ -153,40 +200,13 @@ namespace CardCollector.Rules.Catalog
             ImportPrintingRows(
                 "PendingOrderLines",
                 rows,
-                (row, target) => new PendingOrderLine
-                {
-                    AcquisitionMethod = row.GetEnum<AcquisitionMethod>("AcquisitionMethod"),
-                    CardID = target.CardID,
-                    CatalogPrintingID = target.PrintingID,
-                    Condition = row.GetEnum<CardCondition>("Condition"),
-                    DateCreated = row.GetDateTime("DateCreated"),
-                    Edition = row.GetEnum<CardEdition>("Edition"),
-                    ID = row.GetInt("ID"),
-                    MarketPriceAtEntry = row.GetDecimal("MarketPriceAtEntry"),
-                    PrintVariant = target.PrintVariant,
-                    PurchaseDate = row.GetNullableDateTime("PurchaseDate"),
-                    PurchasePrice = row.GetDecimal("PurchasePrice"),
-                    Quantity = row.GetInt("Quantity"),
-                    RarityName = target.RarityName,
-                    SetCode = target.SetCode
-                });
+                BuildPendingOrderLine);
 
         public IReadOnlyList<PreferredVersion> ImportPreferredVersions(IReadOnlyList<LegacyRow> rows) =>
             ImportPrintingRows(
                 "PreferredVersions",
                 rows,
-                (row, target) => new PreferredVersion
-                {
-                    CardID = target.CardID,
-                    CatalogPrintingID = target.PrintingID,
-                    DateCreated = row.GetDateTime("DateCreated"),
-                    DateModified = row.GetDateTime("DateModified"),
-                    DesiredQuantity = row.GetNullableInt("DesiredQuantity") ?? 3,
-                    ID = row.GetInt("ID"),
-                    PrintVariant = target.PrintVariant,
-                    RarityName = target.RarityName,
-                    SetCode = target.SetCode
-                },
+                BuildPreferredVersion,
                 p => p.CatalogPrintingID,
                 (kept, folded) =>
                 {

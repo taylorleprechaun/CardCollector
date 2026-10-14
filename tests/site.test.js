@@ -464,4 +464,40 @@ describe('site.js', () => {
       loadScript('site.js');
     }
   });
+
+  describe('updateReviewBadge', () => {
+    it('shows the count from the response header', () => {
+      setupReviewBadge();
+      updateReviewBadge('4');
+
+      expect(document.getElementById('navReviewCount').textContent).toBe('4');
+      expect(document.getElementById('navReviewBadge').classList.contains('d-none')).toBe(false);
+    });
+
+    it('count of zero hides the badge', () => {
+      setupReviewBadge();
+      updateReviewBadge('0');
+
+      expect(document.getElementById('navReviewBadge').classList.contains('d-none')).toBe(true);
+    });
+
+    it('missing header is a no-op', () => {
+      setupReviewBadge();
+      updateReviewBadge(null);
+
+      expect(document.getElementById('navReviewCount').textContent).toBe('');
+    });
+
+    it('missing badge element does not throw', () => {
+      document.body.innerHTML = '';
+      loadScript('site.js');
+
+      expect(() => updateReviewBadge('2')).not.toThrow();
+    });
+
+    function setupReviewBadge() {
+      document.body.innerHTML = '<a id="navReviewBadge" class="d-none"><span id="navReviewCount"></span></a>';
+      loadScript('site.js');
+    }
+  });
 });

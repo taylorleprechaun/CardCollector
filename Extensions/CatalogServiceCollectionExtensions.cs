@@ -16,6 +16,8 @@ namespace CardCollector.Extensions
 
             services.AddSingleton<ICardDataRepository, CatalogCardDataRepository>();
             services.AddScoped<ICatalogRepository, CatalogRepository>();
+            services.AddScoped<ICatalogReviewRepository, CatalogReviewRepository>();
+            services.AddScoped<ICatalogReviewService, CatalogReviewService>();
             services.AddScoped<ICatalogSyncService, CatalogSyncService>();
             services.AddSingleton<ILegacyDatabaseReader, LegacyDatabaseReader>();
             services.AddScoped<ILegacyImportRepository, LegacyImportRepository>();

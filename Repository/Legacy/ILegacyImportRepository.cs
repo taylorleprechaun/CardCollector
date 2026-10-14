@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace CardCollector.Repository.Legacy
 {
     /// <summary>Writes migrated rows into the app's (new) database.</summary>
@@ -14,6 +16,9 @@ namespace CardCollector.Repository.Legacy
 
         /// <summary>Creates the database with the full current schema when it doesn't exist yet.</summary>
         Task EnsureCreatedAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Returns the first row matching the predicate, tracked; null when none does.</summary>
+        Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) where TEntity : class;
 
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }

@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace CardCollector.Repository.Legacy
 {
@@ -56,6 +57,10 @@ namespace CardCollector.Repository.Legacy
 
         public async Task EnsureCreatedAsync(CancellationToken cancellationToken = default) =>
             await _context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+
+        public async Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+            where TEntity : class =>
+            await _context.Set<TEntity>().FirstOrDefaultAsync(predicate, cancellationToken).ConfigureAwait(false);
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

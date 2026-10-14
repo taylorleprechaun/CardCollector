@@ -1,0 +1,88 @@
+@page
+@model CardCollector.Pages.Catalog.ReviewModel
+@using CardCollector.Data.Models.Catalog
+@{
+    ViewData["Title"] = "Catalog Review";
+    var filterParams = Model.GetFilterParams();
+    var tabs = new[]
+    {
+        (Filter: CatalogReviewFilter.NeedsDecision, Label: "Needs decision", Count: (int?)Model.CountOpen(actionable: true)),
+        (Filter: CatalogReviewFilter.Informational, Label: "Informational", Count: (int?)Model.CountOpen(actionable: false)),
+        (Filter: CatalogReviewFilter.Resolved, Label: "Resolved", Count: (int?)null)
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Catalog Review</h1>
+    <span class="badge-neutral fs-6" id="totalCountBadge" data-suffix="items">@Model.Results.TotalCount items</span>
+</div>
+
+<ul class="nav nav-pills mb-3">
+    @foreach (var tab in tabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.Filter == tab.Filter ? "active" : "")" href="/Catalog/Review?filter=@tab.Filter">
+                @tab.Label
+                @if (tab.Count is int count && count > 0)
+                {
+                    <span class="badge @(Model.Filter == tab.Filter ? "text-bg-light" : "text-bg-secondary") ms-1">@count</span>
+                }
+            </a>
+        </li>
+    }
+</ul>
+
+<div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <form method="get" class="d-flex gap-2 align-items-end">
+        <input type="hidden" name="filter" value="@Model.Filter" />
+        <div>
+            <label for="reviewKind" class="form-label small mb-1">Kind</label>
+            <select id="reviewKind" name="kind" class="form-select form-select-sm">
+                <option value="">All kinds</option>
+                @foreach (var kind in Model.FilterKinds)
+                {
+                    var open = Model.OpenCountsByKind.GetValueOrDefault(kind);
+                    <option value="@kind" selected="@(Model.Kind == kind)">@kind.GetDisplayName()@(Model.Filter != CatalogReviewFilter.Resolved && open > 0 ? $" ({open})" : string.Empty)</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button>
+    </form>
+
+    @if (Model.Filter == CatalogReviewFilter.Informational && Model.Results.TotalCount > 0)
+    {
+        <form method="post" asp-page-handler="DismissAll" class="ms-auto" data-confirm="Dismiss every informational item@(Model.Kind is null ? string.Empty : " of this kind")?">
+            <input type="hidden" name="filter" value="@Model.Filter" />
+            <input type="hidden" name="kind" value="@Model.Kind" />
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss all@(Model.Kind is null ? string.Empty : $" {Model.Kind.Value.GetDisplayName()}")</button>
+        </form>
+    }
+</div>
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        @(Model.Filter switch
+        {
+            CatalogReviewFilter.NeedsDecision => "Nothing needs a decision.",
+            CatalogReviewFilter.Informational => "No informational items.",
+            _ => "Nothing has been resolved yet."
+        })
+    </div>
+}
+else
+{
+    <div class="list-group mb-4 cc-table-card">
+        @foreach (var item in Model.Results.Items)
+        {
+            <partial name="_ReviewItemRow" model='new CatalogReviewRowViewModel { FilterParams = filterParams, Item = item }' />
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Review pagination", PageName = "/Catalog/Review", PageNumber = Model.PageNumber, PageSize = Model.PageSize, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}
+
+@section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
+    <script src="~/js/catalog-review.js" asp-append-version="true"></script>
+}
