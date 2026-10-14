@@ -639,3 +639,12 @@ th[aria-sort="descending"] .cc-sort-button::after {
         max-width: 28rem;
     }
 }
+
+/* Stand-in for the large card image when no source has one (cards created from a TCGPlayer product). */
+.cc-card-image-placeholder {
+    aspect-ratio: 59 / 86;
+    background-color: var(--bs-secondary-bg);
+    border: 1px dashed var(--bs-border-color);
+    max-width: 280px;
+    width: 100%;
+}

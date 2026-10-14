@@ -8,6 +8,8 @@ namespace CardCollector.Repository.Catalog
     /// </summary>
     public interface ICatalogReviewRepository
     {
+        void AddCard(CatalogCard card);
+
         void AddSet(CatalogSet set);
 
         /// <summary>Counts open items of the given kinds.</summary>
@@ -21,6 +23,9 @@ namespace CardCollector.Repository.Catalog
 
         /// <summary>Counts the collection, wishlist, checked-out, and cart rows that point at the printing.</summary>
         Task<int> CountUserRowsForPrintingAsync(int catalogPrintingID, CancellationToken cancellationToken = default);
+
+        /// <summary>Returns a card (active or retired) with exactly this name, ignoring case, for reading only; null when there is none.</summary>
+        Task<CatalogCard?> FindCardByNameAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>Returns the card with its printings (and their sources and sets), tracked; null when it doesn't exist.</summary>
         Task<CatalogCard?> GetCardAsync(int catalogCardID, CancellationToken cancellationToken = default);

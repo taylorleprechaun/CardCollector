@@ -13,6 +13,8 @@ namespace CardCollector.Repository.Catalog
             _context = context;
         }
 
+        public void AddCard(CatalogCard card) => _context.CatalogCards.Add(card);
+
         public void AddSet(CatalogSet set) => _context.CatalogSets.Add(set);
 
         public async Task<int> CountOpenAsync(IReadOnlyCollection<CatalogReviewItemKind> kinds, CancellationToken cancellationToken = default) =>
@@ -59,6 +61,13 @@ namespace CardCollector.Repository.Catalog
                 + await _context.PendingOrderLines.CountAsync(l => l.CatalogPrintingID == catalogPrintingID
                     || (l.CardID == cardID && l.SetCode == setCode && l.RarityName == rarityName && l.PrintVariant == printVariant), cancellationToken).ConfigureAwait(false);
         }
+
+        public async Task<CatalogCard?> FindCardByNameAsync(string name, CancellationToken cancellationToken = default) =>
+            await _context.CatalogCards
+                .AsNoTracking()
+                .OrderBy(c => c.Status)
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower(), cancellationToken)
+                .ConfigureAwait(false);
 
         public async Task<CatalogCard?> GetCardAsync(int catalogCardID, CancellationToken cancellationToken = default) =>
             await _context.CatalogCards

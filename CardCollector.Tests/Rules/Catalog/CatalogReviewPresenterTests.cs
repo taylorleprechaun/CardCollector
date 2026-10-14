@@ -10,9 +10,11 @@ namespace CardCollector.Tests.Rules.Catalog
     public sealed class CatalogReviewPresenterTests
     {
         [TestMethod]
-        public void AllowedActions_ClosedItem_AllowsNothing()
+        [DataRow(CatalogReviewItemStatus.Accepted, DisplayName = "Accepted")]
+        [DataRow(CatalogReviewItemStatus.ResolvedBySource, DisplayName = "Resolved by source")]
+        public void AllowedActions_AppliedItem_AllowsNothing(CatalogReviewItemStatus status)
         {
-            var actions = CatalogReviewPresenter.AllowedActions(CatalogReviewItemKind.PasscodeChanged, CatalogReviewItemStatus.Rejected);
+            var actions = CatalogReviewPresenter.AllowedActions(CatalogReviewItemKind.PasscodeChanged, status);
 
             Assert.AreEqual(0, actions.Count);
         }
@@ -28,6 +30,16 @@ namespace CardCollector.Tests.Rules.Catalog
             var actions = CatalogReviewPresenter.AllowedActions(kind, CatalogReviewItemStatus.Open);
 
             CollectionAssert.Contains(actions.ToList(), expected);
+        }
+
+        [TestMethod]
+        [DataRow(CatalogReviewItemStatus.Rejected, DisplayName = "Rejected")]
+        [DataRow(CatalogReviewItemStatus.Dismissed, DisplayName = "Dismissed")]
+        public void AllowedActions_RejectedOrDismissedItem_AllowsOnlyReopen(CatalogReviewItemStatus status)
+        {
+            var actions = CatalogReviewPresenter.AllowedActions(CatalogReviewItemKind.UnmappedTCGProduct, status);
+
+            CollectionAssert.AreEqual(new[] { CatalogReviewAction.Reopen }, actions.ToArray());
         }
 
         [TestMethod]
@@ -69,6 +81,27 @@ namespace CardCollector.Tests.Rules.Catalog
             Assert.AreEqual("Keep 48739627", model.RejectLabel);
             Assert.AreEqual("Synthetic Theory", model.CardName);
             Assert.IsTrue(model.IsActionable);
+        }
+
+        [TestMethod]
+        public void ToViewModel_ProductNamingExistingCard_DoesNotOfferCreateCard()
+        {
+            var card = Card(5, "Synthetic Dragon", 11111111, Printing(51, "SYN-EN001", "Ultra Rare"));
+            var item = Item(CatalogReviewItemKind.UnmappedTCGProduct, """{"ProductID":97893,"CardName":"synthetic dragon","SetCode":"SYN-EN051","RarityName":"Secret Rare"}""");
+
+            var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
+
+            CollectionAssert.DoesNotContain(model.Actions.ToList(), CatalogReviewAction.CreateCard);
+        }
+
+        [TestMethod]
+        public void ToViewModel_ProductNamingNoCatalogCard_OffersCreateCard()
+        {
+            var item = Item(CatalogReviewItemKind.UnmappedTCGProduct, """{"ProductID":97893,"CardName":"Synthetic Legend","SetCode":"SYN-EN051","RarityName":"Secret Rare"}""");
+
+            var model = CatalogReviewPresenter.ToViewModel(item, Lookup());
+
+            CollectionAssert.Contains(model.Actions.ToList(), CatalogReviewAction.CreateCard);
         }
 
         [TestMethod]

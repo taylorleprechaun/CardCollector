@@ -10,6 +10,8 @@
     var canDismiss = item.Actions.Contains(CatalogReviewAction.Dismiss);
     var canMap = item.Actions.Contains(CatalogReviewAction.MapToPrinting);
     var canCreate = item.Actions.Contains(CatalogReviewAction.CreatePrinting);
+    var canCreateCard = item.Actions.Contains(CatalogReviewAction.CreateCard);
+    var canReopen = item.Actions.Contains(CatalogReviewAction.Reopen);
 }
 <div class="list-group-item py-3" id="@rowId">
     <div class="d-flex flex-column gap-3">
@@ -66,7 +68,7 @@
         @if (item.Actions.Count > 0)
         {
             <div class="d-flex flex-column flex-md-row flex-md-wrap align-items-md-end gap-2 gap-md-3">
-                @if (canAccept || canReject || canDismiss)
+                @if (canAccept || canReject || canDismiss || canReopen)
                 {
                     <form method="post" class="d-grid d-md-flex flex-md-wrap align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId">
                         @Html.AntiForgeryToken()
@@ -82,6 +84,10 @@
                         @if (canDismiss)
                         {
                             <button type="submit" formaction="@handlerURL("Dismiss")" class="btn btn-outline-secondary">Dismiss</button>
+                        }
+                        @if (canReopen)
+                        {
+                            <button type="submit" formaction="@handlerURL("Reopen")" class="btn btn-outline-secondary">Reopen</button>
                         }
                     </form>
                 }
@@ -124,6 +130,18 @@
                             </select>
                         </div>
                         <button type="submit" formaction="@handlerURL("CreatePrinting")" class="btn btn-outline-primary">Create printing</button>
+                    </form>
+                }
+                @if (canCreateCard)
+                {
+                    <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId"
+                          data-confirm="Create a new catalog card named &quot;@item.CardName&quot;? It starts with only a name until a card source lists it.">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.ID" />
+                        <div class="d-grid gap-1">
+                            <span class="form-label small text-muted mb-0">No catalog card has this name</span>
+                            <button type="submit" formaction="@handlerURL("CreateCard")" class="btn btn-outline-primary">Create card &ldquo;@item.CardName&rdquo;</button>
+                        </div>
                     </form>
                 }
             </div>

@@ -19,6 +19,29 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void Detect_CardOnlyOnTCGPlayerWhenTCGPlayerFailed_IsNotReported()
+        {
+            var card = Card(1, "Synthetic Legend");
+            Printing(card, 10, "SYN-EN051", "Prismatic Secret Rare", null, 97893);
+
+            var result = Run(State(card), Context(tcgPlayer: false));
+
+            Assert.AreEqual(0, result.Items.Count);
+        }
+
+        [TestMethod]
+        public void Detect_CardOnlyOnTCGPlayerWithProductSeen_IsNotReported()
+        {
+            var card = Card(1, "Synthetic Legend");
+            var printing = Printing(card, 10, "SYN-EN051", "Prismatic Secret Rare", null, 97893);
+            printing.Sources.Single().LastSeenUTC = NowUTC;
+
+            var result = Run(State(card), Context());
+
+            Assert.AreEqual(0, result.Items.Count);
+        }
+
+        [TestMethod]
         public void Detect_CardSourceFailed_ReportsNothing()
         {
             var card = Card(1, "Synthetic Vanished");
@@ -26,6 +49,17 @@ namespace CardCollector.Tests.Rules.Catalog
             var result = Run(State(card), Context(ygoProDeck: false));
 
             Assert.AreEqual(0, result.Items.Count);
+        }
+
+        [TestMethod]
+        public void Detect_CardWhoseProductsAreAlsoGone_ReportsIt()
+        {
+            var card = Card(1, "Synthetic Legend");
+            Printing(card, 10, "SYN-EN051", "Prismatic Secret Rare", null, 97893);
+
+            var result = Run(State(card), Context());
+
+            Assert.AreEqual(CatalogReviewItemKind.CardNotSeen, result.Items.Single().Kind);
         }
 
         [TestMethod]

@@ -94,6 +94,22 @@ namespace CardCollector.Tests.Pages.Catalog
             Assert.AreEqual("That review item is not open.", page.TempData["Warning"]);
         }
 
+        [TestMethod]
+        public async Task OnPostReopenAsync_AjaxFromResolvedTab_RemovesRow()
+        {
+            _catalogReviewServiceMock.Setup(s => s.ReopenAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(SaveResult.Success());
+            _catalogReviewServiceMock.Setup(s => s.GetItemAsync(7, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CatalogReviewItemViewModel { ID = 7, Status = CatalogReviewItemStatus.Open });
+            _catalogReviewServiceMock.Setup(s => s.SearchAsync(It.IsAny<CatalogReviewSearchCriteria>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedResult<CatalogReviewItemViewModel> { TotalCount = 0 });
+            var page = CreatePage(isAjax: true);
+            page.Filter = CatalogReviewFilter.Resolved;
+
+            var result = await page.OnPostReopenAsync(7) as ContentResult;
+
+            Assert.AreEqual(string.Empty, result!.Content);
+        }
+
         [TestInitialize]
         public void Setup()
         {

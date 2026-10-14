@@ -6,6 +6,9 @@ namespace CardCollector.ViewModels
         /// <summary>Apply what the item reports (a new passcode or name, retiring a card or printing).</summary>
         Accept,
 
+        /// <summary>Create the card an unmapped product names when the catalog has no card by that name, with the printing, and link the product.</summary>
+        CreateCard,
+
         /// <summary>Create the missing printing on a chosen card, then link the product or restore the row on it.</summary>
         CreatePrinting,
 
@@ -16,6 +19,9 @@ namespace CardCollector.ViewModels
         MapToPrinting,
 
         /// <summary>Keep the catalog as it is (or discard the legacy row).</summary>
-        Reject
+        Reject,
+
+        /// <summary>Put a rejected or dismissed item back in front of the user, undecided.</summary>
+        Reopen
     }
 }

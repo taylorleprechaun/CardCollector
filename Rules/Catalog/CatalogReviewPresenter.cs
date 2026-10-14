@@ -20,9 +20,14 @@ namespace CardCollector.Rules.Catalog
             "IsPlaceholder"
         };
 
-        /// <summary>The decisions an item of this kind and status allows; none once it is closed.</summary>
+        /// <summary>
+        /// The decisions an item of this kind and status allows. A rejected or dismissed item can only be reopened; one that
+        /// was accepted or resolved by its source allows nothing, since its effect is already applied.
+        /// </summary>
         public static IReadOnlyList<CatalogReviewAction> AllowedActions(CatalogReviewItemKind kind, CatalogReviewItemStatus status)
         {
+            if (status is CatalogReviewItemStatus.Rejected or CatalogReviewItemStatus.Dismissed)
+                return [CatalogReviewAction.Reopen];
             if (status != CatalogReviewItemStatus.Open)
                 return [];
 
@@ -31,8 +36,10 @@ namespace CardCollector.Rules.Catalog
                 CatalogReviewItemKind.CardNameChanged or CatalogReviewItemKind.CardNotSeen or CatalogReviewItemKind.PasscodeChanged
                     or CatalogReviewItemKind.PrintingNotSeen or CatalogReviewItemKind.TCGListingChanged
                     => [CatalogReviewAction.Accept, CatalogReviewAction.Reject],
-                CatalogReviewItemKind.LegacyRowUnmapped or CatalogReviewItemKind.UnmappedTCGProduct
+                CatalogReviewItemKind.LegacyRowUnmapped
                     => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.Reject],
+                CatalogReviewItemKind.UnmappedTCGProduct
+                    => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.CreateCard, CatalogReviewAction.Reject],
                 _ => [CatalogReviewAction.Dismiss]
             };
         }
@@ -85,6 +92,12 @@ namespace CardCollector.Rules.Catalog
 
             var payload = ParsePayload(item.PayloadJson);
             var actions = AllowedActions(item.Kind, item.Status);
+
+            // Creating a card is only offered when no catalog card has the product's name, so it can't make a duplicate.
+            if (actions.Contains(CatalogReviewAction.CreateCard)
+                && (ReadString(payload, "CardName") is not { } productCardName || lookup.CardsByName.ContainsKey(productCardName)))
+                actions = actions.Where(a => a != CatalogReviewAction.CreateCard).ToList();
+
             var card = item.CatalogCardID is int cardID ? lookup.CardByID(cardID) : null;
             var placesOnPrinting = actions.Contains(CatalogReviewAction.MapToPrinting);
             var (printingOptions, cardOptions) = placesOnPrinting ? BuildPlacementOptions(item.Kind, payload, lookup) : ([], []);

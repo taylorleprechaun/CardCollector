@@ -17,6 +17,12 @@ namespace CardCollector.Services
         Task<int> CountNeedingDecisionAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Creates the card an unmapped product names (when no catalog card has that name) with the product's printing, and
+        /// links the product to it. The card starts with only a name; a source that later reports it fills in the rest.
+        /// </summary>
+        Task<SaveResult> CreateCardAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Creates the missing printing on the chosen card from the item's set code, rarity, and variant, then links the
         /// product to it or restores the legacy row on it.
         /// </summary>
@@ -39,6 +45,9 @@ namespace CardCollector.Services
 
         /// <summary>Keeps the catalog as it is (for an unmapped legacy row, discards the row).</summary>
         Task<SaveResult> RejectAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>Puts a rejected or dismissed item back in the inbox, undecided.</summary>
+        Task<SaveResult> ReopenAsync(int id, CancellationToken cancellationToken = default);
 
         Task<PagedResult<CatalogReviewItemViewModel>> SearchAsync(CatalogReviewSearchCriteria criteria, CancellationToken cancellationToken = default);
     }

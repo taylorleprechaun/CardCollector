@@ -72,6 +72,41 @@ namespace CardCollector.Tests.Services
         public void Cleanup() => _connection.Dispose();
 
         [TestMethod]
+        public async Task CreateCardAsync_CardWithThatNameExists_FailsAndLeavesItOpen()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.UnmappedTCGProduct,
+                """{"ProductID":97893,"CardName":"synthetic theory","SetCode":"BLGG-EN128","RarityName":"Secret Rare"}""");
+
+            var result = await Service().CreateCardAsync(itemID);
+
+            Assert.IsFalse(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(1, await verify.CatalogCards.CountAsync());
+            Assert.AreEqual(CatalogReviewItemStatus.Open, (await verify.CatalogReviewItems.SingleAsync()).Status);
+        }
+
+        [TestMethod]
+        public async Task CreateCardAsync_NoCardWithThatName_CreatesCardWithLinkedPrintingAndClosesItem()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.UnmappedTCGProduct, """{"ProductID":97893,"CardName":"Synthetic Legend","SetCode":"BLGG-EN128","RarityName":"Prismatic Secret Rare","PrintVariant":null}""");
+
+            var result = await Service().CreateCardAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            var card = await verify.CatalogCards.Include(c => c.Printings).ThenInclude(p => p.Sources).SingleAsync(c => c.Name == "Synthetic Legend");
+            Assert.IsNull(card.KonamiID);
+            Assert.IsNull(card.Passcode);
+            var printing = card.Printings.Single();
+            Assert.AreEqual("BLGG-EN128", printing.SetCode);
+            Assert.AreEqual("97893", printing.Sources.Single().ExternalKey);
+            var item = await verify.CatalogReviewItems.SingleAsync();
+            Assert.AreEqual(CatalogReviewItemStatus.Accepted, item.Status);
+            Assert.AreEqual(card.ID, item.CatalogCardID);
+            _cardDataRepositoryMock.Verify(r => r.ReloadAsync(), Times.Once);
+        }
+
+        [TestMethod]
         public async Task CreatePrintingAsync_LegacyRow_CreatesPrintingAndRestoresRowOnIt()
         {
             var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyEntryPayload("LDS1-EN101", "Ultra Rare", "Blue"));
@@ -194,6 +229,30 @@ namespace CardCollector.Tests.Services
             using var verify = NewContext();
             Assert.AreEqual(0, await verify.CollectionEntries.CountAsync());
             Assert.AreEqual(CatalogReviewItemStatus.Rejected, (await verify.CatalogReviewItems.SingleAsync()).Status);
+        }
+
+        [TestMethod]
+        public async Task ReopenAsync_AcceptedItem_Fails()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.PasscodeChanged, "{}", status: CatalogReviewItemStatus.Accepted);
+
+            var result = await Service().ReopenAsync(itemID);
+
+            Assert.IsFalse(result.Succeeded);
+        }
+
+        [TestMethod]
+        public async Task ReopenAsync_RejectedItem_PutsItBackOpen()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.UnmappedTCGProduct, """{"ProductID":97893,"CardName":"Synthetic Legend","SetCode":"BLGG-EN128","RarityName":"Prismatic Secret Rare","PrintVariant":null}""", status: CatalogReviewItemStatus.Rejected);
+
+            var result = await Service().ReopenAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            var item = await verify.CatalogReviewItems.SingleAsync();
+            Assert.AreEqual(CatalogReviewItemStatus.Open, item.Status);
+            Assert.IsNull(item.Resolution);
         }
 
         [TestMethod]

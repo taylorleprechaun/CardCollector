@@ -17,14 +17,11 @@
 {
     <div class="alert alert-warning">Card not found.</div>
 }
-else if (Model.CurrentCard is not null && primaryImage is not null)
+else if (Model.CurrentCard is not null)
 {
     <div class="row g-4">
         <div class="col-md-4 col-lg-3 text-center">
-            <img src="@primaryImage.ImageURL"
-                 alt="@Model.CurrentCard.Name"
-                 class="img-fluid rounded shadow"
-                 style="max-width: 280px;" />
+            <partial name="_CardImage" model='new CardThumbnailViewModel(primaryImage?.ImageURL, Model.CurrentCard.Name ?? string.Empty)' />
         </div>
         <div class="col-md-8 col-lg-9">
             <h2>@Model.CurrentCard.Name</h2>

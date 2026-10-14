@@ -73,6 +73,9 @@ namespace CardCollector.Pages.Catalog
         public async Task<IActionResult> OnPostAcceptAsync(int id) =>
             await RespondAsync(id, await _catalogReviewService.AcceptAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
 
+        public async Task<IActionResult> OnPostCreateCardAsync(int id) =>
+            await RespondAsync(id, await _catalogReviewService.CreateCardAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
+
         public async Task<IActionResult> OnPostCreatePrintingAsync(int id, int cardID) =>
             await RespondAsync(id, await _catalogReviewService.CreatePrintingAsync(id, cardID).ConfigureAwait(false)).ConfigureAwait(false);
 
@@ -91,6 +94,9 @@ namespace CardCollector.Pages.Catalog
 
         public async Task<IActionResult> OnPostRejectAsync(int id) =>
             await RespondAsync(id, await _catalogReviewService.RejectAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
+
+        public async Task<IActionResult> OnPostReopenAsync(int id) =>
+            await RespondAsync(id, await _catalogReviewService.ReopenAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
 
         /// <summary>
         /// After a decision: a full-page post redirects back to the same view; an AJAX post gets the item's row re-rendered
@@ -116,7 +122,10 @@ namespace CardCollector.Pages.Catalog
             if (item is null)
                 return Content(string.Empty, "text/html");
 
-            var leftTab = Filter != CatalogReviewFilter.Resolved && item.Status != CatalogReviewItemStatus.Open;
+            // A decided item leaves the open tabs; a reopened one leaves the Resolved tab.
+            var leftTab = Filter == CatalogReviewFilter.Resolved
+                ? item.Status == CatalogReviewItemStatus.Open
+                : item.Status != CatalogReviewItemStatus.Open;
             if (leftTab && error is null)
                 return Content(string.Empty, "text/html");
 

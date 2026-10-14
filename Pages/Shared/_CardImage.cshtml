@@ -1,0 +1,15 @@
+@model CardCollector.ViewModels.CardThumbnailViewModel
+@* The large card image on the card and Discover pages, or a card-shaped placeholder for cards no source has an image for
+   (e.g. cards created from a TCGPlayer product). *@
+@if (!string.IsNullOrEmpty(Model.ImageURL))
+{
+    <img src="@Model.ImageURL"
+         alt="@Model.AltText"
+         class="img-fluid rounded shadow"
+         style="max-width: 280px;" />
+}
+else
+{
+    <div class="cc-card-image-placeholder rounded shadow mx-auto d-flex align-items-center justify-content-center text-muted small"
+         role="img" aria-label="@Model.AltText (no image yet)">No image yet</div>
+}

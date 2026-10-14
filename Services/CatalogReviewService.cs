@@ -119,6 +119,73 @@ namespace CardCollector.Services
         public async Task<int> CountNeedingDecisionAsync(CancellationToken cancellationToken = default) =>
             await _reviewRepository.CountOpenAsync(ActionableKinds.ToList(), cancellationToken).ConfigureAwait(false);
 
+        public async Task<SaveResult> CreateCardAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
+            if (item is null || item.Status != CatalogReviewItemStatus.Open)
+                return SaveResult.Missing("That review item is not open.");
+            if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.CreateCard))
+                return SaveResult.Failure([$"{item.Kind} items can't create a card."]);
+
+            var payload = JObject.Parse(item.PayloadJson);
+            var name = CatalogReviewPresenter.ReadString(payload, "CardName")?.Trim();
+            var setCode = CatalogReviewPresenter.ReadString(payload, "SetCode");
+            var rawRarity = CatalogReviewPresenter.ReadString(payload, "RarityName");
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setCode) || string.IsNullOrWhiteSpace(rawRarity))
+                return SaveResult.Failure(["The item has no card name, set code, or rarity to create a card from."]);
+
+            var existing = await _reviewRepository.FindCardByNameAsync(name, cancellationToken).ConfigureAwait(false);
+            if (existing is not null)
+                return SaveResult.Failure([existing.Status == CatalogStatus.Retired
+                    ? $"A retired catalog card is named \"{existing.Name}\"; restore it in the catalog admin, then create the printing on it."
+                    : $"The catalog already has a card named \"{existing.Name}\"; create the printing on it instead."]);
+
+            var (rarity, variant) = NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(payload, "PrintVariant"));
+            SaveResult result = SaveResult.Success();
+            try
+            {
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    var now = Now();
+                    var card = new CatalogCard
+                    {
+                        DateCreated = now,
+                        DateModified = now,
+                        FirstSeenUTC = now,
+                        LastSeenUTC = now,
+                        Name = name,
+                        Status = CatalogStatus.Active
+                    };
+                    _reviewRepository.AddCard(card);
+
+                    var prefix = CardDataMapper.GetSetPrefix(setCode);
+                    var set = await _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken).ConfigureAwait(false);
+                    if (set is null)
+                    {
+                        set = new CatalogSet { DateCreated = now, DateModified = now, Name = prefix, Prefix = prefix };
+                        _reviewRepository.AddSet(set);
+                    }
+
+                    var printing = CatalogPrintingFactory.Create(card, setCode, set.Name, rarity, variant, set, now);
+                    result = await PlaceOnPrintingAsync(item, payload, printing, cancellationToken).ConfigureAwait(false);
+                    if (!result.Succeeded)
+                        throw new CatalogReviewDecisionException(result);
+
+                    item.CatalogCardID = card.ID;
+                    item.CatalogPrintingID = printing.ID;
+                    item.Resolution = $"Created card \"{name}\" with {CatalogPrintingFactory.Describe(printing)}";
+                    await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.LogInformation("Created catalog card {CardID} ({Name}) from TCGPlayer review item {ItemID}", card.ID, name, item.ID);
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            catch (CatalogReviewDecisionException failed)
+            {
+                return failed.Result;
+            }
+
+            return await FinishPlacementAsync(result).ConfigureAwait(false);
+        }
+
         public async Task<SaveResult> CreatePrintingAsync(int id, int catalogCardID, CancellationToken cancellationToken = default)
         {
             var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
@@ -138,9 +205,7 @@ namespace CardCollector.Services
             if (string.IsNullOrWhiteSpace(setCode) || string.IsNullOrWhiteSpace(rawRarity))
                 return SaveResult.Failure(["The item has no set code or rarity to create a printing from."]);
 
-            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
-            var rawVariant = CatalogReviewPresenter.ReadString(source, "PrintVariant");
-            var variant = string.IsNullOrWhiteSpace(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
+            var (rarity, variant) = NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(source, "PrintVariant"));
 
             SaveResult result = SaveResult.Success();
             try
@@ -268,6 +333,23 @@ namespace CardCollector.Services
             return SaveResult.Success();
         }
 
+        public async Task<SaveResult> ReopenAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
+            if (item is null)
+                return SaveResult.Missing("That review item no longer exists.");
+            if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.Reopen))
+                return SaveResult.Failure(["Only rejected or dismissed items can be reopened."]);
+
+            item.Status = CatalogReviewItemStatus.Open;
+            item.Resolution = null;
+            item.ResolvedUTC = null;
+            item.DateModified = Now();
+            await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("Reopened catalog review item {ItemID} ({Kind})", item.ID, item.Kind);
+            return SaveResult.Success();
+        }
+
         public async Task<PagedResult<CatalogReviewItemViewModel>> SearchAsync(CatalogReviewSearchCriteria criteria, CancellationToken cancellationToken = default)
         {
             if (criteria is null) throw new ArgumentNullException(nameof(criteria));
@@ -315,6 +397,14 @@ namespace CardCollector.Services
             if (result.Succeeded)
                 await ReloadCardDataAsync().ConfigureAwait(false);
             return result;
+        }
+
+        /// <summary>Normalizes a reported rarity and drops a variant that only restates it.</summary>
+        private static (string Rarity, string? Variant) NormalizeRarityAndVariant(string rawRarity, string? rawVariant)
+        {
+            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
+            var variant = string.IsNullOrWhiteSpace(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
+            return (rarity, variant);
         }
 
         private DateTime Now() => _timeProvider.GetUtcNow().UtcDateTime;
