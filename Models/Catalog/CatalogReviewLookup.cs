@@ -2,17 +2,18 @@ using CardCollector.DTO;
 
 namespace CardCollector.Models.Catalog
 {
-    /// <summary>The card data indexed for building inbox rows: printings by set code, cards by name, id, and passcode.</summary>
+    /// <summary>
+    /// The card data lookups inbox rows are built from: cards by id, passcode, and name, and printings by set code. The name
+    /// and set code lookups return an empty list when nothing matches.
+    /// </summary>
     public sealed class CatalogReviewLookup
     {
         public required Func<int, Card?> CardByID { get; init; }
 
         public required Func<int, Card?> CardByPasscode { get; init; }
 
-        public IReadOnlyDictionary<string, IReadOnlyList<Card>> CardsByName { get; init; } =
-            new Dictionary<string, IReadOnlyList<Card>>(StringComparer.OrdinalIgnoreCase);
+        public required Func<string, IReadOnlyList<Card>> CardsByName { get; init; }
 
-        public IReadOnlyDictionary<string, IReadOnlyList<(Card Card, Set Printing)>> PrintingsBySetCode { get; init; } =
-            new Dictionary<string, IReadOnlyList<(Card, Set)>>(StringComparer.OrdinalIgnoreCase);
+        public required Func<string, IReadOnlyList<CatalogPrintingRef>> PrintingsBySetCode { get; init; }
     }
 }

@@ -35,7 +35,7 @@ namespace CardCollector.Tests.Services
             using var verify = NewContext();
             Assert.AreEqual(74733322, (await verify.CatalogCards.SingleAsync()).Passcode);
             Assert.AreEqual(CatalogReviewItemStatus.Accepted, (await verify.CatalogReviewItems.SingleAsync()).Status);
-            _cardDataRepositoryMock.Verify(r => r.ReloadAsync(), Times.Once);
+            _cardDataRepositoryMock.Verify(r => r.QueueReload(), Times.Once);
         }
 
         [TestMethod]
@@ -103,7 +103,7 @@ namespace CardCollector.Tests.Services
             var item = await verify.CatalogReviewItems.SingleAsync();
             Assert.AreEqual(CatalogReviewItemStatus.Accepted, item.Status);
             Assert.AreEqual(card.ID, item.CatalogCardID);
-            _cardDataRepositoryMock.Verify(r => r.ReloadAsync(), Times.Once);
+            _cardDataRepositoryMock.Verify(r => r.QueueReload(), Times.Once);
         }
 
         [TestMethod]
@@ -166,7 +166,8 @@ namespace CardCollector.Tests.Services
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
             _cardDataRepositoryMock = new Mock<ICardDataRepository>();
-            _cardDataRepositoryMock.Setup(r => r.GetAllCards()).Returns([]);
+            _cardDataRepositoryMock.Setup(r => r.GetCardsByName(It.IsAny<string>())).Returns([]);
+            _cardDataRepositoryMock.Setup(r => r.GetPrintingsBySetCode(It.IsAny<string>())).Returns([]);
 
             using var context = NewContext();
             context.Database.EnsureCreated();

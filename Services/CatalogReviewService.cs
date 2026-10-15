@@ -112,7 +112,7 @@ namespace CardCollector.Services
 
             Close(item, CatalogReviewItemStatus.Accepted, resolution, now);
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -183,7 +183,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return await FinishPlacementAsync(result).ConfigureAwait(false);
+            return FinishPlacement(result);
         }
 
         public async Task<SaveResult> CreatePrintingAsync(int id, int catalogCardID, CancellationToken cancellationToken = default)
@@ -241,7 +241,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return await FinishPlacementAsync(result).ConfigureAwait(false);
+            return FinishPlacement(result);
         }
 
         public async Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, CancellationToken cancellationToken = default)
@@ -311,7 +311,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return await FinishPlacementAsync(result).ConfigureAwait(false);
+            return FinishPlacement(result);
         }
 
         public async Task<SaveResult> RejectAsync(int id, CancellationToken cancellationToken = default)
@@ -390,12 +390,18 @@ namespace CardCollector.Services
             item.DateModified = now;
         }
 
-        private CatalogReviewLookup BuildLookup() =>
-                    CatalogReviewPresenter.BuildLookup(_cardDataRepository.GetAllCards(), _cardDataRepository.GetCardByPasscode);
-        private async Task<SaveResult> FinishPlacementAsync(SaveResult result)
+        private CatalogReviewLookup BuildLookup() => new()
+        {
+            CardByID = _cardDataRepository.GetCardByID,
+            CardByPasscode = _cardDataRepository.GetCardByPasscode,
+            CardsByName = _cardDataRepository.GetCardsByName,
+            PrintingsBySetCode = _cardDataRepository.GetPrintingsBySetCode
+        };
+
+        private SaveResult FinishPlacement(SaveResult result)
         {
             if (result.Succeeded)
-                await ReloadCardDataAsync().ConfigureAwait(false);
+                _cardDataRepository.QueueReload();
             return result;
         }
 
@@ -447,19 +453,6 @@ namespace CardCollector.Services
             Close(item, CatalogReviewItemStatus.Accepted, $"Restored on {described}", now);
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return SaveResult.Success();
-        }
-
-        private async Task ReloadCardDataAsync()
-        {
-            try
-            {
-                await _cardDataRepository.ReloadAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                // The decision is saved; the card data catches up at the next reload (nightly or on restart).
-                _logger.LogError(ex, "Reloading card data after a catalog review decision failed");
-            }
         }
 
         /// <summary>Recreates an unmapped legacy row on the chosen printing from the copy of it kept on the review item.</summary>

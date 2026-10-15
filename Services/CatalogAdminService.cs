@@ -88,7 +88,7 @@ namespace CardCollector.Services
 
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Added printing {Printing} to catalog card {CardID} by hand", CatalogPrintingFactory.Describe(printing), card.ID);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -168,13 +168,7 @@ namespace CardCollector.Services
                 LockedFields = CatalogLockedFields.Split(card.LockedFields),
                 Name = card.Name,
                 Printings = printings,
-                RarityNames = _cardDataRepository.GetAllCards()
-                    .SelectMany(c => c.CardSets ?? [])
-                    .Select(s => s.RarityName)
-                    .OfType<string>()
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
-                    .ToList(),
+                RarityNames = _cardDataRepository.AllRarityNames,
                 Status = card.Status,
                 UserRowCount = rowCounts.Values.Sum()
             };
@@ -247,7 +241,7 @@ namespace CardCollector.Services
             _logger.LogInformation(
                 "Merged catalog printing {FromID} ({From}) into {IntoID} ({Into}): {Moved} rows moved, {Folded} folded",
                 from.ID, CatalogPrintingFactory.Describe(from), into.ID, CatalogPrintingFactory.Describe(into), moved.Moved, moved.Folded);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -299,7 +293,7 @@ namespace CardCollector.Services
             card.DateModified = Now();
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Catalog card {CardID} set to {Status} by hand", card.ID, status);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -323,7 +317,7 @@ namespace CardCollector.Services
             printing.DateModified = Now();
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Catalog printing {PrintingID} ({Printing}) set to {Status} by hand", printing.ID, CatalogPrintingFactory.Describe(printing), status);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -353,7 +347,7 @@ namespace CardCollector.Services
 
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Unlinked TCGPlayer product {ProductID} from catalog printing {PrintingID}", source.ExternalKey, source.CatalogPrintingID);
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -401,7 +395,7 @@ namespace CardCollector.Services
 
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Edited catalog card {CardID} by hand: {Fields}", card.ID, string.Join(", ", changed));
-            await ReloadCardDataAsync().ConfigureAwait(false);
+            _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
 
@@ -430,18 +424,5 @@ namespace CardCollector.Services
         };
 
         private DateTime Now() => _timeProvider.GetUtcNow().UtcDateTime;
-
-        private async Task ReloadCardDataAsync()
-        {
-            try
-            {
-                await _cardDataRepository.ReloadAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                // The edit is saved; the card data catches up at the next reload (nightly or on restart).
-                _logger.LogError(ex, "Reloading card data after a catalog admin edit failed");
-            }
-        }
     }
 }

@@ -44,28 +44,6 @@ namespace CardCollector.Rules.Catalog
             };
         }
 
-        public static CatalogReviewLookup BuildLookup(IEnumerable<Card> cards, Func<int, Card?> cardByPasscode)
-        {
-            if (cards is null) throw new ArgumentNullException(nameof(cards));
-            if (cardByPasscode is null) throw new ArgumentNullException(nameof(cardByPasscode));
-
-            var cardList = cards.ToList();
-            var byID = cardList.ToDictionary(c => c.ID);
-            return new CatalogReviewLookup
-            {
-                CardByID = id => byID.GetValueOrDefault(id),
-                CardByPasscode = cardByPasscode,
-                CardsByName = cardList
-                    .Where(c => !string.IsNullOrWhiteSpace(c.Name))
-                    .GroupBy(c => c.Name!, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => (IReadOnlyList<Card>)g.ToList(), StringComparer.OrdinalIgnoreCase),
-                PrintingsBySetCode = cardList
-                    .SelectMany(c => (c.CardSets ?? []).Where(s => !string.IsNullOrWhiteSpace(s.Code)).Select(s => (Card: c, Printing: s)))
-                    .GroupBy(x => x.Printing.Code!, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => (IReadOnlyList<(Card, Set)>)g.ToList(), StringComparer.OrdinalIgnoreCase)
-            };
-        }
-
         /// <summary>
         /// "SET-EN001 Ultra Rare", with " (Variant)" appended when there is one, and prefixed with "Card — " when
         /// <paramref name="includeCardName"/> is true (when a picker's options span more than one card).
@@ -95,7 +73,7 @@ namespace CardCollector.Rules.Catalog
 
             // Creating a card is only offered when no catalog card has the product's name, so it can't make a duplicate.
             if (actions.Contains(CatalogReviewAction.CreateCard)
-                && (ReadString(payload, "CardName") is not { } productCardName || lookup.CardsByName.ContainsKey(productCardName)))
+                && (ReadString(payload, "CardName") is not { } productCardName || lookup.CardsByName(productCardName).Count > 0))
                 actions = actions.Where(a => a != CatalogReviewAction.CreateCard).ToList();
 
             var card = item.CatalogCardID is int cardID ? lookup.CardByID(cardID) : null;
@@ -162,8 +140,8 @@ namespace CardCollector.Rules.Catalog
             if (kind == CatalogReviewItemKind.UnmappedTCGProduct)
             {
                 setCode = ReadString(payload, "SetCode");
-                if (ReadString(payload, "CardName") is { } name && lookup.CardsByName.TryGetValue(name, out var cards))
-                    namedCards.AddRange(cards);
+                if (ReadString(payload, "CardName") is { } name)
+                    namedCards.AddRange(lookup.CardsByName(name));
             }
             else
             {
@@ -174,12 +152,10 @@ namespace CardCollector.Rules.Catalog
                     namedCards.Add(passcodeCard);
             }
 
-            var underCode = setCode is not null && lookup.PrintingsBySetCode.TryGetValue(setCode, out var printings)
-                ? printings
-                : [];
+            var underCode = setCode is not null ? lookup.PrintingsBySetCode(setCode) : [];
             var candidates = underCode.Count > 0
                 ? underCode
-                : namedCards.SelectMany(c => (c.CardSets ?? []).Select(s => (Card: c, Printing: s))).ToList();
+                : namedCards.SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s))).ToList();
 
             // The row already names the card, so the card name only helps when the options belong to different cards.
             var spansCards = candidates.Select(x => x.Card.ID).Distinct().Count() > 1;

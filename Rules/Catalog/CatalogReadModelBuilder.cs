@@ -27,14 +27,29 @@ namespace CardCollector.Rules.Catalog
                 .Select(s => CardDataMapper.GetSetPrefix(s.Code!))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+            var printings = cards
+                .SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s)))
+                .Where(r => r.Printing.PrintingID > 0)
+                .ToList();
+
             return new CatalogReadModel
             {
+                AllRarityNames = printings
+                    .Select(r => r.Printing.RarityName)
+                    .OfType<string>()
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
                 BrowseableCards = browseable,
                 CardIDsByPrintingID = state.Cards
                     .SelectMany(c => c.Printings.Select(p => (PrintingID: p.ID, CardID: c.ID)))
                     .ToDictionary(x => x.PrintingID, x => x.CardID),
                 Cards = cards,
                 CardsByID = cards.ToDictionary(c => c.ID),
+                CardsByName = cards
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+                    .GroupBy(c => c.Name!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => (IReadOnlyList<Card>)g.ToList(), StringComparer.OrdinalIgnoreCase),
                 DistinctRarityNames = browseable
                     .SelectMany(c => c.CardSets ?? [])
                     .Select(s => RarityExtensions.NormalizeRarityName(s.RarityName))
@@ -49,10 +64,11 @@ namespace CardCollector.Rules.Catalog
                     .OrderBy(n => n)
                     .ToList(),
                 PasscodeAliases = BuildPasscodeAliases(state.Cards),
-                PrintingsByID = cards
-                    .SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s)))
-                    .Where(r => r.Printing.PrintingID > 0)
-                    .ToDictionary(r => r.Printing.PrintingID),
+                PrintingsByID = printings.ToDictionary(r => r.Printing.PrintingID),
+                PrintingsBySetCode = printings
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Printing.Code))
+                    .GroupBy(r => r.Printing.Code!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => (IReadOnlyList<CatalogPrintingRef>)g.ToList(), StringComparer.OrdinalIgnoreCase),
                 SetNamesByCode = setNamesByCode,
                 SetPrefixByName = setPrefixByName
             };

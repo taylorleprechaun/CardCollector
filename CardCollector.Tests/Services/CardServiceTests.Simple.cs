@@ -19,7 +19,7 @@ namespace CardCollector.Tests.Services
 
             await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<int>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<IReadOnlyCollection<int>>()), Times.Never);
         }
 
         [TestMethod]
@@ -39,8 +39,7 @@ namespace CardCollector.Tests.Services
 
             await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(102), Times.Once);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<int>(id => id != 102)), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 102 }))), Times.Once);
         }
 
         [TestMethod]
@@ -55,8 +54,7 @@ namespace CardCollector.Tests.Services
 
             await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(102), Times.Once);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(103), Times.Once);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 102, 103 }))), Times.Once);
         }
 
         [TestMethod]
@@ -212,13 +210,24 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task DismissNewPrintingAsync_Printing_DismissesIt()
+        public async Task DismissNewPrintingsAsync_ActivePrintings_DismissesThemTogether()
+        {
+            SetUpPrinting(101, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            SetUpPrinting(102, "RA05-EN001", "Ultra Rare", "Extended Art");
+
+            await _service.DismissNewPrintingsAsync([101, 102]);
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 101, 102 }))), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task DismissNewPrintingsAsync_UnknownPrinting_ThrowsAndDismissesNothing()
         {
             SetUpPrinting(101, "RA05-EN001", "Ultra Rare", "Starlight Rare");
 
-            await _service.DismissNewPrintingAsync(101);
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.DismissNewPrintingsAsync([101, 999]));
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(101), Times.Once);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<IReadOnlyCollection<int>>()), Times.Never);
         }
 
         [TestMethod]

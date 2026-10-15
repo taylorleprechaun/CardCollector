@@ -23,6 +23,20 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void Build_ActivePrintings_AreIndexedBySetCodeIgnoringCase()
+        {
+            var first = Card(1, "Synthetic Dragon");
+            Printing(first, 10, "SYN-EN001", "Rare");
+            Printing(first, 11, "SYN-EN001", "Super Rare").Status = CatalogStatus.Retired;
+            var second = Card(2, "Synthetic Knight");
+            Printing(second, 20, "SYN-EN001", "Ultra Rare");
+
+            var model = CatalogReadModelBuilder.Build(State(first, second));
+
+            CollectionAssert.AreEquivalent(new[] { 10, 20 }, model.PrintingsBySetCode["syn-en001"].Select(r => r.Printing.PrintingID).ToArray());
+        }
+
+        [TestMethod]
         public void Build_AnyPrinting_MapsToItsCardIDEvenWhenRetired()
         {
             var retiredCard = Card(1, "Synthetic Retired");
@@ -37,6 +51,19 @@ namespace CardCollector.Tests.Rules.Catalog
             Assert.AreEqual(1, model.CardIDsByPrintingID[10]);
             Assert.AreEqual(2, model.CardIDsByPrintingID[20]);
             Assert.AreEqual(2, model.CardIDsByPrintingID[21]);
+        }
+
+        [TestMethod]
+        public void Build_CardsSharingAName_AreIndexedTogetherIgnoringCase()
+        {
+            var first = Card(1, "Synthetic Token");
+            var second = Card(2, "SYNTHETIC TOKEN");
+            var retired = Card(3, "Synthetic Token");
+            retired.Status = CatalogStatus.Retired;
+
+            var model = CatalogReadModelBuilder.Build(State(first, second, retired));
+
+            CollectionAssert.AreEquivalent(new[] { 1, 2 }, model.CardsByName["synthetic token"].Select(c => c.ID).ToArray());
         }
 
         [TestMethod]
@@ -76,6 +103,20 @@ namespace CardCollector.Tests.Rules.Catalog
             Assert.AreEqual("Extended Art", set.PrintVariant);
             CollectionAssert.AreEqual(new[] { 687324 }, set.TCGProductIDs.ToArray());
             Assert.AreSame(built, model.BrowseableCards.Single());
+        }
+
+        [TestMethod]
+        public void Build_RarityNames_AreDistinctIgnoringCaseSortedAndSkipRetiredPrintings()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            Printing(card, 10, "SYN-EN001", "Ultra Rare");
+            Printing(card, 11, "SYN-EN002", "ultra rare");
+            Printing(card, 12, "SYN-EN003", "Common");
+            Printing(card, 13, "SYN-EN004", "Ghost Rare").Status = CatalogStatus.Retired;
+
+            var model = CatalogReadModelBuilder.Build(State(card));
+
+            CollectionAssert.AreEqual(new[] { "Common", "Ultra Rare" }, model.AllRarityNames.ToArray());
         }
 
         [TestMethod]

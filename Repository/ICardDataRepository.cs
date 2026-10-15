@@ -10,6 +10,11 @@ namespace CardCollector.Repository
     public interface ICardDataRepository
     {
         /// <summary>
+        /// Every rarity name an active printing uses, as stored (not normalized), sorted and distinct ignoring case.
+        /// </summary>
+        IReadOnlyList<string> AllRarityNames { get; }
+
+        /// <summary>
         /// All distinct rarity name strings present in the card data.
         /// </summary>
         IReadOnlyList<string> DistinctRarityNames { get; }
@@ -46,6 +51,11 @@ namespace CardCollector.Repository
         int? GetCardIDByPrintingID(int printingID);
 
         /// <summary>
+        /// Returns the active cards with the given name (ignoring case); empty when none has it.
+        /// </summary>
+        IReadOnlyList<Card> GetCardsByName(string name);
+
+        /// <summary>
         /// Returns a dictionary mapping every known passcode and source id to the catalog id of its card. A passcode with no
         /// entry is unknown.
         /// </summary>
@@ -56,6 +66,11 @@ namespace CardCollector.Repository
         /// retired.
         /// </summary>
         CatalogPrintingRef? GetPrintingByID(int printingID);
+
+        /// <summary>
+        /// Returns every active printing (with its card) under the given set code, ignoring case; empty when none has it.
+        /// </summary>
+        IReadOnlyList<CatalogPrintingRef> GetPrintingsBySetCode(string setCode);
 
         /// <summary>
         /// Returns a dictionary mapping full card code (e.g. "LOB-EN001") to canonical set name (e.g. "Legend of Blue Eyes White Dragon").
@@ -73,12 +88,18 @@ namespace CardCollector.Repository
         Task LoadIfStaleAsync();
 
         /// <summary>
+        /// Reloads the in-memory card data in the background and returns at once, e.g. after a catalog edit. Requests made
+        /// while a reload runs are served by one more reload once it finishes; a failed reload is logged, not thrown.
+        /// </summary>
+        void QueueReload();
+
+        /// <summary>
         /// Downloads every source again, brings the catalog up to date, then reloads the in-memory card data.
         /// </summary>
         Task RefreshAsync();
 
         /// <summary>
-        /// Reloads the in-memory card data from the catalog without touching the sources, e.g. after a catalog edit.
+        /// Reloads the in-memory card data from the catalog without touching the sources, and waits for it to finish.
         /// </summary>
         Task ReloadAsync();
     }

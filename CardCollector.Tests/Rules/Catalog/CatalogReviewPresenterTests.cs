@@ -130,8 +130,16 @@ namespace CardCollector.Tests.Rules.Catalog
             Summary = "Synthetic summary"
         };
 
-        private static CatalogReviewLookup Lookup(params Card[] cards) =>
-            CatalogReviewPresenter.BuildLookup(cards, passcode => cards.FirstOrDefault(c => c.Passcode == passcode));
+        private static CatalogReviewLookup Lookup(params Card[] cards) => new()
+        {
+            CardByID = id => cards.FirstOrDefault(c => c.ID == id),
+            CardByPasscode = passcode => cards.FirstOrDefault(c => c.Passcode == passcode),
+            CardsByName = name => cards.Where(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)).ToList(),
+            PrintingsBySetCode = setCode => cards
+                .SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s)))
+                .Where(r => string.Equals(r.Printing.Code, setCode, StringComparison.OrdinalIgnoreCase))
+                .ToList()
+        };
 
         private static Set Printing(int printingID, string setCode, string rarity, string? variant = null) =>
             new() { Code = setCode, PrintingID = printingID, PrintVariant = variant, RarityName = rarity };

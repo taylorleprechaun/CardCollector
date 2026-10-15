@@ -60,10 +60,10 @@ namespace CardCollector.Services
         Task CheckOutCardAsync(int printingID, int quantity);
 
         /// <summary>
-        /// Records the catalog printing as dismissed so it no longer appears as an upgrade opportunity.
+        /// Records the catalog printings as dismissed so they no longer appear as upgrade opportunities.
         /// </summary>
-        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
-        Task DismissNewPrintingAsync(int printingID);
+        /// <exception cref="ArgumentException">A printing is not an active catalog printing; nothing is dismissed.</exception>
+        Task DismissNewPrintingsAsync(IReadOnlyCollection<int> printingIDs);
 
         /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.

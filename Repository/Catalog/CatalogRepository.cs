@@ -43,18 +43,34 @@ namespace CardCollector.Repository.Catalog
 
         public async Task<CatalogState> LoadSnapshotAsync(CancellationToken cancellationToken = default)
         {
+            // Each table is read flat and joined here: EF's Include fix-up over the whole catalog took about four times as long.
             var sets = await _context.CatalogSets.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
-            var cards = await _context.CatalogCards
-                .AsNoTrackingWithIdentityResolution()
-                .Include(c => c.Aliases)
-                .Include(c => c.Images)
-                .Include(c => c.Printings)
-                    .ThenInclude(p => p.Sources)
-                .Include(c => c.Printings)
-                    .ThenInclude(p => p.Set)
-                .AsSplitQuery()
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+            var cards = await _context.CatalogCards.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+            var aliases = await _context.CatalogCardAliases.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+            var images = await _context.CatalogCardImages.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+            var printings = await _context.CatalogPrintings.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+            var sources = await _context.CatalogPrintingSources.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var aliasesByCard = aliases.ToLookup(a => a.CatalogCardID);
+            var cardsByID = cards.ToDictionary(c => c.ID);
+            var imagesByCard = images.ToLookup(i => i.CatalogCardID);
+            var printingsByCard = printings.ToLookup(p => p.CatalogCardID);
+            var setsByID = sets.ToDictionary(s => s.ID);
+            var sourcesByPrinting = sources.ToLookup(s => s.CatalogPrintingID);
+
+            foreach (var card in cards)
+            {
+                card.Aliases = aliasesByCard[card.ID].ToList();
+                card.Images = imagesByCard[card.ID].ToList();
+                card.Printings = printingsByCard[card.ID].ToList();
+            }
+
+            foreach (var printing in printings)
+            {
+                printing.Card = cardsByID.GetValueOrDefault(printing.CatalogCardID);
+                printing.Set = setsByID.GetValueOrDefault(printing.CatalogSetID);
+                printing.Sources = sourcesByPrinting[printing.ID].ToList();
+            }
 
             return new CatalogState { Cards = cards, Sets = sets };
         }

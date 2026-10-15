@@ -54,14 +54,13 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostDismissAllAsync()
         {
-            foreach (var printingID in PrintingIDs)
-                await _cardService.DismissNewPrintingAsync(printingID);
+            await _cardService.DismissNewPrintingsAsync(PrintingIDs);
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostDismissAsync()
         {
-            await _cardService.DismissNewPrintingAsync(PrintingID);
+            await _cardService.DismissNewPrintingsAsync([PrintingID]);
             return RedirectToPage();
         }
 

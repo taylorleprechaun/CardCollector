@@ -10,6 +10,9 @@ namespace CardCollector.Models.Catalog
     {
         public static CatalogReadModel Empty { get; } = new();
 
+        /// <summary>Every rarity name an active printing uses, as stored (not normalized), sorted and distinct ignoring case.</summary>
+        public IReadOnlyList<string> AllRarityNames { get; init; } = [];
+
         /// <summary>Cards with at least one active printing; the ones Browse and the collection views list.</summary>
         public IReadOnlyList<Card> BrowseableCards { get; init; } = [];
 
@@ -20,6 +23,10 @@ namespace CardCollector.Models.Catalog
 
         public IReadOnlyDictionary<int, Card> CardsByID { get; init; } = new Dictionary<int, Card>();
 
+        /// <summary>Active cards by name, ignoring case; a name more than one card carries lists them all.</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<Card>> CardsByName { get; init; } =
+            new Dictionary<string, IReadOnlyList<Card>>(StringComparer.OrdinalIgnoreCase);
+
         public IReadOnlyList<string> DistinctRarityNames { get; init; } = [];
 
         public IReadOnlyList<string> DistinctSetNames { get; init; } = [];
@@ -29,6 +36,10 @@ namespace CardCollector.Models.Catalog
 
         /// <summary>Every active printing of an active card, by catalog printing ID.</summary>
         public IReadOnlyDictionary<int, CatalogPrintingRef> PrintingsByID { get; init; } = new Dictionary<int, CatalogPrintingRef>();
+
+        /// <summary>Every active printing of an active card, by set code (ignoring case).</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<CatalogPrintingRef>> PrintingsBySetCode { get; init; } =
+            new Dictionary<string, IReadOnlyList<CatalogPrintingRef>>(StringComparer.OrdinalIgnoreCase);
 
         public IReadOnlyDictionary<string, string> SetNamesByCode { get; init; } = new Dictionary<string, string>();
 

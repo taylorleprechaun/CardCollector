@@ -53,14 +53,13 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public async Task OnPostDismissAllAsync_DismissesEachPrinting()
+        public async Task OnPostDismissAllAsync_DismissesEveryPrintingTogether()
         {
             _page.PrintingIDs = [101, 102];
 
             await _page.OnPostDismissAllAsync();
 
-            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(101), Times.Once);
-            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(102), Times.Once);
+            _cardServiceMock.Verify(s => s.DismissNewPrintingsAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 101, 102 }))), Times.Once);
         }
 
         [TestMethod]
@@ -70,7 +69,7 @@ namespace CardCollector.Tests.Pages
 
             var result = await _page.OnPostDismissAsync();
 
-            _cardServiceMock.Verify(s => s.DismissNewPrintingAsync(101), Times.Once);
+            _cardServiceMock.Verify(s => s.DismissNewPrintingsAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 101 }))), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

@@ -6,10 +6,10 @@ namespace CardCollector.Repository
     public interface IDismissedNewPrintingRepository
     {
         /// <summary>
-        /// Records the catalog printing as dismissed so it no longer appears as an upgrade opportunity. Does
-        /// nothing when it is already dismissed.
+        /// Records the catalog printings as dismissed so they no longer appear as upgrade opportunities, in one save.
+        /// Printings already dismissed are skipped.
         /// </summary>
-        Task AddAsync(int printingID);
+        Task AddAsync(IReadOnlyCollection<int> printingIDs);
 
         /// <summary>
         /// Returns true if any dismissed records exist.

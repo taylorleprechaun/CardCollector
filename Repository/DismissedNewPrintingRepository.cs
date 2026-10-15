@@ -14,21 +14,30 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddAsync(int printingID)
+        public async Task AddAsync(IReadOnlyCollection<int> printingIDs)
         {
-            var exists = await _context.DismissedNewPrintings
-                .AnyAsync(d => d.CatalogPrintingID == printingID)
-                .ConfigureAwait(false);
+            if (printingIDs is null) throw new ArgumentNullException(nameof(printingIDs));
 
-            if (exists)
+            var requested = printingIDs.ToHashSet();
+            if (requested.Count == 0)
                 return;
 
-            _context.DismissedNewPrintings.Add(new DismissedNewPrinting
+            var existing = await _context.DismissedNewPrintings
+                .Where(d => requested.Contains(d.CatalogPrintingID))
+                .Select(d => d.CatalogPrintingID)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            requested.ExceptWith(existing);
+            if (requested.Count == 0)
+                return;
+
+            var now = DateTime.UtcNow;
+            _context.DismissedNewPrintings.AddRange(requested.Select(printingID => new DismissedNewPrinting
             {
                 CatalogPrintingID = printingID,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow
-            });
+                DateCreated = now,
+                DateModified = now
+            }));
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }

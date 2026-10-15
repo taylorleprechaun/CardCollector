@@ -35,7 +35,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("BLGG-EN127", created.SetCode);
             Assert.AreEqual("Starfoil Rare", created.RarityName);
             Assert.AreEqual(CatalogSource.Manual, created.Sources.Single().Source);
-            _cardDataRepositoryMock.Verify(r => r.ReloadAsync(), Times.Once);
+            _cardDataRepositoryMock.Verify(r => r.QueueReload(), Times.Once);
         }
 
         [TestMethod]
@@ -107,7 +107,7 @@ namespace CardCollector.Tests.Services
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
             _cardDataRepositoryMock = new Mock<ICardDataRepository>();
-            _cardDataRepositoryMock.Setup(r => r.GetAllCards()).Returns([]);
+            _cardDataRepositoryMock.Setup(r => r.AllRarityNames).Returns([]);
 
             using var context = NewContext();
             context.Database.EnsureCreated();
@@ -294,7 +294,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(74733322, card.Passcode);
             Assert.AreEqual(2500, card.ATK);
             Assert.AreEqual("ATK,Passcode", card.LockedFields);
-            _cardDataRepositoryMock.Verify(r => r.ReloadAsync(), Times.Once);
+            _cardDataRepositoryMock.Verify(r => r.QueueReload(), Times.Once);
         }
 
         [TestMethod]

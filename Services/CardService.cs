@@ -274,10 +274,13 @@ namespace CardCollector.Services
             }).ConfigureAwait(false);
         }
 
-        public async Task DismissNewPrintingAsync(int printingID)
+        public async Task DismissNewPrintingsAsync(IReadOnlyCollection<int> printingIDs)
         {
-            GetRequiredPrinting(printingID);
-            await _dismissedNewPrintingRepository.AddAsync(printingID).ConfigureAwait(false);
+            if (printingIDs is null) throw new ArgumentNullException(nameof(printingIDs));
+
+            foreach (var printingID in printingIDs)
+                GetRequiredPrinting(printingID);
+            await _dismissedNewPrintingRepository.AddAsync(printingIDs).ConfigureAwait(false);
         }
 
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
@@ -1317,8 +1320,8 @@ namespace CardCollector.Services
                             && string.Compare(x.Date, today, StringComparison.Ordinal) <= 0)
                 .ToList();
 
-            foreach (var (set, _) in toDismiss)
-                await _dismissedNewPrintingRepository.AddAsync(set.PrintingID).ConfigureAwait(false);
+            if (toDismiss.Count > 0)
+                await _dismissedNewPrintingRepository.AddAsync(toDismiss.Select(x => x.Set.PrintingID).ToList()).ConfigureAwait(false);
         }
 
         private async Task<IReadOnlyDictionary<int, CollectionCompletionStatus?>> BuildCardCompletionMapAsync(IReadOnlyList<Card> cards)
@@ -1464,13 +1467,10 @@ namespace CardCollector.Services
             _cardDataRepository.GetPrintingByID(printingID)
             ?? throw new ArgumentException($"{printingID} is not an active catalog printing.", nameof(printingID));
 
-        private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync()
+        private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync(IReadOnlyList<CollectionEntry> entries)
         {
-            var owned = await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
-            var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
-
             var results = new List<EditionAuditResult>();
-            foreach (var group in owned.Concat(ordered).Where(e => e.Edition.HasValue).GroupBy(e => GetCardID(e.CatalogPrintingID)))
+            foreach (var group in entries.Where(e => e.Edition.HasValue).GroupBy(e => GetCardID(e.CatalogPrintingID)))
             {
                 var editions = await _pricingService.GetEditionsByPrintingAsync(group.Key).ConfigureAwait(false);
 
@@ -1499,18 +1499,18 @@ namespace CardCollector.Services
 
         private async Task<IReadOnlyList<EditionAuditGroupViewModel>> GetGroupedEditionAuditResultsAsync()
         {
-            var flaggedResults = await GetEditionAuditResultsAsync().ConfigureAwait(false);
+            var entries = await GetOwnedAndOrderedEntriesAsync().ConfigureAwait(false);
+            var flaggedResults = await GetEditionAuditResultsAsync(entries).ConfigureAwait(false);
             if (flaggedResults.Count == 0)
                 return [];
 
+            var entriesByCardID = entries.OrderBy(e => e.ID).ToLookup(e => GetCardID(e.CatalogPrintingID));
             var flaggedByEntryID = flaggedResults.ToDictionary(r => r.CollectionEntryID);
             var groups = new List<EditionAuditGroupViewModel>();
 
             foreach (var cardID in flaggedResults.Select(r => r.CardID).Distinct())
             {
-                var cardEntries = await _collectionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
-                var enrichedEntries = cardEntries
-                    .Where(e => e.Status == CollectionStatus.Owned || e.Status == CollectionStatus.Ordered)
+                var enrichedEntries = entriesByCardID[cardID]
                     .Select(e =>
                     {
                         var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(e.CatalogPrintingID), e);
@@ -1532,6 +1532,13 @@ namespace CardCollector.Services
             }
 
             return groups;
+        }
+
+        private async Task<IReadOnlyList<CollectionEntry>> GetOwnedAndOrderedEntriesAsync()
+        {
+            var owned = await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false);
+            var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+            return owned.Concat(ordered).ToList();
         }
 
         private async Task<(
