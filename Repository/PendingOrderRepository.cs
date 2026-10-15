@@ -16,11 +16,7 @@ namespace CardCollector.Repository
 
         public async Task AddRangeAsync(IEnumerable<PendingOrderLine> lines)
         {
-            var lineList = lines.ToList();
-            foreach (var line in lineList)
-                line.RarityName = RarityExtensions.NormalizeRarityName(line.RarityName);
-
-            _context.PendingOrderLines.AddRange(lineList);
+            _context.PendingOrderLines.AddRange(lines);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
@@ -69,15 +65,16 @@ namespace CardCollector.Repository
                 .ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetStagedQuantitiesAsync()
+        public async Task<IReadOnlyDictionary<int, int>> GetStagedQuantitiesAsync()
         {
             var grouped = await _context.PendingOrderLines
-                .GroupBy(l => new { l.CardID, l.SetCode, RarityName = l.RarityName ?? string.Empty })
-                .Select(g => new { g.Key.CardID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(l => l.Quantity) })
+                .Where(l => l.CatalogPrintingID != null)
+                .GroupBy(l => l.CatalogPrintingID!.Value)
+                .Select(g => new { PrintingID = g.Key, Quantity = g.Sum(l => l.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return grouped.ToDictionary(g => (g.CardID, g.SetCode, g.RarityName), g => g.Quantity);
+            return grouped.ToDictionary(g => g.PrintingID, g => g.Quantity);
         }
 
         public async Task<(int Count, decimal Total)> GetSummaryAsync()

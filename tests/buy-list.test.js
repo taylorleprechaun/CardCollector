@@ -19,8 +19,8 @@ describe('buy-list.js', () => {
       expect(buyListState.itemsCount).toBe(0);
     });
 
-    it('missing row for the current image ID is a no-op', () => {
-      document.body.innerHTML = '<input id="poImageID" value="999" /><div id="buyListResults"></div>';
+    it('missing row for the current printing ID is a no-op', () => {
+      document.body.innerHTML = '<input id="poPrintingID" value="999" /><div id="buyListResults"></div>';
       loadDeps();
 
       expect(() => applyBuyListUpdate({ itemRemoved: true })).not.toThrow();
@@ -41,7 +41,7 @@ describe('buy-list.js', () => {
 
       applyBuyListUpdate({
         itemRemoved: false,
-        rowHtml: '<div class="list-group-item" data-image-id="10" data-line-total="20" data-mass-entry-line="1 Dark Magician [LOB]"></div>'
+        rowHtml: '<div class="list-group-item" data-printing-id="101" data-line-total="20" data-mass-entry-line="1 Dark Magician [LOB]"></div>'
       });
 
       expect(document.querySelector('.list-group-item').dataset.lineTotal).toBe('20');
@@ -50,9 +50,9 @@ describe('buy-list.js', () => {
 
     function setupRow() {
       document.body.innerHTML = `
-        <input id="poImageID" value="10" />
+        <input id="poPrintingID" value="101" />
         <div id="buyListResults">
-          <div class="list-group-item" data-image-id="10" data-line-total="15" data-mass-entry-line="2 Dark Magician [LOB]"></div>
+          <div class="list-group-item" data-printing-id="101" data-line-total="15" data-mass-entry-line="2 Dark Magician [LOB]"></div>
         </div>
         <textarea id="massEntryText">2 Dark Magician [LOB]</textarea>
         <div id="buyListStat-items"><span class="stat-tile-value"></span></div>
@@ -64,29 +64,29 @@ describe('buy-list.js', () => {
   describe('openPurchaseModal', () => {
     it('populates the form fields from the button dataset and clamps quantity into 1-3', () => {
       document.body.innerHTML = `
-        <input id="poCardID" /><input id="poImageID" /><input id="poSetCode" /><input id="poRarityName" />
+        <input id="poPrintingID" />
         <input id="poMarketPrice" /><span id="poCardName"></span><span id="poSetNameLabel"></span><span id="poRarityLabel"></span>
         <input type="hidden" id="poQuantity" />
         <div id="purchaseOrderModal"></div>
-        <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001" data-rarity-name="Ultra Rare"
+        <button id="btn" data-printing-id="101" data-rarity-name="Ultra Rare"
                 data-price="9.99" data-card-name="Dark Magician" data-set-name="Legend" data-quantity-needed="5"></button>`;
       loadDeps();
 
       openPurchaseModal(document.getElementById('btn'));
 
-      expect(document.getElementById('poCardID').value).toBe('1');
-      expect(document.getElementById('poSetCode').value).toBe('LOB-EN001');
+      expect(document.getElementById('poPrintingID').value).toBe('101');
+      expect(document.getElementById('poRarityLabel').textContent).toBe('Ultra Rare');
       expect(document.getElementById('poCardName').textContent).toBe('Dark Magician');
       expect(document.getElementById('poQuantity').value).toBe('3'); // clamped from 5
     });
 
     it('quantityNeeded below 1 clamps up to 1', () => {
       document.body.innerHTML = `
-        <input id="poCardID" /><input id="poImageID" /><input id="poSetCode" /><input id="poRarityName" />
+        <input id="poPrintingID" />
         <input id="poMarketPrice" /><span id="poCardName"></span><span id="poSetNameLabel"></span><span id="poRarityLabel"></span>
         <input type="hidden" id="poQuantity" />
         <div id="purchaseOrderModal"></div>
-        <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001" data-quantity-needed="0"></button>`;
+        <button id="btn" data-printing-id="101" data-quantity-needed="0"></button>`;
       loadDeps();
 
       openPurchaseModal(document.getElementById('btn'));
@@ -136,7 +136,7 @@ describe('buy-list.js', () => {
       document.body.innerHTML = `
         <form id="purchaseOrderForm"></form>
         <button id="addToCartBtn"></button>
-        <input id="poImageID" value="10" />
+        <input id="poPrintingID" value="101" />
         <div id="purchaseOrderModal"></div>
         <span id="navCartBadge" class="d-none"><span id="navCartCount"></span></span>`;
       loadDeps();

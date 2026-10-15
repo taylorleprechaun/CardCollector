@@ -14,18 +14,18 @@ describe('wishlist.js', () => {
       globalThis.fetch = vi.fn().mockRejectedValue(new Error('offline'));
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      await fetchWishlistOrderMarketPrice(1, 'LOB-EN001', 'Ultra Rare');
+      await fetchWishlistOrderMarketPrice(101);
 
       expect(warnSpy).toHaveBeenCalled();
       expect(document.getElementById('woMarketPrice').placeholder).toBe('0.00');
     });
 
-    it('missing any of cardID/setCode/rarityName clears the value and does not call fetch', async () => {
+    it('missing printing ID clears the value and does not call fetch', async () => {
       document.body.innerHTML = '<input id="woMarketPrice" value="stale" />';
       loadDeps();
       globalThis.fetch = vi.fn();
 
-      await fetchWishlistOrderMarketPrice(null, 'LOB-EN001', 'Ultra Rare');
+      await fetchWishlistOrderMarketPrice(null);
 
       expect(document.getElementById('woMarketPrice').value).toBe('');
       expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe('wishlist.js', () => {
       loadDeps();
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: false });
 
-      await fetchWishlistOrderMarketPrice(1, 'LOB-EN001', 'Ultra Rare');
+      await fetchWishlistOrderMarketPrice(101);
 
       expect(document.getElementById('woMarketPrice').value).toBe('');
     });
@@ -46,7 +46,7 @@ describe('wishlist.js', () => {
       loadDeps();
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: 5 }) });
 
-      await fetchWishlistOrderMarketPrice(1, 'LOB-EN001', 'Ultra Rare');
+      await fetchWishlistOrderMarketPrice(101);
 
       expect(document.getElementById('woMarketPrice').value).toBe('5.00');
       expect(document.getElementById('woMarketPrice').placeholder).toBe('0.00');
@@ -65,18 +65,20 @@ describe('wishlist.js', () => {
       expect(document.getElementById('wishlistOrderForm').dataset.ajaxTarget).toBe('wishlist-row-20');
       expect(document.getElementById('woMarketPrice').value).toBe('12.50');
       expect(document.getElementById('woPreferredVersionID').value).toBe('20');
+      expect(document.getElementById('woPrintingID').value).toBe('201');
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/price?printingID=201&edition=0');
     });
 
     function setupForm() {
       document.body.innerHTML = `
-        <input id="woCardID" /><input id="woImageID" /><input id="woSetCode" /><input id="woRarityName" />
+        <input id="woPrintingID" />
         <input id="woPreferredVersionID" />
         <span id="woCardName"></span><span id="woSetNameLabel"></span><span id="woRarityLabel"></span>
         <input type="hidden" id="woQuantity" /><input id="woMarketPrice" />
         <form id="wishlistOrderForm"></form>
         <div id="wishlistOrderModal"></div>
         <div id="wishlist-row-20">
-          <button id="btn" data-card-id="1" data-image-id="20" data-set-code="LOB-EN002" data-rarity-name="Secret Rare"
+          <button id="btn" data-printing-id="201" data-rarity-name="Secret Rare"
                   data-card-name="Blue-Eyes" data-set-name="Legend" data-quantity-needed="7" data-filter-params="page=2"
                   data-preferred-version-id="20"></button>
         </div>`;
@@ -88,12 +90,12 @@ describe('wishlist.js', () => {
     it('no ajax target row found leaves the form dataset unset', async () => {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
-        <input id="wlCardID" /><input id="wlImageID" /><input id="wlSetCode" /><span id="wlSetName"></span>
+        <input id="wlPrintingID" /><span id="wlSetName"></span>
         <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"></select><select id="wlEdition"></select><select id="wlAcquisition"></select>
         <input type="hidden" id="wlQuantity" /><input id="wlPurchaseDate" /><input id="wlPurchasePrice" /><input id="wlMarketPrice" />
         <div id="wishlistModal"></div>
-        <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001"></button>`;
+        <button id="btn" data-printing-id="101"></button>`;
       loadDeps();
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: null }) });
 
@@ -108,7 +110,7 @@ describe('wishlist.js', () => {
 
       await openWishlistOwnModal(document.getElementById('btn'));
 
-      expect(document.getElementById('wlCardID').value).toBe('1');
+      expect(document.getElementById('wlPrintingID').value).toBe('101');
       expect(document.getElementById('wlSetName').textContent).toBe('Legend');
       expect(document.getElementById('wlCondition').value).toBe(CardDefaults.Condition);
       expect(document.getElementById('wishlistModalLabel').textContent).toBe('Already Own This Printing');
@@ -120,7 +122,7 @@ describe('wishlist.js', () => {
     function setupForm() {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
-        <input id="wlCardID" /><input id="wlImageID" /><input id="wlSetCode" /><span id="wlSetName"></span>
+        <input id="wlPrintingID" /><span id="wlSetName"></span>
         <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"><option value="4"></option></select>
         <select id="wlEdition"><option value="0"></option></select>
@@ -129,7 +131,7 @@ describe('wishlist.js', () => {
         <input id="wlPurchaseDate" /><input id="wlPurchasePrice" /><input id="wlMarketPrice" />
         <div id="wishlistModal"></div>
         <div id="wishlist-row-10">
-          <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001" data-rarity-name="Ultra Rare"
+          <button id="btn" data-printing-id="101" data-rarity-name="Ultra Rare"
                   data-set-name="Legend" data-filter-params="page=1" data-preferred-version-id="10"></button>
         </div>`;
       loadDeps();

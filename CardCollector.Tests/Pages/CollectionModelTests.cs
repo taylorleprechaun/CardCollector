@@ -52,7 +52,7 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnGetAsync_PopulatesAvailableFiltersAndGroupedCards()
         {
-            _collectionRepositoryMock.Setup(r => r.GetDistinctSetCodesAsync()).ReturnsAsync((IReadOnlyList<string>)["LOB-EN001"]);
+            _cardServiceMock.Setup(s => s.GetOwnedSetCodesAndRarityNamesAsync()).ReturnsAsync((["LOB-EN001"], []));
             _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel> { TotalCount = 7 });
             var page = CreatePage();
@@ -66,7 +66,7 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnGetAsync_SetCodeHasCanonicalName_UsesCanonicalNameInsteadOfCode()
         {
-            _collectionRepositoryMock.Setup(r => r.GetDistinctSetCodesAsync()).ReturnsAsync((IReadOnlyList<string>)["LOB-EN001"]);
+            _cardServiceMock.Setup(s => s.GetOwnedSetCodesAndRarityNamesAsync()).ReturnsAsync((["LOB-EN001"], []));
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode())
                 .Returns(new Dictionary<string, string> { ["LOB-EN001"] = "Legend of Blue Eyes White Dragon" });
             _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
@@ -206,7 +206,7 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostEditAsync_QuantityBelowOne_ClampsToOne()
         {
-            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1)).ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001" });
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1)).ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101 });
             CollectionEntry? captured = null;
             _collectionRepositoryMock
                 .Setup(r => r.UpdateAsync(It.IsAny<CollectionEntry>()))
@@ -227,10 +227,9 @@ namespace CardCollector.Tests.Pages
             _cardDataRepositoryMock = new Mock<ICardDataRepository>();
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode()).Returns(new Dictionary<string, string>());
             _cardServiceMock = new Mock<ICardService>();
+            _cardServiceMock.Setup(s => s.GetOwnedSetCodesAndRarityNamesAsync()).ReturnsAsync(([], []));
             _cardSetRepositoryMock = new Mock<ICardSetRepository>();
             _collectionRepositoryMock = new Mock<ICollectionRepository>();
-            _collectionRepositoryMock.Setup(r => r.GetDistinctSetCodesAsync()).ReturnsAsync((IReadOnlyList<string>)[]);
-            _collectionRepositoryMock.Setup(r => r.GetDistinctRarityNamesAsync()).ReturnsAsync((IReadOnlyList<string>)[]);
             _collectionRepositoryMock.Setup(r => r.GetDistinctConditionsAsync()).ReturnsAsync((IReadOnlyList<CardCondition>)[]);
             _collectionRepositoryMock.Setup(r => r.GetDistinctEditionsAsync()).ReturnsAsync((IReadOnlyList<CardEdition>)[]);
             _collectionRepositoryMock.Setup(r => r.GetDistinctAcquisitionMethodsAsync()).ReturnsAsync((IReadOnlyList<AcquisitionMethod>)[]);

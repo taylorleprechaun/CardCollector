@@ -26,7 +26,7 @@
     <div class="col-12 col-sm-4">
         <label class="form-label">Edition</label>
         <select name="Lines[@i].Edition" id="lineEdition@(i)" form="cartSubmitForm"
-                data-card-id="@line.CardID" data-set-code="@line.SetCode" data-rarity-name="@line.RarityName"
+                data-printing-id="@line.PrintingID"
                 data-market-price-target="lineMarketPrice@(i)"
                 class="form-select form-select-sm" asp-items="EnumOptions(line.Edition)">
             <option value="">-- Edition --</option>

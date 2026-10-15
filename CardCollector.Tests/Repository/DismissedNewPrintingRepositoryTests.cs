@@ -12,72 +12,37 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
+            await repository.AddAsync(101, 1);
 
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
-
-            var result = await repository.GetAllAsync();
-            Assert.AreEqual(1, result.Count);
-        }
-
-        [TestMethod]
-        public async Task AddAsync_AlreadyDismissedAsCommonButRequestedAsShortPrint_DoesNotAddDuplicate()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Common");
-
-            await repository.AddAsync(1, "LOB-EN001", "Short Print");
+            await repository.AddAsync(101, 1);
 
             var result = await repository.GetAllAsync();
             Assert.AreEqual(1, result.Count);
         }
 
         [TestMethod]
-        public async Task AddAsync_DifferentPrintVariantSameSetAndRarity_AddsBothAsDistinctRecords()
+        public async Task AddAsync_TwoPrintingsOfOneCard_AddsBoth()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
 
-            await repository.AddAsync(1, "RA05-EN001", "Ultra Rare", "Extended Art");
-            await repository.AddAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            await repository.AddAsync(101, 1);
+            await repository.AddAsync(102, 1);
 
             var result = await repository.GetAllAsync();
-            Assert.AreEqual(2, result.Count);
-            Assert.IsTrue(result.Contains((1, "RA05-EN001", "Ultra Rare", "Extended Art")));
-            Assert.IsTrue(result.Contains((1, "RA05-EN001", "Ultra Rare", "Starlight Rare")));
+            CollectionAssert.AreEquivalent(new[] { 101, 102 }, result.ToArray());
         }
 
-        [TestMethod]
-        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new DismissedNewPrintingRepository(context);
-
-            await repository.AddAsync(1, "LOB-EN001", "Short Print");
-
-            var result = await repository.GetAllAsync();
-            Assert.IsTrue(result.Contains((1, "LOB-EN001", "Common", (string?)null)));
-        }
-        [TestMethod]
-        public async Task AddAsync_ThenGetAllAsync_ContainsRecord()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new DismissedNewPrintingRepository(context);
-
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
-
-            var result = await repository.GetAllAsync();
-            Assert.IsTrue(result.Contains((1, "LOB-EN001", "Ultra Rare", (string?)null)));
-        }
         [TestMethod]
         public async Task AnyAsync_HasRecords_ReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
+            await repository.AddAsync(101, 1);
 
-            Assert.IsTrue(await repository.AnyAsync());
+            var result = await repository.AnyAsync();
+
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -86,7 +51,9 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
 
-            Assert.IsFalse(await repository.AnyAsync());
+            var result = await repository.AnyAsync();
+
+            Assert.IsFalse(result);
         }
     }
 }

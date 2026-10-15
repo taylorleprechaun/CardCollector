@@ -21,23 +21,12 @@ namespace CardCollector.Services
             DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null);
 
         /// <summary>
-        /// Adds a new entry to the collection for a printing identified by its card, set code, rarity, and variant, for
-        /// callers that don't have the catalog printing ID.
+        /// Stages the catalog printing into the cart as a pending order line, defaulting Condition to Near Mint, Edition to
+        /// 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page. Returns the cart's new
+        /// total line count and cost, plus the new staged quantity for this printing.
         /// </summary>
-        Task AddEntryAsync(
-            int cardID, string setCode, CollectionStatus status,
-            int quantity, CardCondition? condition, CardEdition? edition,
-            AcquisitionMethod? acquisitionMethod,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
-            string? rarityName = null, string? printVariant = null);
-
-        /// <summary>
-        /// Stages a printing into the cart as a pending order line, defaulting Condition to Near Mint,
-        /// Edition to 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page.
-        /// Returns the cart's new total line count and cost, plus the new staged quantity for this printing.
-        /// </summary>
-        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
-            int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(int printingID, int quantity, decimal? marketPrice);
 
         /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
@@ -50,12 +39,6 @@ namespace CardCollector.Services
         /// QuantityNeeded across every wishlist item), or returns today's already-persisted snapshot if one exists.
         /// </summary>
         Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync();
-
-        /// <summary>
-        /// Checks whether the given (setCode, rarityName, printVariant, edition) is a printing the live pricing
-        /// data actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
-        /// </summary>
-        Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition, string? printVariant = null);
 
         /// <summary>
         /// Checks whether TCGPlayer lists the catalog printing in the given edition. Returns null if it does,
@@ -77,9 +60,10 @@ namespace CardCollector.Services
         Task CheckOutCardAsync(int printingID, int quantity);
 
         /// <summary>
-        /// Records the given card set+rarity+variant combination as dismissed so it no longer appears as an upgrade opportunity.
+        /// Records the catalog printing as dismissed so it no longer appears as an upgrade opportunity.
         /// </summary>
-        Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task DismissNewPrintingAsync(int printingID);
 
         /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.
@@ -144,6 +128,11 @@ namespace CardCollector.Services
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
 
         /// <summary>
+        /// Returns the distinct set codes and rarity names of the owned collection's printings, sorted, for filter lists.
+        /// </summary>
+        Task<(IReadOnlyList<string> SetCodes, IReadOnlyList<string> RarityNames)> GetOwnedSetCodesAndRarityNamesAsync();
+
+        /// <summary>
         /// Returns every staged (not-yet-submitted) cart line, enriched with card and set data.
         /// </summary>
         Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
@@ -158,10 +147,10 @@ namespace CardCollector.Services
 
         /// <summary>
         /// Single-item counterpart to <see cref="GetPurchasePriorityCandidatesAsync"/> — no budget-fill, no
-        /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
+        /// wishlist-wide iteration. Returns null if the printing is unknown, already covered, or over
+        /// <paramref name="maxPrice"/>.
         /// </summary>
-        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
-            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUTC = null);
+        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(int printingID, decimal? maxPrice = null, DateTime? asOfUTC = null);
 
         /// <summary>
         /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
@@ -279,9 +268,10 @@ namespace CardCollector.Services
         Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
 
         /// <summary>
-        /// Updates the tracked printing with the given ID to point at the specified newer printing,
-        /// preserving its desired quantity.
+        /// Moves the tracked printing with the given ID to a newer catalog printing of the same card, preserving its
+        /// desired quantity.
         /// </summary>
-        Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName, string? newPrintVariant = null);
+        /// <exception cref="ArgumentException">The new printing is not an active catalog printing.</exception>
+        Task UpgradePreferredVersionAsync(int preferredVersionID, int newPrintingID);
     }
 }

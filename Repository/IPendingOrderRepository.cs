@@ -33,11 +33,9 @@ namespace CardCollector.Repository
         Task<IReadOnlyList<PendingOrderLine>> GetByIDsAsync(IEnumerable<int> ids);
 
         /// <summary>
-        /// Returns the total staged quantity for every (cardID, setCode, rarityName) combination, summed
-        /// across pending order lines. RarityName is normalized to an empty string when null, so callers
-        /// should look up with <c>rarityName ?? string.Empty</c>.
+        /// Returns the total quantity staged in the cart for each catalog printing.
         /// </summary>
-        Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetStagedQuantitiesAsync();
+        Task<IReadOnlyDictionary<int, int>> GetStagedQuantitiesAsync();
 
         /// <summary>
         /// Returns the total line count and total cost (price * quantity) across all pending order lines.

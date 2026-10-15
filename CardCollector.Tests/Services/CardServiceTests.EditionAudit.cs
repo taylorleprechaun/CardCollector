@@ -9,149 +9,78 @@ namespace CardCollector.Tests.Services
     public partial class CardServiceTests
     {
         [TestMethod]
-        public async Task CheckEntryEditionAsync_MultiplePrintVariantsExistWithNoPlainListing_ReturnsUnverifiable()
+        public async Task CheckEntryEditionAsync_PrintingLeftTheCatalog_ReturnsUnverifiable()
         {
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LDS1-EN045", "ULTRA RARE", "Blue")] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LDS1-EN045", "ULTRA RARE", "Green")] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LDS1-EN045", "ULTRA RARE", "Purple")] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
-
-            var result = await _service.CheckEntryEditionAsync(1, "LDS1-EN045", "Ultra Rare", CardEdition.Unlimited);
+            var result = await _service.CheckEntryEditionAsync(999, CardEdition.FirstEdition);
 
             Assert.AreEqual(EditionAuditCategory.Unverifiable, result);
         }
 
         [TestMethod]
-        public async Task CheckEntryEditionAsync_NoEditionDataForPrinting_ReturnsUnverifiable()
+        public async Task GetEnrichedOrdersAsync_EntryWithEditionMismatch_FlagsCategoryAndListsEditions()
         {
-            var result = await _service.CheckEntryEditionAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
-
-            Assert.AreEqual(EditionAuditCategory.Unverifiable, result);
-        }
-
-        [TestMethod]
-        public async Task CheckEntryEditionAsync_RecordedEditionMatchesLiveData_ReturnsNull()
-        {
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.FirstEdition }
-                });
-
-            var result = await _service.CheckEntryEditionAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
-
-            Assert.IsNull(result);
-        }
-
-        [TestMethod]
-        public async Task CheckEntryEditionAsync_RecordedEditionNotInLiveData_ReturnsEditionMismatch()
-        {
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
-
-            var result = await _service.CheckEntryEditionAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
-
-            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result);
-        }
-        [TestMethod]
-        public async Task GetEnrichedOrdersAsync_EntryWithEditionMismatch_FlagsCategory()
-        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
             ]);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
+            SetUpEditions(1, (101, [CardEdition.Unlimited]));
 
-            var result = (await _service.GetEnrichedOrdersAsync()).ToList();
+            var result = (await _service.GetEnrichedOrdersAsync()).Single();
 
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result[0].Category);
+            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result.Category);
+            CollectionAssert.AreEqual(new[] { CardEdition.Unlimited }, result.AvailableEditions.ToArray());
         }
 
         [TestMethod]
         public async Task GetEnrichedOrdersAsync_EntryWithNoRecordedEdition_SkipsCategoryCheck()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = null, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = null, Quantity = 1 }
             ]);
 
-            var result = (await _service.GetEnrichedOrdersAsync()).ToList();
+            var result = (await _service.GetEnrichedOrdersAsync()).Single();
 
-            Assert.IsNull(result[0].Category);
-            Assert.AreEqual(0, result[0].AvailableEditions.Count);
+            Assert.IsNull(result.Category);
+            Assert.AreEqual(0, result.AvailableEditions.Count);
         }
 
         [TestMethod]
-        public async Task GetEnrichedOrdersAsync_EntryWithPrintVariant_UsesVariantSpecificEditionMap()
+        public async Task GetEnrichedOrdersAsync_PrintingWithoutLinkedProduct_IsUnverifiable()
         {
+            SetUpCard(1, "Synthetic Duelist",
+                new Set { Code = "LDS1-EN045", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LDS1-EN045", PrintingID = 102, PrintVariant = "Blue", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", PrintVariant = "Starfoil", Edition = CardEdition.Unlimited, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.Unlimited, Quantity = 1 }
             ]);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LOB-EN001", "ULTRA RARE", "Starfoil")] = new HashSet<CardEdition> { CardEdition.FirstEdition }
-                });
+            SetUpEditions(1, (102, [CardEdition.Unlimited]));
 
-            var result = (await _service.GetEnrichedOrdersAsync()).ToList();
+            var result = (await _service.GetEnrichedOrdersAsync()).Single();
 
-            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result[0].Category);
+            Assert.AreEqual(EditionAuditCategory.Unverifiable, result.Category);
         }
 
         [TestMethod]
-        public async Task GetEnrichedOrdersAsync_NullPrintVariantWithMultipleCandidateVariants_StaysUnverifiableWithAmbiguousSuggestions()
+        public async Task GetEnrichedOrdersAsync_VariantPrinting_UsesThatPrintingsEditions()
         {
+            SetUpCard(1, "Synthetic Dragon",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN001", PrintingID = 102, PrintVariant = "Starfoil", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LDS1-EN045", RarityName = "Ultra Rare", PrintVariant = null, Edition = CardEdition.Unlimited, Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 102, Edition = CardEdition.Unlimited, Quantity = 1 }
             ]);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LDS1-EN045", "ULTRA RARE", "Blue")] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LDS1-EN045", "ULTRA RARE", "Green")] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LDS1-EN045", "ULTRA RARE", "Purple")] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
+            SetUpEditions(1, (101, [CardEdition.Unlimited]), (102, [CardEdition.FirstEdition]));
 
-            var result = (await _service.GetEnrichedOrdersAsync()).ToList();
+            var result = (await _service.GetEnrichedOrdersAsync()).Single();
 
-            Assert.AreEqual(EditionAuditCategory.Unverifiable, result[0].Category);
-            Assert.AreEqual(0, result[0].AvailableEditions.Count);
-            CollectionAssert.AreEquivalent(new[] { "Blue", "Green", "Purple" }, result[0].SuggestedPrintVariants.ToArray());
+            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result.Category);
         }
 
-        [TestMethod]
-        public async Task GetEnrichedOrdersAsync_NullPrintVariantWithSingleCandidateVariant_StaysUnverifiableWithSuggestion()
-        {
-            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
-            [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "RA02-EN040", RarityName = "Quarter Century Secret Rare", PrintVariant = null, Edition = CardEdition.FirstEdition, Quantity = 1 }
-            ]);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("RA02-EN040", "QUARTER CENTURY SECRET RARE", "Alternate Art")] = new HashSet<CardEdition> { CardEdition.FirstEdition }
-                });
-
-            var result = (await _service.GetEnrichedOrdersAsync()).ToList();
-
-            Assert.AreEqual(EditionAuditCategory.Unverifiable, result[0].Category);
-            CollectionAssert.AreEqual(new[] { CardEdition.FirstEdition }, result[0].AvailableEditions.ToArray());
-            CollectionAssert.AreEqual(new[] { "Alternate Art" }, result[0].SuggestedPrintVariants.ToArray());
-        }
         [TestMethod]
         public async Task SearchEditionAuditAsync_CategoryFilterDoesNotMatch_ExcludesResult()
         {
@@ -170,28 +99,6 @@ namespace CardCollector.Tests.Services
             var result = await _service.SearchEditionAuditAsync(new EditionAuditSearchCriteria { Category = EditionAuditCategory.EditionMismatch });
 
             Assert.AreEqual(1, result.TotalCount);
-        }
-
-        [TestMethod]
-        public async Task SearchEditionAuditAsync_EntriesShareRarityCodeButDifferPrintVariant_ReturnsSeparateGroups()
-        {
-            var entries = new List<CollectionEntry>
-            {
-                new() { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", PrintVariant = null, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned },
-                new() { ID = 2, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", PrintVariant = "Starfoil", Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
-            };
-            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
-            _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LOB-EN001", "ULTRA RARE", "Starfoil")] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
-
-            var result = await _service.SearchEditionAuditAsync(new EditionAuditSearchCriteria());
-
-            Assert.AreEqual(2, result.TotalCount);
         }
 
         [TestMethod]
@@ -215,50 +122,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task SearchEditionAuditAsync_NullPrintVariantWithSingleCandidateVariant_SurfacesSuggestionOnGroupedEntry()
-        {
-            var entries = new List<CollectionEntry>
-            {
-                new() { ID = 1, CardID = 1, SetCode = "RA02-EN040", RarityName = "Quarter Century Secret Rare", PrintVariant = null, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
-            };
-            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
-            _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("RA02-EN040", "QUARTER CENTURY SECRET RARE", "Alternate Art")] = new HashSet<CardEdition> { CardEdition.FirstEdition }
-                });
-
-            var result = await _service.SearchEditionAuditAsync(new EditionAuditSearchCriteria());
-
-            Assert.AreEqual(1, result.TotalCount);
-            Assert.AreEqual(EditionAuditCategory.Unverifiable, result.Items[0].FlaggedCategory);
-            CollectionAssert.AreEqual(new[] { "Alternate Art" }, result.Items[0].Entries[0].SuggestedPrintVariants.ToArray());
-        }
-
-        [TestMethod]
-        public async Task SearchEditionAuditAsync_PrintVariantEditionMismatch_IsFlaggedUsingVariantSpecificMap()
-        {
-            var entries = new List<CollectionEntry>
-            {
-                new() { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", PrintVariant = "Starfoil", Edition = CardEdition.Unlimited, Quantity = 1, Status = CollectionStatus.Owned }
-            };
-            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
-            _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited },
-                    [("LOB-EN001", "ULTRA RARE", "Starfoil")] = new HashSet<CardEdition> { CardEdition.FirstEdition }
-                });
-
-            var result = await _service.SearchEditionAuditAsync(new EditionAuditSearchCriteria());
-
-            Assert.AreEqual(1, result.TotalCount);
-            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result.Items[0].FlaggedCategory);
-            Assert.AreEqual("Starfoil", result.Items[0].Entries[0].PrintVariant);
-        }
-        [TestMethod]
         public async Task SearchEditionAuditAsync_QueryFilterDoesNotMatch_ExcludesResult()
         {
             SetUpEditionMismatchEntry();
@@ -278,25 +141,41 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.TotalCount);
         }
 
-        private void SetUpEditionMismatchEntry()
+        [TestMethod]
+        public async Task SearchEditionAuditAsync_TwoPrintingsOfOneSetCodeAndRarity_ReturnsSeparateGroups()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                Name = "Dark Magician",
-                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare", RarityCode = "(UR)" }]
-            });
+            SetUpCard(1, "Synthetic Dragon",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN001", PrintingID = 102, PrintVariant = "Starfoil", RarityName = "Ultra Rare" });
             var entries = new List<CollectionEntry>
             {
-                new() { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
+                new() { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned },
+                new() { ID = 2, CardID = 1, CatalogPrintingID = 102, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
             };
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
             _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(1)).ReturnsAsync(
-                new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>
-                {
-                    [("LOB-EN001", "ULTRA RARE", null)] = new HashSet<CardEdition> { CardEdition.Unlimited }
-                });
+            SetUpEditions(1, (101, [CardEdition.Unlimited]), (102, [CardEdition.Unlimited]));
+
+            var result = await _service.SearchEditionAuditAsync(new EditionAuditSearchCriteria());
+
+            Assert.AreEqual(2, result.TotalCount);
         }
+
+        private void SetUpEditionMismatchEntry()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            var entries = new List<CollectionEntry>
+            {
+                new() { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
+            };
+            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
+            _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
+            SetUpEditions(1, (101, [CardEdition.Unlimited]));
+        }
+
+        /// <summary>Makes the pricing mock list the given editions for each of the card's printings.</summary>
+        private void SetUpEditions(int cardID, params (int PrintingID, CardEdition[] Editions)[] printings) =>
+            _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(cardID)).ReturnsAsync(
+                printings.ToDictionary(p => p.PrintingID, p => (IReadOnlySet<CardEdition>)p.Editions.ToHashSet()));
     }
 }

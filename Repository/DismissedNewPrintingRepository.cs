@@ -14,12 +14,10 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
+        public async Task AddAsync(int printingID, int cardID)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
-
             var exists = await _context.DismissedNewPrintings
-                .AnyAsync(d => d.CardID == cardID && d.SetCode == setCode && d.RarityName == rarityName && d.PrintVariant == printVariant)
+                .AnyAsync(d => d.CatalogPrintingID == printingID)
                 .ConfigureAwait(false);
 
             if (exists)
@@ -28,11 +26,9 @@ namespace CardCollector.Repository
             _context.DismissedNewPrintings.Add(new DismissedNewPrinting
             {
                 CardID = cardID,
+                CatalogPrintingID = printingID,
                 DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
-                PrintVariant = printVariant,
-                RarityName = rarityName,
-                SetCode = setCode
+                DateModified = DateTime.UtcNow
             });
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
@@ -41,14 +37,15 @@ namespace CardCollector.Repository
         public async Task<bool> AnyAsync() =>
             await _context.DismissedNewPrintings.AnyAsync().ConfigureAwait(false);
 
-        public async Task<IReadOnlySet<(int CardID, string SetCode, string RarityName, string? PrintVariant)>> GetAllAsync()
+        public async Task<IReadOnlySet<int>> GetAllAsync()
         {
-            var rows = await _context.DismissedNewPrintings
-                .Select(d => new { d.CardID, d.SetCode, d.RarityName, d.PrintVariant })
+            var ids = await _context.DismissedNewPrintings
+                .Where(d => d.CatalogPrintingID != null)
+                .Select(d => d.CatalogPrintingID!.Value)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return rows.Select(r => (r.CardID, r.SetCode, r.RarityName, r.PrintVariant)).ToHashSet();
+            return ids.ToHashSet();
         }
     }
 }

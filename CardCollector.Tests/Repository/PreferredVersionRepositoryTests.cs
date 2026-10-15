@@ -195,45 +195,19 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task UpgradeAsync_ExistingID_UpdatesSetAndRarityPreservingDesiredQuantity()
+        public async Task UpgradeAsync_ExistingID_MovesToNewPrintingKeepingDesiredQuantity()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
-            var created = await AddTrackedAsync(context, "LOB-EN001", "Ultra Rare", null, desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 1);
+            var created = (await repository.GetByCardIDAsync(1)).Single();
 
-            var result = await repository.UpgradeAsync(created.ID, "LOB-EN002", "Secret Rare");
+            var result = await repository.UpgradeAsync(created.ID, 102);
 
             Assert.IsTrue(result);
             var updated = (await repository.GetByCardIDAsync(1)).Single();
-            Assert.AreEqual("LOB-EN002", updated.SetCode);
-            Assert.AreEqual("Secret Rare", updated.RarityName);
+            Assert.AreEqual(102, updated.CatalogPrintingID);
             Assert.AreEqual(1, updated.DesiredQuantity);
-        }
-
-        [TestMethod]
-        public async Task UpgradeAsync_NewPrintVariantOmitted_ClearsPreviousPrintVariant()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PreferredVersionRepository(context);
-            var created = await AddTrackedAsync(context, "RA05-EN001", "Ultra Rare", "Starlight Rare");
-
-            await repository.UpgradeAsync(created.ID, "LOB-EN002", "Secret Rare");
-
-            var updated = (await repository.GetByCardIDAsync(1)).Single();
-            Assert.IsNull(updated.PrintVariant);
-        }
-
-        [TestMethod]
-        public async Task UpgradeAsync_NewPrintVariantSpecified_SetsPrintVariant()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PreferredVersionRepository(context);
-            var created = await AddTrackedAsync(context, "LOB-EN001", "Ultra Rare", null);
-
-            await repository.UpgradeAsync(created.ID, "RA05-EN001", "Ultra Rare", "Starlight Rare");
-
-            var updated = (await repository.GetByCardIDAsync(1)).Single();
-            Assert.AreEqual("Starlight Rare", updated.PrintVariant);
         }
 
         [TestMethod]
@@ -242,18 +216,9 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PreferredVersionRepository(context);
 
-            var result = await repository.UpgradeAsync(999, "LOB-EN002", "Secret Rare");
+            var result = await repository.UpgradeAsync(999, 102);
 
             Assert.IsFalse(result);
-        }
-
-        private static async Task<PreferredVersion> AddTrackedAsync(
-            CardCollector.Data.AppDBContext context, string setCode, string rarityName, string? printVariant, int desiredQuantity = 3)
-        {
-            var tracked = new PreferredVersion { CardID = 1, DesiredQuantity = desiredQuantity, PrintVariant = printVariant, RarityName = rarityName, SetCode = setCode };
-            context.PreferredVersions.Add(tracked);
-            await context.SaveChangesAsync();
-            return tracked;
         }
     }
 }

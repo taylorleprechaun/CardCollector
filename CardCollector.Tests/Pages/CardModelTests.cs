@@ -202,7 +202,7 @@ namespace CardCollector.Tests.Pages
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
-            var pv = new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" };
+            var pv = new PreferredVersion { CardID = 1, CatalogPrintingID = 101 };
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1)).ReturnsAsync((IReadOnlyList<PreferredVersion>)[pv]);
             _cardServiceMock.Setup(s => s.IsCardIgnoredAsync(1)).ReturnsAsync(true);
             var page = CreatePage();

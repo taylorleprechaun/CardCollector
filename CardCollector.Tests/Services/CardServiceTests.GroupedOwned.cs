@@ -13,7 +13,7 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             var checkedOutDate = new DateTime(2026, 1, 1);
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
@@ -35,8 +35,8 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 2, PurchasePrice = 5.00m },
-                new CollectionEntry { ID = 2, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1, PurchasePrice = null }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5.00m },
+                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -48,12 +48,12 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetGroupedOwnedAsync_MultipleCards_OrdersByCardNameThenSetCode()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Zeta Card" });
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(2)).Returns(new Card { ID = 2, Name = "Alpha Card" });
+            SetUpCard(1, "Zeta Card", new Set { Code = "ZZZ-EN001", PrintingID = 101 });
+            SetUpCard(2, "Alpha Card", new Set { Code = "AAA-EN001", PrintingID = 201 });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "ZZZ-EN001", Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 2, SetCode = "AAA-EN001", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CardID = 2, CatalogPrintingID = 201, Quantity = 1 }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -68,7 +68,7 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1, PurchasePrice = null }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -82,11 +82,11 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 },
-                new CollectionEntry { ID = 2, CardID = 1, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 3 },
+                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -101,11 +101,11 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -119,10 +119,10 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -136,10 +136,10 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -152,16 +152,16 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, SetCode = "LOB-EN002", RarityName = "Secret Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>
                 {
                     [1] =
                     [
-                        new() { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 3 },
-                        new() { CardID = 1, CatalogPrintingID = 102, SetCode = "LOB-EN002", RarityName = "Secret Rare", DesiredQuantity = 1 }
+                        new() { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 },
+                        new() { CardID = 1, CatalogPrintingID = 102, DesiredQuantity = 1 }
                     ]
                 });
 
@@ -178,20 +178,13 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetGroupedOwnedAsync_TwoVariantsUnderOneSetCode_AreSeparateGroups()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                Name = "Synthetic Dragon",
-                CardSets =
-                [
-                    new Set { Code = "RA05-EN146", PrintingID = 101, RarityName = "Ultra Rare" },
-                    new Set { Code = "RA05-EN146", PrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare" }
-                ]
-            });
+            SetUpCard(1, "Synthetic Dragon",
+                new Set { Code = "RA05-EN146", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "RA05-EN146", PrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "RA05-EN146", RarityName = "Ultra Rare", Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, SetCode = "RA05-EN146", RarityName = "Ultra Rare", PrintVariant = "Extended Art", Quantity = 2 }
+                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 2 }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -200,15 +193,8 @@ namespace CardCollector.Tests.Services
         }
 
         private void SetUpDarkMagicianCard() =>
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                Name = "Dark Magician",
-                CardSets =
-                [
-                    new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
-                    new Set { Code = "LOB-EN002", PrintingID = 102, RarityName = "Secret Rare" }
-                ]
-            });
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN002", PrintingID = 102, RarityName = "Secret Rare" });
     }
 }

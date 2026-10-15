@@ -1,9 +1,8 @@
 async function openWishlistOwnModal(btn) {
     const form = document.getElementById('wishlistForm');
 
-    document.getElementById('wlCardID').value = btn.dataset.cardId;
-    document.getElementById('wlImageID').value = btn.dataset.imageId;
-    document.getElementById('wlSetCode').value = btn.dataset.setCode;
+    const printingID = btn.dataset.printingId;
+    document.getElementById('wlPrintingID').value = printingID;
     document.getElementById('wlSetName').textContent = btn.dataset.setName;
     document.getElementById('wlPreferredVersionID').value = btn.dataset.preferredVersionId;
 
@@ -29,19 +28,14 @@ async function openWishlistOwnModal(btn) {
 
     new bootstrap.Modal(document.getElementById('wishlistModal')).show();
 
-    const cardID = btn.dataset.cardId;
-    const setCode = btn.dataset.setCode;
     const editionSelect = document.getElementById('wlEdition');
 
-    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ printingID }));
 }
 
 async function openWishlistOrderModal(btn) {
     const ds = btn.dataset;
-    document.getElementById('woCardID').value = ds.cardId;
-    document.getElementById('woImageID').value = ds.imageId;
-    document.getElementById('woSetCode').value = ds.setCode;
-    document.getElementById('woRarityName').value = ds.rarityName || '';
+    document.getElementById('woPrintingID').value = ds.printingId;
     document.getElementById('woPreferredVersionID').value = ds.preferredVersionId;
     document.getElementById('woCardName').textContent = ds.cardName;
     document.getElementById('woSetNameLabel').textContent = ds.setName;
@@ -61,17 +55,18 @@ async function openWishlistOrderModal(btn) {
     // Wishlist rows don't have a pre-computed live price (unlike Buy List, which already
     // fetches one per row for its own display) — fetch one now, defaulting to 1st Edition
     // since the Cart page is where Edition actually gets chosen.
-    await fetchWishlistOrderMarketPrice(ds.cardId, ds.setCode, ds.rarityName || '');
+    await fetchWishlistOrderMarketPrice(ds.printingId);
 }
 
-async function fetchWishlistOrderMarketPrice(cardID, setCode, rarityName) {
+async function fetchWishlistOrderMarketPrice(printingID) {
     const marketPriceEl = document.getElementById('woMarketPrice');
     marketPriceEl.value = '';
-    if (!(cardID && setCode && rarityName)) return;
+    const url = buildPriceURL({ printingID }, CardDefaults.Edition);
+    if (!url) return;
 
     marketPriceEl.placeholder = 'Loading…';
     try {
-        const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${CardDefaults.Edition}`);
+        const resp = await fetch(url);
         if (resp.ok) {
             const { price } = await resp.json();
             if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);

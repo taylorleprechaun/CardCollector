@@ -92,7 +92,7 @@ namespace CardCollector.Pages
         {
             NormalizeSearchParameters();
 
-            var setCodes = await _collectionRepository.GetDistinctSetCodesAsync().ConfigureAwait(false);
+            var (setCodes, rarityNames) = await _cardService.GetOwnedSetCodesAndRarityNamesAsync().ConfigureAwait(false);
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             AvailableSetNames = setCodes
                 .Select(c => setNamesByCode.TryGetValue(c, out var n) ? n : c)
@@ -100,7 +100,7 @@ namespace CardCollector.Pages
                 .OrderBy(n => n)
                 .ToList();
 
-            AvailableRarityNames = await _collectionRepository.GetDistinctRarityNamesAsync().ConfigureAwait(false);
+            AvailableRarityNames = rarityNames;
             AvailableConditions = await _collectionRepository.GetDistinctConditionsAsync().ConfigureAwait(false);
             AvailableEditions = await _collectionRepository.GetDistinctEditionsAsync().ConfigureAwait(false);
             AvailableAcquisitionMethods = await _collectionRepository.GetDistinctAcquisitionMethodsAsync().ConfigureAwait(false);

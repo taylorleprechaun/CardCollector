@@ -9,19 +9,6 @@ namespace CardCollector.Tests.Repository
     public sealed class PendingOrderRepositoryTests
     {
         [TestMethod]
-        public async Task AddRangeAsync_ShortPrintRarityName_NormalizesToCommon()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = "Short Print" };
-
-            await repository.AddRangeAsync([line]);
-
-            var result = await repository.GetAllAsync();
-            Assert.AreEqual("Common", result[0].RarityName);
-        }
-
-        [TestMethod]
         public async Task AddRangeAsync_ThenGetAllAsync_OrdersByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
@@ -36,6 +23,24 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual("NEW-EN001", result[0].SetCode);
             Assert.AreEqual("OLD-EN001", result[1].SetCode);
+        }
+
+        [TestMethod]
+        public async Task GetStagedQuantitiesAsync_SumsStagedQuantityPerPrinting()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+            await repository.AddRangeAsync(
+            [
+                new PendingOrderLine { CardID = 1, CatalogPrintingID = 101, Quantity = 2 },
+                new PendingOrderLine { CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new PendingOrderLine { CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
+            ]);
+
+            var result = await repository.GetStagedQuantitiesAsync();
+
+            Assert.AreEqual(3, result[101]);
+            Assert.AreEqual(1, result[102]);
         }
         [TestMethod]
         public async Task DeleteAsync_ExistingLine_RemovesItAndReturnsTrue()
@@ -119,22 +124,6 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual(2, result[0].CardID);
             Assert.AreEqual(1, result[1].CardID);
-        }
-
-        [TestMethod]
-        public async Task GetStagedQuantitiesAsync_GroupsByImageSetAndRarityNullBecomesEmptyString()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PendingOrderRepository(context);
-            await repository.AddRangeAsync(
-            [
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 2 },
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 1 }
-            ]);
-
-            var result = await repository.GetStagedQuantitiesAsync();
-
-            Assert.AreEqual(3, result[(1, "LOB-EN001", "")]);
         }
 
         [TestMethod]

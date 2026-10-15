@@ -39,7 +39,7 @@ namespace CardCollector.Pages
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice,
-            decimal? marketPriceAtEntry, string? rarityName = null)
+            decimal? marketPriceAtEntry)
         {
             var entry = new CollectionEntry
             {
@@ -50,8 +50,7 @@ namespace CardCollector.Pages
                 MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
-                Quantity = quantity < 1 ? 1 : quantity,
-                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName
+                Quantity = quantity < 1 ? 1 : quantity
             };
 
             await _collectionRepository.UpdateAsync(entry);

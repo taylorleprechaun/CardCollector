@@ -8,13 +8,10 @@ namespace CardCollector.ViewModels
 
         public EditionAuditCategory? Category { get; init; }
 
-        public IReadOnlyList<string> SuggestedPrintVariants { get; init; } = [];
-
         public static EditionAuditEntryViewModel From(
             OrderEntryViewModel entry,
             EditionAuditCategory? category,
-            IReadOnlyList<CardEdition> availableEditions,
-            IReadOnlyList<string>? suggestedPrintVariants = null) => new()
+            IReadOnlyList<CardEdition> availableEditions) => new()
         {
             AcquisitionMethod = entry.AcquisitionMethod,
             AvailableEditions = availableEditions,
@@ -38,8 +35,7 @@ namespace CardCollector.ViewModels
             RarityCode = entry.RarityCode,
             RarityName = entry.RarityName,
             SetCode = entry.SetCode,
-            SetName = entry.SetName,
-            SuggestedPrintVariants = suggestedPrintVariants ?? []
+            SetName = entry.SetName
         };
     }
 }

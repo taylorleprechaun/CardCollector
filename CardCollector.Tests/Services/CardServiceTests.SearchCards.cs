@@ -81,14 +81,14 @@ namespace CardCollector.Tests.Services
         public async Task SearchCardsAsync_InCollectionTrueWithSetFilter_ScopesToOwnedWithinThatSetNotWholeCard()
         {
             SetUpBrowseableCards(
-                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001" }] },
-                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002" }] });
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", PrintingID = 101 }, new Set { Code = "SDK-EN001", PrintingID = 102 }] },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002", PrintingID = 201 }] });
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Legend of Blue Eyes White Dragon")).Returns("LOB");
             // Both cards are owned somewhere in the collection, but only card 2 is owned specifically within LOB.
             _collectionRepositoryMock.Setup(r => r.GetCardIDsByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(new HashSet<int> { 1, 2 });
             _collectionRepositoryMock
-                .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned, "LOB", null))
-                .ReturnsAsync(new Dictionary<int, int> { [2] = 1 });
+                .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned))
+                .ReturnsAsync(new Dictionary<int, int> { [102] = 1, [201] = 1 });
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Legend of Blue Eyes White Dragon", InCollection = true });
 
@@ -116,15 +116,15 @@ namespace CardCollector.Tests.Services
         public async Task SearchCardsAsync_InWishlistTrueWithSetFilter_RequiresTrackedPrintingWithinThatSet()
         {
             SetUpBrowseableCards(
-                new Card { ID = 1, Name = "A Bao A Qu", CardSets = [new Set { Code = "SUDA-EN001" }, new Set { Code = "RA04-EN001" }] });
+                new Card { ID = 1, Name = "A Bao A Qu", CardSets = [new Set { Code = "SUDA-EN001", PrintingID = 101 }, new Set { Code = "RA04-EN001", PrintingID = 102 }] });
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Quarter Century Bonanza")).Returns("RA04");
             // Card 1 is tracked, but only via a SUDA printing -- not the RA04 printing being filtered to.
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock
-                .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CollectionStatus>(), "RA04", null))
+                .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CollectionStatus>()))
                 .ReturnsAsync(new Dictionary<int, int>());
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Quarter Century Bonanza", InWishlist = true });
@@ -151,13 +151,13 @@ namespace CardCollector.Tests.Services
         public async Task SearchCardsAsync_IsIncompleteWithRarityOnlyFilter_ScopesToThatRarityNotWholeCard()
         {
             SetUpBrowseableCards(
-                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" }] });
             _collectionRepositoryMock
-                .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned, null, "Ultra Rare"))
-                .ReturnsAsync(new Dictionary<int, int> { [1] = 1 });
+                .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { RarityName = "Ultra Rare", IsIncomplete = true });
@@ -170,16 +170,16 @@ namespace CardCollector.Tests.Services
         public async Task SearchCardsAsync_IsIncompleteWithSetFilter_UsesEachCardsOwnDesiredQuantityWithinThatSet()
         {
             SetUpBrowseableCards(
-                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001" }] },
-                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002" }] });
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", PrintingID = 101 }] },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002", PrintingID = 201 }] });
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Legend of Blue Eyes White Dragon")).Returns("LOB");
             _collectionRepositoryMock
-                .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned, "LOB", null))
-                .ReturnsAsync(new Dictionary<int, int> { [1] = 1, [2] = 1 });
+                .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 1, [201] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", DesiredQuantity = 1 },
-                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 1 },
+                new PreferredVersion { CardID = 2, CatalogPrintingID = 201, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Legend of Blue Eyes White Dragon", IsIncomplete = true });
@@ -227,7 +227,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, int PrintingID)> { (1, 116) });
@@ -242,15 +242,15 @@ namespace CardCollector.Tests.Services
         public async Task SearchCardsAsync_IsTrackedFalseWithSetFilter_FindsOwnedButUntrackedCardsWithinThatSet()
         {
             SetUpBrowseableCards(
-                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001" }] },
-                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002" }] });
+                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", PrintingID = 101 }] },
+                new Card { ID = 2, Name = "Blue-Eyes White Dragon", CardSets = [new Set { Code = "LOB-EN002", PrintingID = 201 }] });
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Legend of Blue Eyes White Dragon")).Returns("LOB");
             _collectionRepositoryMock
-                .Setup(r => r.GetQuantitiesByCardIDsForPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned, "LOB", null))
-                .ReturnsAsync(new Dictionary<int, int> { [1] = 3, [2] = 1 });
+                .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), CollectionStatus.Owned))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 3, [201] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 2, CatalogPrintingID = 201, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria
@@ -271,7 +271,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 }
+                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, int PrintingID)> { (1, 116) });
@@ -280,6 +280,7 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(0, result.TotalCount);
         }
+
         [TestMethod]
         public async Task SearchCardsAsync_Pagination_SlicesItemsButKeepsTotalCountAtFullFilteredSize()
         {
@@ -347,7 +348,12 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.TotalCount);
             Assert.AreEqual("Dark Magician", result.Items[0].Name);
         }
-        private void SetUpBrowseableCards(params Card[] cards) =>
-                                                                                                            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(cards);
+        /// <summary>Makes the given cards browseable and registers each of their printings with the card data mock.</summary>
+        private void SetUpBrowseableCards(params Card[] cards)
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(cards);
+            foreach (var card in cards)
+                SetUpCard(card.ID, card.Name ?? string.Empty, [.. card.CardSets ?? []]);
+        }
     }
 }

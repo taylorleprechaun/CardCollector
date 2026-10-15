@@ -14,7 +14,7 @@ describe('site.js', () => {
       globalThis.fetch = vi.fn().mockRejectedValue(new Error('network down'));
       vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }));
+      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: 101 }));
 
       await expect(refresh()).resolves.toBeUndefined();
     });
@@ -24,7 +24,7 @@ describe('site.js', () => {
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: null }) });
       marketPriceEl.value = 'stale';
 
-      await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }));
+      await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ printingID: 101 }));
 
       expect(marketPriceEl.value).toBe('');
       expect(marketPriceEl.placeholder).toBe('0.00');
@@ -55,7 +55,7 @@ describe('site.js', () => {
       marketPriceEl.value = 'unchanged';
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: false });
 
-      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }));
+      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: 101 }));
       await refresh();
 
       expect(marketPriceEl.value).toBe('unchanged');
@@ -65,7 +65,7 @@ describe('site.js', () => {
       const { editionSelect, marketPriceEl } = setupElements();
       globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: 9.5 }) });
 
-      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }));
+      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: 101 }));
       await refresh();
 
       expect(marketPriceEl.value).toBe('9.50');
@@ -85,23 +85,15 @@ describe('site.js', () => {
     it('printing ID builds a lookup by printing and edition', () => {
       loadScript('site.js');
 
-      const url = buildPriceURL({ printingID: 101, cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare' }, '0');
+      const url = buildPriceURL({ printingID: 101 }, '0');
 
       expect(url).toBe('/api/price?printingID=101&edition=0');
     });
 
-    it('card, set code, and rarity without a printing ID builds the column lookup', () => {
+    it('no printing ID returns null', () => {
       loadScript('site.js');
 
-      const url = buildPriceURL({ cardID: 1, setCode: 'LOB-EN001', rarityName: 'Ultra Rare', printVariant: 'Extended Art' }, '2');
-
-      expect(url).toBe('/api/price?cardID=1&setCode=LOB-EN001&rarityName=Ultra%20Rare&edition=2&printVariant=Extended%20Art');
-    });
-
-    it('neither a printing ID nor a full set of columns returns null', () => {
-      loadScript('site.js');
-
-      expect(buildPriceURL({ cardID: 1, setCode: 'LOB-EN001' }, '0')).toBeNull();
+      expect(buildPriceURL({}, '0')).toBeNull();
     });
   });
 

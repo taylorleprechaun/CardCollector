@@ -47,9 +47,9 @@ namespace CardCollector.Repository
         Task<bool> UpdateDesiredQuantityAsync(int id, int desiredQuantity);
 
         /// <summary>
-        /// Updates the set/rarity/variant of the tracked printing with the given ID (e.g. swapping to a newer
-        /// reprint), preserving its desired quantity. Returns false if no such record exists.
+        /// Moves a tracked printing to another catalog printing of the same card, keeping its desired quantity. Returns
+        /// false if no such tracked printing exists.
         /// </summary>
-        Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName, string? newPrintVariant = null);
+        Task<bool> UpgradeAsync(int id, int newPrintingID);
     }
 }

@@ -58,7 +58,7 @@ namespace CardCollector.Pages
         {
             NormalizeSearchParameters();
 
-            var setCodes = await _collectionRepository.GetDistinctSetCodesAsync().ConfigureAwait(false);
+            var (setCodes, rarityNames) = await _cardService.GetOwnedSetCodesAndRarityNamesAsync().ConfigureAwait(false);
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             AvailableSetNames = setCodes
                 .Select(c => setNamesByCode.TryGetValue(c, out var n) ? n : c)
@@ -66,38 +66,9 @@ namespace CardCollector.Pages
                 .OrderBy(n => n)
                 .ToList();
 
-            AvailableRarityNames = await _collectionRepository.GetDistinctRarityNamesAsync().ConfigureAwait(false);
+            AvailableRarityNames = rarityNames;
 
             Results = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(PageNumber, PageSize)).ConfigureAwait(false);
-        }
-
-        public async Task<IActionResult> OnPostApplySuggestedPrintVariantAsync(int entryID, string printVariant)
-        {
-            var existing = await _collectionRepository.GetByIDAsync(entryID).ConfigureAwait(false);
-            if (existing is null)
-                return Content(string.Empty, "text/html");
-
-            await _collectionRepository.UpdatePrintVariantAsync(entryID, printVariant).ConfigureAwait(false);
-
-            var groups = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
-            Response.Headers["X-Total-Count"] = groups.TotalCount.ToString();
-
-            var match = groups.Items.FirstOrDefault(g =>
-                g.CardID == existing.CardID &&
-                g.SetCode.Equals(existing.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                g.RarityCode == RarityExtensions.GetRarityCode(RarityExtensions.NormalizeRarityName(existing.RarityName)) &&
-                string.Equals(g.PrintVariant, printVariant, StringComparison.OrdinalIgnoreCase));
-
-            if (match is null)
-                return Content(string.Empty, "text/html");
-
-            var html = await _razorPartialRenderer.RenderPartialAsync(this, "_EditionAuditGroupRow", new EditionAuditGroupRowViewModel
-            {
-                FilterParams = GetFilterParams(),
-                Group = match
-            }).ConfigureAwait(false);
-
-            return Content(html, "text/html");
         }
 
         public async Task<IActionResult> OnPostEditAsync(
@@ -105,7 +76,7 @@ namespace CardCollector.Pages
             CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
             DateTime? purchaseDate, decimal? purchasePrice,
-            decimal? marketPriceAtEntry, string? rarityName = null)
+            decimal? marketPriceAtEntry)
         {
             var existing = await _collectionRepository.GetByIDAsync(entryID).ConfigureAwait(false);
 
@@ -118,8 +89,7 @@ namespace CardCollector.Pages
                 MarketPriceAtEntry = marketPriceAtEntry,
                 PurchaseDate = purchaseDate,
                 PurchasePrice = purchasePrice,
-                Quantity = quantity < 1 ? 1 : quantity,
-                RarityName = string.IsNullOrWhiteSpace(rarityName) ? null : rarityName
+                Quantity = quantity < 1 ? 1 : quantity
             };
 
             await _collectionRepository.UpdateAsync(entry);
@@ -130,13 +100,9 @@ namespace CardCollector.Pages
             var groups = await _cardService.SearchEditionAuditAsync(BuildCurrentCriteria(1, int.MaxValue)).ConfigureAwait(false);
             Response.Headers["X-Total-Count"] = groups.TotalCount.ToString();
 
-            var match = existing is null
-                ? null
-                : groups.Items.FirstOrDefault(g =>
-                    g.CardID == existing.CardID &&
-                    g.SetCode.Equals(existing.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                    g.RarityCode == RarityExtensions.GetRarityCode(RarityExtensions.NormalizeRarityName(existing.RarityName)) &&
-                    string.Equals(g.PrintVariant, existing.PrintVariant, StringComparison.OrdinalIgnoreCase));
+            var match = existing?.CatalogPrintingID is int printingID
+                ? groups.Items.FirstOrDefault(g => g.PrintingID == printingID)
+                : null;
 
             if (match is null)
                 return Content(string.Empty, "text/html");

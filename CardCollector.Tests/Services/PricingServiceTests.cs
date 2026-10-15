@@ -13,46 +13,6 @@ namespace CardCollector.Tests.Services
         private PricingService _service = null!;
 
         [TestMethod]
-        public async Task GetCardEditionMapAsync_FeedRarityIsShortPrint_GroupsUnderCommonKey()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Short Print", "Unlimited", "5")
-            ]);
-
-            var map = await _service.GetCardEditionMapAsync(1);
-
-            Assert.AreEqual(1, map.Count);
-            CollectionAssert.AreEquivalent(new[] { CardEdition.Unlimited }, map[("LOB-EN001", "COMMON", null)].ToArray());
-        }
-
-        [TestMethod]
-        public async Task GetCardEditionMapAsync_GroupsByUppercasedSetCodeAndRarityName()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("lob-en001", "ultra rare", "1st Edition", "10"),
-                MakeSet("LOB-EN001", "Ultra Rare", "Unlimited", "5")
-            ]);
-
-            var map = await _service.GetCardEditionMapAsync(1);
-
-            Assert.AreEqual(1, map.Count);
-            var editions = map[("LOB-EN001", "ULTRA RARE", null)];
-            CollectionAssert.AreEquivalent(new[] { CardEdition.FirstEdition, CardEdition.Unlimited }, editions.ToArray());
-        }
-
-        [TestMethod]
-        public async Task GetCardEditionMapAsync_UnparseableEditionString_IsExcludedFromSet()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Ultra Rare", "Not A Real Edition", "10")
-            ]);
-
-            var map = await _service.GetCardEditionMapAsync(1);
-
-            Assert.AreEqual(0, map[("LOB-EN001", "ULTRA RARE", null)].Count);
-        }
-
-        [TestMethod]
         public async Task GetEditionsByPrintingAsync_MapsEachPrintingToItsListedEditions()
         {
             _pricingDataCacheMock.Setup(c => c.GetPrintingRowsByCard(1)).Returns(new Dictionary<int, IReadOnlyList<TCGPriceSet>>
@@ -68,48 +28,24 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetPrintingPriceAsync_EditionSpecified_PrefersExactEditionMatch()
+        public async Task GetEditionsByPrintingAsync_UnparseableEditionString_IsLeftOut()
         {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Ultra Rare", "Unlimited", "5.00"),
-                MakeSet("LOB-EN001", "Ultra Rare", "1st Edition", "50.00")
-            ]);
+            _pricingDataCacheMock.Setup(c => c.GetPrintingRowsByCard(1)).Returns(new Dictionary<int, IReadOnlyList<TCGPriceSet>>
+            {
+                [101] = [MakeSet("LOB-EN001", "Ultra Rare", "Not An Edition", "10"), MakeSet("LOB-EN001", "Ultra Rare", "1st Edition", "5")]
+            });
 
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
+            var map = await _service.GetEditionsByPrintingAsync(1);
 
-            Assert.AreEqual(50.00m, price);
+            CollectionAssert.AreEquivalent(new[] { CardEdition.FirstEdition }, map[101].ToArray());
         }
 
         [TestMethod]
-        public async Task GetPrintingPriceAsync_EditionSpecifiedButNoExactMatch_FallsBackToSetRarityOnlyMatch()
+        public async Task GetPrintingPriceAsync_ListedPriceIsZero_ReturnsNull()
         {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Ultra Rare", "Unlimited", "5.00")
-            ]);
+            _pricingDataCacheMock.Setup(c => c.GetPrintingRows(101)).Returns([MakeSet("LOB-EN001", "Ultra Rare", "1st Edition", "0")]);
 
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition);
-
-            Assert.AreEqual(5.00m, price);
-        }
-
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_MatchHasZeroPrice_ReturnsNull()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Ultra Rare", "Unlimited", "0")
-            ]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare");
-
-            Assert.IsNull(price);
-        }
-
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_NoMatchingSetOrRarity_ReturnsNull()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare");
+            var price = await _service.GetPrintingPriceAsync(101, CardEdition.FirstEdition);
 
             Assert.IsNull(price);
         }
@@ -143,54 +79,6 @@ namespace CardCollector.Tests.Services
             var price = await _service.GetPrintingPriceAsync(101, CardEdition.FirstEdition);
 
             Assert.IsNull(price);
-        }
-
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_PrintVariantSpecified_MatchesVariantSpecificEntryOnly()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "5.00"),
-                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "12.82", "Extended Art")
-            ]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "MAMO-EN003", "Ultra Rare", printVariant: "Extended Art");
-
-            Assert.AreEqual(12.82m, price);
-        }
-
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_PrintVariantSpecifiedButOnlyBasePrintExists_ReturnsNull()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("MAMO-EN003", "Ultra Rare", "Unlimited", "5.00")
-            ]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "MAMO-EN003", "Ultra Rare", printVariant: "Extended Art");
-
-            Assert.IsNull(price);
-        }
-
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_SetRarityMatchIgnoringCase_ReturnsPrice()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("lob-en001", "ultra rare", "Unlimited", "12.50")
-            ]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare");
-
-            Assert.AreEqual(12.50m, price);
-        }
-        [TestMethod]
-        public async Task GetPrintingPriceAsync_StoredRarityIsCommonButFeedStillSaysShortPrint_ReturnsPrice()
-        {
-            _pricingDataCacheMock.Setup(c => c.GetCardSets(1)).Returns([
-                MakeSet("LOB-EN001", "Short Print", "Unlimited", "5.00")
-            ]);
-
-            var price = await _service.GetPrintingPriceAsync(1, "LOB-EN001", "Common");
-
-            Assert.AreEqual(5.00m, price);
         }
 
         [TestInitialize]

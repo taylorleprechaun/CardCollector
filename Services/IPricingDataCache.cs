@@ -9,11 +9,6 @@ namespace CardCollector.Services
     public interface IPricingDataCache
     {
         /// <summary>
-        /// Returns the known set printings (code, rarity, edition, price) for the given card, or an empty list if not found.
-        /// </summary>
-        IReadOnlyList<TCGPriceSet> GetCardSets(int cardID);
-
-        /// <summary>
         /// Returns the price rows (one per product and edition) of the TCGPlayer products linked to a catalog printing;
         /// empty when the printing is unknown or has no linked product.
         /// </summary>
