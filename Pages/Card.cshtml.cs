@@ -89,8 +89,7 @@ namespace CardCollector.Pages
 
             var entries = await _cardService.GetEntriesByCardIDAsync(ID);
             CollectionByPrinting = entries
-                .Where(e => e.CatalogPrintingID is not null)
-                .GroupBy(e => e.CatalogPrintingID!.Value)
+                .GroupBy(e => e.CatalogPrintingID)
                 .ToDictionary(
                     g => g.Key,
                     g => (

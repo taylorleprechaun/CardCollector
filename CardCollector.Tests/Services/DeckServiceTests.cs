@@ -74,12 +74,12 @@ namespace CardCollector.Tests.Services
             var detail = await service.GetAsync(deckID);
 
             // Pasted as 200, 100, 300: the display order comes from the sort, with the unknown card last.
-            CollectionAssert.AreEqual(new[] { 100, 200, 300 }, detail!.Main.Cards.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 100, 200, 300 }, detail!.Main.Cards.Select(c => c.PastedPasscode).ToArray());
             Assert.AreEqual(4, detail.Main.Count);
             Assert.AreEqual(1, detail.Extra.Count);
             Assert.AreEqual(1, detail.Side.Count);
             Assert.AreEqual(1, detail.UnknownCardCount);
-            Assert.IsTrue(detail.Main.Cards.Single(c => c.CardID == 300).IsUnknown);
+            Assert.IsTrue(detail.Main.Cards.Single(c => c.PastedPasscode == 300).IsUnknown);
             Assert.AreEqual(3, detail.MainTypes.Monsters);
             Assert.AreEqual(eventID, detail.Events.Single().ID);
         }
@@ -251,7 +251,7 @@ namespace CardCollector.Tests.Services
             var result = await service.ImportAsync(new DeckImportRequest { Name = "Sample", Text = Ydk(83764718, 83764719) });
 
             var card = await context.DeckCards.SingleAsync();
-            Assert.AreEqual(83764718, card.CardID);
+            Assert.AreEqual(83764718, card.PastedPasscode);
             Assert.AreEqual(12063, card.CatalogCardID);
             Assert.AreEqual(2, card.Quantity);
             Assert.AreEqual(0, result.UnknownPasscodes.Count);
@@ -448,7 +448,7 @@ namespace CardCollector.Tests.Services
                     .OrderBy(c => c.Section)
                     .ThenBy(c => c.SortOrder)
                     .AsEnumerable()
-                    .Select(c => $"{c.Section}:{c.CardID}x{c.Quantity}@{c.SortOrder}"));
+                    .Select(c => $"{c.Section}:{c.PastedPasscode}x{c.Quantity}@{c.SortOrder}"));
 
         private static string ReadFixture(string fileName) =>
             File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "Decks", fileName));

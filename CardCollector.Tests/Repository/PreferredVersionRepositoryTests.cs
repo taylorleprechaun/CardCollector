@@ -12,10 +12,11 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_DifferentPrintingSameCard_CreatesSecondRecord()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
 
-            await repository.AddOrUpdateAsync(102, 1);
+            await repository.AddOrUpdateAsync(102);
 
             var result = await repository.GetByCardIDAsync(1);
             CollectionAssert.AreEquivalent(new int?[] { 101, 102 }, result.Select(r => r.CatalogPrintingID).ToArray());
@@ -25,9 +26,10 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_NoExistingRecord_CreatesNewForThePrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(101, result.CatalogPrintingID);
@@ -37,9 +39,10 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_NoExistingRecordDesiredQuantityGiven_UsesGivenValue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 1);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(1, result.DesiredQuantity);
@@ -49,9 +52,10 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_NoExistingRecordNoDesiredQuantityGiven_DefaultsToThree()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
 
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(3, result.DesiredQuantity);
@@ -61,10 +65,11 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_SamePrintingDesiredQuantityGiven_OverwritesValue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 1);
 
-            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 2);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 2);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(2, result.DesiredQuantity);
@@ -74,10 +79,11 @@ namespace CardCollector.Tests.Repository
         public async Task AddOrUpdateAsync_SamePrintingNoDesiredQuantityGiven_PreservesExistingValue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 1);
 
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
 
             var result = (await repository.GetByCardIDAsync(1)).Single();
             Assert.AreEqual(1, result.DesiredQuantity);
@@ -88,8 +94,9 @@ namespace CardCollector.Tests.Repository
         public async Task DeleteAsync_ExistingID_RemovesRecord()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             await repository.DeleteAsync(created.ID);
@@ -132,8 +139,9 @@ namespace CardCollector.Tests.Repository
         public async Task GetByCardIDsAsync_MatchingIDs_ReturnsKeyedByCardID()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
 
             var result = await repository.GetByCardIDsAsync([1, 999]);
 
@@ -145,9 +153,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetByCardIDsAsync_TwoTrackedPrintingsForSameCard_BothReturnedForThatKey()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
-            await repository.AddOrUpdateAsync(102, 1);
+            await repository.AddOrUpdateAsync(101);
+            await repository.AddOrUpdateAsync(102);
 
             var result = await repository.GetByCardIDsAsync([1]);
 
@@ -158,10 +167,11 @@ namespace CardCollector.Tests.Repository
         public async Task GetPreferredCardIDsAsync_ReturnsDistinctCardIDs()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1), (201, 2));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
-            await repository.AddOrUpdateAsync(102, 1);
-            await repository.AddOrUpdateAsync(201, 2);
+            await repository.AddOrUpdateAsync(101);
+            await repository.AddOrUpdateAsync(102);
+            await repository.AddOrUpdateAsync(201);
 
             var result = await repository.GetPreferredCardIDsAsync();
 
@@ -172,8 +182,9 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateDesiredQuantityAsync_ExistingID_UpdatesAndReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1);
+            await repository.AddOrUpdateAsync(101);
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             var result = await repository.UpdateDesiredQuantityAsync(created.ID, 1);
@@ -198,8 +209,9 @@ namespace CardCollector.Tests.Repository
         public async Task UpgradeAsync_ExistingID_MovesToNewPrintingKeepingDesiredQuantity()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new PreferredVersionRepository(context);
-            await repository.AddOrUpdateAsync(101, 1, desiredQuantity: 1);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 1);
             var created = (await repository.GetByCardIDAsync(1)).Single();
 
             var result = await repository.UpgradeAsync(created.ID, 102);

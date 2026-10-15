@@ -12,8 +12,9 @@ namespace CardCollector.Services
     public sealed class LegacyMigrationService : ILegacyMigrationService
     {
         /// <summary>
-        /// Tables copied as they are, parents before children. None of them refers to a card (value snapshots keep their own
-        /// copy of the card's name, set, and rarity).
+        /// Tables copied as they are, parents before children. None of them refers to a card, except that value snapshots
+        /// are linked to their catalog card once the collection entries are in (they keep their own copy of the card's name,
+        /// set, and rarity for display).
         /// </summary>
         private static readonly IReadOnlyList<string> UnmappedTables =
         [
@@ -83,6 +84,7 @@ namespace CardCollector.Services
             await ImportAsync(legacyDatabasePath, legacyTables, "DismissedNewPrintings", importer.ImportDismissedNewPrintings, cancellationToken).ConfigureAwait(false);
             await ImportAsync(legacyDatabasePath, legacyTables, "IgnoredCards", importer.ImportIgnoredCards, cancellationToken).ConfigureAwait(false);
             await ImportAsync(legacyDatabasePath, legacyTables, "DeckCards", importer.ImportDeckCards, cancellationToken).ConfigureAwait(false);
+            report.SnapshotCardFill = await _importRepository.FillSnapshotCardIDsAsync(cancellationToken).ConfigureAwait(false);
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
             var existingItems = await _catalogRepository.GetReviewItemsAsync(cancellationToken).ConfigureAwait(false);

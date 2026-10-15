@@ -11,23 +11,25 @@ namespace CardCollector.Tests.Repository
         public async Task AddAsync_ThenGetByIDAsync_RoundTripsEntry()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            var entry = new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Quantity = 2 };
+            var entry = new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 };
 
             await repository.AddAsync(entry);
             var result = await repository.GetByIDAsync(entry.ID);
 
             Assert.IsNotNull(result);
-            Assert.AreEqual("LOB-EN001", result!.SetCode);
+            Assert.AreEqual(101, result!.CatalogPrintingID);
         }
 
         [TestMethod]
         public async Task GetCompletionStatusByCardIDsAsync_NoTrackedPrintingOwned_ReturnsPlaceholder()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 3 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 102 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 102 });
             await context.SaveChangesAsync();
 
             var result = await repository.GetCompletionStatusByCardIDsAsync([1]);
@@ -39,9 +41,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetCompletionStatusByCardIDsAsync_TrackedQuantityAtThreshold_ReturnsComplete()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 3 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 101 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 101 });
             await context.SaveChangesAsync();
 
             var result = await repository.GetCompletionStatusByCardIDsAsync([1]);
@@ -53,9 +56,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetCompletionStatusByCardIDsAsync_TrackedQuantityBelowThreshold_ReturnsIncomplete()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 101 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 101 });
             await context.SaveChangesAsync();
 
             var result = await repository.GetCompletionStatusByCardIDsAsync([1]);
@@ -67,11 +71,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetCompletionStatusByCardIDsAsync_TwoTrackedPrintingsForSameCard_RollsUpToCompleteIfEitherIsMet()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 102, Status = CollectionStatus.Owned, Quantity = 1 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 102, DesiredQuantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Owned, Quantity = 1 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 102, DesiredQuantity = 1 });
             await context.SaveChangesAsync();
 
             var result = await repository.GetCompletionStatusByCardIDsAsync([1]);
@@ -83,9 +88,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetCompletionStatusByCardIDsAsync_VariantOfTrackedPrinting_DoesNotCountTowardIt()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare", SetCode = "RA05-EN146", Status = CollectionStatus.Owned, Quantity = 3 });
-            context.PreferredVersions.Add(new PreferredVersion { CardID = 1, CatalogPrintingID = 101, RarityName = "Ultra Rare", SetCode = "RA05-EN146" });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Owned, Quantity = 3 });
+            context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = 101 });
             await context.SaveChangesAsync();
 
             var result = await repository.GetCompletionStatusByCardIDsAsync([1]);
@@ -97,11 +103,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetOrderedQuantitiesAsync_SumsOrderedQuantityPerPrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 2 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 1 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 102, Status = CollectionStatus.Ordered, Quantity = 4 });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, CatalogPrintingID = 201, Status = CollectionStatus.Owned, Quantity = 5 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Ordered, Quantity = 4 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, Quantity = 5 });
 
             var result = await repository.GetOrderedQuantitiesAsync();
 
@@ -114,10 +121,11 @@ namespace CardCollector.Tests.Repository
         public async Task GetOwnedCardPrintingsAsync_ExcludesOrderedEntriesAndReturnsDistinctPrintings()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, CatalogPrintingID = 201, Status = CollectionStatus.Ordered });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Ordered });
 
             var result = await repository.GetOwnedCardPrintingsAsync();
 
@@ -128,9 +136,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetOwnedPrintingIDsAsync_ExcludesOrderedEntries()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, CatalogPrintingID = 201, Status = CollectionStatus.Ordered });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Ordered });
 
             var result = await repository.GetOwnedPrintingIDsAsync();
 
@@ -141,11 +150,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetOwnedQuantitiesByPrintingAsync_SumsOwnedEntriesOfEachRequestedPrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 5 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 102, Status = CollectionStatus.Owned, Quantity = 4 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 5 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Owned, Quantity = 4 });
 
             var result = await repository.GetOwnedQuantitiesByPrintingAsync([101]);
 
@@ -168,11 +178,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetQuantitiesByPrintingAsync_SumsRequestedCardsEntriesWithTheStatusPerPrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, CatalogPrintingID = 102, Status = CollectionStatus.Ordered, Quantity = 4 });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, CatalogPrintingID = 201, Status = CollectionStatus.Owned, Quantity = 5 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Ordered, Quantity = 4 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, Quantity = 5 });
 
             var result = await repository.GetQuantitiesByPrintingAsync([1], CollectionStatus.Owned);
 
@@ -184,25 +195,26 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateAsync_ExistingEntry_UpdatesMutableFieldsAndKeepsPrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            var entry = new CollectionEntry { CardID = 1, CatalogPrintingID = 101, RarityName = "Ultra Rare", SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Quantity = 1 };
+            var entry = new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 };
             await repository.AddAsync(entry);
 
-            var result = await repository.UpdateAsync(new CollectionEntry { ID = entry.ID, Quantity = 5, RarityName = "Secret Rare" });
+            var result = await repository.UpdateAsync(new CollectionEntry { ID = entry.ID, Quantity = 5 });
 
             Assert.IsTrue(result);
             var updated = await repository.GetByIDAsync(entry.ID);
             Assert.AreEqual(5, updated!.Quantity);
             Assert.AreEqual(101, updated.CatalogPrintingID);
-            Assert.AreEqual("Ultra Rare", updated.RarityName);
         }
 
         [TestMethod]
         public async Task DeleteAsync_ExistingEntry_RemovesItAndReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            var entry = new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned };
+            var entry = new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned };
             await repository.AddAsync(entry);
 
             var result = await repository.DeleteAsync(entry.ID);
@@ -226,38 +238,41 @@ namespace CardCollector.Tests.Repository
         public async Task GetByCardIDAsync_ReturnsOnlyEntriesForThatCard()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN002", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned });
 
             var result = (await repository.GetByCardIDAsync(1)).ToList();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("LOB-EN001", result[0].SetCode);
+            Assert.AreEqual(101, result[0].CatalogPrintingID);
         }
 
         [TestMethod]
         public async Task GetByStatusAsync_OrdersByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "OLD-EN001", Status = CollectionStatus.Owned, DateCreated = new DateTime(2020, 1, 1) });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "NEW-EN001", Status = CollectionStatus.Owned, DateCreated = new DateTime(2026, 1, 1) });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, DateCreated = new DateTime(2020, 1, 1) });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, DateCreated = new DateTime(2026, 1, 1) });
 
             var result = (await repository.GetByStatusAsync(CollectionStatus.Owned)).ToList();
 
-            Assert.AreEqual("NEW-EN001", result[0].SetCode);
-            Assert.AreEqual("OLD-EN001", result[1].SetCode);
+            Assert.AreEqual(201, result[0].CatalogPrintingID);
+            Assert.AreEqual(101, result[1].CatalogPrintingID);
         }
 
         [TestMethod]
         public async Task GetCardIDsByStatusAsync_ReturnsDistinctCardIDsForStatus()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN002", Status = CollectionStatus.Owned });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN003", Status = CollectionStatus.Ordered });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Ordered });
 
             var result = await repository.GetCardIDsByStatusAsync(CollectionStatus.Owned);
 
@@ -279,11 +294,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetDistinctAcquisitionMethodsAsync_OwnedOnlyExcludesNullAndOrdersValues()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2), (301, 3), (401, 4));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Traded });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Purchased });
-            await repository.AddAsync(new CollectionEntry { CardID = 3, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, AcquisitionMethod = null });
-            await repository.AddAsync(new CollectionEntry { CardID = 4, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, AcquisitionMethod = AcquisitionMethod.Pulled });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Traded });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, AcquisitionMethod = AcquisitionMethod.Purchased });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 301, Status = CollectionStatus.Owned, AcquisitionMethod = null });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 401, Status = CollectionStatus.Ordered, AcquisitionMethod = AcquisitionMethod.Pulled });
 
             var result = await repository.GetDistinctAcquisitionMethodsAsync();
 
@@ -294,11 +310,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetDistinctConditionsAsync_OwnedOnlyExcludesNullAndOrdersValues()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2), (301, 3), (401, 4));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Condition = CardCondition.NearMint });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Condition = CardCondition.Damaged });
-            await repository.AddAsync(new CollectionEntry { CardID = 3, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, Condition = null });
-            await repository.AddAsync(new CollectionEntry { CardID = 4, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, Condition = CardCondition.LightlyPlayed });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Condition = CardCondition.NearMint });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, Condition = CardCondition.Damaged });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 301, Status = CollectionStatus.Owned, Condition = null });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 401, Status = CollectionStatus.Ordered, Condition = CardCondition.LightlyPlayed });
 
             var result = await repository.GetDistinctConditionsAsync();
 
@@ -309,11 +326,12 @@ namespace CardCollector.Tests.Repository
         public async Task GetDistinctEditionsAsync_OwnedOnlyExcludesNullAndOrdersValues()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2), (301, 3), (401, 4));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Edition = CardEdition.Unlimited });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Edition = CardEdition.FirstEdition });
-            await repository.AddAsync(new CollectionEntry { CardID = 3, SetCode = "LOB-EN003", Status = CollectionStatus.Owned, Edition = null });
-            await repository.AddAsync(new CollectionEntry { CardID = 4, SetCode = "LOB-EN004", Status = CollectionStatus.Ordered, Edition = CardEdition.LimitedEdition });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Edition = CardEdition.Unlimited });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, Edition = CardEdition.FirstEdition });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 301, Status = CollectionStatus.Owned, Edition = null });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 401, Status = CollectionStatus.Ordered, Edition = CardEdition.LimitedEdition });
 
             var result = await repository.GetDistinctEditionsAsync();
 
@@ -324,9 +342,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetOwnedStatsAsync_MixOfEntriesWithAndWithoutPrices_SumsOnlyPricedOnes()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Quantity = 2, PurchasePrice = 5m });
-            await repository.AddAsync(new CollectionEntry { CardID = 2, SetCode = "LOB-EN002", Status = CollectionStatus.Owned, Quantity = 1, PurchasePrice = null });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2, PurchasePrice = 5m });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 201, Status = CollectionStatus.Owned, Quantity = 1, PurchasePrice = null });
 
             var stats = await repository.GetOwnedStatsAsync();
 
@@ -338,8 +357,9 @@ namespace CardCollector.Tests.Repository
         public async Task GetOwnedStatsAsync_NoEntriesHavePurchasePrice_TotalSpentIsNull()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Owned, Quantity = 1, PurchasePrice = null });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1, PurchasePrice = null });
 
             var stats = await repository.GetOwnedStatsAsync();
 
@@ -361,8 +381,9 @@ namespace CardCollector.Tests.Repository
         public async Task GetStatusByCardIDsAsync_OnlyOrderedEntries_ReturnsOrdered()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Ordered });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered });
 
             var result = await repository.GetStatusByCardIDsAsync([1]);
 
@@ -373,9 +394,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetStatusByCardIDsAsync_OwnedAndOrderedEntries_OwnedTakesPriority()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
             var repository = new CollectionRepository(context);
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Ordered });
-            await repository.AddAsync(new CollectionEntry { CardID = 1, SetCode = "LOB-EN002", Status = CollectionStatus.Owned });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Owned });
 
             var result = await repository.GetStatusByCardIDsAsync([1]);
 
@@ -397,8 +419,9 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateStatusAsync_ExistingEntryWithQuantity_UpdatesBothFields()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new CollectionRepository(context);
-            var entry = new CollectionEntry { CardID = 1, SetCode = "LOB-EN001", Status = CollectionStatus.Ordered, Quantity = 1 };
+            var entry = new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 1 };
             await repository.AddAsync(entry);
 
             var result = await repository.UpdateStatusAsync(entry.ID, CollectionStatus.Owned, 3);

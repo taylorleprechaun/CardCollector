@@ -40,6 +40,12 @@ namespace CardCollector.Repository
         Card? GetCardByPasscode(int passcode);
 
         /// <summary>
+        /// Returns the card a catalog printing belongs to, for any printing the catalog has ever had (retired ones included), or
+        /// null when the ID is unknown. The card itself may be retired; <see cref="GetCardByID"/> then returns null.
+        /// </summary>
+        int? GetCardIDByPrintingID(int printingID);
+
+        /// <summary>
         /// Returns a dictionary mapping every known passcode and source id to the catalog id of its card. A passcode with no
         /// entry is unknown.
         /// </summary>

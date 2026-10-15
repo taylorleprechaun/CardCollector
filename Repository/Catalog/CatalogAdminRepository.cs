@@ -6,10 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository.Catalog
 {
-    /// <remarks>
-    /// User rows written since the migration don't carry <c>CatalogPrintingID</c> yet, so every lookup of a printing's
-    /// rows also matches the printing's (card, set code, rarity, variant) columns.
-    /// </remarks>
     public sealed class CatalogAdminRepository : ICatalogAdminRepository
     {
         private const string LIKE_ESCAPE = @"\";
@@ -25,49 +21,25 @@ namespace CardCollector.Repository.Catalog
 
         public async Task<IReadOnlyDictionary<int, int>> CountUserRowsByPrintingAsync(int catalogCardID, CancellationToken cancellationToken = default)
         {
-            var printings = await _context.CatalogPrintings
-                .AsNoTracking()
-                .Where(p => p.CatalogCardID == catalogCardID)
-                .Select(p => new { p.ID, p.SetCode, p.RarityName, p.PrintVariant })
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (printings.Count == 0)
-                return new Dictionary<int, int>();
+            var printingIDs = new List<int>();
+            printingIDs.AddRange(await _context.CollectionEntries.AsNoTracking()
+                .Where(e => e.CatalogPrinting!.CatalogCardID == catalogCardID)
+                .Select(e => e.CatalogPrintingID)
+                .ToListAsync(cancellationToken).ConfigureAwait(false));
+            printingIDs.AddRange(await _context.PreferredVersions.AsNoTracking()
+                .Where(v => v.CatalogPrinting!.CatalogCardID == catalogCardID)
+                .Select(v => v.CatalogPrintingID)
+                .ToListAsync(cancellationToken).ConfigureAwait(false));
+            printingIDs.AddRange(await _context.CheckedOutCards.AsNoTracking()
+                .Where(c => c.CatalogPrinting!.CatalogCardID == catalogCardID)
+                .Select(c => c.CatalogPrintingID)
+                .ToListAsync(cancellationToken).ConfigureAwait(false));
+            printingIDs.AddRange(await _context.PendingOrderLines.AsNoTracking()
+                .Where(l => l.CatalogPrinting!.CatalogCardID == catalogCardID)
+                .Select(l => l.CatalogPrintingID)
+                .ToListAsync(cancellationToken).ConfigureAwait(false));
 
-            var ids = printings.Select(p => p.ID).ToList();
-            var rows = new List<(int? CatalogPrintingID, string SetCode, string? RarityName, string? PrintVariant)>();
-            rows.AddRange((await _context.CollectionEntries.AsNoTracking()
-                .Where(e => (e.CatalogPrintingID != null && ids.Contains(e.CatalogPrintingID.Value)) || e.CardID == catalogCardID)
-                .Select(e => new { e.CatalogPrintingID, e.SetCode, e.RarityName, e.PrintVariant })
-                .ToListAsync(cancellationToken).ConfigureAwait(false))
-                .Select(e => (e.CatalogPrintingID, e.SetCode, e.RarityName, e.PrintVariant)));
-            rows.AddRange((await _context.PreferredVersions.AsNoTracking()
-                .Where(v => (v.CatalogPrintingID != null && ids.Contains(v.CatalogPrintingID.Value)) || v.CardID == catalogCardID)
-                .Select(v => new { v.CatalogPrintingID, v.SetCode, v.RarityName, v.PrintVariant })
-                .ToListAsync(cancellationToken).ConfigureAwait(false))
-                .Select(v => (v.CatalogPrintingID, v.SetCode, v.RarityName, v.PrintVariant)));
-            rows.AddRange((await _context.CheckedOutCards.AsNoTracking()
-                .Where(c => (c.CatalogPrintingID != null && ids.Contains(c.CatalogPrintingID.Value)) || c.CardID == catalogCardID)
-                .Select(c => new { c.CatalogPrintingID, c.SetCode, c.RarityName, c.PrintVariant })
-                .ToListAsync(cancellationToken).ConfigureAwait(false))
-                .Select(c => (c.CatalogPrintingID, c.SetCode, (string?)c.RarityName, c.PrintVariant)));
-            rows.AddRange((await _context.PendingOrderLines.AsNoTracking()
-                .Where(l => (l.CatalogPrintingID != null && ids.Contains(l.CatalogPrintingID.Value)) || l.CardID == catalogCardID)
-                .Select(l => new { l.CatalogPrintingID, l.SetCode, l.RarityName, l.PrintVariant })
-                .ToListAsync(cancellationToken).ConfigureAwait(false))
-                .Select(l => (l.CatalogPrintingID, l.SetCode, l.RarityName, l.PrintVariant)));
-
-            var counts = new Dictionary<int, int>();
-            foreach (var row in rows)
-            {
-                var printingID = row.CatalogPrintingID is int id && ids.Contains(id)
-                    ? id
-                    : printings.FirstOrDefault(p => p.SetCode == row.SetCode && p.RarityName == row.RarityName && p.PrintVariant == row.PrintVariant)?.ID;
-                if (printingID is int matched)
-                    counts[matched] = counts.GetValueOrDefault(matched) + 1;
-            }
-
-            return counts;
+            return printingIDs.GroupBy(id => id).ToDictionary(g => g.Key, g => g.Count());
         }
 
         public async Task<CatalogCard?> FindOtherCardWithPasscodeAsync(int passcode, int exceptCardID, CancellationToken cancellationToken = default) =>
@@ -127,32 +99,31 @@ namespace CardCollector.Repository.Catalog
             if (from is null) throw new ArgumentNullException(nameof(from));
             if (into is null) throw new ArgumentNullException(nameof(into));
 
-            var (fromID, fromCard, fromCode, fromRarity, fromVariant) = (from.ID, from.CatalogCardID, from.SetCode, from.RarityName, from.PrintVariant);
-            var (intoID, intoCard, intoCode, intoRarity, intoVariant) = (into.ID, into.CatalogCardID, into.SetCode, into.RarityName, into.PrintVariant);
+            var (fromID, intoID) = (from.ID, into.ID);
             var moved = 0;
             var folded = 0;
 
             foreach (var entry in await _context.CollectionEntries
-                .Where(e => e.CatalogPrintingID == fromID || (e.CardID == fromCard && e.SetCode == fromCode && e.RarityName == fromRarity && e.PrintVariant == fromVariant))
+                .Where(e => e.CatalogPrintingID == fromID)
                 .ToListAsync(cancellationToken).ConfigureAwait(false))
             {
-                (entry.CatalogPrintingID, entry.CardID, entry.SetCode, entry.RarityName, entry.PrintVariant) = (intoID, intoCard, intoCode, intoRarity, intoVariant);
+                entry.CatalogPrintingID = intoID;
                 moved++;
             }
 
             foreach (var line in await _context.PendingOrderLines
-                .Where(l => l.CatalogPrintingID == fromID || (l.CardID == fromCard && l.SetCode == fromCode && l.RarityName == fromRarity && l.PrintVariant == fromVariant))
+                .Where(l => l.CatalogPrintingID == fromID)
                 .ToListAsync(cancellationToken).ConfigureAwait(false))
             {
-                (line.CatalogPrintingID, line.CardID, line.SetCode, line.RarityName, line.PrintVariant) = (intoID, intoCard, intoCode, intoRarity, intoVariant);
+                line.CatalogPrintingID = intoID;
                 moved++;
             }
 
             var keptVersion = await _context.PreferredVersions
-                .FirstOrDefaultAsync(v => v.CatalogPrintingID == intoID || (v.CardID == intoCard && v.SetCode == intoCode && v.RarityName == intoRarity && v.PrintVariant == intoVariant), cancellationToken)
+                .FirstOrDefaultAsync(v => v.CatalogPrintingID == intoID, cancellationToken)
                 .ConfigureAwait(false);
             foreach (var version in await _context.PreferredVersions
-                .Where(v => v.CatalogPrintingID == fromID || (v.CardID == fromCard && v.SetCode == fromCode && v.RarityName == fromRarity && v.PrintVariant == fromVariant))
+                .Where(v => v.CatalogPrintingID == fromID)
                 .ToListAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (keptVersion is not null)
@@ -163,16 +134,16 @@ namespace CardCollector.Repository.Catalog
                     continue;
                 }
 
-                (version.CatalogPrintingID, version.CardID, version.SetCode, version.RarityName, version.PrintVariant) = (intoID, intoCard, intoCode, intoRarity, intoVariant);
+                version.CatalogPrintingID = intoID;
                 keptVersion = version;
                 moved++;
             }
 
             var keptCheckout = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.CatalogPrintingID == intoID || (c.CardID == intoCard && c.SetCode == intoCode && c.RarityName == intoRarity && c.PrintVariant == intoVariant), cancellationToken)
+                .FirstOrDefaultAsync(c => c.CatalogPrintingID == intoID, cancellationToken)
                 .ConfigureAwait(false);
             foreach (var checkout in await _context.CheckedOutCards
-                .Where(c => c.CatalogPrintingID == fromID || (c.CardID == fromCard && c.SetCode == fromCode && c.RarityName == fromRarity && c.PrintVariant == fromVariant))
+                .Where(c => c.CatalogPrintingID == fromID)
                 .ToListAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (keptCheckout is not null)
@@ -183,16 +154,16 @@ namespace CardCollector.Repository.Catalog
                     continue;
                 }
 
-                (checkout.CatalogPrintingID, checkout.CardID, checkout.SetCode, checkout.RarityName, checkout.PrintVariant) = (intoID, intoCard, intoCode, intoRarity, intoVariant);
+                checkout.CatalogPrintingID = intoID;
                 keptCheckout = checkout;
                 moved++;
             }
 
             var keptDismissal = await _context.DismissedNewPrintings
-                .FirstOrDefaultAsync(d => d.CatalogPrintingID == intoID || (d.CardID == intoCard && d.SetCode == intoCode && d.RarityName == intoRarity && d.PrintVariant == intoVariant), cancellationToken)
+                .FirstOrDefaultAsync(d => d.CatalogPrintingID == intoID, cancellationToken)
                 .ConfigureAwait(false);
             foreach (var dismissal in await _context.DismissedNewPrintings
-                .Where(d => d.CatalogPrintingID == fromID || (d.CardID == fromCard && d.SetCode == fromCode && d.RarityName == fromRarity && d.PrintVariant == fromVariant))
+                .Where(d => d.CatalogPrintingID == fromID)
                 .ToListAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (keptDismissal is not null)
@@ -202,7 +173,7 @@ namespace CardCollector.Repository.Catalog
                     continue;
                 }
 
-                (dismissal.CatalogPrintingID, dismissal.CardID, dismissal.SetCode, dismissal.RarityName, dismissal.PrintVariant) = (intoID, intoCard, intoCode, intoRarity, intoVariant);
+                dismissal.CatalogPrintingID = intoID;
                 keptDismissal = dismissal;
                 moved++;
             }

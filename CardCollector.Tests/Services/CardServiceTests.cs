@@ -92,13 +92,16 @@ namespace CardCollector.Tests.Services
                 _wishlistValueRepositoryMock.Object);
         }
 
-        /// <summary>Registers a card and each of its printings with the card data mock, and returns the card.</summary>
+        /// <summary>Registers a card and each of its printings (and the printings' card ID) with the card data mock, and returns the card.</summary>
         private Card SetUpCard(int cardID, string name, params Set[] printings)
         {
             var card = new Card { ID = cardID, Name = name, CardSets = printings };
             _cardDataRepositoryMock.Setup(r => r.GetCardByID(cardID)).Returns(card);
             foreach (var printing in printings)
+            {
+                _cardDataRepositoryMock.Setup(r => r.GetCardIDByPrintingID(printing.PrintingID)).Returns(cardID);
                 _cardDataRepositoryMock.Setup(r => r.GetPrintingByID(printing.PrintingID)).Returns(new CatalogPrintingRef(card, printing));
+            }
             return card;
         }
 

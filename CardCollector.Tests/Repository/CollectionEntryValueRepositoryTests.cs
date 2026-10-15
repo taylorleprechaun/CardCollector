@@ -9,33 +9,36 @@ namespace CardCollector.Tests.Repository
     public sealed class CollectionEntryValueRepositoryTests
     {
         [TestMethod]
-        public async Task GetDistinctCardNamesAsync_ReturnsSortedDistinctNames()
+        public async Task GetCatalogCardIDsAsync_ReturnsDistinctCardsAndSkipsUnlinkedSnapshots()
         {
             using var context = InMemoryDbContextFactory.Create();
             context.CollectionEntryValueSnapshots.AddRange(
-                new CollectionEntryValueSnapshot { CardName = "Zeta Card", SnapshotDate = "2026-01-01" },
-                new CollectionEntryValueSnapshot { CardName = "Alpha Card", SnapshotDate = "2026-01-01" },
-                new CollectionEntryValueSnapshot { CardName = "Alpha Card", SnapshotDate = "2026-01-02" });
+                new CollectionEntryValueSnapshot { CatalogCardID = 2, SnapshotDate = "2026-01-01" },
+                new CollectionEntryValueSnapshot { CatalogCardID = 1, SnapshotDate = "2026-01-01" },
+                new CollectionEntryValueSnapshot { CatalogCardID = 1, SnapshotDate = "2026-01-02" },
+                new CollectionEntryValueSnapshot { CatalogCardID = null, SnapshotDate = "2026-01-02" });
             await context.SaveChangesAsync();
             var repository = new CollectionEntryValueRepository(context);
 
-            var result = (await repository.GetDistinctCardNamesAsync()).ToList();
+            var result = await repository.GetCatalogCardIDsAsync();
 
-            CollectionAssert.AreEqual(new[] { "Alpha Card", "Zeta Card" }, result);
+            CollectionAssert.AreEquivalent(new[] { 1, 2 }, result.ToArray());
         }
 
         [TestMethod]
-        public async Task GetHistoryByCardNameAsync_OrdersBySnapshotDateAscending()
+        public async Task GetHistoryByCardIDAsync_ReturnsThatCardsSnapshotsBySnapshotDateAscending()
         {
             using var context = InMemoryDbContextFactory.Create();
             context.CollectionEntryValueSnapshots.AddRange(
-                new CollectionEntryValueSnapshot { CardName = "Dark Magician", SnapshotDate = "2026-02-01" },
-                new CollectionEntryValueSnapshot { CardName = "Dark Magician", SnapshotDate = "2026-01-01" });
+                new CollectionEntryValueSnapshot { CardName = "Old Name", CatalogCardID = 1, SnapshotDate = "2026-02-01" },
+                new CollectionEntryValueSnapshot { CardName = "New Name", CatalogCardID = 1, SnapshotDate = "2026-01-01" },
+                new CollectionEntryValueSnapshot { CardName = "Other Card", CatalogCardID = 2, SnapshotDate = "2026-01-01" });
             await context.SaveChangesAsync();
             var repository = new CollectionEntryValueRepository(context);
 
-            var result = (await repository.GetHistoryByCardNameAsync("Dark Magician")).ToList();
+            var result = (await repository.GetHistoryByCardIDAsync(1)).ToList();
 
+            Assert.AreEqual(2, result.Count);
             Assert.AreEqual("2026-01-01", result[0].SnapshotDate);
             Assert.AreEqual("2026-02-01", result[1].SnapshotDate);
         }

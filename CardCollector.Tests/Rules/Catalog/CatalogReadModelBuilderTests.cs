@@ -23,6 +23,23 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void Build_AnyPrinting_MapsToItsCardIDEvenWhenRetired()
+        {
+            var retiredCard = Card(1, "Synthetic Retired");
+            retiredCard.Status = CatalogStatus.Retired;
+            Printing(retiredCard, 10, "SYN-EN001", "Rare");
+            var card = Card(2, "Synthetic Active");
+            Printing(card, 20, "SYN-EN002", "Rare");
+            Printing(card, 21, "SYN-EN002", "Super Rare").Status = CatalogStatus.Retired;
+
+            var model = CatalogReadModelBuilder.Build(State(retiredCard, card));
+
+            Assert.AreEqual(1, model.CardIDsByPrintingID[10]);
+            Assert.AreEqual(2, model.CardIDsByPrintingID[20]);
+            Assert.AreEqual(2, model.CardIDsByPrintingID[21]);
+        }
+
+        [TestMethod]
         public void Build_CardWithoutImages_FallsBackToPasscodeImage()
         {
             var card = Card(1, "Synthetic Dragon", passcode: 11111111);

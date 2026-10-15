@@ -20,7 +20,7 @@ namespace CardCollector.Tests.ViewModels
         {
             var detail = BuildDetail(main: [BuildCard(1)], extra: [BuildCard(2)], side: [BuildCard(3), BuildCard(4)]);
 
-            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, detail.AllCards.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, detail.AllCards.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -38,7 +38,7 @@ namespace CardCollector.Tests.ViewModels
             new()
             {
                 Card = isKnown ? new Card { ID = cardID, Name = $"Test Card {cardID}" } : null,
-                CardID = cardID,
+                PastedPasscode = cardID,
                 Quantity = quantity
             };
 

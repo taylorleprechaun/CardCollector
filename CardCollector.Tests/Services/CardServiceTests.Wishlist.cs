@@ -12,7 +12,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
 
             await _service.GetWishlistAsync();
@@ -31,8 +31,8 @@ namespace CardCollector.Tests.Services
             SetUpCard(2, "Alpha Card", new Set { Code = "AAA-EN001", PrintingID = 201, RarityName = "Common" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
 
             var result = (await _service.GetWishlistAsync()).ToList();
@@ -66,7 +66,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = desiredQuantity }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = desiredQuantity }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = owned });
@@ -82,7 +82,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
@@ -106,7 +106,7 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "RA05-EN146", PrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [102] = 3 });
@@ -122,7 +122,7 @@ namespace CardCollector.Tests.Services
             SetUpCard(1, "Dark Magician", new Set { Code = "LOB-EN001", Name = "Legend of Blue Eyes White Dragon", Price = 5m, PrintingID = 101, RarityName = "Common" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
 
             var result = (await _service.GetWishlistAsync()).Single();
@@ -141,8 +141,8 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "RA04-EN001", PrintingID = 102, RarityName = "Quarter Century Secret Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 },
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 102, DesiredQuantity = 1 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 },
+                new PreferredVersion { CatalogPrintingID = 102, DesiredQuantity = 1 }
             ]);
 
             var result = (await _service.GetWishlistAsync()).ToList();
@@ -159,9 +159,9 @@ namespace CardCollector.Tests.Services
             SetUpCard(3, "Card C", new Set { Code = "LOB-EN003", PrintingID = 301, RarityName = "Ultra Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 },
-                new PreferredVersion { CardID = 3, CatalogPrintingID = 301 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 },
+                new PreferredVersion { CatalogPrintingID = 301 }
             ]);
 
             var result = await _service.GetWishlistDistinctRarityNamesAsync();
@@ -175,7 +175,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode())
                 .Returns(new Dictionary<string, string> { ["LOB-EN001"] = "Legend of Blue Eyes White Dragon" });

@@ -96,7 +96,7 @@ namespace CardCollector.Tests.Pages
         public async Task OnPostEditAsync_AjaxWithMatch_ReturnsRenderedPartial()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
-                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, CatalogPrintingID = 501 });
+                .ReturnsAsync(new CollectionEntry { ID = 1, CatalogPrintingID = 501 });
             _cardServiceMock.Setup(s => s.SearchEditionAuditAsync(It.IsAny<EditionAuditSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<EditionAuditGroupViewModel>
                 {
@@ -116,7 +116,7 @@ namespace CardCollector.Tests.Pages
         public async Task OnPostEditAsync_MultipleGroupsForSameSetCode_MatchesTheEntrysPrinting()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
-                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 5, CatalogPrintingID = 502 });
+                .ReturnsAsync(new CollectionEntry { ID = 1, CatalogPrintingID = 502 });
             var wrongGroup = new EditionAuditGroupViewModel { CardID = 5, PrintingID = 501, SetCode = "LOB-EN001", RarityCode = "(UR)", PrintVariant = null };
             var correctGroup = new EditionAuditGroupViewModel { CardID = 5, PrintingID = 502, SetCode = "LOB-EN001", RarityCode = "(UR)", PrintVariant = "Starfoil" };
             _cardServiceMock.Setup(s => s.SearchEditionAuditAsync(It.IsAny<EditionAuditSearchCriteria>()))

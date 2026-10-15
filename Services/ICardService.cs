@@ -81,9 +81,9 @@ namespace CardCollector.Services
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
 
         /// <summary>
-        /// Returns the price history for the given card name, with one series per tracked printing.
+        /// Returns the price history for the given catalog card, with one series per collection entry.
         /// </summary>
-        Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName);
+        Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(int cardID);
 
         /// <summary>
         /// Returns the total line count and total cost across every staged (not-yet-submitted) cart line.
@@ -138,6 +138,12 @@ namespace CardCollector.Services
         Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
 
         /// <summary>
+        /// Returns every active catalog card that has value history, under its current name and sorted by it, for the Stats
+        /// page's price-history picker.
+        /// </summary>
+        Task<IReadOnlyList<PriceHistoryCardViewModel>> GetPriceHistoryCardsAsync();
+
+        /// <summary>
         /// Builds a purchase plan by walking the purchase-priority list in order and taking candidates that fit
         /// within <paramref name="totalBudget"/> and/or <paramref name="maxCards"/>, skipping (not stopping at)
         /// any candidate too expensive to fit so a cheaper, lower-priority one further down can still be taken.
@@ -167,10 +173,6 @@ namespace CardCollector.Services
         /// </summary>
         Task<Card?> GetRandomUncollectedAsync();
 
-        /// <summary>
-        /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
-        /// </summary>
-        Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
 
         /// <summary>
         /// Returns every tracked printing for the given card ID. A card can have any number of tracked

@@ -1,16 +1,17 @@
+using CardCollector.Data.Models.Catalog;
 using System.ComponentModel.DataAnnotations;
 
 namespace CardCollector.Data.Models
 {
-    public class CollectionEntry : IPrintingKeyedRow
+    public class CollectionEntry
     {
         public AcquisitionMethod? AcquisitionMethod { get; set; }
 
-        [Required]
-        public int CardID { get; set; }
+        /// <summary>Lets queries reach the printing (and its card); not loaded unless a query includes it.</summary>
+        public CatalogPrinting? CatalogPrinting { get; set; }
 
-        /// <summary>The catalog printing this row refers to. Set by the legacy migration; the app switches to it from the set code, rarity, and variant columns in a later phase.</summary>
-        public int? CatalogPrintingID { get; set; }
+        /// <summary>The catalog printing this row refers to.</summary>
+        public int CatalogPrintingID { get; set; }
 
         public CardCondition? Condition { get; set; }
 
@@ -24,19 +25,11 @@ namespace CardCollector.Data.Models
 
         public decimal? MarketPriceAtEntry { get; set; }
 
-        /// <summary>Null for a normal/base print; a distinct sellable variant of the same rarity otherwise (e.g. "Extended Art").</summary>
-        public string? PrintVariant { get; set; }
-
         public DateTime? PurchaseDate { get; set; }
 
         public decimal? PurchasePrice { get; set; }
 
         public int Quantity { get; set; } = 1;
-
-        public string? RarityName { get; set; }
-
-        [Required]
-        public string SetCode { get; set; } = string.Empty;
 
         [Required]
         public CollectionStatus Status { get; set; }

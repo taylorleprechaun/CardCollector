@@ -54,20 +54,6 @@ namespace CardCollector.Data
 
         public DbSet<WishlistValueSnapshot> WishlistValueSnapshots { get; set; }
 
-        /// <remarks>Reconciles the user rows' printing keys first; see <see cref="PrintingKeySync"/>.</remarks>
-        public override int SaveChanges(bool acceptAllChangesOnSuccess)
-        {
-            PrintingKeySync.Apply(this);
-            return base.SaveChanges(acceptAllChangesOnSuccess);
-        }
-
-        /// <remarks>Reconciles the user rows' printing keys first; see <see cref="PrintingKeySync"/>.</remarks>
-        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
-        {
-            await PrintingKeySync.ApplyAsync(this, cancellationToken).ConfigureAwait(false);
-            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<CatalogCard>(entity =>
@@ -155,13 +141,14 @@ namespace CardCollector.Data
             modelBuilder.Entity<CheckedOutCard>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
+                entity.HasIndex(e => e.CatalogPrintingID).IsUnique();
+                entity.HasOne(e => e.CatalogPrinting).WithMany().HasForeignKey(e => e.CatalogPrintingID).OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<CollectionEntry>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode });
+                entity.HasOne(e => e.CatalogPrinting).WithMany().HasForeignKey(e => e.CatalogPrintingID).OnDelete(DeleteBehavior.Restrict);
                 entity.Property(e => e.AcquisitionMethod).HasConversion<string>();
                 entity.Property(e => e.Condition).HasConversion<string>();
                 entity.Property(e => e.Edition).HasConversion<string>();
@@ -171,6 +158,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<CollectionEntryValueSnapshot>(entity =>
             {
                 entity.HasKey(e => e.ID);
+                entity.HasIndex(e => e.CatalogCardID);
                 entity.Property(e => e.Edition).HasConversion<string>();
             });
 
@@ -186,14 +174,15 @@ namespace CardCollector.Data
             modelBuilder.Entity<DeckCard>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.DeckID, e.CardID, e.Section }).IsUnique();
+                entity.HasIndex(e => new { e.DeckID, e.PastedPasscode, e.Section }).IsUnique();
                 entity.Property(e => e.Section).HasConversion<string>();
             });
 
             modelBuilder.Entity<DismissedNewPrinting>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
+                entity.HasIndex(e => e.CatalogPrintingID).IsUnique();
+                entity.HasOne(e => e.CatalogPrinting).WithMany().HasForeignKey(e => e.CatalogPrintingID).OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<Event>(entity =>
@@ -225,7 +214,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<IgnoredCard>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => e.CardID).IsUnique();
+                entity.HasIndex(e => e.CatalogCardID).IsUnique();
             });
 
             modelBuilder.Entity<Match>(entity =>
@@ -238,6 +227,7 @@ namespace CardCollector.Data
             modelBuilder.Entity<PendingOrderLine>(entity =>
             {
                 entity.HasKey(e => e.ID);
+                entity.HasOne(e => e.CatalogPrinting).WithMany().HasForeignKey(e => e.CatalogPrintingID).OnDelete(DeleteBehavior.Restrict);
                 entity.Property(e => e.AcquisitionMethod).HasConversion<string>();
                 entity.Property(e => e.Condition).HasConversion<string>();
                 entity.Property(e => e.Edition).HasConversion<string>();
@@ -246,7 +236,8 @@ namespace CardCollector.Data
             modelBuilder.Entity<PreferredVersion>(entity =>
             {
                 entity.HasKey(e => e.ID);
-                entity.HasIndex(e => new { e.CardID, e.SetCode, e.RarityName, e.PrintVariant }).IsUnique();
+                entity.HasIndex(e => e.CatalogPrintingID).IsUnique();
+                entity.HasOne(e => e.CatalogPrinting).WithMany().HasForeignKey(e => e.CatalogPrintingID).OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

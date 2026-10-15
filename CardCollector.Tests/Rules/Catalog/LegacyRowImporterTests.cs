@@ -35,7 +35,6 @@ namespace CardCollector.Tests.Rules.Catalog
             var entry = importer.ImportCollectionEntries([EntryRow(2097, 11111111, "SYN-EN001", "Ultra Rare")]).Single();
 
             Assert.AreEqual(2097, entry.ID);
-            Assert.AreEqual(1, entry.CardID);
             Assert.AreEqual(10, entry.CatalogPrintingID);
             Assert.AreEqual(CardEdition.FirstEdition, entry.Edition);
             Assert.AreEqual(CollectionStatus.Owned, entry.Status);
@@ -63,7 +62,7 @@ namespace CardCollector.Tests.Rules.Catalog
 
             var entry = importer.ImportCollectionEntries([EntryRow(9, 11111111, "SYN-EN002", "Ultra Rare")]).Single();
 
-            Assert.AreEqual("Extended Art", entry.PrintVariant);
+            Assert.AreEqual(11, entry.CatalogPrintingID);
             Assert.AreEqual(CatalogReviewItemKind.LegacyRowAutoMapped, _items.Single().Kind);
         }
 
@@ -75,7 +74,7 @@ namespace CardCollector.Tests.Rules.Catalog
 
             var cards = importer.ImportDeckCards(rows);
 
-            Assert.AreEqual(11111111, cards[0].CardID);
+            Assert.AreEqual(11111111, cards[0].PastedPasscode);
             Assert.AreEqual(1, cards[0].CatalogCardID);
             Assert.IsNull(cards[1].CatalogCardID);
         }

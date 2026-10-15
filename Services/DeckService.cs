@@ -137,7 +137,7 @@ namespace CardCollector.Services
                     .Select(c => new DeckCardViewModel
                     {
                         Card = ResolveCard(c),
-                        CardID = c.CardID,
+                        PastedPasscode = c.PastedPasscode,
                         Quantity = c.Quantity
                     }))
             };
@@ -173,7 +173,7 @@ namespace CardCollector.Services
         /// </summary>
         private Card? ResolveCard(DeckCard deckCard) =>
             (deckCard.CatalogCardID is int catalogCardID ? _cardDataRepository.GetCardByID(catalogCardID) : null)
-            ?? _cardDataRepository.GetCardByPasscode(deckCard.CardID);
+            ?? _cardDataRepository.GetCardByPasscode(deckCard.PastedPasscode);
 
         private DeckImportResult Summarize(IReadOnlyList<DeckCard> cards, int deckID, int linkedEventCount) =>
             new()
@@ -185,7 +185,7 @@ namespace CardCollector.Services
                 SideCount = CountCopies(cards, DeckSection.Side),
                 UnknownPasscodes = cards
                     .Where(c => ResolveCard(c) is null)
-                    .Select(c => c.CardID)
+                    .Select(c => c.PastedPasscode)
                     .Distinct()
                     .ToList()
             };

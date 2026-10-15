@@ -494,7 +494,7 @@ namespace CardCollector.Services
                 case "PreferredVersions":
                 {
                     var version = LegacyRowImporter.BuildPreferredVersion(row, target);
-                    var existing = await _importRepository.FindAsync<PreferredVersion>(p => p.CardID == target.CardID && p.SetCode == target.SetCode && p.RarityName == target.RarityName && p.PrintVariant == target.PrintVariant, cancellationToken).ConfigureAwait(false);
+                    var existing = await _importRepository.FindAsync<PreferredVersion>(p => p.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
                     if (existing is not null)
                     {
                         existing.DesiredQuantity = Math.Max(existing.DesiredQuantity, version.DesiredQuantity);
@@ -509,7 +509,7 @@ namespace CardCollector.Services
                 case "CheckedOutCards":
                 {
                     var checkedOut = LegacyRowImporter.BuildCheckedOutCard(row, target);
-                    var existing = await _importRepository.FindAsync<CheckedOutCard>(c => c.CardID == target.CardID && c.SetCode == target.SetCode && c.RarityName == target.RarityName && c.PrintVariant == target.PrintVariant, cancellationToken).ConfigureAwait(false);
+                    var existing = await _importRepository.FindAsync<CheckedOutCard>(c => c.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
                     if (existing is not null)
                     {
                         existing.Quantity += checkedOut.Quantity;

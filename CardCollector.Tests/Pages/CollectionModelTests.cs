@@ -158,7 +158,7 @@ namespace CardCollector.Tests.Pages
         public async Task OnPostDeleteAsync_AjaxWithMatch_ReturnsRenderedPartialAndSetsHeader()
         {
             _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1))
-                .ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" });
+                .ReturnsAsync(new CollectionEntry { ID = 1, CatalogPrintingID = 101 });
             _cardServiceMock.Setup(s => s.SearchGroupedOwnedAsync(It.IsAny<CollectionSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<CollectionGroupViewModel>
                 {
@@ -206,7 +206,7 @@ namespace CardCollector.Tests.Pages
         [TestMethod]
         public async Task OnPostEditAsync_QuantityBelowOne_ClampsToOne()
         {
-            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1)).ReturnsAsync(new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101 });
+            _collectionRepositoryMock.Setup(r => r.GetByIDAsync(1)).ReturnsAsync(new CollectionEntry { ID = 1, CatalogPrintingID = 101 });
             CollectionEntry? captured = null;
             _collectionRepositoryMock
                 .Setup(r => r.UpdateAsync(It.IsAny<CollectionEntry>()))

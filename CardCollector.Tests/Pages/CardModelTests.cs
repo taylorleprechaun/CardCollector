@@ -22,7 +22,7 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101 }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -38,10 +38,10 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync(
             [
-                new CollectionEntry { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 3 }
+                new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 3 }
             ]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101 }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -57,7 +57,7 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101 }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -73,7 +73,7 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 1 }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 1 }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -89,7 +89,7 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101 }]);
             var page = CreatePage();
             page.ID = 1;
             await page.OnGetAsync();
@@ -116,8 +116,8 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1))
                 .ReturnsAsync((IReadOnlyList<PreferredVersion>)[
-                    new PreferredVersion { CardID = 1, CatalogPrintingID = 201, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
-                    new PreferredVersion { CardID = 1, CatalogPrintingID = 202, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 }
+                    new PreferredVersion { CatalogPrintingID = 201, DesiredQuantity = 3 },
+                    new PreferredVersion { CatalogPrintingID = 202, DesiredQuantity = 1 }
                 ]);
             var page = CreatePage();
             page.ID = 1;
@@ -166,8 +166,8 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync(
             [
-                new CollectionEntry { CardID = 1, CatalogPrintingID = 301, SetCode = "RA05-EN146", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 1 },
-                new CollectionEntry { CardID = 1, CatalogPrintingID = 302, SetCode = "RA05-EN146", RarityName = "Ultra Rare", PrintVariant = "Extended Art", Status = CollectionStatus.Owned, Quantity = 2 }
+                new CollectionEntry { CatalogPrintingID = 301, Status = CollectionStatus.Owned, Quantity = 1 },
+                new CollectionEntry { CatalogPrintingID = 302, Status = CollectionStatus.Owned, Quantity = 2 }
             ]);
             var page = CreatePage();
             page.ID = 1;
@@ -184,8 +184,8 @@ namespace CardCollector.Tests.Pages
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1 });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync(
             [
-                new CollectionEntry { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Ordered, Quantity = 1 },
-                new CollectionEntry { CardID = 1, CatalogPrintingID = 101, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Status = CollectionStatus.Owned, Quantity = 2 }
+                new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Ordered, Quantity = 1 },
+                new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 }
             ]);
             var page = CreatePage();
             page.ID = 1;
@@ -202,7 +202,7 @@ namespace CardCollector.Tests.Pages
         {
             _cardServiceMock.Setup(s => s.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
             _cardServiceMock.Setup(s => s.GetEntriesByCardIDAsync(1)).ReturnsAsync([]);
-            var pv = new PreferredVersion { CardID = 1, CatalogPrintingID = 101 };
+            var pv = new PreferredVersion { CatalogPrintingID = 101 };
             _cardServiceMock.Setup(s => s.GetTrackedPrintingsByCardIDAsync(1)).ReturnsAsync((IReadOnlyList<PreferredVersion>)[pv]);
             _cardServiceMock.Setup(s => s.IsCardIgnoredAsync(1)).ReturnsAsync(true);
             var page = CreatePage();

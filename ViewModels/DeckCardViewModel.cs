@@ -7,12 +7,12 @@ namespace CardCollector.ViewModels
     {
         public required Card? Card { get; init; }
 
-        /// <summary>The passcode stored for the row (as pasted). Link to the card with <see cref="Card"/>'s id, not this.</summary>
-        public required int CardID { get; init; }
-
         public string? ImageURL => Card?.CardImages?.FirstOrDefault()?.ImageURLSmall;
 
         public bool IsUnknown => Card is null;
+
+        /// <summary>The passcode stored for the row (as pasted). Link to the card with <see cref="Card"/>'s id, not this.</summary>
+        public required int PastedPasscode { get; init; }
 
         public required int Quantity { get; init; }
     }

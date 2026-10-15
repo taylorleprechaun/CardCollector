@@ -16,6 +16,7 @@ function setPageGlobals(overrides = {}) {
     wishlistHistoryDates: [],
     wishlistHistoryValues: [],
     wishlistHistoryCounts: [],
+    priceHistoryCards: [],
     ...overrides
   });
 }
@@ -28,7 +29,7 @@ describe('stats.js', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     vi.restoreAllMocks();
-    for (const key of ['setLabels', 'setCounts', 'setValueLabels', 'setValueData', 'historyDates', 'historyValues', 'historyCardCounts', 'wishlistHistoryDates', 'wishlistHistoryValues', 'wishlistHistoryCounts', 'trackedCardImageMap']) {
+    for (const key of ['setLabels', 'setCounts', 'setValueLabels', 'setValueData', 'historyDates', 'historyValues', 'historyCardCounts', 'wishlistHistoryDates', 'wishlistHistoryValues', 'wishlistHistoryCounts', 'priceHistoryCards']) {
       delete globalThis[key];
     }
   });
@@ -190,6 +191,27 @@ describe('stats.js', () => {
       expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
+    it('name with no price history shows a not-found message without calling fetch', async () => {
+      setupInputs();
+      document.getElementById('cardHistoryInput').value = 'Blue-Eyes White Dragon';
+      globalThis.fetch = vi.fn();
+
+      await loadCardPriceHistory();
+
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+      expect(document.getElementById('cardHistoryStatus').textContent).toBe('No price history found for this card.');
+    });
+
+    it('name matching a card in any case fetches that card\'s history by ID', async () => {
+      setupInputs();
+      document.getElementById('cardHistoryInput').value = 'dark magician';
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+
+      await loadCardPriceHistory();
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/stats/card-price-history?cardID=7');
+    });
+
     it('empty series shows a not-found message', async () => {
       setupInputs();
       document.getElementById('cardHistoryInput').value = 'Dark Magician';
@@ -240,7 +262,7 @@ describe('stats.js', () => {
         <span id="cardHistoryStatus"></span>
         <div id="cardHistoryChartWrapper"></div>
         <canvas id="cardHistoryChart"></canvas>`;
-      setPageGlobals();
+      setPageGlobals({ priceHistoryCards: [{ cardID: 7, imageURL: null, name: 'Dark Magician' }] });
       loadScript('stats.js');
     }
   });
@@ -278,7 +300,7 @@ describe('stats.js', () => {
       document.body.innerHTML = `
         <input id="cardHistoryInput" /><span id="cardHistoryStatus"></span>
         <div id="cardHistoryChartWrapper"></div><canvas id="cardHistoryChart"></canvas>`;
-      setPageGlobals();
+      setPageGlobals({ priceHistoryCards: [{ cardID: 7, imageURL: null, name: 'Dark Magician' }] });
       loadScript('stats.js');
       document.getElementById('cardHistoryInput').value = 'Dark Magician';
       globalThis.fetch = vi.fn().mockResolvedValue({

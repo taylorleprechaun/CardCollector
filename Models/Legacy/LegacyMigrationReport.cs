@@ -13,6 +13,9 @@ namespace CardCollector.Models.Legacy
 
         public string LegacyDatabasePath { get; init; } = string.Empty;
 
+        /// <summary>How the copied value snapshots were linked to catalog cards; null until that step runs.</summary>
+        public LegacySnapshotCardFill? SnapshotCardFill { get; set; }
+
         public DateTime StartedUTC { get; init; }
 
         public IList<LegacyTableReport> Tables { get; } = new List<LegacyTableReport>();
@@ -35,6 +38,12 @@ namespace CardCollector.Models.Legacy
                 text.AppendLine(CultureInfo.InvariantCulture,
                     $"{table.Table,-32}{table.Read,9}{table.Written,9}{table.Exact,9}{table.CardCorrected,9}{table.VariantFilled,9}{table.Merged,9}{table.Unmapped,10}");
 
+            if (SnapshotCardFill is { } fill)
+            {
+                text.AppendLine();
+                text.AppendLine(CultureInfo.InvariantCulture,
+                    $"Value snapshots linked to a catalog card: {fill.ByEntry} through their entry, {fill.ByName} by card name, {fill.Unlinked} not linked.");
+            }
             var unaccounted = Tables.Where(t => t.Read != t.Written + t.Merged + t.Unmapped).Select(t => t.Table).ToList();
             text.AppendLine();
             text.AppendLine(unaccounted.Count == 0

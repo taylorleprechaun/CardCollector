@@ -9,10 +9,10 @@ namespace CardCollector.Repository
     public interface IPreferredVersionRepository
     {
         /// <summary>
-        /// Tracks the catalog printing for the card, or updates its desired quantity when it is already tracked. A new
+        /// Tracks the catalog printing, or updates its desired quantity when it is already tracked. A new
         /// tracked printing wants 3 copies unless <paramref name="desiredQuantity"/> says otherwise.
         /// </summary>
-        Task AddOrUpdateAsync(int printingID, int cardID, int? desiredQuantity = null);
+        Task AddOrUpdateAsync(int printingID, int? desiredQuantity = null);
 
         /// <summary>
         /// Deletes the tracked printing with the given ID.

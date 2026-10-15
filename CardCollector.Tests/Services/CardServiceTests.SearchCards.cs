@@ -121,7 +121,7 @@ namespace CardCollector.Tests.Services
             // Card 1 is tracked, but only via a SUDA printing -- not the RA04 printing being filtered to.
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock
                 .Setup(r => r.GetQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CollectionStatus>()))
@@ -157,7 +157,7 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { RarityName = "Ultra Rare", IsIncomplete = true });
@@ -178,8 +178,8 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 1, [201] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 1 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 1 },
+                new PreferredVersion { CatalogPrintingID = 201, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria { SetName = "Legend of Blue Eyes White Dragon", IsIncomplete = true });
@@ -227,7 +227,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, int PrintingID)> { (1, 116) });
@@ -250,7 +250,7 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 3, [201] = 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 201, DesiredQuantity = 3 }
             ]);
 
             var result = await _service.SearchCardsAsync(new BrowseSearchCriteria
@@ -271,7 +271,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedCardPrintingsAsync()).ReturnsAsync(
                 new List<(int CardID, int PrintingID)> { (1, 116) });

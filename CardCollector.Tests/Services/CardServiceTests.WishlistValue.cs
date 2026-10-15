@@ -12,7 +12,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(101, null))
@@ -30,7 +30,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock
                 .Setup(p => p.GetPrintingPriceAsync(101, null))
@@ -51,7 +51,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });

@@ -20,14 +20,14 @@
         <div class="cc-deck-grid" style="--cc-deck-columns: @columns">
             @foreach (var card in Model.Cards)
             {
-                var status = cardStatuses?.GetValueOrDefault(card.CardID);
+                var status = cardStatuses?.GetValueOrDefault(card.PastedPasscode);
                 for (var copy = 0; copy < card.Quantity; copy++)
                 {
                     if (card.IsUnknown)
                     {
-                        <div class="cc-deck-tile cc-deck-tile-empty" title="Unknown card (passcode @card.CardID)">
+                        <div class="cc-deck-tile cc-deck-tile-empty" title="Unknown card (passcode @card.PastedPasscode)">
                             <span>Unknown card</span>
-                            <span>@card.CardID</span>
+                            <span>@card.PastedPasscode</span>
                         </div>
                     }
                     else if (card.ImageURL is null)

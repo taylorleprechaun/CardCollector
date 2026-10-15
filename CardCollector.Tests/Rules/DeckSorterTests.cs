@@ -20,7 +20,7 @@ namespace CardCollector.Tests.Rules
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 4, 3, 2, 1 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 4, 3, 2, 1 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -36,7 +36,7 @@ namespace CardCollector.Tests.Rules
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 4, 3, 2, 1 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 4, 3, 2, 1 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -59,17 +59,17 @@ namespace CardCollector.Tests.Rules
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 5, 3, 2, 1, 4 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 5, 3, 2, 1, 4 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
-        public void Sort_SameNameAndType_OrdersByCardID()
+        public void Sort_SameNameAndType_OrdersByPastedPasscode()
         {
             var cards = new[] { Row(9, "Effect Monster", "Alpha"), Row(3, "Effect Monster", "Alpha") };
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 3, 9 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 3, 9 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -89,7 +89,7 @@ namespace CardCollector.Tests.Rules
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 8, 5, 4, 7, 6, 3, 2, 1 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 8, 5, 4, 7, 6, 3, 2, 1 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -97,14 +97,14 @@ namespace CardCollector.Tests.Rules
         {
             var cards = new[]
             {
-                new DeckCardViewModel { Card = null, CardID = 700, Quantity = 1 },
+                new DeckCardViewModel { Card = null, PastedPasscode = 700, Quantity = 1 },
                 Row(1, "Trap Card", "Alpha"),
-                new DeckCardViewModel { Card = null, CardID = 600, Quantity = 1 }
+                new DeckCardViewModel { Card = null, PastedPasscode = 600, Quantity = 1 }
             };
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 1, 600, 700 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 1, 600, 700 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -119,10 +119,10 @@ namespace CardCollector.Tests.Rules
 
             var sorted = DeckSorter.Sort(cards);
 
-            CollectionAssert.AreEqual(new[] { 2, 3, 1 }, sorted.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEqual(new[] { 2, 3, 1 }, sorted.Select(c => c.PastedPasscode).ToArray());
         }
 
         private static DeckCardViewModel Row(int cardID, string cardType, string name) =>
-            new() { Card = new Card { CardType = cardType, ID = cardID, Name = name }, CardID = cardID, Quantity = 1 };
+            new() { Card = new Card { CardType = cardType, ID = cardID, Name = name }, PastedPasscode = cardID, Quantity = 1 };
     }
 }

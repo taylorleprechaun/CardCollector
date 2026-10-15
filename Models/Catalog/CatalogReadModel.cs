@@ -13,6 +13,9 @@ namespace CardCollector.Models.Catalog
         /// <summary>Cards with at least one active printing; the ones Browse and the collection views list.</summary>
         public IReadOnlyList<Card> BrowseableCards { get; init; } = [];
 
+        /// <summary>Every printing the catalog has, retired ones included, mapped to its card's ID.</summary>
+        public IReadOnlyDictionary<int, int> CardIDsByPrintingID { get; init; } = new Dictionary<int, int>();
+
         public IReadOnlyList<Card> Cards { get; init; } = [];
 
         public IReadOnlyDictionary<int, Card> CardsByID { get; init; } = new Dictionary<int, Card>();

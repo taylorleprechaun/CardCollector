@@ -13,28 +13,27 @@ namespace CardCollector.Tests
     public sealed class APIEndpointsTests
     {
         [TestMethod]
-        [DataRow(null, DisplayName = "Null card name")]
-        [DataRow("", DisplayName = "Empty card name")]
-        [DataRow("   ", DisplayName = "Whitespace card name")]
-        public async Task GetCardPriceHistoryAsync_BlankCardName_ReturnsBadRequest(string? cardName)
+        [DataRow(0, DisplayName = "Zero card ID")]
+        [DataRow(-1, DisplayName = "Negative card ID")]
+        public async Task GetCardPriceHistoryAsync_NonPositiveCardID_ReturnsBadRequest(int cardID)
         {
             var cardServiceMock = new Mock<ICardService>();
 
-            var result = await APIEndpoints.GetCardPriceHistoryAsync(cardName!, cardServiceMock.Object);
+            var result = await APIEndpoints.GetCardPriceHistoryAsync(cardID, cardServiceMock.Object);
 
             Assert.IsInstanceOfType<BadRequest<string>>(result);
         }
 
         [TestMethod]
-        public async Task GetCardPriceHistoryAsync_ValidCardName_ReturnsJsonSeries()
+        public async Task GetCardPriceHistoryAsync_ValidCardID_ReturnsJsonSeries()
         {
             var cardServiceMock = new Mock<ICardService>();
-            cardServiceMock.Setup(s => s.GetCardPriceHistoryAsync("Dark Magician")).ReturnsAsync(
+            cardServiceMock.Setup(s => s.GetCardPriceHistoryAsync(1)).ReturnsAsync(
             [
                 new CardPriceHistorySeries { Label = "LOB — Ultra Rare", Dates = ["2026-01-01"], Values = [10m] }
             ]);
 
-            var result = await APIEndpoints.GetCardPriceHistoryAsync("Dark Magician", cardServiceMock.Object);
+            var result = await APIEndpoints.GetCardPriceHistoryAsync(1, cardServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);

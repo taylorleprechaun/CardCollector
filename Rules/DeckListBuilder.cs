@@ -46,7 +46,7 @@ namespace CardCollector.Rules
                     continue;
                 }
 
-                var row = new DeckCard { CardID = passcode, CatalogCardID = catalogCardID, Quantity = 1, Section = section, SortOrder = index };
+                var row = new DeckCard { CatalogCardID = catalogCardID, PastedPasscode = passcode, Quantity = 1, Section = section, SortOrder = index };
                 rowsByCard.Add(key, row);
                 rows.Add(row);
             }

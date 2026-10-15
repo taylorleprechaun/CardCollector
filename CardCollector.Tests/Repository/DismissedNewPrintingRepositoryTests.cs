@@ -12,9 +12,9 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(101, 1);
+            await repository.AddAsync(101);
 
-            await repository.AddAsync(101, 1);
+            await repository.AddAsync(101);
 
             var result = await repository.GetAllAsync();
             Assert.AreEqual(1, result.Count);
@@ -26,8 +26,8 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
 
-            await repository.AddAsync(101, 1);
-            await repository.AddAsync(102, 1);
+            await repository.AddAsync(101);
+            await repository.AddAsync(102);
 
             var result = await repository.GetAllAsync();
             CollectionAssert.AreEquivalent(new[] { 101, 102 }, result.ToArray());
@@ -38,7 +38,7 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(101, 1);
+            await repository.AddAsync(101);
 
             var result = await repository.AnyAsync();
 

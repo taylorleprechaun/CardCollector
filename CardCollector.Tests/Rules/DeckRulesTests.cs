@@ -35,7 +35,7 @@ namespace CardCollector.Tests.Rules
         {
             var cards = new[]
             {
-                new DeckCardViewModel { Card = null, CardID = 999, Quantity = 2 },
+                new DeckCardViewModel { Card = null, PastedPasscode = 999, Quantity = 2 },
                 Row("Spell Card", 1)
             };
 
@@ -116,6 +116,6 @@ namespace CardCollector.Tests.Rules
         }
 
         private static DeckCardViewModel Row(string cardType, int quantity) =>
-            new() { Card = new Card { CardType = cardType }, CardID = 1, Quantity = quantity };
+            new() { Card = new Card { CardType = cardType }, PastedPasscode = 1, Quantity = quantity };
     }
 }

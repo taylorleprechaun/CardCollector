@@ -18,7 +18,7 @@ namespace CardCollector.Tests.Rules
             var rows = DeckListBuilder.Build(deck, aliases);
 
             Assert.AreEqual(1, rows.Count);
-            Assert.AreEqual(83764718, rows[0].CardID);
+            Assert.AreEqual(83764718, rows[0].PastedPasscode);
             Assert.AreEqual(12063, rows[0].CatalogCardID);
             Assert.AreEqual(3, rows[0].Quantity);
         }
@@ -31,8 +31,8 @@ namespace CardCollector.Tests.Rules
             var rows = DeckListBuilder.Build(deck, NoAliases);
 
             Assert.AreEqual(2, rows.Count);
-            Assert.AreEqual(3, rows.Single(r => r.CardID == 100).Quantity);
-            Assert.AreEqual(1, rows.Single(r => r.CardID == 200).Quantity);
+            Assert.AreEqual(3, rows.Single(r => r.PastedPasscode == 100).Quantity);
+            Assert.AreEqual(1, rows.Single(r => r.PastedPasscode == 200).Quantity);
         }
 
         [TestMethod]
@@ -61,11 +61,11 @@ namespace CardCollector.Tests.Rules
 
             var rows = DeckListBuilder.Build(deck, NoAliases);
 
-            Assert.AreEqual(0, rows.Single(r => r.CardID == 300).SortOrder);
-            Assert.AreEqual(1, rows.Single(r => r.CardID == 100).SortOrder);
-            Assert.AreEqual(3, rows.Single(r => r.CardID == 200).SortOrder);
-            Assert.AreEqual(0, rows.Single(r => r.CardID == 900).SortOrder);
-            Assert.AreEqual(1, rows.Single(r => r.CardID == 800).SortOrder);
+            Assert.AreEqual(0, rows.Single(r => r.PastedPasscode == 300).SortOrder);
+            Assert.AreEqual(1, rows.Single(r => r.PastedPasscode == 100).SortOrder);
+            Assert.AreEqual(3, rows.Single(r => r.PastedPasscode == 200).SortOrder);
+            Assert.AreEqual(0, rows.Single(r => r.PastedPasscode == 900).SortOrder);
+            Assert.AreEqual(1, rows.Single(r => r.PastedPasscode == 800).SortOrder);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace CardCollector.Tests.Rules
 
             var rows = DeckListBuilder.Build(deck, NoAliases);
 
-            Assert.AreEqual(424242, rows.Single().CardID);
+            Assert.AreEqual(424242, rows.Single().PastedPasscode);
             Assert.IsNull(rows.Single().CatalogCardID);
         }
 

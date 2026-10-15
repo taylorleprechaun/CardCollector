@@ -53,11 +53,11 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task AcceptAsync_PrintingUsedByRowWrittenSinceMigration_FailsAndLeavesItOpen()
+        public async Task AcceptAsync_PrintingTrackedOnTheWishlist_FailsAndLeavesItOpen()
         {
             using (var context = NewContext())
             {
-                context.PreferredVersions.Add(new PreferredVersion { CardID = _cardID, RarityName = "Ultra Rare", SetCode = "BLGG-EN127" });
+                context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = _printingID });
                 await context.SaveChangesAsync();
             }
 
@@ -120,7 +120,6 @@ namespace CardCollector.Tests.Services
             var entry = await verify.CollectionEntries.SingleAsync();
             Assert.AreEqual(4331, entry.ID);
             Assert.AreEqual(created.ID, entry.CatalogPrintingID);
-            Assert.AreEqual(_cardID, entry.CardID);
         }
 
         [TestMethod]
@@ -187,7 +186,7 @@ namespace CardCollector.Tests.Services
             {
                 context.PreferredVersions.Add(new PreferredVersion
                 {
-                    CardID = _cardID, CatalogPrintingID = _printingID, DesiredQuantity = 1, ID = 10, RarityName = "Ultra Rare", SetCode = "BLGG-EN127"
+                    CatalogPrintingID = _printingID, DesiredQuantity = 1, ID = 10
                 });
                 await context.SaveChangesAsync();
             }
@@ -275,7 +274,7 @@ namespace CardCollector.Tests.Services
             using var context = NewContext();
             context.CollectionEntries.Add(new CollectionEntry
             {
-                CardID = _cardID, CatalogPrintingID = _printingID, Quantity = 1, RarityName = "Ultra Rare", SetCode = "BLGG-EN127", Status = CollectionStatus.Owned
+                CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
             });
             await context.SaveChangesAsync();
         }

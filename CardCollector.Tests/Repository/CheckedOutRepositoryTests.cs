@@ -20,8 +20,9 @@ namespace CardCollector.Tests.Repository
         public async Task AddAsync_ThenGetAsync_RoundTrips()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 10));
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 2 });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101, Quantity = 2 });
 
             var result = await repository.GetAsync(101);
 
@@ -32,9 +33,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetAllAsync_OrdersByCheckedOutDateDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 1, CatalogPrintingID = 101, CheckedOutDate = new DateTime(2020, 1, 1) });
-            await repository.AddAsync(new CheckedOutCard { CardID = 2, CatalogPrintingID = 201, CheckedOutDate = new DateTime(2026, 1, 1) });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101, CheckedOutDate = new DateTime(2020, 1, 1) });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 201, CheckedOutDate = new DateTime(2026, 1, 1) });
 
             var result = await repository.GetAllAsync();
 
@@ -45,8 +47,9 @@ namespace CardCollector.Tests.Repository
         public async Task GetAsync_OtherPrintingOfSameCard_ReturnsNull()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 10));
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 1 });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101, Quantity = 1 });
 
             var result = await repository.GetAsync(102);
 
@@ -57,9 +60,10 @@ namespace CardCollector.Tests.Repository
         public async Task GetCheckedOutLookupAsync_KeyedByPrintingID()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 10));
             var repository = new CheckedOutRepository(context);
             var date = new DateTime(2026, 1, 1);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, CheckedOutDate = date, Quantity = 2 });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101, CheckedOutDate = date, Quantity = 2 });
 
             var result = await repository.GetCheckedOutLookupAsync();
 
@@ -67,23 +71,12 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task GetCheckedOutLookupAsync_RowWithoutPrintingID_IsLeftOut()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 2 });
-
-            var result = await repository.GetCheckedOutLookupAsync();
-
-            Assert.AreEqual(0, result.Count);
-        }
-
-        [TestMethod]
         public async Task RemoveAsync_ExistingRecord_RemovesAndReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 10));
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101 });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101 });
 
             var result = await repository.RemoveAsync(101);
 
@@ -106,8 +99,9 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateAsync_ExistingRecord_UpdatesQuantity()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 10));
             var repository = new CheckedOutRepository(context);
-            await repository.AddAsync(new CheckedOutCard { CardID = 10, CatalogPrintingID = 101, Quantity = 1 });
+            await repository.AddAsync(new CheckedOutCard { CatalogPrintingID = 101, Quantity = 1 });
 
             await repository.UpdateAsync(101, 5);
 

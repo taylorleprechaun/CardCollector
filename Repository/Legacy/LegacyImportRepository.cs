@@ -1,4 +1,6 @@
 using CardCollector.Data;
+using CardCollector.Data.Models.Catalog;
+using CardCollector.Models.Legacy;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -57,6 +59,38 @@ namespace CardCollector.Repository.Legacy
 
         public async Task EnsureCreatedAsync(CancellationToken cancellationToken = default) =>
             await _context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+
+        public async Task<LegacySnapshotCardFill> FillSnapshotCardIDsAsync(CancellationToken cancellationToken = default)
+        {
+            var byEntry = await _context.Database.ExecuteSqlRawAsync(
+                """
+                UPDATE "CollectionEntryValueSnapshots"
+                SET "CatalogCardID" = (
+                    SELECT p."CatalogCardID"
+                    FROM "CollectionEntries" e
+                    JOIN "CatalogPrintings" p ON p."ID" = e."CatalogPrintingID"
+                    WHERE e."ID" = "CollectionEntryValueSnapshots"."CollectionEntryID")
+                WHERE "CatalogCardID" IS NULL
+                  AND EXISTS (SELECT 1 FROM "CollectionEntries" e WHERE e."ID" = "CollectionEntryValueSnapshots"."CollectionEntryID")
+                """,
+                cancellationToken).ConfigureAwait(false);
+
+            var active = nameof(CatalogStatus.Active);
+            var byName = await _context.Database.ExecuteSqlAsync(
+                $"""
+                UPDATE "CollectionEntryValueSnapshots"
+                SET "CatalogCardID" = (
+                    SELECT MIN(c."ID") FROM "CatalogCards" c
+                    WHERE c."Name" = "CollectionEntryValueSnapshots"."CardName" AND c."Status" = {active})
+                WHERE "CatalogCardID" IS NULL
+                  AND (SELECT COUNT(*) FROM "CatalogCards" c
+                       WHERE c."Name" = "CollectionEntryValueSnapshots"."CardName" AND c."Status" = {active}) = 1
+                """,
+                cancellationToken).ConfigureAwait(false);
+
+            var unlinked = await _context.CollectionEntryValueSnapshots.CountAsync(s => s.CatalogCardID == null, cancellationToken).ConfigureAwait(false);
+            return new LegacySnapshotCardFill(byEntry, byName, unlinked);
+        }
 
         public async Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
             where TEntity : class =>

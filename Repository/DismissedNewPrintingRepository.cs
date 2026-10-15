@@ -14,7 +14,7 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddAsync(int printingID, int cardID)
+        public async Task AddAsync(int printingID)
         {
             var exists = await _context.DismissedNewPrintings
                 .AnyAsync(d => d.CatalogPrintingID == printingID)
@@ -25,7 +25,6 @@ namespace CardCollector.Repository
 
             _context.DismissedNewPrintings.Add(new DismissedNewPrinting
             {
-                CardID = cardID,
                 CatalogPrintingID = printingID,
                 DateCreated = DateTime.UtcNow,
                 DateModified = DateTime.UtcNow
@@ -40,8 +39,7 @@ namespace CardCollector.Repository
         public async Task<IReadOnlySet<int>> GetAllAsync()
         {
             var ids = await _context.DismissedNewPrintings
-                .Where(d => d.CatalogPrintingID != null)
-                .Select(d => d.CatalogPrintingID!.Value)
+                .Select(d => d.CatalogPrintingID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 

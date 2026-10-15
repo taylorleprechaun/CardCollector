@@ -135,8 +135,8 @@ namespace CardCollector.Tests.Rules
         [TestMethod]
         public void Evaluate_TwoPasscodesShareName_GroupedTogetherByNameFallback()
         {
-            // A "ghost duplicate" card (see PasscodeAliasResolver): the real card has a Konami ID; the
-            // YGOProDeck-merge-only duplicate under a different CardID doesn't, so grouping falls back
+            // A "ghost duplicate" card (one passcode a source lists twice): the real card has a Konami ID; the
+            // YGOProDeck-merge-only duplicate under a different passcode doesn't, so grouping falls back
             // to the shared name to combine both copies toward the same limit.
             var realCard = BuildCard(1, "Monster Reborn", konamiID: 400);
             var ghostCard = BuildCard(2, "Monster Reborn", konamiID: null);
@@ -175,6 +175,6 @@ namespace CardCollector.Tests.Rules
             new() { ID = id, Name = name, KonamiID = konamiID };
 
         private static DeckCardViewModel BuildDeckCard(Card? card, int cardID, int quantity) =>
-            new() { Card = card, CardID = cardID, Quantity = quantity };
+            new() { Card = card, PastedPasscode = cardID, Quantity = quantity };
     }
 }

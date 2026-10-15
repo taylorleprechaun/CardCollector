@@ -35,8 +35,7 @@ namespace CardCollector.Repository
         public async Task<IReadOnlyDictionary<int, (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
         {
             var records = await _context.CheckedOutCards
-                .Where(c => c.CatalogPrintingID != null)
-                .Select(c => new { PrintingID = c.CatalogPrintingID!.Value, c.CheckedOutDate, c.Quantity })
+                .Select(c => new { PrintingID = c.CatalogPrintingID, c.CheckedOutDate, c.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 

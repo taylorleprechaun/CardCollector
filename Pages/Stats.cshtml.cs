@@ -9,8 +9,10 @@ namespace CardCollector.Pages
     {
         private readonly ICardService _cardService;
 
+        /// <summary>The cards with price history, as JSON for the price-history picker.</summary>
+        public string PriceHistoryCardsJson { get; private set; } = "[]";
+
         public CollectionStatsViewModel Stats { get; private set; } = new();
-        public string TrackedCardImageMapJson { get; private set; } = "{}";
 
         public StatsModel(ICardService cardService)
         {
@@ -20,8 +22,8 @@ namespace CardCollector.Pages
         public async Task OnGetAsync()
         {
             Stats = await _cardService.GetCollectionStatsAsync();
-            var imageMap = await _cardService.GetTrackedCardImageMapAsync();
-            TrackedCardImageMapJson = JsonSerializer.Serialize(imageMap);
+            var cards = await _cardService.GetPriceHistoryCardsAsync();
+            PriceHistoryCardsJson = JsonSerializer.Serialize(cards, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         }
     }
 }

@@ -68,8 +68,7 @@ namespace CardCollector.Repository
         public async Task<IReadOnlyDictionary<int, int>> GetStagedQuantitiesAsync()
         {
             var grouped = await _context.PendingOrderLines
-                .Where(l => l.CatalogPrintingID != null)
-                .GroupBy(l => l.CatalogPrintingID!.Value)
+                .GroupBy(l => l.CatalogPrintingID)
                 .Select(g => new { PrintingID = g.Key, Quantity = g.Sum(l => l.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);

@@ -1,3 +1,4 @@
+using CardCollector.Data;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 
@@ -78,6 +79,19 @@ namespace CardCollector.Tests.TestHelpers
 
         public static SourceTCGProduct Product(int productID, string cardName, string setCode, string rarityName, string? printVariant = null) =>
             new(productID, 1, cardName, setCode, rarityName, printVariant);
+
+        /// <summary>
+        /// Adds bare catalog printings so user rows can reach their card through <c>CatalogPrinting</c>. The InMemory provider
+        /// doesn't enforce foreign keys, so no card or set rows are needed. The printings are detached afterwards so a query
+        /// only reaches them the way it does in production, through the database rather than already-tracked entities.
+        /// </summary>
+        public static void SeedPrintings(AppDBContext context, params (int PrintingID, int CardID)[] printings)
+        {
+            foreach (var (printingID, cardID) in printings)
+                context.CatalogPrintings.Add(new CatalogPrinting { CatalogCardID = cardID, ID = printingID, RarityName = "Ultra Rare", SetCode = $"SYN-EN{printingID:000}" });
+            context.SaveChanges();
+            context.ChangeTracker.Clear();
+        }
 
         /// <summary>A catalog state holding the cards and every set their printings use.</summary>
         public static CatalogState State(params CatalogCard[] cards) => new()

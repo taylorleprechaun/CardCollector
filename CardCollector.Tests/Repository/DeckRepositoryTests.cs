@@ -115,7 +115,7 @@ namespace CardCollector.Tests.Repository
 
             var deck = await repository.GetAsync(id, includeCards: true);
 
-            CollectionAssert.AreEquivalent(new[] { 100, 200, 300 }, deck!.Cards.Select(c => c.CardID).ToArray());
+            CollectionAssert.AreEquivalent(new[] { 100, 200, 300 }, deck!.Cards.Select(c => c.PastedPasscode).ToArray());
         }
 
         [TestMethod]
@@ -197,6 +197,6 @@ namespace CardCollector.Tests.Repository
             new() { Cards = cards, Name = name };
 
         private static DeckCard Card(int cardID, DeckSection section, int quantity, int sortOrder) =>
-            new() { CardID = cardID, Quantity = quantity, Section = section, SortOrder = sortOrder };
+            new() { PastedPasscode = cardID, Quantity = quantity, Section = section, SortOrder = sortOrder };
     }
 }

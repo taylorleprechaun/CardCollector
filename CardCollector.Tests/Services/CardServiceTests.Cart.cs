@@ -14,8 +14,8 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new PendingOrderLine { ID = 2, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new PendingOrderLine { ID = 2, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             await _service.SubmitCartAsync([]);
@@ -30,7 +30,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
             ]);
             _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(1))
                 .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>> { [101] = new HashSet<CardEdition> { CardEdition.FirstEdition } });
@@ -46,7 +46,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
             ]);
             _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(1))
                 .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>> { [101] = new HashSet<CardEdition> { CardEdition.Unlimited } });
@@ -62,8 +62,8 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new PendingOrderLine { ID = 2, CardID = 1, CatalogPrintingID = 999, Quantity = 1 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new PendingOrderLine { ID = 2, CatalogPrintingID = 999, Quantity = 1 }
             ]);
 
             var (count, _, warnings) = await _service.SubmitCartAsync([]);
@@ -80,7 +80,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = null, Quantity = 1 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Edition = null, Quantity = 1 }
             ]);
 
             var (_, _, warnings) = await _service.SubmitCartAsync([]);
@@ -95,7 +95,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5.00m }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5.00m }
             ]);
 
             var (count, total, warnings) = await _service.SubmitCartAsync([new CartLineOverride { PendingOrderLineID = 999 }]);
@@ -131,7 +131,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetByIDsAsync(It.IsAny<IEnumerable<int>>())).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = 5.00m }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = 5.00m }
             ]);
 
             var (_, total, _) = await _service.SubmitCartAsync(

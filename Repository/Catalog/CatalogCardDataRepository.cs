@@ -40,6 +40,9 @@ namespace CardCollector.Repository.Catalog
             return model.PasscodeAliases.TryGetValue(passcode, out var cardID) ? model.CardsByID.GetValueOrDefault(cardID) : null;
         }
 
+        public int? GetCardIDByPrintingID(int printingID) =>
+            _model.CardIDsByPrintingID.TryGetValue(printingID, out var cardID) ? cardID : null;
+
         public IReadOnlyDictionary<int, int> GetPasscodeAliases() => _model.PasscodeAliases;
 
         public CatalogPrintingRef? GetPrintingByID(int printingID) => _model.PrintingsByID.GetValueOrDefault(printingID);

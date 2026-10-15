@@ -10,12 +10,13 @@ namespace CardCollector
     /// </summary>
     public static class APIEndpoints
     {
-        public static async Task<IResult> GetCardPriceHistoryAsync(string cardName, ICardService cardService)
+        /// <summary>Returns a catalog card's value history, one series per collection entry.</summary>
+        public static async Task<IResult> GetCardPriceHistoryAsync(int cardID, ICardService cardService)
         {
-            if (string.IsNullOrWhiteSpace(cardName))
-                return Results.BadRequest("cardName is required.");
+            if (cardID <= 0)
+                return Results.BadRequest("cardID is required.");
 
-            var history = await cardService.GetCardPriceHistoryAsync(cardName).ConfigureAwait(false);
+            var history = await cardService.GetCardPriceHistoryAsync(cardID).ConfigureAwait(false);
             return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
         }
 

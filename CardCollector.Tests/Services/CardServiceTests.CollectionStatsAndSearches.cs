@@ -13,8 +13,8 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, AcquisitionMethod = AcquisitionMethod.Purchased, Quantity = 2 },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 999, AcquisitionMethod = null, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, AcquisitionMethod = AcquisitionMethod.Purchased, Quantity = 2 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 999, AcquisitionMethod = null, Quantity = 1 }
             ]);
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode())
                 .Returns(new Dictionary<string, string> { ["LOB-EN001"] = "Legend of Blue Eyes White Dragon" });
@@ -59,7 +59,7 @@ namespace CardCollector.Tests.Services
             SetUpCard(1, "Dark Magician", new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" }).CardType = "Normal Monster";
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { CardType = "Spell" });
@@ -73,7 +73,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { Query = "Blue-Eyes" });
@@ -87,7 +87,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 2 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 2 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { Query = "Dark" });
@@ -102,7 +102,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { RarityName = "Common" });
@@ -116,7 +116,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { RarityName = "ultra rare" });
@@ -131,7 +131,7 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Metal Raiders")).Returns("MRD");
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { SetName = "Metal Raiders" });
@@ -146,7 +146,7 @@ namespace CardCollector.Tests.Services
             _cardDataRepositoryMock.Setup(r => r.GetSetPrefixByName("Not A Real Set")).Returns((string?)null);
             _checkedOutRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new CheckedOutCard { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CheckedOutCard { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = await _service.SearchCheckedOutAsync(new CheckedOutSearchCriteria { SetName = "Not A Real Set" });
@@ -160,7 +160,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Condition = CardCondition.NearMint, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Condition = CardCondition.NearMint, Quantity = 1 }
             ]);
 
             var result = await _service.SearchGroupedOwnedAsync(new CollectionSearchCriteria { Condition = CardCondition.Damaged });
@@ -174,7 +174,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
                 .ReturnsAsync(new Dictionary<int, (DateTime Date, int Quantity)>
@@ -194,8 +194,8 @@ namespace CardCollector.Tests.Services
             SetUpCard(2, "Zeta Card", new Set { Code = "ZZZ-EN001", PrintingID = 201 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
 
             var result = await _service.SearchWishlistAsync(new WishlistSearchCriteria { Page = 1, PageSize = 1 });
@@ -211,8 +211,8 @@ namespace CardCollector.Tests.Services
             SetUpCard(2, "Zeta Card", new Set { Code = "ZZZ-EN001", PrintingID = 201 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
 
             var result = await _service.SearchWishlistAsync(new WishlistSearchCriteria { SortBy = WishlistSortBy.Name, SortDescending = true });

@@ -15,14 +15,14 @@ namespace CardCollector.Tests.Services
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 2 });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 3 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 2, CardID = 3 },
-                new CollectionEntry { ID = 3, CardID = 4 }
+                new CollectionEntry { ID = 2 },
+                new CollectionEntry { ID = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedStatsAsync()).ReturnsAsync(new OwnedCollectionStats(5, null, 50m));
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync())
@@ -31,8 +31,8 @@ namespace CardCollector.Tests.Services
                 .ReturnsAsync(new HashSet<int> { 101 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 5, CatalogPrintingID = 501 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 501 }
             ]);
 
             var stats = await _service.GetDashboardStatsAsync();

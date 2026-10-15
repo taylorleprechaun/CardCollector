@@ -16,8 +16,8 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard(2, 201, "LOB-EN002", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(101, CardEdition.FirstEdition)).ReturnsAsync(100.00m);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(201, CardEdition.FirstEdition)).ReturnsAsync(5.00m);
@@ -35,8 +35,8 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard(2, 201, "LOB-EN002", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 },
-                new PreferredVersion { CardID = 2, CatalogPrintingID = 201 }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(101, CardEdition.FirstEdition)).ReturnsAsync(5.00m);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(201, CardEdition.FirstEdition)).ReturnsAsync(5.00m);
@@ -52,7 +52,7 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(101, CardEdition.FirstEdition)).ReturnsAsync(5.00m);
 
@@ -89,7 +89,7 @@ namespace CardCollector.Tests.Services
         {
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1))
-                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }]);
+                .ReturnsAsync((IReadOnlyList<PreferredVersion>)[new PreferredVersion { CatalogPrintingID = 101 }]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 3 });
 
@@ -150,8 +150,8 @@ namespace CardCollector.Tests.Services
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode(It.IsAny<string>())).Returns("2015-01-01");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 },
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 102, DesiredQuantity = 1 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 },
+                new PreferredVersion { CatalogPrintingID = 102, DesiredQuantity = 1 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 3 });
@@ -168,7 +168,7 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, int> { [101] = 3 });
@@ -184,7 +184,7 @@ namespace CardCollector.Tests.Services
             SetUpFlaggableCard();
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, CatalogPrintingID = 101 }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(101, CardEdition.FirstEdition)).ReturnsAsync(9.99m);
 

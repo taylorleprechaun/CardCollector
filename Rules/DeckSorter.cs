@@ -29,7 +29,7 @@ namespace CardCollector.Rules
             return cards
                 .OrderBy(GetRank)
                 .ThenBy(c => c.Card?.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(c => c.CardID)
+                .ThenBy(c => c.PastedPasscode)
                 .ToList();
         }
 

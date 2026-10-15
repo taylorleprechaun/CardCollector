@@ -22,7 +22,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1 }
             ]);
             SetUpEditions(1, (101, [CardEdition.Unlimited]));
 
@@ -38,7 +38,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = null, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Edition = null, Quantity = 1 }
             ]);
 
             var result = (await _service.GetEnrichedOrdersAsync()).Single();
@@ -55,7 +55,7 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "LDS1-EN045", PrintingID = 102, PrintVariant = "Blue", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.Unlimited, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.Unlimited, Quantity = 1 }
             ]);
             SetUpEditions(1, (102, [CardEdition.Unlimited]));
 
@@ -72,7 +72,7 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "LOB-EN001", PrintingID = 102, PrintVariant = "Starfoil", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 102, Edition = CardEdition.Unlimited, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 102, Edition = CardEdition.Unlimited, Quantity = 1 }
             ]);
             SetUpEditions(1, (101, [CardEdition.Unlimited]), (102, [CardEdition.FirstEdition]));
 
@@ -149,8 +149,8 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "LOB-EN001", PrintingID = 102, PrintVariant = "Starfoil", RarityName = "Ultra Rare" });
             var entries = new List<CollectionEntry>
             {
-                new() { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned },
-                new() { ID = 2, CardID = 1, CatalogPrintingID = 102, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
+                new() { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned },
+                new() { ID = 2, CatalogPrintingID = 102, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
             };
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
             _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
@@ -166,7 +166,7 @@ namespace CardCollector.Tests.Services
             SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             var entries = new List<CollectionEntry>
             {
-                new() { ID = 1, CardID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
+                new() { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 1, Status = CollectionStatus.Owned }
             };
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(entries);
             _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);

@@ -13,7 +13,7 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             var checkedOutDate = new DateTime(2026, 1, 1);
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
@@ -35,8 +35,8 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5.00m },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5.00m },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -52,8 +52,8 @@ namespace CardCollector.Tests.Services
             SetUpCard(2, "Alpha Card", new Set { Code = "AAA-EN001", PrintingID = 201 });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 2, CatalogPrintingID = 201, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 201, Quantity = 1 }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -68,7 +68,7 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1, PurchasePrice = null }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
@@ -82,11 +82,11 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 3 },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 3 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -101,11 +101,11 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -119,10 +119,10 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 3 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -136,10 +136,10 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, CatalogPrintingID = 101 }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();
 
@@ -152,16 +152,16 @@ namespace CardCollector.Tests.Services
             SetUpDarkMagicianCard();
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 102, Quantity = 1 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>>
                 {
                     [1] =
                     [
-                        new() { CardID = 1, CatalogPrintingID = 101, DesiredQuantity = 3 },
-                        new() { CardID = 1, CatalogPrintingID = 102, DesiredQuantity = 1 }
+                        new() { CatalogPrintingID = 101, DesiredQuantity = 3 },
+                        new() { CatalogPrintingID = 102, DesiredQuantity = 1 }
                     ]
                 });
 
@@ -183,8 +183,8 @@ namespace CardCollector.Tests.Services
                 new Set { Code = "RA05-EN146", PrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare" });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, CatalogPrintingID = 101, Quantity = 1 },
-                new CollectionEntry { ID = 2, CardID = 1, CatalogPrintingID = 102, Quantity = 2 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 102, Quantity = 2 }
             ]);
 
             var groups = (await _service.GetGroupedOwnedAsync()).ToList();

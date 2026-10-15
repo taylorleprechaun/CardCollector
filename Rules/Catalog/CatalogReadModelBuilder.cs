@@ -30,6 +30,9 @@ namespace CardCollector.Rules.Catalog
             return new CatalogReadModel
             {
                 BrowseableCards = browseable,
+                CardIDsByPrintingID = state.Cards
+                    .SelectMany(c => c.Printings.Select(p => (PrintingID: p.ID, CardID: c.ID)))
+                    .ToDictionary(x => x.PrintingID, x => x.CardID),
                 Cards = cards,
                 CardsByID = cards.ToDictionary(c => c.ID),
                 DistinctRarityNames = browseable

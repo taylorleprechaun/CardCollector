@@ -74,7 +74,6 @@ namespace CardCollector.Services
             var entry = new CollectionEntry
             {
                 AcquisitionMethod = acquisitionMethod,
-                CardID = printing.Card.ID,
                 CatalogPrintingID = printingID,
                 Condition = condition,
                 DateCreated = DateTime.UtcNow,
@@ -97,7 +96,6 @@ namespace CardCollector.Services
             var line = new PendingOrderLine
             {
                 AcquisitionMethod = AcquisitionMethod.Purchased,
-                CardID = printing.Card.ID,
                 CatalogPrintingID = printingID,
                 Condition = CardCondition.NearMint,
                 DateCreated = DateTime.UtcNow,
@@ -132,10 +130,10 @@ namespace CardCollector.Services
 
             var printingsByEntryID = entries.ToDictionary(
                 e => e.ID,
-                e => e.CatalogPrintingID is int id ? _cardDataRepository.GetPrintingByID(id) : null);
+                e => _cardDataRepository.GetPrintingByID(e.CatalogPrintingID));
             var uniquePriceKeys = entries
                 .Where(e => printingsByEntryID[e.ID] is not null)
-                .Select(e => (PrintingID: e.CatalogPrintingID!.Value, e.Edition))
+                .Select(e => (PrintingID: e.CatalogPrintingID, e.Edition))
                 .Distinct()
                 .ToList();
 
@@ -156,7 +154,7 @@ namespace CardCollector.Services
             {
                 var printing = printingsByEntryID[entry.ID];
                 previousSnapshots.TryGetValue(entry.ID, out var previous);
-                decimal? price = printing is null ? null : priceCache.GetValueOrDefault((entry.CatalogPrintingID!.Value, entry.Edition));
+                decimal? price = printing is null ? null : priceCache.GetValueOrDefault((entry.CatalogPrintingID, entry.Edition));
                 var label = printing is null ? previous?.SetCode : $"{printing.Printing.Code} {printing.Printing.RarityName}";
 
                 decimal entryValue;
@@ -187,6 +185,7 @@ namespace CardCollector.Services
                 entrySnapshots.Add(new CollectionEntryValueSnapshot
                 {
                     CardName = printing?.Card.Name ?? previous?.CardName ?? string.Empty,
+                    CatalogCardID = _cardDataRepository.GetCardIDByPrintingID(entry.CatalogPrintingID),
                     CollectionEntryID = entry.ID,
                     DateCreated = DateTime.UtcNow,
                     Edition = entry.Edition,
@@ -263,11 +262,10 @@ namespace CardCollector.Services
                 return;
             }
 
-            var printing = GetRequiredPrinting(printingID);
+            GetRequiredPrinting(printingID);
             var now = DateTime.UtcNow;
             await _checkedOutRepository.AddAsync(new CheckedOutCard
             {
-                CardID = printing.Card.ID,
                 CatalogPrintingID = printingID,
                 CheckedOutDate = now,
                 DateCreated = now,
@@ -278,8 +276,8 @@ namespace CardCollector.Services
 
         public async Task DismissNewPrintingAsync(int printingID)
         {
-            var printing = GetRequiredPrinting(printingID);
-            await _dismissedNewPrintingRepository.AddAsync(printingID, printing.Card.ID).ConfigureAwait(false);
+            GetRequiredPrinting(printingID);
+            await _dismissedNewPrintingRepository.AddAsync(printingID).ConfigureAwait(false);
         }
 
         public Card? GetCardByID(int cardID) => _cardDataRepository.GetCardByID(cardID);
@@ -293,11 +291,9 @@ namespace CardCollector.Services
                 .Take(maxResults)
                 .Select(c => c.Name!);
 
-        public async Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName)
+        public async Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(int cardID)
         {
-            if (string.IsNullOrWhiteSpace(cardName)) throw new ArgumentException("cardName is required.", nameof(cardName));
-
-            var snapshots = (await _collectionEntryValueRepository.GetHistoryByCardNameAsync(cardName).ConfigureAwait(false)).ToList();
+            var snapshots = (await _collectionEntryValueRepository.GetHistoryByCardIDAsync(cardID).ConfigureAwait(false)).ToList();
 
             var entries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
             var quantityByEntryID = entries.ToDictionary(e => e.ID, e => e.Quantity);
@@ -333,7 +329,7 @@ namespace CardCollector.Services
             var ownedEntries = (await _collectionRepository.GetByStatusAsync(CollectionStatus.Owned).ConfigureAwait(false)).ToList();
             var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
             var printings = ownedEntries
-                .Select(e => (Entry: e, Printing: e.CatalogPrintingID is int id ? _cardDataRepository.GetPrintingByID(id) : null))
+                .Select(e => (Entry: e, Printing: _cardDataRepository.GetPrintingByID(e.CatalogPrintingID)))
                 .ToList();
 
             var rarityBreakdown = printings
@@ -387,7 +383,7 @@ namespace CardCollector.Services
 
             var ownedPrintingIDs = await _collectionRepository.GetOwnedPrintingIDsAsync().ConfigureAwait(false);
             var allPreferred = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
-            var wishlistCount = allPreferred.Count(pv => pv.CatalogPrintingID is not int id || !ownedPrintingIDs.Contains(id));
+            var wishlistCount = allPreferred.Count(pv => !ownedPrintingIDs.Contains(pv.CatalogPrintingID));
 
             return new DashboardStats
             {
@@ -411,13 +407,13 @@ namespace CardCollector.Services
             var entries = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
             var viewModels = new List<EditionAuditEntryViewModel>();
 
-            foreach (var group in entries.GroupBy(e => e.CardID))
+            foreach (var group in entries.GroupBy(e => GetCardID(e.CatalogPrintingID)))
             {
                 var editions = await _pricingService.GetEditionsByPrintingAsync(group.Key).ConfigureAwait(false);
 
                 foreach (var entry in group)
                 {
-                    var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(entry), entry);
+                    var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(entry.CatalogPrintingID), entry);
                     var (category, availableEditions) = entry.Edition is CardEdition recorded
                         ? CategorizeEdition(editions, entry.CatalogPrintingID, recorded)
                         : (null, []);
@@ -505,7 +501,8 @@ namespace CardCollector.Services
 
             foreach (var pv in preferredVersions)
             {
-                if (pv.CatalogPrintingID is not int trackedID || _cardDataRepository.GetPrintingByID(trackedID) is not { } tracked)
+                var trackedID = pv.CatalogPrintingID;
+                if (_cardDataRepository.GetPrintingByID(trackedID) is not { } tracked)
                     continue;
 
                 var card = tracked.Card;
@@ -536,7 +533,7 @@ namespace CardCollector.Services
 
             // Ignored cards with no preferred version at all have no set to compare against, so the date
             // they were ignored on stands in as the baseline for "is this printing new."
-            var preferredCardIDs = preferredVersions.Select(pv => pv.CardID).ToHashSet();
+            var preferredCardIDs = preferredVersions.Select(pv => GetCardID(pv.CatalogPrintingID)).ToHashSet();
             foreach (var (cardID, ignoredSince) in ignoredCards.Where(kvp => !preferredCardIDs.Contains(kvp.Key)))
             {
                 var card = _cardDataRepository.GetCardByID(cardID);
@@ -579,7 +576,23 @@ namespace CardCollector.Services
         public async Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync()
         {
             var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
-            return lines.Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line), line)).ToList();
+            return lines.Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line.CatalogPrintingID), line)).ToList();
+        }
+
+        public async Task<IReadOnlyList<PriceHistoryCardViewModel>> GetPriceHistoryCardsAsync()
+        {
+            var cardIDs = await _collectionEntryValueRepository.GetCatalogCardIDsAsync().ConfigureAwait(false);
+            return cardIDs
+                .Select(_cardDataRepository.GetCardByID)
+                .OfType<Card>()
+                .Select(card => new PriceHistoryCardViewModel
+                {
+                    CardID = card.ID,
+                    ImageURL = card.CardImages?.FirstOrDefault() is { } image ? image.ImageURLSmall ?? image.ImageURL : null,
+                    Name = card.Name ?? string.Empty
+                })
+                .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         public async Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUTC = null)
@@ -638,11 +651,10 @@ namespace CardCollector.Services
         {
             var asOf = asOfUTC ?? DateTime.UtcNow;
             var tracked = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false))
-                .Where(pv => pv.CatalogPrintingID is not null)
                 .ToList();
 
             var ownedQuantities = await _collectionRepository
-                .GetOwnedQuantitiesByPrintingAsync(tracked.Select(pv => pv.CatalogPrintingID!.Value))
+                .GetOwnedQuantitiesByPrintingAsync(tracked.Select(pv => pv.CatalogPrintingID))
                 .ConfigureAwait(false);
             var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
@@ -654,7 +666,7 @@ namespace CardCollector.Services
             // on its own target — EvaluateCandidateAsync already excludes one whose own target is already met.
             foreach (var pv in tracked)
             {
-                var printing = _cardDataRepository.GetPrintingByID(pv.CatalogPrintingID!.Value);
+                var printing = _cardDataRepository.GetPrintingByID(pv.CatalogPrintingID);
                 if (printing is null)
                     continue;
 
@@ -698,25 +710,6 @@ namespace CardCollector.Services
             return uncollected[index];
         }
 
-        public async Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync()
-        {
-            var names = await _collectionEntryValueRepository.GetDistinctCardNamesAsync().ConfigureAwait(false);
-            var nameToCard = _cardDataRepository.GetBrowseableCards()
-                .Where(c => c.Name is not null && c.CardImages?.Count > 0)
-                .GroupBy(c => c.Name!)
-                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-            var map = new Dictionary<string, string>();
-            foreach (var name in names)
-            {
-                if (nameToCard.TryGetValue(name, out var card))
-                {
-                    var url = card.CardImages![0].ImageURLSmall ?? card.CardImages[0].ImageURL;
-                    if (url is not null) map[name] = url;
-                }
-            }
-            return map;
-        }
-
         public async Task<IReadOnlyList<PreferredVersion>> GetTrackedPrintingsByCardIDAsync(int cardID) =>
             await _preferredVersionRepository.GetByCardIDAsync(cardID).ConfigureAwait(false);
 
@@ -733,7 +726,7 @@ namespace CardCollector.Services
             }
 
             var ownedQuantities = await _collectionRepository
-                .GetOwnedQuantitiesByPrintingAsync(allPreferred.Where(pv => pv.CatalogPrintingID is not null).Select(pv => pv.CatalogPrintingID!.Value))
+                .GetOwnedQuantitiesByPrintingAsync(allPreferred.Select(pv => pv.CatalogPrintingID))
                 .ConfigureAwait(false);
             var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
@@ -742,13 +735,13 @@ namespace CardCollector.Services
 
             foreach (var pv in allPreferred)
             {
-                var printingID = pv.CatalogPrintingID ?? 0;
+                var printingID = pv.CatalogPrintingID;
                 var ownedQty = ownedQuantities.GetValueOrDefault(printingID);
                 if (ownedQty >= pv.DesiredQuantity)
                     continue;
 
                 results.Add(WishlistItemViewModel.From(
-                    BuildCardPrinting(pv),
+                    BuildCardPrinting(pv.CatalogPrintingID),
                     pv.ID,
                     ownedQty,
                     stagedQuantities.GetValueOrDefault(printingID),
@@ -796,7 +789,7 @@ namespace CardCollector.Services
         public async Task SavePreferredVersionAsync(int printingID, int? desiredQuantity = null)
         {
             var printing = GetRequiredPrinting(printingID);
-            await _preferredVersionRepository.AddOrUpdateAsync(printingID, printing.Card.ID, desiredQuantity).ConfigureAwait(false);
+            await _preferredVersionRepository.AddOrUpdateAsync(printingID, desiredQuantity).ConfigureAwait(false);
             await _ignoredCardRepository.RemoveAsync(printing.Card.ID).ConfigureAwait(false);
             await AutoDismissNewPrintingsForCardAsync(printing).ConfigureAwait(false);
         }
@@ -955,14 +948,14 @@ namespace CardCollector.Services
             var records = await _checkedOutRepository.GetAllAsync().ConfigureAwait(false);
 
             var ownedQuantities = await _collectionRepository
-                .GetOwnedQuantitiesByPrintingAsync(records.Where(r => r.CatalogPrintingID is not null).Select(r => r.CatalogPrintingID!.Value))
+                .GetOwnedQuantitiesByPrintingAsync(records.Select(r => r.CatalogPrintingID))
                 .ConfigureAwait(false);
 
             var enriched = records
                 .Select(r =>
                 {
-                    var printing = BuildCardPrinting(r);
-                    var totalOwned = r.CatalogPrintingID is int id ? ownedQuantities.GetValueOrDefault(id) : 0;
+                    var printing = BuildCardPrinting(r.CatalogPrintingID);
+                    var totalOwned = ownedQuantities.GetValueOrDefault(r.CatalogPrintingID);
                     return CheckedOutCardViewModel.From(printing, r.CheckedOutDate, r.Quantity, totalOwned);
                 })
                 .ToList();
@@ -1122,7 +1115,8 @@ namespace CardCollector.Services
                 foreach (var line in lines)
                 {
                     // A line whose printing has left the catalog can't become an entry; it stays in the cart.
-                    if (line.CatalogPrintingID is not int printingID || _cardDataRepository.GetPrintingByID(printingID) is not { } printing)
+                    var printingID = line.CatalogPrintingID;
+                    if (_cardDataRepository.GetPrintingByID(printingID) is not { } printing)
                     {
                         editionWarnings.Add("One cart line's printing is no longer in the catalog, so it was left in the cart.");
                         continue;
@@ -1324,7 +1318,7 @@ namespace CardCollector.Services
                 .ToList();
 
             foreach (var (set, _) in toDismiss)
-                await _dismissedNewPrintingRepository.AddAsync(set.PrintingID, printing.Card.ID).ConfigureAwait(false);
+                await _dismissedNewPrintingRepository.AddAsync(set.PrintingID).ConfigureAwait(false);
         }
 
         private async Task<IReadOnlyDictionary<int, CollectionCompletionStatus?>> BuildCardCompletionMapAsync(IReadOnlyList<Card> cards)
@@ -1336,22 +1330,25 @@ namespace CardCollector.Services
                 c => c.ID,
                 c => completionMap.TryGetValue(c.ID, out var s) ? (CollectionCompletionStatus?)s : null);
         }
+
         /// <summary>
         /// Builds the printing a user row points at. A row whose printing has left the catalog shows only its card, so it
         /// still appears (and can be fixed from the catalog admin pages) instead of vanishing.
         /// </summary>
-        private CardPrinting BuildCardPrinting(IPrintingKeyedRow row)
+        private CardPrinting BuildCardPrinting(int printingID)
         {
-            if (row.CatalogPrintingID is int printingID && _cardDataRepository.GetPrintingByID(printingID) is { } printing)
+            if (_cardDataRepository.GetPrintingByID(printingID) is { } printing)
                 return BuildCardPrinting(printing);
 
-            var card = _cardDataRepository.GetCardByID(row.CardID);
+            var cardID = _cardDataRepository.GetCardIDByPrintingID(printingID) ?? 0;
+            var card = _cardDataRepository.GetCardByID(cardID);
             return new CardPrinting
             {
-                CardID = row.CardID,
+                CardID = cardID,
                 CardName = card?.Name ?? "Unknown",
                 CardType = card?.CardType ?? string.Empty,
                 ImageURLSmall = card?.CardImages?.FirstOrDefault()?.ImageURLSmall ?? string.Empty,
+                PrintingID = printingID,
                 SetName = "Printing no longer in the catalog"
             };
         }
@@ -1443,7 +1440,7 @@ namespace CardCollector.Services
                 return new HashSet<int>();
 
             var trackedByCardID = (await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false))
-                .GroupBy(pv => pv.CardID)
+                .GroupBy(pv => GetCardID(pv.CatalogPrintingID))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var result = new HashSet<int>();
@@ -1460,6 +1457,9 @@ namespace CardCollector.Services
         }
 
         /// <summary>Returns the active catalog printing, or throws when the ID names none.</summary>
+        /// <summary>The card a user row's printing belongs to, retired printings included; 0 when the catalog never had it.</summary>
+        private int GetCardID(int printingID) => _cardDataRepository.GetCardIDByPrintingID(printingID) ?? 0;
+
         private CatalogPrintingRef GetRequiredPrinting(int printingID) =>
             _cardDataRepository.GetPrintingByID(printingID)
             ?? throw new ArgumentException($"{printingID} is not an active catalog printing.", nameof(printingID));
@@ -1470,7 +1470,7 @@ namespace CardCollector.Services
             var ordered = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
 
             var results = new List<EditionAuditResult>();
-            foreach (var group in owned.Concat(ordered).Where(e => e.Edition.HasValue).GroupBy(e => e.CardID))
+            foreach (var group in owned.Concat(ordered).Where(e => e.Edition.HasValue).GroupBy(e => GetCardID(e.CatalogPrintingID)))
             {
                 var editions = await _pricingService.GetEditionsByPrintingAsync(group.Key).ConfigureAwait(false);
 
@@ -1479,7 +1479,7 @@ namespace CardCollector.Services
                     var recordedEdition = entry.Edition!.Value;
                     var (category, availableEditions) = CategorizeEdition(editions, entry.CatalogPrintingID, recordedEdition);
                     if (category is not null)
-                        results.Add(EditionAuditResult.From(BuildCardPrinting(entry), entry.ID, recordedEdition, availableEditions, category.Value));
+                        results.Add(EditionAuditResult.From(BuildCardPrinting(entry.CatalogPrintingID), entry.ID, recordedEdition, availableEditions, category.Value));
                 }
             }
 
@@ -1492,7 +1492,7 @@ namespace CardCollector.Services
             var viewModels = new List<OrderEntryViewModel>();
 
             foreach (var entry in entries)
-                viewModels.Add(OrderEntryViewModel.From(BuildCardPrinting(entry), entry));
+                viewModels.Add(OrderEntryViewModel.From(BuildCardPrinting(entry.CatalogPrintingID), entry));
 
             return viewModels;
         }
@@ -1513,7 +1513,7 @@ namespace CardCollector.Services
                     .Where(e => e.Status == CollectionStatus.Owned || e.Status == CollectionStatus.Ordered)
                     .Select(e =>
                     {
-                        var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(e), e);
+                        var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(e.CatalogPrintingID), e);
                         var isFlagged = flaggedByEntryID.TryGetValue(e.ID, out var flagged);
                         return EditionAuditEntryViewModel.From(
                             baseEntry,
@@ -1565,7 +1565,7 @@ namespace CardCollector.Services
             if (needTracked)
             {
                 var allTracked = await _preferredVersionRepository.GetAllAsync().ConfigureAwait(false);
-                foreach (var group in allTracked.Where(pv => InScope(pv.CatalogPrintingID)).GroupBy(pv => pv.CardID))
+                foreach (var group in allTracked.Where(pv => InScope(pv.CatalogPrintingID)).GroupBy(pv => GetCardID(pv.CatalogPrintingID)))
                 {
                     trackedCardIDs.Add(group.Key);
                     maxDesiredQuantities[group.Key] = group.Max(pv => pv.DesiredQuantity);

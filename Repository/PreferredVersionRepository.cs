@@ -14,7 +14,7 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddOrUpdateAsync(int printingID, int cardID, int? desiredQuantity = null)
+        public async Task AddOrUpdateAsync(int printingID, int? desiredQuantity = null)
         {
             var existing = await _context.PreferredVersions
                 .FirstOrDefaultAsync(pv => pv.CatalogPrintingID == printingID)
@@ -24,7 +24,6 @@ namespace CardCollector.Repository
             {
                 _context.PreferredVersions.Add(new PreferredVersion
                 {
-                    CardID = cardID,
                     CatalogPrintingID = printingID,
                     DateCreated = DateTime.UtcNow,
                     DateModified = DateTime.UtcNow,
@@ -56,7 +55,7 @@ namespace CardCollector.Repository
 
         public async Task<IReadOnlyList<PreferredVersion>> GetByCardIDAsync(int cardID) =>
             await _context.PreferredVersions
-                .Where(pv => pv.CardID == cardID)
+                .Where(pv => pv.CatalogPrinting!.CatalogCardID == cardID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -67,20 +66,22 @@ namespace CardCollector.Repository
                 return new Dictionary<int, IReadOnlyList<PreferredVersion>>();
 
             // Filter in memory, not in SQL: cardIDs can cover the whole owned collection (thousands of rows).
+            // The card ID is projected in the query: the printing navigation isn't loaded once the rows are in memory.
             var all = await _context.PreferredVersions
+                .Select(pv => new { CardID = pv.CatalogPrinting!.CatalogCardID, Version = pv })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             return all
-                .Where(pv => ids.Contains(pv.CardID))
-                .GroupBy(pv => pv.CardID)
-                .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.ToList());
+                .Where(x => ids.Contains(x.CardID))
+                .GroupBy(x => x.CardID)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.Select(x => x.Version).ToList());
         }
 
         public async Task<IReadOnlySet<int>> GetPreferredCardIDsAsync()
         {
             var ids = await _context.PreferredVersions
-                .Select(pv => pv.CardID)
+                .Select(pv => pv.CatalogPrinting!.CatalogCardID)
                 .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);

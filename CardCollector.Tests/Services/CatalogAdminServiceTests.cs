@@ -62,11 +62,11 @@ namespace CardCollector.Tests.Services
         public void Cleanup() => _connection.Dispose();
 
         [TestMethod]
-        public async Task GetCardAsync_RowWrittenSinceMigration_CountsItOnItsPrinting()
+        public async Task GetCardAsync_UserRowOnAPrinting_CountsItOnThatPrinting()
         {
             using (var context = NewContext())
             {
-                context.PreferredVersions.Add(new PreferredVersion { CardID = _cardID, RarityName = "Ultra Rare", SetCode = "BLGG-EN127" });
+                context.PreferredVersions.Add(new PreferredVersion { CatalogPrintingID = _printingID });
                 await context.SaveChangesAsync();
             }
 
@@ -137,11 +137,11 @@ namespace CardCollector.Tests.Services
             using (var context = NewContext())
             {
                 context.PreferredVersions.AddRange(
-                    new PreferredVersion { CardID = _cardID, CatalogPrintingID = _printingID, DesiredQuantity = 3, RarityName = "Ultra Rare", SetCode = "BLGG-EN127" },
-                    new PreferredVersion { CardID = _cardID, CatalogPrintingID = intoID, DesiredQuantity = 1, RarityName = "Ultra Pharaoh’s Rare", SetCode = "BLGG-EN127" });
+                    new PreferredVersion { CatalogPrintingID = _printingID, DesiredQuantity = 3 },
+                    new PreferredVersion { CatalogPrintingID = intoID, DesiredQuantity = 1 });
                 context.CheckedOutCards.AddRange(
-                    new CheckedOutCard { CardID = _cardID, CatalogPrintingID = _printingID, Quantity = 1, RarityName = "Ultra Rare", SetCode = "BLGG-EN127" },
-                    new CheckedOutCard { CardID = _cardID, CatalogPrintingID = intoID, Quantity = 2, RarityName = "Ultra Pharaoh’s Rare", SetCode = "BLGG-EN127" });
+                    new CheckedOutCard { CatalogPrintingID = _printingID, Quantity = 1 },
+                    new CheckedOutCard { CatalogPrintingID = intoID, Quantity = 2 });
                 await context.SaveChangesAsync();
             }
 
@@ -161,7 +161,7 @@ namespace CardCollector.Tests.Services
             {
                 context.CollectionEntries.Add(new CollectionEntry
                 {
-                    CardID = _cardID, Quantity = 1, RarityName = "Ultra Rare", SetCode = "BLGG-EN127", Status = CollectionStatus.Owned
+                    CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
                 });
                 context.CatalogPrintingSources.Add(new CatalogPrintingSource { CatalogPrintingID = _printingID, ExternalKey = "695684", Source = CatalogSource.TCGPlayer });
                 await context.SaveChangesAsync();
@@ -173,7 +173,6 @@ namespace CardCollector.Tests.Services
             using var verify = NewContext();
             var entry = await verify.CollectionEntries.SingleAsync();
             Assert.AreEqual(intoID, entry.CatalogPrintingID);
-            Assert.AreEqual("Ultra Pharaoh’s Rare", entry.RarityName);
             Assert.AreEqual(intoID, (await verify.CatalogPrintingSources.SingleAsync()).CatalogPrintingID);
             Assert.AreEqual(CatalogStatus.Retired, (await verify.CatalogPrintings.SingleAsync(p => p.ID == _printingID)).Status);
         }
@@ -197,8 +196,7 @@ namespace CardCollector.Tests.Services
             using (var context = NewContext())
             {
                 context.CollectionEntries.Add(new CollectionEntry
-                {
-                    CardID = _cardID, CatalogPrintingID = _printingID, Quantity = 1, RarityName = "Ultra Rare", SetCode = "BLGG-EN127", Status = CollectionStatus.Owned
+                { CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
                 });
                 await context.SaveChangesAsync();
             }
