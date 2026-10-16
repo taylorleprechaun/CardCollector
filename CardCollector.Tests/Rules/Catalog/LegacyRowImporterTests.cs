@@ -95,6 +95,21 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void ImportDismissedNewPrintings_TwoRowsOnOnePrinting_KeepsOne()
+        {
+            var importer = Importer();
+            var first = Row(("ID", 3L), ("CardID", 11111111L), ("SetCode", "SYN-EN001"), ("RarityName", "Ultra Rare"), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE));
+            var second = Row(("ID", 4L), ("CardID", 11111111L), ("SetCode", "SYN-EN001"), ("RarityName", "Ultra Rare"), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE));
+
+            var dismissals = importer.ImportDismissedNewPrintings([first, second]);
+
+            var kept = dismissals.Single();
+            Assert.AreEqual(3, kept.ID);
+            Assert.AreEqual(10, kept.CatalogPrintingID);
+            Assert.AreEqual(1, _report.Tables.Single().Merged);
+        }
+
+        [TestMethod]
         public void ImportDismissedNewPrintings_UnmappedRow_BecomesInformationalItem()
         {
             var importer = Importer();
@@ -104,6 +119,43 @@ namespace CardCollector.Tests.Rules.Catalog
 
             Assert.AreEqual(CatalogReviewItemKind.LegacyDismissalUnmapped, _items.Single().Kind);
             Assert.IsFalse(_items.Single().Kind.IsActionable());
+        }
+
+        [TestMethod]
+        public void ImportIgnoredCards_KnownDuplicateAndUnknownCards_KeepsOnePerCardAndSendsUnknownToInbox()
+        {
+            var importer = Importer();
+            var rows = new[]
+            {
+                Row(("ID", 1L), ("CardID", 11111111L), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE)),
+                Row(("ID", 2L), ("CardID", 11111111L), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE)),
+                Row(("ID", 3L), ("CardID", 99999999L), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE))
+            };
+
+            var ignored = importer.ImportIgnoredCards(rows);
+
+            var kept = ignored.Single();
+            Assert.AreEqual(1, kept.ID);
+            Assert.AreEqual(1, kept.CatalogCardID);
+            var report = _report.Tables.Single();
+            Assert.AreEqual(1, report.Merged);
+            Assert.AreEqual(1, report.Unmapped);
+            Assert.AreEqual(1, report.Written);
+            Assert.AreEqual(CatalogReviewItemKind.LegacyRowUnmapped, _items.Single().Kind);
+        }
+
+        [TestMethod]
+        public void ImportPendingOrderLines_TwoRowsOnOnePrinting_KeepsBoth()
+        {
+            var importer = Importer();
+            var rows = new[] { PendingRow(7, 2), PendingRow(8, 1) };
+
+            var lines = importer.ImportPendingOrderLines(rows);
+
+            Assert.AreEqual(2, lines.Count);
+            Assert.IsTrue(lines.All(l => l.CatalogPrintingID == 10));
+            Assert.AreEqual(2, lines.Single(l => l.ID == 7).Quantity);
+            Assert.AreEqual(CardCondition.NearMint, lines.Single(l => l.ID == 7).Condition);
         }
 
         [TestMethod]
@@ -136,6 +188,10 @@ namespace CardCollector.Tests.Rules.Catalog
             ("ID", (long)id), ("CardID", (long)cardID), ("SetCode", setCode), ("RarityName", rarity), ("PrintVariant", null),
             ("Status", "Owned"), ("Condition", "NearMint"), ("Edition", "FirstEdition"), ("AcquisitionMethod", "Pulled"), ("Quantity", 3L),
             ("PurchaseDate", "2025-07-11 00:00:00"), ("PurchasePrice", null), ("MarketPriceAtEntry", 6.81), ("DateCreated", LEGACY_DATE), ("DateModified", LEGACY_DATE));
+
+        private static LegacyRow PendingRow(int id, int quantity) => Row(
+            ("ID", (long)id), ("CardID", 11111111L), ("SetCode", "SYN-EN001"), ("RarityName", "Ultra Rare"), ("PrintVariant", null), ("Quantity", (long)quantity),
+            ("Condition", "NearMint"), ("Edition", "FirstEdition"), ("AcquisitionMethod", "Purchased"), ("MarketPriceAtEntry", 1.5), ("DateCreated", LEGACY_DATE));
 
         private static LegacyRow PreferredRow(int id, string? variant, int desiredQuantity) => Row(
             ("ID", (long)id), ("CardID", 11111111L), ("SetCode", "SP18-EN013"), ("RarityName", "Starfoil Rare"), ("PrintVariant", variant),

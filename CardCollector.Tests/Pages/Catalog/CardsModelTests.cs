@@ -11,6 +11,17 @@ namespace CardCollector.Tests.Pages.Catalog
     public sealed class CardsModelTests
     {
         [TestMethod]
+        public void GetPaginationParams_QueryAndStatus_KeepsBoth()
+        {
+            var page = new CardsModel(new Mock<ICatalogAdminService>().Object) { Query = "theo", Status = CatalogStatus.Retired };
+
+            var result = page.GetPaginationParams();
+
+            Assert.AreEqual("theo", result["q"]);
+            Assert.AreEqual("Retired", result["status"]);
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_PassesQueryAndStatusToSearch()
         {
             var serviceMock = new Mock<ICatalogAdminService>();
