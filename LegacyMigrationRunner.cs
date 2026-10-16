@@ -9,10 +9,13 @@ namespace CardCollector
     /// <summary>
     /// Runs the legacy migration for the command line and for startup: writes the report next to the new database, and on
     /// any failure deletes the half-built database so the next attempt starts clean. The legacy database is never touched.
+    /// While a migration runs, a marker file sits next to the new database; one left behind means the process stopped
+    /// mid-migration (killed, not failed), so <see cref="DiscardIncompleteMigration"/> throws that database away too.
     /// </summary>
     [ExcludeFromCodeCoverage(Justification = "File and DI-scope orchestration around ILegacyMigrationService, which is tested directly.")]
     public static class LegacyMigrationRunner
     {
+        public const string IN_PROGRESS_SUFFIX = ".migrating";
         public const string REPORT_FILE_NAME = "migration-report.txt";
 
         /// <summary>Deletes a SQLite database file together with its WAL and shared-memory files.</summary>
@@ -27,6 +30,23 @@ namespace CardCollector
             }
         }
 
+        /// <summary>
+        /// Deletes the database (and the marker) when an earlier migration into it never finished; returns true when it did.
+        /// </summary>
+        public static bool DiscardIncompleteMigration(string databasePath, ILogger logger)
+        {
+            if (logger is null) throw new ArgumentNullException(nameof(logger));
+
+            var markerPath = databasePath + IN_PROGRESS_SUFFIX;
+            if (!File.Exists(markerPath))
+                return false;
+
+            logger.LogWarning("A legacy migration into {DatabasePath} never finished; discarding the partly built database", databasePath);
+            DeleteDatabaseFiles(databasePath);
+            File.Delete(markerPath);
+            return true;
+        }
+
         public static async Task<LegacyMigrationReport> RunAsync(
             IServiceProvider services,
             string legacyDatabasePath,
@@ -37,6 +57,8 @@ namespace CardCollector
             if (services is null) throw new ArgumentNullException(nameof(services));
             if (logger is null) throw new ArgumentNullException(nameof(logger));
 
+            var markerPath = targetDatabasePath + IN_PROGRESS_SUFFIX;
+            await File.WriteAllTextAsync(markerPath, $"Migration from {legacyDatabasePath} started {DateTime.UtcNow:O}").ConfigureAwait(false);
             try
             {
                 LegacyMigrationReport report;
@@ -49,12 +71,14 @@ namespace CardCollector
                 var reportPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(targetDatabasePath)) ?? ".", REPORT_FILE_NAME);
                 await File.WriteAllTextAsync(reportPath, report.ToText()).ConfigureAwait(false);
                 logger.LogInformation("Legacy migration report written to {ReportPath}", reportPath);
+                File.Delete(markerPath);
                 return report;
             }
             catch (Exception ex)
             {
                 logger.LogCritical(ex, "Legacy migration from {LegacyDatabasePath} failed; removing the partly built {TargetDatabasePath}", legacyDatabasePath, targetDatabasePath);
                 DeleteDatabaseFiles(targetDatabasePath);
+                File.Delete(markerPath);
                 throw;
             }
         }

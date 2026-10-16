@@ -82,6 +82,7 @@ if (catalogCommand is null)
 {
     var databasePath = new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).DataSource;
     var legacyDatabasePath = builder.Configuration.GetValue<string>("LegacyMigration:LegacyDatabasePath");
+    CardCollector.LegacyMigrationRunner.DiscardIncompleteMigration(databasePath, app.Services.GetRequiredService<ILogger<Program>>());
     if (!File.Exists(databasePath) && !string.IsNullOrWhiteSpace(legacyDatabasePath) && File.Exists(legacyDatabasePath))
     {
         var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -117,8 +118,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 
-app.MapGet("/api/price", CardCollector.APIEndpoints.GetPriceAsync);
+app.MapGet("/api/price", CardCollector.APIEndpoints.GetPriceAsync).RequireAuthorization();
 
-app.MapGet("/api/stats/card-price-history", CardCollector.APIEndpoints.GetCardPriceHistoryAsync);
+app.MapGet("/api/stats/card-price-history", CardCollector.APIEndpoints.GetCardPriceHistoryAsync).RequireAuthorization();
 
 app.Run();
