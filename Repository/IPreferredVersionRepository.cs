@@ -47,7 +47,8 @@ namespace CardCollector.Repository
         Task<bool> UpdateDesiredQuantityAsync(int id, int desiredQuantity);
 
         /// <summary>
-        /// Moves a tracked printing to another catalog printing of the same card, keeping its desired quantity. Returns
+        /// Moves a tracked printing to another catalog printing of the same card, keeping its desired quantity. When the
+        /// new printing is already tracked, the two are folded into that one, keeping the higher desired quantity. Returns
         /// false if no such tracked printing exists.
         /// </summary>
         Task<bool> UpgradeAsync(int id, int newPrintingID);

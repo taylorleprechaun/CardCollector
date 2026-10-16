@@ -81,7 +81,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
    On first run the app downloads yaml-yugi, YGOProDeck, and tcgcsv, caches each locally, and builds the card catalog in a new SQLite database at `Data/cardcollector.db`. When a pre-catalog database exists at `LegacyMigration:LegacyDatabasePath` (`Data/collection.db`) and `Data/cardcollector.db` doesn&rsquo;t, the app first migrates it: it builds the catalog, points every collection row at a catalog printing, and writes `Data/migration-report.txt`. The legacy file is only read, so it stays as the rollback. Rows it can&rsquo;t place land in the review inbox instead of being dropped.
 
-4. Open `https://localhost:5001` in your browser and log in.
+4. Open `http://localhost:5000` (the default launch profile) in your browser and log in.
 
 ## Project Structure
 

@@ -223,6 +223,24 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task UpgradeAsync_NewPrintingAlreadyTracked_FoldsIntoItKeepingHigherDesiredQuantity()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(101, desiredQuantity: 3);
+            await repository.AddOrUpdateAsync(102, desiredQuantity: 1);
+            var older = (await repository.GetByCardIDAsync(1)).Single(pv => pv.CatalogPrintingID == 101);
+
+            var result = await repository.UpgradeAsync(older.ID, 102);
+
+            Assert.IsTrue(result);
+            var remaining = (await repository.GetByCardIDAsync(1)).Single();
+            Assert.AreEqual(102, remaining.CatalogPrintingID);
+            Assert.AreEqual(3, remaining.DesiredQuantity);
+        }
+
+        [TestMethod]
         public async Task UpgradeAsync_NoSuchID_ReturnsFalse()
         {
             using var context = InMemoryDbContextFactory.Create();

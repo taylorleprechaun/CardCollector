@@ -106,9 +106,25 @@ namespace CardCollector.Repository
             var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
             if (entity is null)
                 return false;
+            if (entity.CatalogPrintingID == newPrintingID)
+                return true;
 
-            entity.CatalogPrintingID = newPrintingID;
-            entity.DateModified = DateTime.UtcNow;
+            // A printing is tracked at most once, so moving onto one that is already tracked folds the two together.
+            var existing = await _context.PreferredVersions
+                .FirstOrDefaultAsync(pv => pv.CatalogPrintingID == newPrintingID)
+                .ConfigureAwait(false);
+            if (existing is not null)
+            {
+                existing.DesiredQuantity = Math.Max(existing.DesiredQuantity, entity.DesiredQuantity);
+                existing.DateModified = DateTime.UtcNow;
+                _context.PreferredVersions.Remove(entity);
+            }
+            else
+            {
+                entity.CatalogPrintingID = newPrintingID;
+                entity.DateModified = DateTime.UtcNow;
+            }
+
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }
