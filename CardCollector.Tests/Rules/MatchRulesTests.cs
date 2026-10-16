@@ -417,6 +417,7 @@ namespace CardCollector.Tests.Rules
 
             Assert.AreEqual(0, errors.Count);
         }
+
         private static Match BuildMatch(
             MatchResult result,
             int gamesLost = 0,

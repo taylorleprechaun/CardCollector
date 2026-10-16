@@ -1,6 +1,5 @@
 using CardCollector.DTO;
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Services
 {
@@ -280,6 +279,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Dark Magical Curtain", cardName);
             Assert.AreEqual("Extended Art", printVariant);
         }
+
         [TestMethod]
         public void ParseProductName_UnrecognizedQualifier_IsKeptAsDistinctVariant()
         {

@@ -1,8 +1,8 @@
-using System.Security.Cryptography;
-using System.Text;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CardCollector.Rules.Catalog
 {

@@ -1,6 +1,6 @@
+using CardCollector.Data.Models.Catalog;
 using System.Globalization;
 using System.Text;
-using CardCollector.Data.Models.Catalog;
 
 namespace CardCollector.Models.Legacy
 {

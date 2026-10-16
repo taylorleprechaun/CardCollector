@@ -152,6 +152,7 @@ namespace CardCollector.Tests.Services
             Assert.ThrowsExactly<ArgumentNullException>(() =>
                 PurchasePriorityAnalyzer.Evaluate(card, "LOB-EN001", "Secret Rare", null!, AsOfUTC));
         }
+
         private static Card MakeCard(params (string Code, string RarityName)[] sets) => new()
         {
             ID = 1,

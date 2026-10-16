@@ -3,7 +3,6 @@ using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -13,6 +12,7 @@ namespace CardCollector.Tests.Pages
     {
         private Mock<ICardDataRepository> _cardDataRepositoryMock = null!;
         private Mock<ICardService> _cardServiceMock = null!;
+
         [TestMethod]
         public void ActiveFilterCount_CollectionOrderedTrackedWishlistFiltersSet_AddsToBaseCount()
         {
@@ -115,6 +115,7 @@ namespace CardCollector.Tests.Pages
 
             Assert.AreEqual(expected, captured!.IsTracked);
         }
+
         [TestInitialize]
         public void Setup()
         {

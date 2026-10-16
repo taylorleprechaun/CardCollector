@@ -4,7 +4,6 @@ using CardCollector.Extensions;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.ViewModels;
-using Microsoft.Extensions.Logging;
 
 namespace CardCollector.Services
 {
@@ -626,7 +625,6 @@ namespace CardCollector.Services
             };
         }
 
-
         public async Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
             int printingID, decimal? maxPrice = null, DateTime? asOfUTC = null)
         {
@@ -824,10 +822,10 @@ namespace CardCollector.Services
                         candidates.Select(c => c.ID).ToList(), setPrefix, criteria.RarityName, needOwned, needOrdered, needTracked)
                         .ConfigureAwait(false);
 
-                    if (criteria.InCollection == true)  candidates = candidates.Where(c => scoped.OwnedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
+                    if (criteria.InCollection == true) candidates = candidates.Where(c => scoped.OwnedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
                     if (criteria.InCollection == false) candidates = candidates.Where(c => scoped.OwnedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
-                    if (criteria.IsOrdered == true)     candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
-                    if (criteria.IsOrdered == false)    candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
+                    if (criteria.IsOrdered == true) candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
+                    if (criteria.IsOrdered == false) candidates = candidates.Where(c => scoped.OrderedQuantities.GetValueOrDefault(c.ID) == 0).ToList();
 
                     if (criteria.InWishlist == true)
                         candidates = candidates.Where(c => scoped.TrackedCardIDs.Contains(c.ID)
@@ -838,7 +836,7 @@ namespace CardCollector.Services
                             || scoped.OwnedQuantities.GetValueOrDefault(c.ID) > 0
                             || scoped.OrderedQuantities.GetValueOrDefault(c.ID) > 0).ToList();
 
-                    if (criteria.IsTracked == true)  candidates = candidates.Where(c => scoped.TrackedCardIDs.Contains(c.ID)).ToList();
+                    if (criteria.IsTracked == true) candidates = candidates.Where(c => scoped.TrackedCardIDs.Contains(c.ID)).ToList();
                     if (criteria.IsTracked == false) candidates = candidates.Where(c => !scoped.TrackedCardIDs.Contains(c.ID)).ToList();
 
                     filtered = candidates;
@@ -862,10 +860,10 @@ namespace CardCollector.Services
                         ? await GetCardIDsWithUntrackedOwnedPrintingsAsync().ConfigureAwait(false)
                         : null;
 
-                    if (criteria.InCollection == true)  filtered = filtered.Where(c => ownedIDs!.Contains(c.ID));
+                    if (criteria.InCollection == true) filtered = filtered.Where(c => ownedIDs!.Contains(c.ID));
                     if (criteria.InCollection == false) filtered = filtered.Where(c => !ownedIDs!.Contains(c.ID));
-                    if (criteria.IsOrdered == true)     filtered = filtered.Where(c => orderedIDs!.Contains(c.ID));
-                    if (criteria.IsOrdered == false)    filtered = filtered.Where(c => !orderedIDs!.Contains(c.ID));
+                    if (criteria.IsOrdered == true) filtered = filtered.Where(c => orderedIDs!.Contains(c.ID));
+                    if (criteria.IsOrdered == false) filtered = filtered.Where(c => !orderedIDs!.Contains(c.ID));
 
                     if (criteria.InWishlist == true)
                     {
@@ -1159,6 +1157,7 @@ namespace CardCollector.Services
 
             return (submitted.Count, total, editionWarnings);
         }
+
         public async Task UnignoreCardAsync(int cardID) =>
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
 

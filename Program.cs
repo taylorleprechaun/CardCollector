@@ -1,5 +1,4 @@
 using CardCollector.Data;
-using CardCollector.DTO;
 using CardCollector.Extensions;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;

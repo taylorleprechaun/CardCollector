@@ -161,7 +161,9 @@ namespace CardCollector.Tests.Services
             {
                 context.CollectionEntries.Add(new CollectionEntry
                 {
-                    CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
+                    CatalogPrintingID = _printingID,
+                    Quantity = 1,
+                    Status = CollectionStatus.Owned
                 });
                 context.CatalogPrintingSources.Add(new CatalogPrintingSource { CatalogPrintingID = _printingID, ExternalKey = "695684", Source = CatalogSource.TCGPlayer });
                 await context.SaveChangesAsync();
@@ -196,7 +198,10 @@ namespace CardCollector.Tests.Services
             using (var context = NewContext())
             {
                 context.CollectionEntries.Add(new CollectionEntry
-                { CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
+                {
+                    CatalogPrintingID = _printingID,
+                    Quantity = 1,
+                    Status = CollectionStatus.Owned
                 });
                 await context.SaveChangesAsync();
             }
@@ -326,7 +331,11 @@ namespace CardCollector.Tests.Services
             var set = await context.CatalogSets.SingleAsync();
             var printing = new CatalogPrinting
             {
-                CatalogCardID = _cardID, CatalogSetID = set.ID, RarityName = rarityName, SetCode = "BLGG-EN127", Status = CatalogStatus.Active
+                CatalogCardID = _cardID,
+                CatalogSetID = set.ID,
+                RarityName = rarityName,
+                SetCode = "BLGG-EN127",
+                Status = CatalogStatus.Active
             };
             context.CatalogPrintings.Add(printing);
             await context.SaveChangesAsync();

@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using CardCollector.Pages;
 using CardCollector.Tests.TestHelpers;
+using System.Diagnostics;
 
 namespace CardCollector.Tests.Pages
 {

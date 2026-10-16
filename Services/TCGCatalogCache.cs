@@ -1,9 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.RegularExpressions;
 using CardCollector.Data;
 using CardCollector.DTO;
 using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace CardCollector.Services
 {
@@ -236,6 +236,7 @@ namespace CardCollector.Services
                 return null;
             }
         }
+
         [ExcludeFromCodeCoverage(Justification = "Reads catalog JSON from disk; I/O, not testable logic.")]
         private IReadOnlyList<TCGPriceSet> LoadEntriesFromJson(string path)
         {
@@ -250,6 +251,7 @@ namespace CardCollector.Services
                 return [];
             }
         }
+
         private void LogUnrecognizedVariantQualifiers(IReadOnlyList<TCGPriceSet> entries)
         {
             var unrecognized = entries

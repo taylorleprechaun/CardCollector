@@ -1,10 +1,10 @@
-using System.Text.Json;
 using CardCollector.Data.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
 using Moq;
+using System.Text.Json;
 
 namespace CardCollector.Tests.Pages.Tournaments
 {

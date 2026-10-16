@@ -33,7 +33,7 @@ namespace CardCollector.Repository.Sources
         /// Parses a yaml-yugi multi-document YAML stream into card documents, skipping any document that fails to
         /// parse (public for direct unit testing). Unmapped fields are ignored, since real documents carry many.
         /// </summary>
-        public static IReadOnlyList<YamlCard> ParseYaml(string yaml, ILogger? logger = null)
+        public static IReadOnlyList<YamlCard> ParseYAML(string yaml, ILogger? logger = null)
         {
             var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(UnderscoredNamingConvention.Instance)
@@ -138,7 +138,7 @@ namespace CardCollector.Repository.Sources
             {
                 var client = _httpClientFactory.CreateClient();
                 var yaml = await client.GetStringAsync(_yamlYugiURL).ConfigureAwait(false);
-                return ParseYaml(yaml, _logger);
+                return ParseYAML(yaml, _logger);
             }
             catch (Exception ex)
             {

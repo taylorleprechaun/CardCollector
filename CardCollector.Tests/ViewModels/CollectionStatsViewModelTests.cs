@@ -30,6 +30,7 @@ namespace CardCollector.Tests.ViewModels
             Assert.AreEqual("Set1", labels[0]);
             Assert.AreEqual("Set20", labels[19]);
         }
+
         [TestMethod]
         public void SetValueLabelsJson_SerializesAllEntriesWithoutTruncation()
         {

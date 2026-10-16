@@ -92,6 +92,7 @@ namespace CardCollector.Tests.Rules
             Assert.IsNotNull(result);
             Assert.AreEqual(0, result!.LimitsByKonamiID.Count);
         }
+
         [TestMethod]
         public void ParseList_OutOfRangeValue_SkipsThatEntry()
         {

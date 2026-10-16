@@ -173,7 +173,6 @@ namespace CardCollector.Services
         /// </summary>
         Task<Card?> GetRandomUncollectedAsync();
 
-
         /// <summary>
         /// Returns every tracked printing for the given card ID. A card can have any number of tracked
         /// printings at once, each independently targeted.
@@ -258,6 +257,7 @@ namespace CardCollector.Services
         /// raised while committing.
         /// </summary>
         Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
+
         /// <summary>
         /// Clears the ignored status for the given card, resuming Dashboard progress tracking for it. No-ops if not currently ignored.
         /// </summary>

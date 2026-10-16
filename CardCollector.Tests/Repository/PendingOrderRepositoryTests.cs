@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -44,6 +43,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(3, result[101]);
             Assert.AreEqual(1, result[102]);
         }
+
         [TestMethod]
         public async Task DeleteAsync_ExistingLine_RemovesItAndReturnsTrue()
         {

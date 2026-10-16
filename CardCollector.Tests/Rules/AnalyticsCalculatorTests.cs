@@ -71,6 +71,7 @@ namespace CardCollector.Tests.Rules
                 new[] { "Early Format", "Late Format", FormatRules.NO_FORMAT_NAME },
                 report.ByFormat.Select(r => r.Label).ToArray());
         }
+
         [TestMethod]
         public void Calculate_DeckFormats_GroupsDeckNamesIgnoringCaseWithinEachFormat()
         {
@@ -118,6 +119,7 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(2, report.Summary.EventCount);
             Assert.AreEqual(new WinLossTie(2, 1, 1), report.Summary.MatchRecord);
         }
+
         [TestMethod]
         public void Calculate_DiceRolls_BucketsNonByeRoundsByRoll()
         {
@@ -152,6 +154,7 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(0, report.Dice[1].Record.Total);
             Assert.AreEqual(2, report.Dice[2].Record.Total);
         }
+
         [TestMethod]
         public void Calculate_EmptyInput_ReturnsZeroedReport()
         {
@@ -250,6 +253,7 @@ namespace CardCollector.Tests.Rules
 
             Assert.AreEqual(expectedRows, report.Matchups.Count);
         }
+
         [TestMethod]
         public void Calculate_NullEvents_ThrowsArgumentNullException()
         {
@@ -458,36 +462,37 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(0, filtered.Count);
         }
 
-                private static Event BuildEvent(
-                    int id,
-                    string date,
-                    string deckName,
-                    int? finish = null,
-                    EventType eventType = EventType.Locals,
-                    string location = "Test Hobby Shop",
-                    IReadOnlyList<Match>? matches = null) =>
-                    new()
-                    {
-                        Date = DateOnly.Parse(date),
-                        DeckName = deckName,
-                        EventType = eventType,
-                        Finish = finish,
-                        ID = id,
-                        Location = location,
-                        Matches = matches ?? []
-                    };
+        private static Event BuildEvent(
+            int id,
+            string date,
+            string deckName,
+            int? finish = null,
+            EventType eventType = EventType.Locals,
+            string location = "Test Hobby Shop",
+            IReadOnlyList<Match>? matches = null) =>
+            new()
+            {
+                Date = DateOnly.Parse(date),
+                DeckName = deckName,
+                EventType = eventType,
+                Finish = finish,
+                ID = id,
+                Location = location,
+                Matches = matches ?? []
+            };
 
-                private static Format BuildFormat(int id, string name, string start, string? end) =>
-    new()
-    {
-        EndDate = end is null ? null : DateOnly.Parse(end),
-        ID = id,
-        Name = name,
-        StartDate = DateOnly.Parse(start)
-    };
+        private static Format BuildFormat(int id, string name, string start, string? end) =>
+new()
+{
+    EndDate = end is null ? null : DateOnly.Parse(end),
+    ID = id,
+    Name = name,
+    StartDate = DateOnly.Parse(start)
+};
 
-                private static Match Bye(MatchResult result = MatchResult.Win) =>
-                            new() { IsBye = true, OpponentDeck = MatchRules.BYE_OPPONENT_NAME, Result = result, Round = "1" };
+        private static Match Bye(MatchResult result = MatchResult.Win) =>
+                    new() { IsBye = true, OpponentDeck = MatchRules.BYE_OPPONENT_NAME, Result = result, Round = "1" };
+
         private static IReadOnlyList<AnalyticsEvent> Prepare(params Event[] events) =>
             AnalyticsCalculator.Filter(events, Formats, new AnalyticsCriteria());
 

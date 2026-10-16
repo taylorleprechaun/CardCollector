@@ -1,8 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using CardCollector.Models.Catalog;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -484,6 +482,7 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Verify(r => r.UpgradeAsync(2, 102), Times.Once);
             _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
         }
+
         [TestMethod]
         public async Task IgnoreCardAsync_DelegatesToRepository()
         {

@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -87,6 +86,7 @@ namespace CardCollector.Tests.Services
             _pricingDataCacheMock = new Mock<IPricingDataCache>();
             _service = new PricingService(_pricingDataCacheMock.Object);
         }
+
         private static TCGPriceSet MakeSet(string code, string rarityName, string edition, string priceRaw, string? printVariant = null) => new()
         {
             Code = code,

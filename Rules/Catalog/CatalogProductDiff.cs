@@ -1,7 +1,7 @@
-using System.Globalization;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
+using System.Globalization;
 
 namespace CardCollector.Rules.Catalog
 {

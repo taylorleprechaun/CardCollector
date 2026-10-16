@@ -1,7 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
 using CardCollector.Data.Models.Catalog;
-using CardCollector.DTO;
 using CardCollector.Repository;
 using CardCollector.Repository.Catalog;
 using CardCollector.Repository.Legacy;
@@ -187,7 +186,9 @@ namespace CardCollector.Tests.Services
             {
                 context.PreferredVersions.Add(new PreferredVersion
                 {
-                    CatalogPrintingID = _printingID, DesiredQuantity = 1, ID = 10
+                    CatalogPrintingID = _printingID,
+                    DesiredQuantity = 1,
+                    ID = 10
                 });
                 await context.SaveChangesAsync();
             }
@@ -275,7 +276,9 @@ namespace CardCollector.Tests.Services
             using var context = NewContext();
             context.CollectionEntries.Add(new CollectionEntry
             {
-                CatalogPrintingID = _printingID, Quantity = 1, Status = CollectionStatus.Owned
+                CatalogPrintingID = _printingID,
+                Quantity = 1,
+                Status = CollectionStatus.Owned
             });
             await context.SaveChangesAsync();
         }

@@ -1,6 +1,5 @@
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -29,6 +28,7 @@ namespace CardCollector.Tests.Repository
 
             Assert.IsTrue(await repository.IsIgnoredAsync(1));
         }
+
         [TestMethod]
         public async Task GetIgnoredCardIDsAsync_ReturnsSetOfIDs()
         {

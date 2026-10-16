@@ -1,4 +1,3 @@
-using System.Text.Json;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Extensions;
 using CardCollector.Models;
@@ -6,6 +5,7 @@ using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace CardCollector.Pages.Catalog
 {

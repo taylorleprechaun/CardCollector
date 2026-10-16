@@ -103,9 +103,9 @@ function applyBuyListUpdate(result) {
         return;
     }
 
-    if (!result.rowHtml) return;
+    if (!result.rowHTML) return;
 
-    row.outerHTML = result.rowHtml;
+    row.outerHTML = result.rowHTML;
     const newRow = document.querySelector(`#buyListResults .list-group-item[data-printing-id="${CSS.escape(printingID)}"]`);
     const newLineTotal = newRow ? (Number(newRow.dataset.lineTotal) || 0) : 0;
     const newMassEntryLine = newRow ? (newRow.dataset.massEntryLine || '') : '';

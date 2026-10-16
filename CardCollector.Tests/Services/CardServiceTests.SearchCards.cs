@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -348,6 +347,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.TotalCount);
             Assert.AreEqual("Dark Magician", result.Items[0].Name);
         }
+
         /// <summary>Makes the given cards browseable and registers each of their printings with the card data mock.</summary>
         private void SetUpBrowseableCards(params Card[] cards)
         {

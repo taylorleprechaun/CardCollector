@@ -1,5 +1,4 @@
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Services
 {

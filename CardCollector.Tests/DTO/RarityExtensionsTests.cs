@@ -1,5 +1,4 @@
 using CardCollector.DTO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.DTO
 {
@@ -90,7 +89,7 @@ namespace CardCollector.Tests.DTO
 
             Assert.AreEqual(rarityName, result);
         }
-        
+
         [TestMethod]
         [DataRow("Short Print", DisplayName = "Short Print")]
         [DataRow("Super Short Print", DisplayName = "Super Short Print")]

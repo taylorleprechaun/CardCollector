@@ -18,6 +18,7 @@ namespace CardCollector.Pages
 
         public PagedResult<CheckedOutCardViewModel> Results { get; private set; } = new();
         protected override ICardService CardService => _cardService;
+
         public string GetFilterParams()
         {
             var (cardType, rarityName, setName) = GetSafeFilterQueryValues();

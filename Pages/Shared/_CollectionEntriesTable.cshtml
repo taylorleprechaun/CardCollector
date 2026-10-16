@@ -107,7 +107,7 @@
                     </button>
                     @if (Model.ShowRemoveButton)
                     {
-                        <form method="post" action="@Model.DeleteActionUrl" class="d-inline ms-1 ajax-form"
+                        <form method="post" action="@Model.DeleteActionURL" class="d-inline ms-1 ajax-form"
                               onsubmit="return confirm('Remove this entry from your collection?')">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="entryID" value="@entry.EntryID" />

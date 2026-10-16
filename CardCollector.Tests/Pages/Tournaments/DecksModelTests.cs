@@ -1,4 +1,3 @@
-using System.Text.Json;
 using CardCollector.Models;
 using CardCollector.Pages.Tournaments;
 using CardCollector.Services;
@@ -6,6 +5,7 @@ using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Text.Json;
 
 namespace CardCollector.Tests.Pages.Tournaments
 {
@@ -144,6 +144,7 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.AreEqual("Deck linked to 3 events.", model.TempData["Success"]);
         }
+
         [TestMethod]
         public async Task OnPostLinkAsync_SingleEventLinked_ReportsIt()
         {

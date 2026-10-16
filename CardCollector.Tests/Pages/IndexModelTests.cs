@@ -1,7 +1,6 @@
 using CardCollector.Pages;
 using CardCollector.Services;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages

@@ -1,10 +1,10 @@
-using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace CardCollector.Pages
 {
@@ -148,7 +148,7 @@ namespace CardCollector.Pages
                 SortDescending = SortDescending
             };
         }
-        
+
         // Reads filter-state fields from the query string directly because POST body values
         // share names with filter BindProperties and would override the query-string values.
         private object BuildFilterRedirect() => new

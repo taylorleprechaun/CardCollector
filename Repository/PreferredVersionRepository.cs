@@ -1,6 +1,5 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository

@@ -25,6 +25,7 @@ namespace CardCollector.Tests.Services
         private CardService _service = null!;
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
         private Mock<IWishlistValueRepository> _wishlistValueRepositoryMock = null!;
+
         [TestInitialize]
         public void Setup()
         {

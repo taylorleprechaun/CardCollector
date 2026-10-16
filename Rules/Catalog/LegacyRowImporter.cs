@@ -1,8 +1,8 @@
-using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 using CardCollector.Models.Legacy;
+using System.Globalization;
 
 namespace CardCollector.Rules.Catalog
 {
@@ -223,9 +223,11 @@ namespace CardCollector.Rules.Catalog
                 case LegacyMappingRule.CardCorrected:
                     report.CardCorrected++;
                     break;
+
                 case LegacyMappingRule.Exact:
                     report.Exact++;
                     break;
+
                 case LegacyMappingRule.VariantFilled:
                     report.VariantFilled++;
                     break;

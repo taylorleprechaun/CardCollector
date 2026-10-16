@@ -1,8 +1,8 @@
+using CardCollector.Data.Models;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using CardCollector.Data.Models;
 
 namespace CardCollector.Extensions
 {

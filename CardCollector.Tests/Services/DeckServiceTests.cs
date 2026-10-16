@@ -317,6 +317,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(2, linked);
             Assert.AreEqual(deckID, (await context.Events.SingleAsync(e => e.ID == peerID)).DeckID);
         }
+
         [TestMethod]
         public void Preview_InvalidText_ReturnsFailure()
         {

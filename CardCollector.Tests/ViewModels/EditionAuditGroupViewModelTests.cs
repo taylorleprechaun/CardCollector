@@ -1,6 +1,4 @@
-using CardCollector.Data.Models;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.ViewModels
 {
@@ -35,6 +33,7 @@ namespace CardCollector.Tests.ViewModels
 
             Assert.AreEqual(2, result.FlaggedCount);
         }
+
         [TestMethod]
         public void From_OnlyUnverifiableEntries_FlaggedCategoryIsUnverifiable()
         {

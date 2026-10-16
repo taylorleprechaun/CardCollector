@@ -5,8 +5,6 @@ using CardCollector.Models.Catalog;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Extensions
@@ -75,10 +73,6 @@ namespace CardCollector.Tests.Extensions
         {
             var set = new Set { Code = "LOB-EN124", PrintingID = 101, RarityName = "Ultra Rare" };
             _cardServiceMock.Setup(s => s.GetPrintingByID(101)).Returns(new CatalogPrintingRef(new Card { ID = 1, CardSets = [set] }, set));
-        }
-
-        private sealed class TestPageModel : PageModel
-        {
         }
     }
 }

@@ -1,8 +1,8 @@
-using System.Globalization;
 using CardCollector.Extensions;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace CardCollector.Pages
 {
@@ -74,11 +74,11 @@ namespace CardCollector.Pages
             var item = await _cardService.GetPurchasePriorityCandidateAsync(printingID, MaxPricePerCard).ConfigureAwait(false);
 
             var itemRemoved = item is null;
-            var rowHtml = item is null
+            var rowHTML = item is null
                 ? null
                 : await _razorPartialRenderer.RenderPartialAsync(this, "_BuyListRow", item).ConfigureAwait(false);
 
-            return new JsonResult(new { count, total, itemRemoved, rowHtml });
+            return new JsonResult(new { count, total, itemRemoved, rowHTML });
         }
 
         private void NormalizeFilterDefaults()

@@ -1,6 +1,5 @@
 using CardCollector.Data.Models;
 using CardCollector.Services;
-using Microsoft.AspNetCore.Http;
 
 namespace CardCollector
 {

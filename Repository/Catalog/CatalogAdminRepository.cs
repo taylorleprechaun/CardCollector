@@ -1,9 +1,9 @@
-using System.Globalization;
 using CardCollector.Data;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Extensions;
 using CardCollector.Models.Catalog;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace CardCollector.Repository.Catalog
 {

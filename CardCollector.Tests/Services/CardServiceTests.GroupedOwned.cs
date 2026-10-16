@@ -1,6 +1,5 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services

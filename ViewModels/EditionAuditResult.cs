@@ -18,23 +18,23 @@ namespace CardCollector.ViewModels
             CardEdition recordedEdition,
             IReadOnlyList<CardEdition> availableEditions,
             EditionAuditCategory category) => new()
-        {
-            AvailableEditions = availableEditions,
-            AvailableRarities = printing.AvailableRarities,
-            CardID = printing.CardID,
-            CardName = printing.CardName,
-            CardType = printing.CardType,
-            Category = category,
-            CollectionEntryID = collectionEntryID,
-            ImageURLSmall = printing.ImageURLSmall,
-            Price = printing.Price,
-            PrintingID = printing.PrintingID,
-            PrintVariant = printing.PrintVariant,
-            RarityCode = printing.RarityCode,
-            RarityName = printing.RarityName,
-            RecordedEdition = recordedEdition,
-            SetCode = printing.SetCode,
-            SetName = printing.SetName
-        };
+            {
+                AvailableEditions = availableEditions,
+                AvailableRarities = printing.AvailableRarities,
+                CardID = printing.CardID,
+                CardName = printing.CardName,
+                CardType = printing.CardType,
+                Category = category,
+                CollectionEntryID = collectionEntryID,
+                ImageURLSmall = printing.ImageURLSmall,
+                Price = printing.Price,
+                PrintingID = printing.PrintingID,
+                PrintVariant = printing.PrintVariant,
+                RarityCode = printing.RarityCode,
+                RarityName = printing.RarityName,
+                RecordedEdition = recordedEdition,
+                SetCode = printing.SetCode,
+                SetName = printing.SetName
+            };
     }
 }

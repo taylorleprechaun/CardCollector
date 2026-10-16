@@ -1,7 +1,5 @@
-using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Data.Models.Catalog;
-using CardCollector.DTO;
 using CardCollector.Models;
 using CardCollector.Models.Catalog;
 using CardCollector.Models.Legacy;
@@ -11,6 +9,7 @@ using CardCollector.Repository.Legacy;
 using CardCollector.Rules.Catalog;
 using CardCollector.ViewModels;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 
 namespace CardCollector.Services
 {
@@ -62,52 +61,52 @@ namespace CardCollector.Services
             switch (item.Kind)
             {
                 case CatalogReviewItemKind.PasscodeChanged:
-                {
-                    var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
-                    if (card is null || !int.TryParse(CatalogReviewPresenter.ReadString(payload, "Reported"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var reported))
-                        return SaveResult.Missing("The card or the reported passcode is missing.");
-                    resolution = $"Passcode changed from {card.Passcode} to {reported}";
-                    card.Passcode = reported;
-                    card.DateModified = now;
-                    break;
-                }
+                    {
+                        var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
+                        if (card is null || !int.TryParse(CatalogReviewPresenter.ReadString(payload, "Reported"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var reported))
+                            return SaveResult.Missing("The card or the reported passcode is missing.");
+                        resolution = $"Passcode changed from {card.Passcode} to {reported}";
+                        card.Passcode = reported;
+                        card.DateModified = now;
+                        break;
+                    }
                 case CatalogReviewItemKind.CardNameChanged:
-                {
-                    var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
-                    var reported = CatalogReviewPresenter.ReadString(payload, "Reported");
-                    if (card is null || string.IsNullOrWhiteSpace(reported))
-                        return SaveResult.Missing("The card or the reported name is missing.");
-                    resolution = $"Renamed from \"{card.Name}\" to \"{reported}\"";
-                    card.Name = reported;
-                    card.DateModified = now;
-                    break;
-                }
+                    {
+                        var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
+                        var reported = CatalogReviewPresenter.ReadString(payload, "Reported");
+                        if (card is null || string.IsNullOrWhiteSpace(reported))
+                            return SaveResult.Missing("The card or the reported name is missing.");
+                        resolution = $"Renamed from \"{card.Name}\" to \"{reported}\"";
+                        card.Name = reported;
+                        card.DateModified = now;
+                        break;
+                    }
                 case CatalogReviewItemKind.CardNotSeen:
-                {
-                    var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
-                    if (card is null)
-                        return SaveResult.Missing("The card no longer exists.");
-                    var inUse = await _reviewRepository.CountUserRowsForCardAsync(card.ID, cancellationToken).ConfigureAwait(false);
-                    if (inUse > 0)
-                        return SaveResult.Failure([$"{inUse} of your collection, wishlist, checked-out, or cart rows still use this card, so it can't be retired."]);
-                    card.Status = CatalogStatus.Retired;
-                    card.DateModified = now;
-                    resolution = "Card retired";
-                    break;
-                }
+                    {
+                        var card = await _reviewRepository.GetCardAsync(item.CatalogCardID ?? 0, cancellationToken).ConfigureAwait(false);
+                        if (card is null)
+                            return SaveResult.Missing("The card no longer exists.");
+                        var inUse = await _reviewRepository.CountUserRowsForCardAsync(card.ID, cancellationToken).ConfigureAwait(false);
+                        if (inUse > 0)
+                            return SaveResult.Failure([$"{inUse} of your collection, wishlist, checked-out, or cart rows still use this card, so it can't be retired."]);
+                        card.Status = CatalogStatus.Retired;
+                        card.DateModified = now;
+                        resolution = "Card retired";
+                        break;
+                    }
                 default:
-                {
-                    var printing = await _reviewRepository.GetPrintingAsync(item.CatalogPrintingID ?? 0, cancellationToken).ConfigureAwait(false);
-                    if (printing is null)
-                        return SaveResult.Missing("The printing no longer exists.");
-                    var inUse = await _reviewRepository.CountUserRowsForPrintingAsync(printing.ID, cancellationToken).ConfigureAwait(false);
-                    if (inUse > 0)
-                        return SaveResult.Failure([$"{inUse} of your collection, wishlist, checked-out, or cart rows still use this printing, so it can't be retired."]);
-                    printing.Status = CatalogStatus.Retired;
-                    printing.DateModified = now;
-                    resolution = $"Printing {CatalogPrintingFactory.Describe(printing)} retired";
-                    break;
-                }
+                    {
+                        var printing = await _reviewRepository.GetPrintingAsync(item.CatalogPrintingID ?? 0, cancellationToken).ConfigureAwait(false);
+                        if (printing is null)
+                            return SaveResult.Missing("The printing no longer exists.");
+                        var inUse = await _reviewRepository.CountUserRowsForPrintingAsync(printing.ID, cancellationToken).ConfigureAwait(false);
+                        if (inUse > 0)
+                            return SaveResult.Failure([$"{inUse} of your collection, wishlist, checked-out, or cart rows still use this printing, so it can't be retired."]);
+                        printing.Status = CatalogStatus.Retired;
+                        printing.DateModified = now;
+                        resolution = $"Printing {CatalogPrintingFactory.Describe(printing)} retired";
+                        break;
+                    }
             }
 
             Close(item, CatalogReviewItemStatus.Accepted, resolution, now);
@@ -274,6 +273,7 @@ namespace CardCollector.Services
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return SaveResult.Success();
         }
+
         public async Task<CatalogReviewItemViewModel?> GetItemAsync(int id, string? errorMessage = null, CancellationToken cancellationToken = default)
         {
             var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
@@ -461,51 +461,51 @@ namespace CardCollector.Services
             switch (table)
             {
                 case "CollectionEntries":
-                {
-                    var entry = LegacyRowImporter.BuildCollectionEntry(row, target);
-                    if (await _importRepository.FindAsync<CollectionEntry>(e => e.ID == entry.ID, cancellationToken).ConfigureAwait(false) is not null)
-                        entry.ID = 0;
-                    _importRepository.AddRange([entry]);
-                    return SaveResult.Success();
-                }
+                    {
+                        var entry = LegacyRowImporter.BuildCollectionEntry(row, target);
+                        if (await _importRepository.FindAsync<CollectionEntry>(e => e.ID == entry.ID, cancellationToken).ConfigureAwait(false) is not null)
+                            entry.ID = 0;
+                        _importRepository.AddRange([entry]);
+                        return SaveResult.Success();
+                    }
                 case "PendingOrderLines":
-                {
-                    var line = LegacyRowImporter.BuildPendingOrderLine(row, target);
-                    if (await _importRepository.FindAsync<PendingOrderLine>(l => l.ID == line.ID, cancellationToken).ConfigureAwait(false) is not null)
-                        line.ID = 0;
-                    _importRepository.AddRange([line]);
-                    return SaveResult.Success();
-                }
+                    {
+                        var line = LegacyRowImporter.BuildPendingOrderLine(row, target);
+                        if (await _importRepository.FindAsync<PendingOrderLine>(l => l.ID == line.ID, cancellationToken).ConfigureAwait(false) is not null)
+                            line.ID = 0;
+                        _importRepository.AddRange([line]);
+                        return SaveResult.Success();
+                    }
                 case "PreferredVersions":
-                {
-                    var version = LegacyRowImporter.BuildPreferredVersion(row, target);
-                    var existing = await _importRepository.FindAsync<PreferredVersion>(p => p.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
-                    if (existing is not null)
                     {
-                        existing.DesiredQuantity = Math.Max(existing.DesiredQuantity, version.DesiredQuantity);
+                        var version = LegacyRowImporter.BuildPreferredVersion(row, target);
+                        var existing = await _importRepository.FindAsync<PreferredVersion>(p => p.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
+                        if (existing is not null)
+                        {
+                            existing.DesiredQuantity = Math.Max(existing.DesiredQuantity, version.DesiredQuantity);
+                            return SaveResult.Success();
+                        }
+
+                        if (await _importRepository.FindAsync<PreferredVersion>(p => p.ID == version.ID, cancellationToken).ConfigureAwait(false) is not null)
+                            version.ID = 0;
+                        _importRepository.AddRange([version]);
                         return SaveResult.Success();
                     }
-
-                    if (await _importRepository.FindAsync<PreferredVersion>(p => p.ID == version.ID, cancellationToken).ConfigureAwait(false) is not null)
-                        version.ID = 0;
-                    _importRepository.AddRange([version]);
-                    return SaveResult.Success();
-                }
                 case "CheckedOutCards":
-                {
-                    var checkedOut = LegacyRowImporter.BuildCheckedOutCard(row, target);
-                    var existing = await _importRepository.FindAsync<CheckedOutCard>(c => c.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
-                    if (existing is not null)
                     {
-                        existing.Quantity += checkedOut.Quantity;
+                        var checkedOut = LegacyRowImporter.BuildCheckedOutCard(row, target);
+                        var existing = await _importRepository.FindAsync<CheckedOutCard>(c => c.CatalogPrintingID == target.PrintingID, cancellationToken).ConfigureAwait(false);
+                        if (existing is not null)
+                        {
+                            existing.Quantity += checkedOut.Quantity;
+                            return SaveResult.Success();
+                        }
+
+                        if (await _importRepository.FindAsync<CheckedOutCard>(c => c.ID == checkedOut.ID, cancellationToken).ConfigureAwait(false) is not null)
+                            checkedOut.ID = 0;
+                        _importRepository.AddRange([checkedOut]);
                         return SaveResult.Success();
                     }
-
-                    if (await _importRepository.FindAsync<CheckedOutCard>(c => c.ID == checkedOut.ID, cancellationToken).ConfigureAwait(false) is not null)
-                        checkedOut.ID = 0;
-                    _importRepository.AddRange([checkedOut]);
-                    return SaveResult.Success();
-                }
                 default:
                     return SaveResult.Failure([$"Rows from {table} can't be restored on a printing."]);
             }

@@ -17,7 +17,7 @@ namespace CardCollector.Tests.Repository.Sources
                 fake_password: 10000040
                 """;
 
-            var card = YamlYugiSource.ParseYaml(yaml).Single();
+            var card = YamlYugiSource.ParseYAML(yaml).Single();
 
             Assert.AreEqual(10112, card.KonamiID);
             Assert.IsNull(card.Password);
@@ -42,7 +42,7 @@ namespace CardCollector.Tests.Repository.Sources
                     - Ultra Rare
                 """;
 
-            var cards = YamlYugiSource.ParseYaml(yaml);
+            var cards = YamlYugiSource.ParseYAML(yaml);
 
             Assert.AreEqual(2, cards.Count);
             Assert.AreEqual(22222222, cards[1].Password);
@@ -61,7 +61,7 @@ namespace CardCollector.Tests.Repository.Sources
                 password: 22222222
                 """;
 
-            var cards = YamlYugiSource.ParseYaml(yaml);
+            var cards = YamlYugiSource.ParseYAML(yaml);
 
             Assert.AreEqual(1, cards.Count);
             Assert.AreEqual(2, cards[0].KonamiID);

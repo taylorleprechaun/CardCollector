@@ -200,6 +200,7 @@ namespace CardCollector.Rules.Catalog
             SyncImages(card, observed.Images, now);
             return card;
         }
+
         private static void SyncAliases(CatalogCard card, ObservedCard observed, CatalogSyncContext context, CatalogDiffResult result)
         {
             var now = context.NowUTC;

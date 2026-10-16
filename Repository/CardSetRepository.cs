@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.DTO;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Repository
 {
@@ -70,7 +68,7 @@ namespace CardCollector.Repository
         }
 
         public string? GetTCGDateBySetCode(string fullSetCode) => GetTCGDateBySetCode(_dateByCode, fullSetCode);
-        
+
         [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus HTTP fetch orchestration; I/O, not testable logic.")]
         public async Task LoadIfStaleAsync()
         {

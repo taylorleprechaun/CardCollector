@@ -1,11 +1,10 @@
-using System.Text;
 using CardCollector.Data.Models;
 using CardCollector.Pages;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Text;
 
 namespace CardCollector.Tests.Pages
 {

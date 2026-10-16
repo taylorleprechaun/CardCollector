@@ -15,11 +15,14 @@ namespace CardCollector.Repository.Catalog
         private readonly ILogger<CatalogCardDataRepository> _logger;
         private volatile CatalogReadModel _model = CatalogReadModel.Empty;
         private readonly object _queueGate = new();
+
         /// <summary>Runs reloads one at a time, so a reload that started later (and read newer data) always finishes last.</summary>
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
+
         private bool _reloadPending;
         private bool _reloadQueued;
         private readonly IServiceScopeFactory _scopeFactory;
+
         /// <summary>Lets only one sync run at a time (the startup warm-up can overlap the nightly refresh).</summary>
         private readonly SemaphoreSlim _syncLock = new(1, 1);
 

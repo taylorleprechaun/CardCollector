@@ -35,7 +35,7 @@ namespace CardCollector.Tests.DTO.YamlYugi
         /// Deserializes a single yaml-yugi card document into a <see cref="YamlCard"/>.
         /// </summary>
         /// <remarks>
-        /// Mirrors YamlYugiSource.ParseYaml: UnderscoredNamingConvention with unmatched
+        /// Mirrors YamlYugiSource.ParseYAML: UnderscoredNamingConvention with unmatched
         /// properties ignored, since real yaml-yugi documents carry many fields this DTO doesn't map.
         /// </remarks>
         /// <param name="yaml">One yaml-yugi card document.</param>

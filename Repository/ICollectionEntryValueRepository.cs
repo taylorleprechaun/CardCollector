@@ -27,7 +27,7 @@ namespace CardCollector.Repository
         /// snapshot date per calendar month for older data.
         /// </summary>
         Task PruneSnapshotsAsync();
-        
+
         /// <summary>
         /// Inserts or updates entry-level value snapshots for the given snapshot date.
         /// </summary>

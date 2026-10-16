@@ -69,6 +69,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Alpha Era", saved.Name);
             CollectionAssert.AreEqual(new[] { "First", "Second" }, saved.Strategies.Select(s => s.Name).ToArray());
         }
+
         [TestMethod]
         public async Task DeleteAsync_ExistingFormat_ReturnsTrue()
         {

@@ -42,6 +42,7 @@ namespace CardCollector.Tests.Repository
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.AddAsync(null!));
         }
+
         [TestMethod]
         public async Task DeleteAsync_FormatExists_RemovesFormatAndStrategies()
         {
@@ -170,6 +171,7 @@ namespace CardCollector.Tests.Repository
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         }
+
         private static Format BuildFormat(string name, DateOnly start, DateOnly? end, params string[] strategies) =>
             new()
             {

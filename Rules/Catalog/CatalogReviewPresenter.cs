@@ -1,9 +1,9 @@
-using System.Globalization;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.DTO;
 using CardCollector.Models.Catalog;
 using CardCollector.ViewModels;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 
 namespace CardCollector.Rules.Catalog
 {

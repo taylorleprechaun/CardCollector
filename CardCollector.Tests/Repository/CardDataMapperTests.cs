@@ -1,7 +1,6 @@
 using CardCollector.DTO;
 using CardCollector.DTO.YamlYugi;
 using CardCollector.Repository;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -64,6 +63,7 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual(expected, result);
         }
+
         [TestMethod]
         [DataRow(null, "Normal Monster", DisplayName = "Null type line")]
         [DataRow("Dragon / Fusion", "Fusion Monster", DisplayName = "Fusion")]
@@ -126,6 +126,5 @@ namespace CardCollector.Tests.Repository
 
             Assert.AreEqual(expected, result);
         }
-
     }
 }

@@ -3,6 +3,7 @@ namespace CardCollector.Data.Models
     public sealed class CollectionValueSnapshot : IValueSnapshotEntity
     {
         public int CardCount { get; set; }
+
         int IValueSnapshotEntity.Count
         {
             get => CardCount;

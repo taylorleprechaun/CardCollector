@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Repository;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Services
 {
@@ -14,7 +14,7 @@ namespace CardCollector.Services
         private readonly IHostApplicationLifetime _lifetime;
         private readonly ILogger<CatalogWarmupHostedService> _logger;
         private readonly IPricingDataCache _pricingDataCache;
-        
+
         /// <summary>
         /// Set on the ApplicationStarted callback and read when the host stops, which can be on another thread.
         /// </summary>

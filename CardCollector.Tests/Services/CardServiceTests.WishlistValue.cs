@@ -1,5 +1,4 @@
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Moq;
 
 namespace CardCollector.Tests.Services

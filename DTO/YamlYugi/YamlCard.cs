@@ -26,9 +26,11 @@ namespace CardCollector.DTO.YamlYugi
         public int? Password { get; set; }
         public string? Property { get; set; }
         public int? Rank { get; set; }
+
         // Images intentionally omitted — card images come from the YGOProDeck image cache.
         // IgnoreUnmatchedProperties handles skipping the images block.
         public YamlCardSets? Sets { get; set; }
+
         public YamlLocalizedString? Text { get; set; }
     }
 
@@ -41,6 +43,7 @@ namespace CardCollector.DTO.YamlYugi
     {
         public string? En { get; set; }
     }
+
     public sealed class YamlSetEntry
     {
         public List<string>? Rarities { get; set; }

@@ -1,7 +1,6 @@
 using CardCollector.Pages;
 using CardCollector.Services;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -22,7 +21,7 @@ namespace CardCollector.Tests.Pages
 
             await page.OnGetAsync();
 
-            Assert.AreEqual("[{\"cardID\":7,\"imageURL\":\"url.jpg\",\"name\":\"Dark Magician\"}]", page.PriceHistoryCardsJson);
+            Assert.AreEqual("[{\"cardID\":7,\"imageURL\":\"url.jpg\",\"name\":\"Dark Magician\"}]", page.PriceHistoryCardsJSON);
         }
     }
 }

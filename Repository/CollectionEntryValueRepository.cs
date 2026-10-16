@@ -63,7 +63,7 @@ namespace CardCollector.Repository
                   )
                 """).ConfigureAwait(false);
         }
-        
+
         public async Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate)
         {
             var existing = await _context.CollectionEntryValueSnapshots

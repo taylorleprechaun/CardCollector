@@ -26,11 +26,11 @@ describe('buy-list.js', () => {
       expect(() => applyBuyListUpdate({ itemRemoved: true })).not.toThrow();
     });
 
-    it('no rowHtml and not removed is a no-op', () => {
+    it('no rowHTML and not removed is a no-op', () => {
       setupRow();
       buyListState = { itemsCount: 1, totalCost: 15, totalBudget: null };
 
-      applyBuyListUpdate({ itemRemoved: false, rowHtml: null });
+      applyBuyListUpdate({ itemRemoved: false, rowHTML: null });
 
       expect(buyListState.totalCost).toBe(15);
     });
@@ -41,7 +41,7 @@ describe('buy-list.js', () => {
 
       applyBuyListUpdate({
         itemRemoved: false,
-        rowHtml: '<div class="list-group-item" data-printing-id="101" data-line-total="20" data-mass-entry-line="1 Dark Magician [LOB]"></div>'
+        rowHTML: '<div class="list-group-item" data-printing-id="101" data-line-total="20" data-mass-entry-line="1 Dark Magician [LOB]"></div>'
       });
 
       expect(document.querySelector('.list-group-item').dataset.lineTotal).toBe('20');
@@ -123,7 +123,7 @@ describe('buy-list.js', () => {
       setupForm();
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ count: 2, total: 15, itemRemoved: false, rowHtml: null })
+        json: () => Promise.resolve({ count: 2, total: 15, itemRemoved: false, rowHTML: null })
       });
 
       await submitAddToCart();

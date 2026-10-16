@@ -87,6 +87,7 @@ namespace CardCollector.Tests.Extensions
 
             Assert.IsNotNull(service);
         }
+
         /// <summary>
         /// Registers what the module expects the app to provide, then builds with scope validation on, so a
         /// scoped dependency captured by a singleton fails the build.

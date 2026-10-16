@@ -72,6 +72,7 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.AreEqual("Sample Deck", model.DeckOptions.Single().Name);
         }
+
         [TestMethod]
         public async Task OnGetAsync_FiltersBound_PassesThemToTheService()
         {
@@ -229,6 +230,7 @@ namespace CardCollector.Tests.Pages.Tournaments
                 new[] { "Finish must be a whole number.", "Players must be a whole number." },
                 model.Errors.ToArray());
         }
+
         [TestMethod]
         public async Task OnPostSaveAsync_MissingDateAndType_ReturnsRequiredErrorsWithoutSaving()
         {
@@ -290,26 +292,27 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreEqual("Sample Deck", model.Input.DeckName);
         }
 
-                private static EventInputModel BuildInput(
-                    bool hasDate = true,
-                    EventType? eventType = EventType.Regional,
-                    int id = 0) =>
-                    new()
-                    {
-                        Date = hasDate ? new DateOnly(2024, 5, 4) : null,
-                        DeckName = "Sample Deck",
-                        EventType = eventType,
-                        ID = id,
-                        Location = "Test Hobby Shop"
-                    };
+        private static EventInputModel BuildInput(
+            bool hasDate = true,
+            EventType? eventType = EventType.Regional,
+            int id = 0) =>
+            new()
+            {
+                Date = hasDate ? new DateOnly(2024, 5, 4) : null,
+                DeckName = "Sample Deck",
+                EventType = eventType,
+                ID = id,
+                Location = "Test Hobby Shop"
+            };
 
-                private static EventListItemViewModel BuildItem(int id) =>
-                    new()
+        private static EventListItemViewModel BuildItem(int id) =>
+            new()
             {
                 Event = new Event { Date = new DateOnly(2024, 5, 4), DeckName = "Sample Deck", ID = id, Location = "Test Hobby Shop" },
                 FormatName = "Alpha Era",
                 Record = new WinLossTie(1, 0, 0)
             };
+
         private static PagedResult<EventListItemViewModel> BuildPage(int page, params EventListItemViewModel[] items) =>
             new() { Items = items, Page = page, PageSize = 25, TotalCount = items.Length };
 

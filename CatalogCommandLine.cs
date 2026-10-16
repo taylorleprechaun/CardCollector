@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 using CardCollector.Services;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector
 {
@@ -66,15 +66,19 @@ namespace CardCollector
                     case "--to" when command == MIGRATE_LEGACY && i + 1 < args.Count:
                         databasePath = args[++i];
                         break;
+
                     case "--from" when command == MIGRATE_LEGACY && i + 1 < args.Count:
                         legacyDatabasePath = args[++i];
                         break;
+
                     case "--offline":
                         offline = true;
                         break;
+
                     case "--overwrite" when command == MIGRATE_LEGACY:
                         overwrite = true;
                         break;
+
                     default:
                         throw new ArgumentException($"Unknown option \"{args[i]}\". {Usage(command)}", nameof(args));
                 }

@@ -3,7 +3,6 @@ using CardCollector.DTO;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
-using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 

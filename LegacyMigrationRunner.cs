@@ -1,8 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Models.Catalog;
 using CardCollector.Models.Legacy;
 using CardCollector.Services;
 using Microsoft.Data.Sqlite;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector
 {

@@ -80,7 +80,5 @@ namespace CardCollector.Tests.Services
 
             return new WarmupTestContext(service, started, cardDataLoad);
         }
-
-        private sealed record WarmupTestContext(CatalogWarmupHostedService Service, CancellationTokenSource Started, TaskCompletionSource CardDataLoad);
     }
 }

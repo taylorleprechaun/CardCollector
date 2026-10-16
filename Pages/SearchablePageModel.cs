@@ -36,6 +36,7 @@ namespace CardCollector.Pages
         public string? SetName { get; set; }
 
         protected abstract ICardService CardService { get; }
+
         public virtual IReadOnlyDictionary<string, string?> GetPaginationParams() =>
             new Dictionary<string, string?>
             {
@@ -43,6 +44,7 @@ namespace CardCollector.Pages
                 ["rarityName"] = RarityName,
                 ["setName"] = SetName
             };
+
         public IActionResult OnGetAutocomplete(string? q)
         {
             if (string.IsNullOrWhiteSpace(q))

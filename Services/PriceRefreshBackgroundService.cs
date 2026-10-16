@@ -28,7 +28,7 @@ namespace CardCollector.Services
             _scopeFactory = scopeFactory;
         }
 
-        // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
+        // Public for direct unit testing — pure timezone math, no I/O. nowUTC is a parameter (rather
         // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
         public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUTC)
         {
@@ -64,6 +64,7 @@ namespace CardCollector.Services
                 await RunNightlyRefreshAsync(stoppingToken);
             }
         }
+
         [ExcludeFromCodeCoverage(Justification = "Orchestrates a real DI scope and downstream services; a mocked-scope test would only re-assert the mock setup, not real behavior.")]
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {

@@ -1,14 +1,11 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Data.Models.Catalog;
-using CardCollector.DTO;
-using CardCollector.DTO.YamlYugi;
-using CardCollector.DTO.YGOProDeck;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Repository.Catalog;
 using CardCollector.Repository.Sources;
 using CardCollector.Rules.Catalog;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Services
 {

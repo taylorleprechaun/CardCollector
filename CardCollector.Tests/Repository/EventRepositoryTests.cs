@@ -46,6 +46,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreNotEqual(default, saved.DateCreated);
             Assert.AreEqual(saved.DateCreated, saved.DateModified);
         }
+
         [TestMethod]
         public async Task AddAsync_NullEvent_ThrowsArgumentNullException()
         {
@@ -85,6 +86,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(1, await context.Matches.CountAsync());
             Assert.AreEqual(keptID, (await context.Matches.SingleAsync()).EventID);
         }
+
         [TestMethod]
         public async Task GetAllWithMatchesAsync_NoEvents_ReturnsEmpty()
         {
@@ -112,6 +114,7 @@ namespace CardCollector.Tests.Repository
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, events[0].Matches.Select(m => m.Sequence).ToArray());
             CollectionAssert.AreEqual(new[] { 1, 2 }, events[1].Matches.Select(m => m.Sequence).ToArray());
         }
+
         [TestMethod]
         public async Task GetAsync_EventMissing_ReturnsNull()
         {
@@ -148,6 +151,7 @@ namespace CardCollector.Tests.Repository
 
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, loaded!.Matches.Select(m => m.Sequence).ToArray());
         }
+
         [TestMethod]
         public async Task GetByDeckAsync_EventsOfSeveralDecks_ReturnsOnlyTheDecksEventsNewestFirst()
         {
@@ -368,6 +372,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual("100% Games", percent.Items.Single().Location);
             Assert.AreEqual("Under_score Cards", underscore.Items.Single().Location);
         }
+
         [TestMethod]
         public async Task SearchAsync_NoFilters_ReturnsEventsNewestFirstWithRounds()
         {
@@ -409,6 +414,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(2, result.Page);
             Assert.AreEqual(2, result.PageSize);
         }
+
         [TestMethod]
         public async Task SearchAsync_SameDateEvents_AreBothReturnedNewestIDFirst()
         {
@@ -421,6 +427,7 @@ namespace CardCollector.Tests.Repository
 
             CollectionAssert.AreEqual(new[] { secondID, firstID }, result.Items.Select(e => e.ID).ToArray());
         }
+
         [TestMethod]
         public async Task SetDeckAsync_DeckIDIsNull_ClearsTheLink()
         {
@@ -506,6 +513,7 @@ namespace CardCollector.Tests.Repository
             Assert.AreEqual(12, saved.DeckID);
             Assert.AreEqual(2, saved.Matches.Count);
         }
+
         [TestMethod]
         public async Task UpdateAsync_NullEvent_ThrowsArgumentNullException()
         {
@@ -514,6 +522,7 @@ namespace CardCollector.Tests.Repository
 
             await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         }
+
         private static async Task<int> AddEventAsync(AppDBContext context, string date, string? decklistURL = null, int? deckID = null)
         {
             var tournamentEvent = BuildEvent(date, "Test Hobby Shop", "Sample Deck");

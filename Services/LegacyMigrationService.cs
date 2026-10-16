@@ -1,4 +1,3 @@
-using CardCollector.Data.Models;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Models.Catalog;
 using CardCollector.Models.Legacy;

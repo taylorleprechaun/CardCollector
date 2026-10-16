@@ -2,7 +2,6 @@ using CardCollector.DTO;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
