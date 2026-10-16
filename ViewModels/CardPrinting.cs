@@ -2,8 +2,6 @@ namespace CardCollector.ViewModels
 {
     public class CardPrinting
     {
-        public IReadOnlyList<string> AvailableRarities { get; init; } = [];
-
         public int CardID { get; init; }
 
         public string CardName { get; init; } = string.Empty;
@@ -32,7 +30,6 @@ namespace CardCollector.ViewModels
 
         public CardPrinting WithPrice(decimal? price) => new()
         {
-            AvailableRarities = AvailableRarities,
             CardID = CardID,
             CardName = CardName,
             CardType = CardType,

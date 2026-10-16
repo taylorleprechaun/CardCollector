@@ -40,8 +40,7 @@ namespace CardCollector.Pages
 
         public string GetFilterParams()
         {
-            var rarityName = Request.Query["rarityName"].FirstOrDefault();
-            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&category={Category}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(RarityName ?? string.Empty)}&category={Category}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams()
@@ -122,7 +121,7 @@ namespace CardCollector.Pages
             Page = page,
             PageSize = pageSize,
             Query = Query,
-            RarityName = Request.Query["rarityName"].FirstOrDefault(),
+            RarityName = RarityName,
             SetName = SetName
         };
 
@@ -133,7 +132,7 @@ namespace CardCollector.Pages
             pageNumber = PageNumber,
             pageSize = PageSize,
             query = Query,
-            rarityName = Request.Query["rarityName"].FirstOrDefault(),
+            rarityName = RarityName,
             setName = SetName
         };
     }

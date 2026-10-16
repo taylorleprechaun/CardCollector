@@ -24,7 +24,6 @@ namespace CardCollector.ViewModels
 
         public static PendingOrderLineViewModel From(CardPrinting printing, PendingOrderLine line) => new()
         {
-            AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,

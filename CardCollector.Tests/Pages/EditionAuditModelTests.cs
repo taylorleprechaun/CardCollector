@@ -4,10 +4,8 @@ using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Primitives;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -38,9 +36,10 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public void GetFilterParams_IncludesRarityNameFromQueryString()
+        public void GetFilterParams_RarityFilter_IncludesIt()
         {
-            var page = CreatePage(rarityNameQuery: "Ultra Rare");
+            var page = CreatePage();
+            page.RarityName = "Ultra Rare";
 
             var result = page.GetFilterParams();
 
@@ -154,7 +153,7 @@ namespace CardCollector.Tests.Pages
             _razorPartialRendererMock = new Mock<IRazorPartialRenderer>();
         }
 
-        private EditionAuditModel CreatePage(bool isAjax = false, string? rarityNameQuery = null)
+        private EditionAuditModel CreatePage(bool isAjax = false)
         {
             var page = new EditionAuditModel(
                 _cardDataRepositoryMock.Object, _cardServiceMock.Object, _collectionRepositoryMock.Object, _razorPartialRendererMock.Object);
@@ -162,8 +161,6 @@ namespace CardCollector.Tests.Pages
             {
                 if (isAjax)
                     httpContext.Request.Headers["X-Requested-With"] = "XMLHttpRequest";
-                if (rarityNameQuery is not null)
-                    httpContext.Request.Query = new QueryCollection(new Dictionary<string, StringValues> { ["rarityName"] = rarityNameQuery });
             });
             return page;
         }

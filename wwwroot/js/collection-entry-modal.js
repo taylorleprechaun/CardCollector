@@ -10,8 +10,6 @@ async function openModal(printingID, setCode, setName, action, rarityName, tcgDa
     submitBtn.textContent = isOrder ? 'Confirm Order' : 'Add to Collection';
     submitBtn.className = isOrder ? 'btn btn-primary' : 'btn btn-success';
 
-    document.getElementById('atcRarityName').value = rarityName || '';
-    document.getElementById('atcPrintVariant').value = printVariant || '';
     document.getElementById('atcRarityDisplay').textContent = (rarityName || '') + (printVariant ? ` (${printVariant})` : '');
 
     document.getElementById('atcAcquisitionGroup').style.display = isOrder ? 'none' : 'block';

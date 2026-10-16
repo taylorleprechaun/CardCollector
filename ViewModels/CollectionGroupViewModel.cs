@@ -47,7 +47,6 @@ namespace CardCollector.ViewModels
             DateTime? checkedOutDate = null,
             int completeThreshold = 3) => new()
             {
-                AvailableRarities = printing.AvailableRarities,
                 CardID = printing.CardID,
                 CardName = printing.CardName,
                 CardType = printing.CardType,

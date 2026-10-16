@@ -15,7 +15,6 @@ namespace CardCollector.ViewModels
             {
                 AcquisitionMethod = entry.AcquisitionMethod,
                 AvailableEditions = availableEditions,
-                AvailableRarities = entry.AvailableRarities,
                 CardID = entry.CardID,
                 CardName = entry.CardName,
                 CardType = entry.CardType,

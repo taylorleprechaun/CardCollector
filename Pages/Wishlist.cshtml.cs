@@ -64,8 +64,7 @@ namespace CardCollector.Pages
 
         public string GetFilterParams()
         {
-            var rarityName = Request.Query["rarityName"].FirstOrDefault();
-            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&sortBy={SortBy}&sortDescending={SortDescending}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(RarityName ?? string.Empty)}&sortBy={SortBy}&sortDescending={SortDescending}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams()
@@ -135,14 +134,13 @@ namespace CardCollector.Pages
 
         private WishlistSearchCriteria BuildCurrentCriteria(int page, int pageSize)
         {
-            var rarityName = Request.Query["rarityName"].FirstOrDefault();
             return new WishlistSearchCriteria
             {
                 CardType = CardType,
                 Page = page,
                 PageSize = pageSize,
                 Query = Query,
-                RarityName = rarityName,
+                RarityName = RarityName,
                 SetName = SetName,
                 SortBy = SortBy,
                 SortDescending = SortDescending
@@ -157,7 +155,7 @@ namespace CardCollector.Pages
             pageNumber = PageNumber,
             pageSize = PageSize,
             query = Query,
-            rarityName = Request.Query["rarityName"].FirstOrDefault(),
+            rarityName = RarityName,
             setName = SetName,
             sortBy = SortBy,
             sortDescending = SortDescending

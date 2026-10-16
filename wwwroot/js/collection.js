@@ -3,7 +3,6 @@ async function openAddModal(btn) {
     document.getElementById('atcPrintingID').value = printingID;
 
     const rarity = btn.dataset.rarityName || '';
-    document.getElementById('atcRarityName').value = rarity;
     document.getElementById('atcRarityDisplay').textContent = rarity;
     document.getElementById('atcAcquisitionGroup').style.display = 'block';
     setQuantityButtons('atcQuantity', 1);

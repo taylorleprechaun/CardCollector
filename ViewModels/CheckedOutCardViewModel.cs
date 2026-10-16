@@ -10,7 +10,6 @@ namespace CardCollector.ViewModels
 
         public static CheckedOutCardViewModel From(CardPrinting printing, DateTime checkedOutDate, int checkedOutQuantity, int totalOwnedQuantity) => new()
         {
-            AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,

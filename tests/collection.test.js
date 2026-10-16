@@ -21,7 +21,7 @@ describe('collection.js', () => {
   it('blank rarityName defaults to an empty string', async () => {
     document.body.innerHTML = `
       <input id="atcPrintingID" />
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup"></div>
       <input type="hidden" id="atcQuantity" />
       <select id="atcCondition"><option value="4"></option></select>
@@ -40,7 +40,6 @@ describe('collection.js', () => {
 
     await openAddModal(document.getElementById('btn'));
 
-    expect(document.getElementById('atcRarityName').value).toBe('');
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('');
   });
 
@@ -59,7 +58,7 @@ describe('collection.js', () => {
   function setupForm() {
     document.body.innerHTML = `
       <input id="atcPrintingID" />
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup" style="display: none;"></div>
       <input type="hidden" id="atcQuantity" />
       <select id="atcCondition"><option value="4"></option></select>

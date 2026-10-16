@@ -52,12 +52,11 @@ describe('collection-entry-modal.js', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/price?printingID=101&'));
   });
 
-  it('blank rarityName defaults the rarity fields to empty strings', async () => {
+  it('blank rarityName leaves the rarity display empty', async () => {
     setupForm();
 
     await openModal(101, 'LOB-EN001', 'Legend', 'Order', null, null);
 
-    expect(document.getElementById('atcRarityName').value).toBe('');
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('');
   });
 
@@ -68,7 +67,7 @@ describe('collection-entry-modal.js', () => {
       </form>
       <input id="atcPrintingID" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
       <button id="modalSubmitBtn"></button>
-      <input id="atcRarityName" /><input id="atcPrintVariant" /><span id="atcRarityDisplay"></span>
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup"></div>
       <select id="atcCondition"><option value="4"></option></select>
       <select id="atcEdition"><option value="0"></option></select>

@@ -5,7 +5,6 @@ function setSelect(id, value) {
 function openEditModal(btn) {
     const ds = btn.dataset;
     document.getElementById('editEntryID').value = ds.entryId;
-    document.getElementById('editRarityName').value = ds.rarityName || '';
     document.getElementById('editRarityDisplay').textContent = ds.rarityName || '';
     setQuantityButtons('editQuantity', ds.quantity);
     setSelect('editCondition', ds.condition);

@@ -69,8 +69,8 @@ namespace CardCollector.Pages
 
         public string GetFilterParams()
         {
-            var (acquisitionMethod, checkedOutFilter, condition, edition, rarityName) = GetSafeFilterQueryValues();
-            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&condition={condition}&edition={edition}&acquisitionMethod={acquisitionMethod}&checkedOutFilter={checkedOutFilter}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
+            var (acquisitionMethod, checkedOutFilter, condition, edition) = GetSafeFilterQueryValues();
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(RarityName ?? string.Empty)}&condition={condition}&edition={edition}&acquisitionMethod={acquisitionMethod}&checkedOutFilter={checkedOutFilter}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams()
@@ -180,7 +180,7 @@ namespace CardCollector.Pages
 
         private CollectionSearchCriteria BuildCurrentCriteria(int page, int pageSize)
         {
-            var (acquisitionMethodRaw, checkedOutFilter, conditionRaw, editionRaw, rarityName) = GetSafeFilterQueryValues();
+            var (acquisitionMethodRaw, checkedOutFilter, conditionRaw, editionRaw) = GetSafeFilterQueryValues();
 
             return new CollectionSearchCriteria
             {
@@ -192,14 +192,14 @@ namespace CardCollector.Pages
                 Page = page,
                 PageSize = pageSize,
                 Query = Query,
-                RarityName = rarityName,
+                RarityName = RarityName,
                 SetName = SetName
             };
         }
 
         private object BuildFilterRedirect()
         {
-            var (acquisitionMethod, checkedOutFilter, condition, edition, rarityName) = GetSafeFilterQueryValues();
+            var (acquisitionMethod, checkedOutFilter, condition, edition) = GetSafeFilterQueryValues();
             return new
             {
                 acquisitionMethod,
@@ -210,17 +210,20 @@ namespace CardCollector.Pages
                 pageNumber = PageNumber,
                 pageSize = PageSize,
                 query = Query,
-                rarityName,
+                rarityName = RarityName,
                 setName = SetName
             };
         }
 
-        private (string? AcquisitionMethod, string? CheckedOutFilter, string? Condition, string? Edition, string? RarityName) GetSafeFilterQueryValues() => (
+        /// <summary>
+        /// The condition, edition, and acquisition filters, read from the query string: the edit and add forms post fields
+        /// with the same names, which would otherwise bind over the filters on a post.
+        /// </summary>
+        private (string? AcquisitionMethod, string? CheckedOutFilter, string? Condition, string? Edition) GetSafeFilterQueryValues() => (
             Request.Query["acquisitionMethod"].FirstOrDefault(),
             Request.Query["checkedOutFilter"].FirstOrDefault(),
             Request.Query["condition"].FirstOrDefault(),
-            Request.Query["edition"].FirstOrDefault(),
-            Request.Query["rarityName"].FirstOrDefault());
+            Request.Query["edition"].FirstOrDefault());
 
         private static bool? ParseFilter(string? value) => value == "yes" ? true : value == "no" ? false : null;
 

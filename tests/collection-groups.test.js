@@ -98,7 +98,7 @@ describe('collection-groups.js', () => {
   describe('openEditModal', () => {
     it('populates fields from the button dataset and marks the ajax target row', () => {
       document.body.innerHTML = `
-        <input id="editEntryID" /><input id="editRarityName" /><span id="editRarityDisplay"></span>
+        <input id="editEntryID" /><span id="editRarityDisplay"></span>
         <input type="hidden" id="editQuantity" />
         <select id="editCondition"><option value="2"></option></select>
         <select id="editEdition"><option value="1"></option></select>

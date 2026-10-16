@@ -28,7 +28,6 @@ namespace CardCollector.ViewModels
 
         public static PurchasePriorityCandidateViewModel From(CardPrinting printing, PurchasePriorityCandidate candidate, int quantityOwned = 0, bool hasAmbiguousSetCode = false, int cartQuantity = 0, int orderedQuantity = 0, int completeThreshold = 3) => new()
         {
-            AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,

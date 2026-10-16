@@ -1361,12 +1361,6 @@ namespace CardCollector.Services
             var rarityName = RarityExtensions.NormalizeRarityName(set.RarityName) ?? string.Empty;
             return new CardPrinting
             {
-                AvailableRarities = (card.CardSets ?? [])
-                    .Where(s => s.Code == set.Code && !string.IsNullOrEmpty(s.RarityName))
-                    .Select(s => RarityExtensions.NormalizeRarityName(s.RarityName)!)
-                    .Distinct()
-                    .OrderBy(r => r)
-                    .ToList(),
                 CardID = card.ID,
                 CardName = card.Name ?? "Unknown",
                 CardType = card.CardType ?? string.Empty,

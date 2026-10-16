@@ -21,8 +21,7 @@ namespace CardCollector.Pages
 
         public string GetFilterParams()
         {
-            var (cardType, rarityName, setName) = GetSafeFilterQueryValues();
-            return $"cardType={Uri.EscapeDataString(cardType ?? string.Empty)}&setName={Uri.EscapeDataString(setName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(RarityName ?? string.Empty)}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public async Task OnGetAsync()
@@ -57,37 +56,30 @@ namespace CardCollector.Pages
 
         private object BuildFilterRedirect()
         {
-            var (cardType, rarityName, setName) = GetSafeFilterQueryValues();
             return new
             {
-                cardType,
+                cardType = CardType,
                 pageNumber = PageNumber,
                 pageSize = PageSize,
                 query = Query,
-                rarityName,
-                setName
+                rarityName = RarityName,
+                setName = SetName
             };
         }
-
-        private (string? CardType, string? RarityName, string? SetName) GetSafeFilterQueryValues() => (
-            Request.Query["cardType"].FirstOrDefault(),
-            Request.Query["rarityName"].FirstOrDefault(),
-            Request.Query["setName"].FirstOrDefault());
 
         private async Task<IActionResult> RespondAfterMutationAsync(int printingID)
         {
             if (!Request.IsAjaxRequest())
                 return RedirectToPage(BuildFilterRedirect());
 
-            var (cardType, filterRarityName, setName) = GetSafeFilterQueryValues();
             var criteria = new CheckedOutSearchCriteria
             {
-                CardType = cardType,
+                CardType = CardType,
                 Page = 1,
                 PageSize = int.MaxValue,
                 Query = Query,
-                RarityName = filterRarityName,
-                SetName = setName
+                RarityName = RarityName,
+                SetName = SetName
             };
 
             var results = await _cardService.SearchCheckedOutAsync(criteria).ConfigureAwait(false);

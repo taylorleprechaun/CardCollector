@@ -100,7 +100,8 @@ namespace CardCollector.Tests.Pages
         {
             _cardServiceMock.Setup(s => s.SearchCheckedOutAsync(It.IsAny<CheckedOutSearchCriteria>()))
                 .ReturnsAsync(new PagedResult<CheckedOutCardViewModel>());
-            var page = CreatePage(isAjax: false, queryString: "?rarityName=Ultra%20Rare");
+            var page = CreatePage(isAjax: false);
+            page.RarityName = "Ultra Rare";
 
             var result = await page.OnPostCheckOutAsync(102, 2) as RedirectToPageResult;
 
@@ -114,15 +115,13 @@ namespace CardCollector.Tests.Pages
             _razorPartialRendererMock = new Mock<IRazorPartialRenderer>();
         }
 
-        private CheckedOutModel CreatePage(bool isAjax = false, string? queryString = null)
+        private CheckedOutModel CreatePage(bool isAjax = false)
         {
             var page = new CheckedOutModel(_cardServiceMock.Object, _razorPartialRendererMock.Object);
             PageContextFactory.Attach(page, httpContext =>
             {
                 if (isAjax)
                     httpContext.Request.Headers["X-Requested-With"] = "XMLHttpRequest";
-                if (queryString is not null)
-                    httpContext.Request.QueryString = new Microsoft.AspNetCore.Http.QueryString(queryString);
             });
             return page;
         }

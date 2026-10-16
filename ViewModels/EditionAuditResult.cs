@@ -20,7 +20,6 @@ namespace CardCollector.ViewModels
             EditionAuditCategory category) => new()
             {
                 AvailableEditions = availableEditions,
-                AvailableRarities = printing.AvailableRarities,
                 CardID = printing.CardID,
                 CardName = printing.CardName,
                 CardType = printing.CardType,

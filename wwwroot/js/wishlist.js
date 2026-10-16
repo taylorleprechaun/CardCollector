@@ -7,7 +7,6 @@ async function openWishlistOwnModal(btn) {
     document.getElementById('wlPreferredVersionID').value = btn.dataset.preferredVersionId;
 
     const rarity = btn.dataset.rarityName || '';
-    document.getElementById('wlRarityName').value = rarity;
     document.getElementById('wlRarityDisplay').textContent = rarity;
 
     document.getElementById('wishlistModalLabel').textContent = 'Already Own This Printing';

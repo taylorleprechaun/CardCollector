@@ -12,7 +12,6 @@ namespace CardCollector.ViewModels
             CardPrinting printing,
             IReadOnlyList<EditionAuditEntryViewModel> entries) => new()
             {
-                AvailableRarities = printing.AvailableRarities,
                 CardID = printing.CardID,
                 CardName = printing.CardName,
                 CardType = printing.CardType,

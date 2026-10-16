@@ -91,7 +91,7 @@ describe('wishlist.js', () => {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
         <input id="wlPrintingID" /><span id="wlSetName"></span>
-        <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
+        <input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"></select><select id="wlEdition"></select><select id="wlAcquisition"></select>
         <input type="hidden" id="wlQuantity" /><input id="wlPurchaseDate" /><input id="wlPurchasePrice" /><input id="wlMarketPrice" />
         <div id="wishlistModal"></div>
@@ -123,7 +123,7 @@ describe('wishlist.js', () => {
       document.body.innerHTML = `
         <form id="wishlistForm"></form>
         <input id="wlPrintingID" /><span id="wlSetName"></span>
-        <input id="wlRarityName" /><input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
+        <input id="wlPreferredVersionID" /><span id="wlRarityDisplay"></span><span id="wishlistModalLabel"></span>
         <select id="wlCondition"><option value="4"></option></select>
         <select id="wlEdition"><option value="0"></option></select>
         <select id="wlAcquisition"><option value="1"></option></select>

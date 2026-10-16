@@ -24,7 +24,6 @@ namespace CardCollector.ViewModels
 
         public static OrderEntryViewModel From(CardPrinting printing, CollectionEntry entry) => new()
         {
-            AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,
