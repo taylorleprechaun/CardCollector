@@ -52,7 +52,19 @@ namespace CardCollector.Tests.Rules.Catalog
             var item = _items.Single();
             Assert.AreEqual(CatalogReviewItemKind.LegacyRowUnmapped, item.Kind);
             Assert.AreEqual("legacy:CollectionEntries:5", item.SubjectKey);
+            Assert.AreEqual(1, item.LinkedCardID);
+            Assert.IsNull(item.LinkedPrintingID);
             Assert.AreEqual(1, _report.UnmappedRows.Count);
+        }
+
+        [TestMethod]
+        public void ImportCollectionEntries_UnmappedRowOfUnknownCard_LinksNoCard()
+        {
+            var importer = Importer();
+
+            importer.ImportCollectionEntries([EntryRow(6, 99999999, "GONE-EN001", "Rare")]);
+
+            Assert.IsNull(_items.Single().LinkedCardID);
         }
 
         [TestMethod]
@@ -63,7 +75,10 @@ namespace CardCollector.Tests.Rules.Catalog
             var entry = importer.ImportCollectionEntries([EntryRow(9, 11111111, "SYN-EN002", "Ultra Rare")]).Single();
 
             Assert.AreEqual(11, entry.CatalogPrintingID);
-            Assert.AreEqual(CatalogReviewItemKind.LegacyRowAutoMapped, _items.Single().Kind);
+            var item = _items.Single();
+            Assert.AreEqual(CatalogReviewItemKind.LegacyRowAutoMapped, item.Kind);
+            Assert.AreEqual(1, item.LinkedCardID);
+            Assert.AreEqual(11, item.LinkedPrintingID);
         }
 
         [TestMethod]

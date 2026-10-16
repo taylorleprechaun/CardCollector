@@ -7,6 +7,32 @@ describe('catalog-review.js', () => {
     vi.restoreAllMocks();
   });
 
+  describe('submitOnChange', () => {
+    it('changing an auto-submit select submits its form', () => {
+      document.body.innerHTML = '<form id="filters"><select id="kind" data-auto-submit><option value="">All</option><option value="CardAdded">Card Added</option></select></form>';
+      loadScript('catalog-review.js');
+      const form = document.getElementById('filters');
+      form.requestSubmit = vi.fn();
+      const select = document.getElementById('kind');
+      select.value = 'CardAdded';
+
+      submitOnChange({ target: select });
+
+      expect(form.requestSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('changing a select without the marker does nothing', () => {
+      document.body.innerHTML = '<form id="filters"><select id="kind"><option value="">All</option></select></form>';
+      loadScript('catalog-review.js');
+      const form = document.getElementById('filters');
+      form.requestSubmit = vi.fn();
+
+      submitOnChange({ target: document.getElementById('kind') });
+
+      expect(form.requestSubmit).not.toHaveBeenCalled();
+    });
+  });
+
   describe('confirmBeforeSubmit', () => {
     it('cancelled confirmation stops the submit', () => {
       const form = setupForm('Dismiss every informational item?');

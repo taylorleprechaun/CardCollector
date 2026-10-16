@@ -33,8 +33,11 @@ namespace CardCollector.Repository.Catalog
         /// <summary>Returns the item, tracked; null when it doesn't exist.</summary>
         Task<CatalogReviewItem?> GetItemAsync(int id, CancellationToken cancellationToken = default);
 
-        /// <summary>Returns every open item of the given kinds, tracked.</summary>
-        Task<IReadOnlyList<CatalogReviewItem>> GetOpenItemsAsync(IReadOnlyCollection<CatalogReviewItemKind> kinds, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Returns every open item of the given kinds, tracked; with <paramref name="query"/>, only those whose summary,
+        /// resolution, or card name contains it.
+        /// </summary>
+        Task<IReadOnlyList<CatalogReviewItem>> GetOpenItemsAsync(IReadOnlyCollection<CatalogReviewItemKind> kinds, string? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>Returns the printing with its card, sources, and set, tracked; null when it doesn't exist.</summary>
         Task<CatalogPrinting?> GetPrintingAsync(int catalogPrintingID, CancellationToken cancellationToken = default);
@@ -48,12 +51,13 @@ namespace CardCollector.Repository.Catalog
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns one page of items with the given statuses and kinds, most recently detected first, for reading only,
-        /// and the total number that match.
+        /// Returns one page of items with the given statuses and kinds (and, with <paramref name="query"/>, whose summary,
+        /// resolution, or card name contains it), most recently detected first, for reading only, and the total number that match.
         /// </summary>
         Task<(IReadOnlyList<CatalogReviewItem> Items, int TotalCount)> SearchAsync(
             IReadOnlyCollection<CatalogReviewItemStatus> statuses,
             IReadOnlyCollection<CatalogReviewItemKind> kinds,
+            string? query,
             int page,
             int pageSize,
             CancellationToken cancellationToken = default);

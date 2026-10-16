@@ -31,11 +31,37 @@ function updateTotalCountBadge(newTotal) {
     badge.textContent = `${newTotal} ${badge.dataset.suffix || ''}`.trim();
 }
 
-function applyAjaxGroupResponse(form, html) {
+// Appends a row the server sent to replace one that left the list (X-Ajax-Append), unless the list already shows it.
+function appendRow(list, html) {
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const row = template.content.firstElementChild;
+    if (!row || (row.id && document.getElementById(row.id))) return;
+
+    list.appendChild(row);
+}
+
+// A list marked data-reload-when-empty reloads once its last row is gone, so the page can show what is left elsewhere.
+function reloadIfListEmptied(list) {
+    if (list && list.hasAttribute('data-reload-when-empty') && list.children.length === 0) {
+        reloadPage();
+    }
+}
+
+function reloadPage() {
+    window.location.reload();
+}
+
+function applyAjaxGroupResponse(form, html, append) {
     const targetId = form.dataset.ajaxTarget || form.closest('[id^="group-row-"]')?.id;
     const target = targetId ? document.getElementById(targetId) : null;
 
-    if (target) {
+    if (target && append) {
+        const list = target.parentElement;
+        target.remove();
+        if (list && html && html.trim().length > 0) appendRow(list, html);
+        reloadIfListEmptied(list);
+    } else if (target) {
         const wasExpanded = target.querySelector('.collapse')?.classList.contains('show') ?? false;
 
         if (html && html.trim().length > 0) {
@@ -47,7 +73,9 @@ function applyAjaxGroupResponse(form, html) {
                 newTarget?.querySelector('[data-bs-toggle="collapse"]')?.setAttribute('aria-expanded', 'true');
             }
         } else {
+            const list = target.parentElement;
             target.remove();
+            reloadIfListEmptied(list);
         }
     }
 
@@ -75,7 +103,8 @@ async function submitAjaxForm(form, submitter) {
         updateTotalCountBadge(Number(response.headers.get('X-Total-Count')));
         updateCartBadge(response.headers.get('X-Cart-Count'), response.headers.get('X-Cart-Total'));
         updateReviewBadge(response.headers.get('X-Review-Count'));
-        applyAjaxGroupResponse(form, html);
+        updateReviewOpenCounts(response.headers.get('X-Review-Open-Counts'));
+        applyAjaxGroupResponse(form, html, response.headers.get('X-Ajax-Append') === 'true');
     } catch (err) {
         console.error('AJAX form submission failed', err);
         alert('Something went wrong saving your change. Please refresh and try again.');

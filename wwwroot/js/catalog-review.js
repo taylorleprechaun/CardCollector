@@ -11,3 +11,13 @@ function confirmBeforeSubmit(event) {
 }
 
 document.addEventListener('submit', confirmBeforeSubmit, true);
+
+// A filter marked data-auto-submit (the Kind dropdown) applies as soon as it changes, so the list always matches it.
+function submitOnChange(event) {
+    const field = event.target;
+    if (!(field instanceof HTMLSelectElement) || !field.hasAttribute('data-auto-submit') || !field.form) return;
+
+    field.form.requestSubmit();
+}
+
+document.addEventListener('change', submitOnChange);

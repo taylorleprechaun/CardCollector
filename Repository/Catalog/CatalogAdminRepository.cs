@@ -1,6 +1,7 @@
 using System.Globalization;
 using CardCollector.Data;
 using CardCollector.Data.Models.Catalog;
+using CardCollector.Extensions;
 using CardCollector.Models.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +9,6 @@ namespace CardCollector.Repository.Catalog
 {
     public sealed class CatalogAdminRepository : ICatalogAdminRepository
     {
-        private const string LIKE_ESCAPE = @"\";
-
         private readonly AppDBContext _context;
 
         public CatalogAdminRepository(AppDBContext context)
@@ -206,13 +205,10 @@ namespace CardCollector.Repository.Catalog
                 }
                 else
                 {
-                    var escaped = text.Replace(@"\", @"\\", StringComparison.Ordinal)
-                        .Replace("%", @"\%", StringComparison.Ordinal)
-                        .Replace("_", @"\_", StringComparison.Ordinal);
-                    var namePattern = $"%{escaped}%";
-                    var codePattern = $"{escaped}%";
-                    cards = cards.Where(c => EF.Functions.Like(c.Name, namePattern, LIKE_ESCAPE)
-                        || c.Printings.Any(p => EF.Functions.Like(p.SetCode, codePattern, LIKE_ESCAPE)));
+                    var namePattern = text.ToContainsLikePattern();
+                    var codePattern = text.ToStartsWithLikePattern();
+                    cards = cards.Where(c => EF.Functions.Like(c.Name, namePattern, StringExtensions.LIKE_ESCAPE)
+                        || c.Printings.Any(p => EF.Functions.Like(p.SetCode, codePattern, StringExtensions.LIKE_ESCAPE)));
                 }
             }
 

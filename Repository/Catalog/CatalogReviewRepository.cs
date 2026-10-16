@@ -1,5 +1,6 @@
 using CardCollector.Data;
 using CardCollector.Data.Models.Catalog;
+using CardCollector.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository.Catalog
@@ -64,9 +65,9 @@ namespace CardCollector.Repository.Catalog
 
         public async Task<IReadOnlyList<CatalogReviewItem>> GetOpenItemsAsync(
             IReadOnlyCollection<CatalogReviewItemKind> kinds,
+            string? query = null,
             CancellationToken cancellationToken = default) =>
-            await _context.CatalogReviewItems
-                .Where(i => i.Status == CatalogReviewItemStatus.Open && kinds.Contains(i.Kind))
+            await Matching(_context.CatalogReviewItems.Where(i => i.Status == CatalogReviewItemStatus.Open && kinds.Contains(i.Kind)), query)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -92,16 +93,17 @@ namespace CardCollector.Repository.Catalog
         public async Task<(IReadOnlyList<CatalogReviewItem> Items, int TotalCount)> SearchAsync(
             IReadOnlyCollection<CatalogReviewItemStatus> statuses,
             IReadOnlyCollection<CatalogReviewItemKind> kinds,
+            string? query,
             int page,
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            var query = _context.CatalogReviewItems
-                .AsNoTracking()
-                .Where(i => statuses.Contains(i.Status) && kinds.Contains(i.Kind));
+            var items = Matching(
+                _context.CatalogReviewItems.AsNoTracking().Where(i => statuses.Contains(i.Status) && kinds.Contains(i.Kind)),
+                query);
 
-            var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
-            var items = await query
+            var totalCount = await items.CountAsync(cancellationToken).ConfigureAwait(false);
+            var pageItems = await items
                 .OrderByDescending(i => i.LastDetectedUTC)
                 .ThenByDescending(i => i.ID)
                 .Skip((page - 1) * pageSize)
@@ -109,7 +111,23 @@ namespace CardCollector.Repository.Catalog
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            return (items, totalCount);
+            return (pageItems, totalCount);
+        }
+
+        /// <summary>
+        /// Narrows items to those whose summary, resolution, or catalog card name contains the search text (ignoring case);
+        /// returns them unchanged when there is no search text.
+        /// </summary>
+        private IQueryable<CatalogReviewItem> Matching(IQueryable<CatalogReviewItem> items, string? query)
+        {
+            var text = query.TrimToNull();
+            if (text is null)
+                return items;
+
+            var pattern = text.ToContainsLikePattern();
+            return items.Where(i => EF.Functions.Like(i.Summary, pattern, StringExtensions.LIKE_ESCAPE)
+                || (i.Resolution != null && EF.Functions.Like(i.Resolution, pattern, StringExtensions.LIKE_ESCAPE))
+                || _context.CatalogCards.Any(c => c.ID == i.CatalogCardID && EF.Functions.Like(c.Name, pattern, StringExtensions.LIKE_ESCAPE)));
         }
     }
 }

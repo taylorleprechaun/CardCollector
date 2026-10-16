@@ -31,8 +31,11 @@ namespace CardCollector.Services
         /// <summary>Acknowledges an informational item (or an anomaly or conflict report).</summary>
         Task<SaveResult> DismissAsync(int id, CancellationToken cancellationToken = default);
 
-        /// <summary>Acknowledges every open informational item, or only those of one kind; returns how many.</summary>
-        Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Acknowledges every open informational item, narrowed to one kind and to a search the same way
+        /// <see cref="SearchAsync"/> narrows them; returns how many.
+        /// </summary>
+        Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, string? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>Returns one item as an inbox row; null when it doesn't exist.</summary>
         Task<CatalogReviewItemViewModel?> GetItemAsync(int id, string? errorMessage = null, CancellationToken cancellationToken = default);

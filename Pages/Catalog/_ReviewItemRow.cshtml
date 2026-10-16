@@ -12,6 +12,8 @@
     var canCreate = item.Actions.Contains(CatalogReviewAction.CreatePrinting);
     var canCreateCard = item.Actions.Contains(CatalogReviewAction.CreateCard);
     var canReopen = item.Actions.Contains(CatalogReviewAction.Reopen);
+    // When no printing has the reported set code, the map options are all other set codes, so creating the printing comes first.
+    var createFirst = canCreate && item.CardOptions.Count > 0 && item.PlacementSetCode is not null && !item.PlacementSetCodeInCatalog;
 }
 <div class="list-group-item py-3" id="@rowId">
     <div class="d-flex flex-column gap-3">
@@ -99,7 +101,7 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@item.ID" />
                             <div class="d-grid gap-1 cc-review-picker">
-                                <label class="form-label small text-muted mb-0" for="review-map-@item.ID">Map onto an existing printing</label>
+                                <label class="form-label small text-muted mb-0" for="review-map-@item.ID">@(createFirst ? "Or map onto a printing with a different set code" : "Map onto an existing printing")</label>
                                 <select id="review-map-@item.ID" name="printingID" class="form-select">
                                     @foreach (var option in item.PrintingOptions)
                                     {
@@ -107,7 +109,7 @@
                                     }
                                 </select>
                             </div>
-                            <button type="submit" formaction="@handlerURL("Map")" class="btn btn-outline-primary">Map</button>
+                            <button type="submit" formaction="@handlerURL("Map")" class="btn btn-outline-primary">@(createFirst ? "Map anyway" : "Map")</button>
                         </form>
                     }
                     else
@@ -117,11 +119,11 @@
                 }
                 @if (canCreate && item.CardOptions.Count > 0)
                 {
-                    <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId">
+                    <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form @(createFirst ? "order-first" : "")" data-ajax-target="@rowId">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@item.ID" />
                         <div class="d-grid gap-1 cc-review-picker">
-                            <label class="form-label small text-muted mb-0" for="review-create-@item.ID">Or create the printing on a card</label>
+                            <label class="form-label small text-muted mb-0" for="review-create-@item.ID">@(createFirst ? $"No printing has set code {item.PlacementSetCode} yet; create it on" : "Or create the printing on a card")</label>
                             <select id="review-create-@item.ID" name="cardID" class="form-select">
                                 @foreach (var option in item.CardOptions)
                                 {
@@ -129,7 +131,7 @@
                                 }
                             </select>
                         </div>
-                        <button type="submit" formaction="@handlerURL("CreatePrinting")" class="btn btn-outline-primary">Create printing</button>
+                        <button type="submit" formaction="@handlerURL("CreatePrinting")" class="btn @(createFirst ? "btn-primary" : "btn-outline-primary")">Create printing</button>
                     </form>
                 }
                 @if (canCreateCard)

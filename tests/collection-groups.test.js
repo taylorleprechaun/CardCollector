@@ -8,6 +8,45 @@ describe('collection-groups.js', () => {
   });
 
   describe('applyAjaxGroupResponse', () => {
+    it('append response removes the target and adds the new row at the end of the list', () => {
+      document.body.innerHTML = '<form id="theForm" data-ajax-target="review-row-1"></form><div id="list"><div id="review-row-1"></div><div id="review-row-2"></div></div>';
+      loadDeps();
+
+      applyAjaxGroupResponse(document.getElementById('theForm'), '<div id="review-row-3">next</div>', true);
+
+      expect(document.getElementById('review-row-1')).toBeNull();
+      expect([...document.getElementById('list').children].map(c => c.id)).toEqual(['review-row-2', 'review-row-3']);
+    });
+
+    it('append response for a row already shown only removes the target', () => {
+      document.body.innerHTML = '<form id="theForm" data-ajax-target="review-row-1"></form><div id="list"><div id="review-row-1"></div><div id="review-row-2"></div></div>';
+      loadDeps();
+
+      applyAjaxGroupResponse(document.getElementById('theForm'), '<div id="review-row-2">dup</div>', true);
+
+      expect([...document.getElementById('list').children].map(c => c.id)).toEqual(['review-row-2']);
+    });
+
+    it('removing the last row of a reload-when-empty list reloads the page', () => {
+      document.body.innerHTML = '<form id="theForm" data-ajax-target="review-row-1"></form><div id="list" data-reload-when-empty><div id="review-row-1"></div></div>';
+      loadDeps();
+      globalThis.reloadPage = vi.fn();
+
+      applyAjaxGroupResponse(document.getElementById('theForm'), '');
+
+      expect(globalThis.reloadPage).toHaveBeenCalledTimes(1);
+    });
+
+    it('removing a row from a list without the marker does not reload', () => {
+      document.body.innerHTML = '<form id="theForm" data-ajax-target="group-row-1"></form><div id="list"><div id="group-row-1"></div></div>';
+      loadDeps();
+      globalThis.reloadPage = vi.fn();
+
+      applyAjaxGroupResponse(document.getElementById('theForm'), '');
+
+      expect(globalThis.reloadPage).not.toHaveBeenCalled();
+    });
+
     it('empty html removes the target row entirely', () => {
       document.body.innerHTML = '<form id="theForm" data-ajax-target="group-row-1"></form><div id="group-row-1">old</div>';
       loadDeps();
@@ -148,6 +187,25 @@ describe('collection-groups.js', () => {
       expect(document.getElementById('totalCountBadge').textContent).toBe('10 cards');
       expect(document.getElementById('navCartCount').textContent).toBe('2');
       expect(document.getElementById('row-1').textContent).toBe('updated');
+    });
+
+    it('append header adds the returned row after removing the target and updates the review counts', async () => {
+      document.body.innerHTML = `
+        <form id="theForm" action="/Catalog/Review?handler=Map" data-ajax-target="review-row-1"></form>
+        <div id="list"><div id="review-row-1"></div></div>
+        <span data-review-tab-count="NeedsDecision">5</span>`;
+      loadDeps();
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('<div id="review-row-9">next</div>'),
+        headers: makeHeaders({ 'X-Ajax-Append': 'true', 'X-Review-Open-Counts': '{"needsDecision":4,"informational":0,"kinds":{}}' })
+      });
+
+      await submitAjaxForm(document.getElementById('theForm'), null);
+
+      expect(document.getElementById('review-row-1')).toBeNull();
+      expect(document.getElementById('review-row-9').textContent).toBe('next');
+      expect(document.querySelector('[data-review-tab-count]').textContent).toBe('4');
     });
 
     function makeHeaders(map) {

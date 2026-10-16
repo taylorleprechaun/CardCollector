@@ -56,7 +56,7 @@ namespace CardCollector.Services
             if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.Accept))
                 return SaveResult.Failure([$"{item.Kind} items can't be accepted."]);
 
-            var payload = JObject.Parse(item.PayloadJson);
+            var payload = JObject.Parse(item.PayloadJSON);
             var now = Now();
             string resolution;
             switch (item.Kind)
@@ -127,7 +127,7 @@ namespace CardCollector.Services
             if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.CreateCard))
                 return SaveResult.Failure([$"{item.Kind} items can't create a card."]);
 
-            var payload = JObject.Parse(item.PayloadJson);
+            var payload = JObject.Parse(item.PayloadJSON);
             var name = CatalogReviewPresenter.ReadString(payload, "CardName")?.Trim();
             var setCode = CatalogReviewPresenter.ReadString(payload, "SetCode");
             var rawRarity = CatalogReviewPresenter.ReadString(payload, "RarityName");
@@ -140,7 +140,7 @@ namespace CardCollector.Services
                     ? $"A retired catalog card is named \"{existing.Name}\"; restore it in the catalog admin, then create the printing on it."
                     : $"The catalog already has a card named \"{existing.Name}\"; create the printing on it instead."]);
 
-            var (rarity, variant) = NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(payload, "PrintVariant"));
+            var (rarity, variant) = CatalogReviewPresenter.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(payload, "PrintVariant"));
             SaveResult result = SaveResult.Success();
             try
             {
@@ -198,14 +198,14 @@ namespace CardCollector.Services
             if (card is null)
                 return SaveResult.Missing("That card no longer exists.");
 
-            var payload = JObject.Parse(item.PayloadJson);
+            var payload = JObject.Parse(item.PayloadJSON);
             var source = item.Kind == CatalogReviewItemKind.UnmappedTCGProduct ? payload : payload["Row"] as JObject ?? new JObject();
             var setCode = CatalogReviewPresenter.ReadString(source, "SetCode");
             var rawRarity = CatalogReviewPresenter.ReadString(source, "RarityName");
             if (string.IsNullOrWhiteSpace(setCode) || string.IsNullOrWhiteSpace(rawRarity))
                 return SaveResult.Failure(["The item has no set code or rarity to create a printing from."]);
 
-            var (rarity, variant) = NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(source, "PrintVariant"));
+            var (rarity, variant) = CatalogReviewPresenter.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(source, "PrintVariant"));
 
             SaveResult result = SaveResult.Success();
             try
@@ -244,7 +244,7 @@ namespace CardCollector.Services
             return FinishPlacement(result);
         }
 
-        public async Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, CancellationToken cancellationToken = default)
+        public async Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, string? query = null, CancellationToken cancellationToken = default)
         {
             var kinds = kind is CatalogReviewItemKind only
                 ? InformationalKinds.Where(k => k == only).ToList()
@@ -252,13 +252,13 @@ namespace CardCollector.Services
             if (kinds.Count == 0)
                 return 0;
 
-            var items = await _reviewRepository.GetOpenItemsAsync(kinds, cancellationToken).ConfigureAwait(false);
+            var items = await _reviewRepository.GetOpenItemsAsync(kinds, query, cancellationToken).ConfigureAwait(false);
             var now = Now();
             foreach (var item in items)
                 Close(item, CatalogReviewItemStatus.Dismissed, "Dismissed with the rest of its kind", now);
 
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation("Dismissed {Count} informational review items ({Kind})", items.Count, kind?.ToString() ?? "all kinds");
+            _logger.LogInformation("Dismissed {Count} informational review items (kind {Kind}, search {Query})", items.Count, kind?.ToString() ?? "all", query ?? "none");
             return items.Count;
         }
 
@@ -295,7 +295,7 @@ namespace CardCollector.Services
             if (printing is null)
                 return SaveResult.Missing("That printing no longer exists.");
 
-            var payload = JObject.Parse(item.PayloadJson);
+            var payload = JObject.Parse(item.PayloadJSON);
             SaveResult result = SaveResult.Success();
             try
             {
@@ -369,7 +369,7 @@ namespace CardCollector.Services
             var page = Paging.ClampPage(criteria.Page);
             var pageSize = Paging.ClampPageSize(criteria.PageSize);
             var (items, totalCount) = await _reviewRepository
-                .SearchAsync(statuses.ToList(), kinds.ToList(), page, pageSize, cancellationToken)
+                .SearchAsync(statuses.ToList(), kinds.ToList(), criteria.Query, page, pageSize, cancellationToken)
                 .ConfigureAwait(false);
 
             var lookup = BuildLookup();
@@ -403,14 +403,6 @@ namespace CardCollector.Services
             if (result.Succeeded)
                 _cardDataRepository.QueueReload();
             return result;
-        }
-
-        /// <summary>Normalizes a reported rarity and drops a variant that only restates it.</summary>
-        private static (string Rarity, string? Variant) NormalizeRarityAndVariant(string rawRarity, string? rawVariant)
-        {
-            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
-            var variant = string.IsNullOrWhiteSpace(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
-            return (rarity, variant);
         }
 
         private DateTime Now() => _timeProvider.GetUtcNow().UtcDateTime;

@@ -18,12 +18,16 @@ namespace CardCollector.Models.Catalog
 
         public CatalogReviewItemKind Kind { get; init; }
 
-        /// <summary>Serialized to <see cref="CatalogReviewItem.PayloadJson"/>; keep property order stable so its hash is too.</summary>
+        /// <summary>The catalog card to link the item to when it holds no <see cref="Card"/> or <see cref="Printing"/> (a legacy row matched by ID).</summary>
+        public int? LinkedCardID { get; init; }
+
+        /// <summary>The catalog printing to link the item to when it holds no <see cref="Printing"/>, like <see cref="LinkedCardID"/>.</summary>
+        public int? LinkedPrintingID { get; init; }
+
+        /// <summary>Serialized to <see cref="CatalogReviewItem.PayloadJSON"/>; keep property order stable so its hash is too.</summary>
         public object Payload { get; init; } = new { };
 
         public CatalogPrinting? Printing { get; init; }
-
-        public string Summary { get; init; } = string.Empty;
 
         /// <summary>The <see cref="CatalogReviewItem.SubjectKey"/>. Read it only after the run's new rows are saved.</summary>
         public string SubjectKey =>
@@ -31,5 +35,7 @@ namespace CardCollector.Models.Catalog
             ?? (Printing is not null ? $"printing:{Printing.ID}" : null)
             ?? (Card is not null ? $"card:{Card.ID}" : null)
             ?? throw new InvalidOperationException("A detected review item needs a card, a printing, or an external subject.");
+
+        public string Summary { get; init; } = string.Empty;
     }
 }

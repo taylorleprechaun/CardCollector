@@ -58,6 +58,16 @@ namespace CardCollector.Rules.Catalog
             return includeCardName ? $"{card.Name} — {label}" : label;
         }
 
+        /// <summary>Normalizes a reported rarity and drops a variant that only restates it.</summary>
+        public static (string Rarity, string? Variant) NormalizeRarityAndVariant(string rawRarity, string? rawVariant)
+        {
+            if (rawRarity is null) throw new ArgumentNullException(nameof(rawRarity));
+
+            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
+            var variant = string.IsNullOrWhiteSpace(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
+            return (rarity, variant);
+        }
+
         /// <summary>Reads a payload property as text; null when it is missing or null.</summary>
         public static string? ReadString(JObject payload, string property) =>
             payload is null ? throw new ArgumentNullException(nameof(payload))
@@ -68,7 +78,7 @@ namespace CardCollector.Rules.Catalog
             if (item is null) throw new ArgumentNullException(nameof(item));
             if (lookup is null) throw new ArgumentNullException(nameof(lookup));
 
-            var payload = ParsePayload(item.PayloadJson);
+            var payload = ParsePayload(item.PayloadJSON);
             var actions = AllowedActions(item.Kind, item.Status);
 
             // Creating a card is only offered when no catalog card has the product's name, so it can't make a duplicate.
@@ -78,7 +88,7 @@ namespace CardCollector.Rules.Catalog
 
             var card = item.CatalogCardID is int cardID ? lookup.CardByID(cardID) : null;
             var placesOnPrinting = actions.Contains(CatalogReviewAction.MapToPrinting);
-            var (printingOptions, cardOptions) = placesOnPrinting ? BuildPlacementOptions(item.Kind, payload, lookup) : ([], []);
+            var placement = placesOnPrinting ? BuildPlacement(item.Kind, payload, lookup) : new CatalogReviewPlacement([], [], null, false);
             var (acceptLabel, rejectLabel) = Labels(item.Kind, payload);
 
             return new CatalogReviewItemViewModel
@@ -86,7 +96,7 @@ namespace CardCollector.Rules.Catalog
                 AcceptLabel = acceptLabel,
                 Actions = actions,
                 CardName = card?.Name ?? ReadString(payload, "CardName") ?? ReadString(payload, "Name"),
-                CardOptions = cardOptions,
+                CardOptions = placement.Cards,
                 CatalogCardID = item.CatalogCardID,
                 Details = BuildDetails(payload),
                 DetectionCount = item.DetectionCount,
@@ -97,7 +107,9 @@ namespace CardCollector.Rules.Catalog
                 IsActionable = item.Kind.IsActionable(),
                 Kind = item.Kind,
                 LastDetectedUTC = item.LastDetectedUTC,
-                PrintingOptions = printingOptions,
+                PlacementSetCode = placement.SetCode,
+                PlacementSetCodeInCatalog = placement.SetCodeInCatalog,
+                PrintingOptions = placement.Printings,
                 RejectLabel = rejectLabel,
                 Resolution = item.Resolution,
                 ResolvedUTC = item.ResolvedUTC,
@@ -128,28 +140,28 @@ namespace CardCollector.Rules.Catalog
 
         /// <summary>
         /// The printings an unmapped product or legacy row could be placed on (every printing under its set code, else every
-        /// printing of the card it names), and the cards a missing printing could be created on.
+        /// printing of the card it names), and the cards a missing printing could be created on. Under the set code, options
+        /// whose rarity or variant differ from the reported one say so and sort after the exact matches.
         /// </summary>
-        private static (IReadOnlyList<CatalogReviewOption> Printings, IReadOnlyList<CatalogReviewOption> Cards) BuildPlacementOptions(
-            CatalogReviewItemKind kind,
-            JObject payload,
-            CatalogReviewLookup lookup)
+        private static CatalogReviewPlacement BuildPlacement(CatalogReviewItemKind kind, JObject payload, CatalogReviewLookup lookup)
         {
-            string? setCode;
+            var source = kind == CatalogReviewItemKind.UnmappedTCGProduct ? payload : payload["Row"] as JObject ?? new JObject();
+            var setCode = ReadString(source, "SetCode");
+            var rawRarity = ReadString(source, "RarityName");
+            var (rarity, variant) = string.IsNullOrWhiteSpace(rawRarity)
+                ? (null, null)
+                : NormalizeRarityAndVariant(rawRarity, ReadString(source, "PrintVariant"));
+
             var namedCards = new List<Card>();
             if (kind == CatalogReviewItemKind.UnmappedTCGProduct)
             {
-                setCode = ReadString(payload, "SetCode");
                 if (ReadString(payload, "CardName") is { } name)
                     namedCards.AddRange(lookup.CardsByName(name));
             }
-            else
+            else if (int.TryParse(ReadString(source, "CardID"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var passcode)
+                && lookup.CardByPasscode(passcode) is { } passcodeCard)
             {
-                var row = payload["Row"] as JObject ?? new JObject();
-                setCode = ReadString(row, "SetCode");
-                if (int.TryParse(ReadString(row, "CardID"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var passcode)
-                    && lookup.CardByPasscode(passcode) is { } passcodeCard)
-                    namedCards.Add(passcodeCard);
+                namedCards.Add(passcodeCard);
             }
 
             var underCode = setCode is not null ? lookup.PrintingsBySetCode(setCode) : [];
@@ -161,8 +173,15 @@ namespace CardCollector.Rules.Catalog
             var spansCards = candidates.Select(x => x.Card.ID).Distinct().Count() > 1;
             var printingOptions = candidates
                 .Where(x => x.Printing.PrintingID > 0)
-                .Select(x => new CatalogReviewOption(x.Printing.PrintingID, DescribePrinting(x.Card, x.Printing, spansCards)))
-                .OrderBy(o => o.Label, StringComparer.OrdinalIgnoreCase)
+                .Select(x => (Ref: x, Difference: underCode.Count > 0 ? Difference(x.Printing, rarity, variant) : CatalogPlacementDifference.None))
+                .OrderBy(x => x.Difference)
+                .ThenBy(x => DescribePrinting(x.Ref.Card, x.Ref.Printing, spansCards), StringComparer.OrdinalIgnoreCase)
+                .Select(x => new CatalogReviewOption(x.Ref.Printing.PrintingID, DescribePrinting(x.Ref.Card, x.Ref.Printing, spansCards) + x.Difference switch
+                {
+                    CatalogPlacementDifference.Rarity => " — different rarity",
+                    CatalogPlacementDifference.Variant => " — different variant",
+                    _ => string.Empty
+                }))
                 .ToList();
             var cardOptions = namedCards
                 .Concat(underCode.Select(x => x.Card))
@@ -171,7 +190,19 @@ namespace CardCollector.Rules.Catalog
                 .OrderBy(o => o.Label, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            return (printingOptions, cardOptions);
+            return new CatalogReviewPlacement(printingOptions, cardOptions, setCode, underCode.Count > 0);
+        }
+
+        /// <summary>How a candidate printing differs from the reported rarity and variant; nothing when no rarity was reported.</summary>
+        private static CatalogPlacementDifference Difference(Set printing, string? rarity, string? variant)
+        {
+            if (rarity is null)
+                return CatalogPlacementDifference.None;
+            if (!string.Equals(RarityExtensions.NormalizeRarityName(printing.RarityName) ?? printing.RarityName, rarity, StringComparison.OrdinalIgnoreCase))
+                return CatalogPlacementDifference.Rarity;
+            return string.Equals(printing.PrintVariant ?? string.Empty, variant ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                ? CatalogPlacementDifference.None
+                : CatalogPlacementDifference.Variant;
         }
 
         private static string FormatValue(JToken token) => token.Type switch
@@ -193,11 +224,11 @@ namespace CardCollector.Rules.Catalog
             _ => (null, null)
         };
 
-        private static JObject ParsePayload(string payloadJson)
+        private static JObject ParsePayload(string payloadJSON)
         {
             try
             {
-                return JObject.Parse(string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson);
+                return JObject.Parse(string.IsNullOrWhiteSpace(payloadJSON) ? "{}" : payloadJSON);
             }
             catch (Newtonsoft.Json.JsonReaderException)
             {

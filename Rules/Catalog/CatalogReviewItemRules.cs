@@ -18,11 +18,11 @@ namespace CardCollector.Rules.Catalog
     /// </summary>
     public static class CatalogReviewItemRules
     {
-        public static string ComputeHash(string payloadJson)
+        public static string ComputeHash(string payloadJSON)
         {
-            if (payloadJson is null) throw new ArgumentNullException(nameof(payloadJson));
+            if (payloadJSON is null) throw new ArgumentNullException(nameof(payloadJSON));
 
-            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payloadJson)));
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payloadJSON)));
         }
 
         /// <summary>
@@ -62,15 +62,15 @@ namespace CardCollector.Rules.Catalog
             {
                 var key = (item.Kind, item.SubjectKey);
                 detectedKeys.Add(key);
-                var payloadJson = JsonConvert.SerializeObject(item.Payload);
-                var payloadHash = ComputeHash(payloadJson);
+                var payloadJSON = JsonConvert.SerializeObject(item.Payload);
+                var payloadHash = ComputeHash(payloadJSON);
 
                 if (!byKey.TryGetValue(key, out var stored))
                 {
                     stored = new CatalogReviewItem
                     {
-                        CatalogCardID = item.Card?.ID ?? item.Printing?.CatalogCardID,
-                        CatalogPrintingID = item.Printing?.ID,
+                        CatalogCardID = item.Card?.ID ?? item.Printing?.CatalogCardID ?? item.LinkedCardID,
+                        CatalogPrintingID = item.Printing?.ID ?? item.LinkedPrintingID,
                         DateCreated = nowUTC,
                         DateModified = nowUTC,
                         DetectionCount = 1,
@@ -79,7 +79,7 @@ namespace CardCollector.Rules.Catalog
                         LastDetectedUTC = nowUTC,
                         LastSyncRunID = syncRunID,
                         PayloadHash = payloadHash,
-                        PayloadJson = payloadJson,
+                        PayloadJSON = payloadJSON,
                         Status = CatalogReviewItemStatus.Open,
                         SubjectKey = item.SubjectKey,
                         Summary = item.Summary
@@ -99,13 +99,13 @@ namespace CardCollector.Rules.Catalog
                 if (stored.Status == CatalogReviewItemStatus.Open)
                 {
                     if (changed)
-                        SetPayload(stored, item, payloadJson, payloadHash);
+                        SetPayload(stored, item, payloadJSON, payloadHash);
                     continue;
                 }
 
                 if (changed || stored.Status == CatalogReviewItemStatus.ResolvedBySource)
                 {
-                    SetPayload(stored, item, payloadJson, payloadHash);
+                    SetPayload(stored, item, payloadJSON, payloadHash);
                     stored.Status = CatalogReviewItemStatus.Open;
                     stored.Resolution = null;
                     stored.ResolvedUTC = null;
@@ -139,9 +139,9 @@ namespace CardCollector.Rules.Catalog
             };
         }
 
-        private static void SetPayload(CatalogReviewItem stored, DetectedReviewItem item, string payloadJson, string payloadHash)
+        private static void SetPayload(CatalogReviewItem stored, DetectedReviewItem item, string payloadJSON, string payloadHash)
         {
-            stored.PayloadJson = payloadJson;
+            stored.PayloadJSON = payloadJSON;
             stored.PayloadHash = payloadHash;
             stored.Summary = item.Summary;
             stored.CatalogCardID = item.Card?.ID ?? item.Printing?.CatalogCardID ?? stored.CatalogCardID;

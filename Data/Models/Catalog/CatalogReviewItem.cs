@@ -29,11 +29,11 @@ namespace CardCollector.Data.Models.Catalog
 
         public int? LastSyncRunID { get; set; }
 
-        /// <summary>Hash of <see cref="PayloadJson"/>; a closed item reopens only when a new detection's hash differs.</summary>
+        /// <summary>Hash of <see cref="PayloadJSON"/>; a closed item reopens only when a new detection's hash differs.</summary>
         public string PayloadHash { get; set; } = string.Empty;
 
         /// <summary>JSON describing the item (typically the current and reported values).</summary>
-        public string PayloadJson { get; set; } = "{}";
+        public string PayloadJSON { get; set; } = "{}";
 
         /// <summary>What was done about the item, in words.</summary>
         public string? Resolution { get; set; }

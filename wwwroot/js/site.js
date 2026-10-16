@@ -84,6 +84,33 @@ function updateReviewBadge(rawCount) {
     badge.classList.toggle('d-none', count === 0);
 }
 
+// Updates the review inbox's tab badges and kind-filter counts from the X-Review-Open-Counts header
+// ({ needsDecision, informational, kinds: { KindName: count } }) that comes back on every inbox AJAX post.
+function updateReviewOpenCounts(rawJSON) {
+    if (!rawJSON) return;
+
+    let counts;
+    try {
+        counts = JSON.parse(rawJSON);
+    } catch {
+        return;
+    }
+
+    const tabCounts = { NeedsDecision: counts.needsDecision, Informational: counts.informational };
+    document.querySelectorAll('[data-review-tab-count]').forEach(badge => {
+        const count = Number(tabCounts[badge.dataset.reviewTabCount]) || 0;
+        badge.textContent = count;
+        badge.classList.toggle('d-none', count === 0);
+    });
+
+    const kinds = counts.kinds || {};
+    document.querySelectorAll('option[data-label]').forEach(option => {
+        if (option.dataset.showCount !== 'true') return;
+        const count = Number(kinds[option.value]) || 0;
+        option.textContent = count > 0 ? `${option.dataset.label} (${count})` : option.dataset.label;
+    });
+}
+
 // Every AJAX POST goes through here, so the X-Requested-With header the server checks for is never left off.
 function postAjax(url, body) {
     return fetch(url, { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } });

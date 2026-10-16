@@ -282,7 +282,7 @@ namespace CardCollector.Tests.Services
 
         private async Task<int> AddItemAsync(
             CatalogReviewItemKind kind,
-            string payloadJson,
+            string payloadJSON,
             int? cardID = null,
             int? printingID = null,
             string subject = "subject",
@@ -296,7 +296,7 @@ namespace CardCollector.Tests.Services
                 DetectionCount = 1,
                 Kind = kind,
                 PayloadHash = "hash",
-                PayloadJson = payloadJson,
+                PayloadJSON = payloadJSON,
                 Status = status,
                 SubjectKey = subject,
                 Summary = "Synthetic summary"

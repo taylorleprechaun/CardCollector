@@ -12,5 +12,8 @@ namespace CardCollector.ViewModels
         public int Page { get; init; } = 1;
 
         public int PageSize { get; init; } = Paging.DEFAULT_PAGE_SIZE;
+
+        /// <summary>Text the summary, resolution, or card name must contain; null or blank for no search.</summary>
+        public string? Query { get; init; }
     }
 }

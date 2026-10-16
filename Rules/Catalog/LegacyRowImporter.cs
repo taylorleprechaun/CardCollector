@@ -210,6 +210,7 @@ namespace CardCollector.Rules.Catalog
             {
                 ExternalSubject = $"legacy:{table}:{id}",
                 Kind = table == DISMISSED_NEW_PRINTINGS ? CatalogReviewItemKind.LegacyDismissalUnmapped : CatalogReviewItemKind.LegacyRowUnmapped,
+                LinkedCardID = row.GetNullableInt("CardID") is int legacyCardID ? LegacyRowMapper.MapCard(_index, legacyCardID) : null,
                 Payload = new { Table = table, Row = row.Values, Reason = reason },
                 Summary = $"{table} #{id} ({description}) could not be mapped: {reason}"
             });
@@ -271,6 +272,8 @@ namespace CardCollector.Rules.Catalog
                     {
                         ExternalSubject = $"legacy:{table}:{row.GetInt("ID")}",
                         Kind = CatalogReviewItemKind.LegacyRowAutoMapped,
+                        LinkedCardID = target.CardID,
+                        LinkedPrintingID = target.PrintingID,
                         Payload = new
                         {
                             Table = table,

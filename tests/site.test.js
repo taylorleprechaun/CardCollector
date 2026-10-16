@@ -481,6 +481,51 @@ describe('site.js', () => {
     }
   });
 
+  describe('updateReviewOpenCounts', () => {
+    it('updates the tab badges and hides one whose count drops to zero', () => {
+      setupReviewCounts();
+
+      updateReviewOpenCounts('{"needsDecision":14,"informational":0,"kinds":{}}');
+
+      const needsDecision = document.querySelector('[data-review-tab-count="NeedsDecision"]');
+      const informational = document.querySelector('[data-review-tab-count="Informational"]');
+      expect(needsDecision.textContent).toBe('14');
+      expect(needsDecision.classList.contains('d-none')).toBe(false);
+      expect(informational.classList.contains('d-none')).toBe(true);
+    });
+
+    it('rewrites the kind options that show counts and leaves the others alone', () => {
+      setupReviewCounts();
+
+      updateReviewOpenCounts('{"needsDecision":1,"informational":2,"kinds":{"CardAdded":2}}');
+
+      expect(document.getElementById('cardAdded').textContent).toBe('Card Added (2)');
+      expect(document.getElementById('aliasAdded').textContent).toBe('Alias Added');
+      expect(document.getElementById('resolved').textContent).toBe('Resolved Kind (9)');
+    });
+
+    it('missing or malformed header is a no-op', () => {
+      setupReviewCounts();
+
+      updateReviewOpenCounts(null);
+      updateReviewOpenCounts('not json');
+
+      expect(document.querySelector('[data-review-tab-count="NeedsDecision"]').textContent).toBe('15');
+    });
+
+    function setupReviewCounts() {
+      document.body.innerHTML = `
+        <span data-review-tab-count="NeedsDecision">15</span>
+        <span data-review-tab-count="Informational">3</span>
+        <select>
+          <option id="cardAdded" value="CardAdded" data-label="Card Added" data-show-count="true">Card Added (3)</option>
+          <option id="aliasAdded" value="AliasAdded" data-label="Alias Added" data-show-count="true">Alias Added (1)</option>
+          <option id="resolved" value="CardNotSeen" data-label="Resolved Kind" data-show-count="false">Resolved Kind (9)</option>
+        </select>`;
+      loadScript('site.js');
+    }
+  });
+
   describe('updateReviewBadge', () => {
     it('shows the count from the response header', () => {
       setupReviewBadge();

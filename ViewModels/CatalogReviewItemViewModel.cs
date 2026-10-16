@@ -37,6 +37,12 @@ namespace CardCollector.ViewModels
 
         public DateTime LastDetectedUTC { get; init; }
 
+        /// <summary>The set code an unmapped product or legacy row reports; null for other items or when it reports none.</summary>
+        public string? PlacementSetCode { get; init; }
+
+        /// <summary>True when an active printing has <see cref="PlacementSetCode"/>, so the map options are all under it.</summary>
+        public bool PlacementSetCodeInCatalog { get; init; }
+
         /// <summary>Existing printings the item can be mapped to.</summary>
         public IReadOnlyList<CatalogReviewOption> PrintingOptions { get; init; } = [];
 

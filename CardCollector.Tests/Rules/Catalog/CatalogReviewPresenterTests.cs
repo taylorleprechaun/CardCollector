@@ -52,7 +52,7 @@ namespace CardCollector.Tests.Rules.Catalog
             var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
 
             CollectionAssert.AreEquivalent(new[] { 51, 52 }, model.PrintingOptions.Select(o => o.Value).ToArray());
-            Assert.AreEqual("LDS1-EN101 Ultra Rare (Blue)", model.PrintingOptions.Single(o => o.Value == 51).Label);
+            Assert.AreEqual("LDS1-EN101 Ultra Rare (Blue) — different variant", model.PrintingOptions.Single(o => o.Value == 51).Label);
             Assert.AreEqual(5, model.CardOptions.Single().Value);
             Assert.AreEqual("Discard row", model.RejectLabel);
             Assert.IsFalse(model.Details.Single(d => d.Key == "Row").Value.Contains("DateCreated"));
@@ -114,17 +114,37 @@ namespace CardCollector.Tests.Rules.Catalog
             var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
 
             Assert.AreEqual(90, model.PrintingOptions.Single().Value);
+            Assert.AreEqual("JUMP-EN037 Ultra Rare", model.PrintingOptions.Single().Label);
             Assert.AreEqual(9, model.CardOptions.Single().Value);
+            Assert.AreEqual("LC01-EN001", model.PlacementSetCode);
+            Assert.IsFalse(model.PlacementSetCodeInCatalog);
+        }
+
+        [TestMethod]
+        public void ToViewModel_ProductWithExactAndOtherPrintingsUnderItsSetCode_ListsTheExactMatchFirstAndFlagsTheRest()
+        {
+            var card = Card(5, "Synthetic Dragon", 11111111,
+                Printing(51, "SYN-EN001", "Common"),
+                Printing(52, "SYN-EN001", "Ultra Rare", "Alternate Art"),
+                Printing(53, "SYN-EN001", "Ultra Rare"));
+            var item = Item(CatalogReviewItemKind.UnmappedTCGProduct, """{"ProductID":1,"CardName":"Synthetic Dragon","SetCode":"SYN-EN001","RarityName":"Ultra Rare"}""");
+
+            var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
+
+            CollectionAssert.AreEqual(
+                new[] { "SYN-EN001 Ultra Rare", "SYN-EN001 Ultra Rare (Alternate Art) — different variant", "SYN-EN001 Common — different rarity" },
+                model.PrintingOptions.Select(o => o.Label).ToArray());
+            Assert.IsTrue(model.PlacementSetCodeInCatalog);
         }
 
         private static Card Card(int id, string name, int passcode, params Set[] printings) =>
             new() { CardSets = printings, ID = id, Name = name, Passcode = passcode };
 
-        private static CatalogReviewItem Item(CatalogReviewItemKind kind, string payloadJson) => new()
+        private static CatalogReviewItem Item(CatalogReviewItemKind kind, string payloadJSON) => new()
         {
             ID = 1,
             Kind = kind,
-            PayloadJson = payloadJson,
+            PayloadJSON = payloadJSON,
             Status = CatalogReviewItemStatus.Open,
             SubjectKey = "subject",
             Summary = "Synthetic summary"
