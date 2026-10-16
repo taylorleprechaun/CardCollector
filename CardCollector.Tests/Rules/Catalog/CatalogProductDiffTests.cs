@@ -18,6 +18,7 @@ namespace CardCollector.Tests.Rules.Catalog
             var result = Run(State(card), Context(), Product(687324, "Synthetic Dragon", "RA05-EN146", "Ultra Rare"));
 
             Assert.AreEqual("Extended Art", printing.PrintVariant);
+            Assert.AreEqual(0, result.ProductsLinked);
             Assert.AreEqual(1, card.Printings.Count);
             Assert.AreEqual(CatalogReviewItemKind.TCGProductChanged, result.Items.Single().Kind);
         }

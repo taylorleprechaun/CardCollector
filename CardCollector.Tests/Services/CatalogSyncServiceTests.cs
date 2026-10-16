@@ -93,7 +93,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(2, first.Run.CardsAdded);
             Assert.AreEqual(2, first.Run.ProductsLinked);
             Assert.AreEqual(CatalogSyncRunStatus.Succeeded, second.Run.Status);
-            Assert.AreEqual(0, second.Run.CardsAdded + second.Run.CardsUpdated + second.Run.PrintingsAdded + second.Run.ItemsOpened);
+            Assert.AreEqual(0, second.Run.CardsAdded + second.Run.CardsUpdated + second.Run.PrintingsAdded + second.Run.ProductsLinked + second.Run.ItemsOpened);
             using var context = NewContext();
             Assert.AreEqual(2, await context.CatalogCards.CountAsync());
             Assert.AreEqual(2, await context.CatalogPrintingSources.CountAsync());

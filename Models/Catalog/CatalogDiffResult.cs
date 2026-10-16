@@ -21,6 +21,7 @@ namespace CardCollector.Models.Catalog
 
         public int ProductsIgnored { get; set; }
 
+        /// <summary>TCGPlayer products linked to a printing for the first time this run (products already linked aren't counted).</summary>
         public int ProductsLinked { get; set; }
 
         public int ProductsUnmapped { get; set; }

@@ -98,7 +98,8 @@ namespace CardCollector.Tests.Services
             Assert.IsNull(card.Passcode);
             var printing = card.Printings.Single();
             Assert.AreEqual("BLGG-EN128", printing.SetCode);
-            Assert.AreEqual("97893", printing.Sources.Single().ExternalKey);
+            Assert.AreEqual("97893", printing.Sources.Single(s => s.Source == CatalogSource.TCGPlayer).ExternalKey);
+            Assert.AreEqual(1, printing.Sources.Count(s => s.Source == CatalogSource.Manual));
             var item = await verify.CatalogReviewItems.SingleAsync();
             Assert.AreEqual(CatalogReviewItemStatus.Accepted, item.Status);
             Assert.AreEqual(card.ID, item.CatalogCardID);
@@ -106,7 +107,7 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task CreatePrintingAsync_LegacyRow_CreatesPrintingAndRestoresRowOnIt()
+        public async Task CreatePrintingAsync_LegacyRow_CreatesManualPrintingAndRestoresRowOnIt()
         {
             var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyEntryPayload("LDS1-EN101", "Ultra Rare", "Blue"));
 
@@ -114,8 +115,9 @@ namespace CardCollector.Tests.Services
 
             Assert.IsTrue(result.Succeeded);
             using var verify = NewContext();
-            var created = await verify.CatalogPrintings.SingleAsync(p => p.SetCode == "LDS1-EN101");
+            var created = await verify.CatalogPrintings.Include(p => p.Sources).SingleAsync(p => p.SetCode == "LDS1-EN101");
             Assert.AreEqual("Blue", created.PrintVariant);
+            Assert.AreEqual(CatalogSource.Manual, created.Sources.Single().Source);
             var entry = await verify.CollectionEntries.SingleAsync();
             Assert.AreEqual(4331, entry.ID);
             Assert.AreEqual(created.ID, entry.CatalogPrintingID);

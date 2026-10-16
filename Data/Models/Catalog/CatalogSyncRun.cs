@@ -29,6 +29,7 @@ namespace CardCollector.Data.Models.Catalog
         /// <summary>TCGPlayer products under a set prefix the catalog doesn't know (sealed product, tokens, other games' promos).</summary>
         public int ProductsIgnored { get; set; }
 
+        /// <summary>TCGPlayer products linked to a printing for the first time in this run.</summary>
         public int ProductsLinked { get; set; }
 
         /// <summary>TCGPlayer products under a known set prefix that no catalog printing could take; each has an open review item.</summary>

@@ -18,28 +18,8 @@ namespace CardCollector.Repository.Catalog
 
         public void AddSet(CatalogSet set) => _context.CatalogSets.Add(set);
 
-        public async Task<IReadOnlyDictionary<int, int>> CountUserRowsByPrintingAsync(int catalogCardID, CancellationToken cancellationToken = default)
-        {
-            var printingIDs = new List<int>();
-            printingIDs.AddRange(await _context.CollectionEntries.AsNoTracking()
-                .Where(e => e.CatalogPrinting!.CatalogCardID == catalogCardID)
-                .Select(e => e.CatalogPrintingID)
-                .ToListAsync(cancellationToken).ConfigureAwait(false));
-            printingIDs.AddRange(await _context.PreferredVersions.AsNoTracking()
-                .Where(v => v.CatalogPrinting!.CatalogCardID == catalogCardID)
-                .Select(v => v.CatalogPrintingID)
-                .ToListAsync(cancellationToken).ConfigureAwait(false));
-            printingIDs.AddRange(await _context.CheckedOutCards.AsNoTracking()
-                .Where(c => c.CatalogPrinting!.CatalogCardID == catalogCardID)
-                .Select(c => c.CatalogPrintingID)
-                .ToListAsync(cancellationToken).ConfigureAwait(false));
-            printingIDs.AddRange(await _context.PendingOrderLines.AsNoTracking()
-                .Where(l => l.CatalogPrinting!.CatalogCardID == catalogCardID)
-                .Select(l => l.CatalogPrintingID)
-                .ToListAsync(cancellationToken).ConfigureAwait(false));
-
-            return printingIDs.GroupBy(id => id).ToDictionary(g => g.Key, g => g.Count());
-        }
+        public async Task<IReadOnlyDictionary<int, int>> CountUserRowsByPrintingAsync(int catalogCardID, CancellationToken cancellationToken = default) =>
+            await _context.CountUserRowsByPrintingAsync(p => p.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false);
 
         public async Task<CatalogCard?> FindOtherCardWithPasscodeAsync(int passcode, int exceptCardID, CancellationToken cancellationToken = default) =>
             await _context.CatalogCards

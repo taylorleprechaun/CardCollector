@@ -58,16 +58,6 @@ namespace CardCollector.Rules.Catalog
             return includeCardName ? $"{card.Name} — {label}" : label;
         }
 
-        /// <summary>Normalizes a reported rarity and drops a variant that only restates it.</summary>
-        public static (string Rarity, string? Variant) NormalizeRarityAndVariant(string rawRarity, string? rawVariant)
-        {
-            if (rawRarity is null) throw new ArgumentNullException(nameof(rawRarity));
-
-            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
-            var variant = string.IsNullOrWhiteSpace(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
-            return (rarity, variant);
-        }
-
         /// <summary>Reads a payload property as text; null when it is missing or null.</summary>
         public static string? ReadString(JObject payload, string property) =>
             payload is null ? throw new ArgumentNullException(nameof(payload))
@@ -150,7 +140,7 @@ namespace CardCollector.Rules.Catalog
             var rawRarity = ReadString(source, "RarityName");
             var (rarity, variant) = string.IsNullOrWhiteSpace(rawRarity)
                 ? (null, null)
-                : NormalizeRarityAndVariant(rawRarity, ReadString(source, "PrintVariant"));
+                : CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, ReadString(source, "PrintVariant"));
 
             var namedCards = new List<Card>();
             if (kind == CatalogReviewItemKind.UnmappedTCGProduct)

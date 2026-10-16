@@ -176,7 +176,6 @@ namespace CardCollector.Rules.Catalog
         {
             link.LastSeenUTC = context.NowUTC;
             printing.LastSeenUTC = context.NowUTC;
-            result.ProductsLinked++;
 
             if (string.Equals(link.ExternalSummary, product.Summary, StringComparison.Ordinal))
                 return;

@@ -111,6 +111,7 @@ namespace CardCollector.Services
 
             Close(item, CatalogReviewItemStatus.Accepted, resolution, now);
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            LogDecision(item);
             _cardDataRepository.QueueReload();
             return SaveResult.Success();
         }
@@ -139,7 +140,7 @@ namespace CardCollector.Services
                     ? $"A retired catalog card is named \"{existing.Name}\"; restore it in the catalog admin, then create the printing on it."
                     : $"The catalog already has a card named \"{existing.Name}\"; create the printing on it instead."]);
 
-            var (rarity, variant) = CatalogReviewPresenter.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(payload, "PrintVariant"));
+            var (rarity, variant) = CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(payload, "PrintVariant"));
             SaveResult result = SaveResult.Success();
             try
             {
@@ -157,15 +158,8 @@ namespace CardCollector.Services
                     };
                     _reviewRepository.AddCard(card);
 
-                    var prefix = CardDataMapper.GetSetPrefix(setCode);
-                    var set = await _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken).ConfigureAwait(false);
-                    if (set is null)
-                    {
-                        set = new CatalogSet { DateCreated = now, DateModified = now, Name = prefix, Prefix = prefix };
-                        _reviewRepository.AddSet(set);
-                    }
-
-                    var printing = CatalogPrintingFactory.Create(card, setCode, set.Name, rarity, variant, set, now);
+                    var printing = await CatalogPrintingFactory.CreateByHandAsync(
+                        card, setCode, rarity, variant, "Created from the review inbox", prefix => _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken), _reviewRepository.AddSet, now).ConfigureAwait(false);
                     result = await PlaceOnPrintingAsync(item, payload, printing, cancellationToken).ConfigureAwait(false);
                     if (!result.Succeeded)
                         throw new CatalogReviewDecisionException(result);
@@ -174,7 +168,6 @@ namespace CardCollector.Services
                     item.CatalogPrintingID = printing.ID;
                     item.Resolution = $"Created card \"{name}\" with {CatalogPrintingFactory.Describe(printing)}";
                     await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                    _logger.LogInformation("Created catalog card {CardID} ({Name}) from TCGPlayer review item {ItemID}", card.ID, name, item.ID);
                 }, cancellationToken).ConfigureAwait(false);
             }
             catch (CatalogReviewDecisionException failed)
@@ -182,7 +175,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return FinishPlacement(result);
+            return FinishPlacement(result, item);
         }
 
         public async Task<SaveResult> CreatePrintingAsync(int id, int catalogCardID, CancellationToken cancellationToken = default)
@@ -204,7 +197,7 @@ namespace CardCollector.Services
             if (string.IsNullOrWhiteSpace(setCode) || string.IsNullOrWhiteSpace(rawRarity))
                 return SaveResult.Failure(["The item has no set code or rarity to create a printing from."]);
 
-            var (rarity, variant) = CatalogReviewPresenter.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(source, "PrintVariant"));
+            var (rarity, variant) = CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, CatalogReviewPresenter.ReadString(source, "PrintVariant"));
 
             SaveResult result = SaveResult.Success();
             try
@@ -217,16 +210,7 @@ namespace CardCollector.Services
                         && string.Equals(p.PrintVariant, variant, StringComparison.OrdinalIgnoreCase));
                     if (printing is null)
                     {
-                        var prefix = CardDataMapper.GetSetPrefix(setCode);
-                        var sibling = card.Printings.FirstOrDefault(p => string.Equals(p.SetCode, setCode, StringComparison.OrdinalIgnoreCase));
-                        var set = sibling?.Set ?? await _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken).ConfigureAwait(false);
-                        if (set is null)
-                        {
-                            set = new CatalogSet { DateCreated = Now(), DateModified = Now(), Name = prefix, Prefix = prefix };
-                            _reviewRepository.AddSet(set);
-                        }
-
-                        printing = CatalogPrintingFactory.Create(card, setCode, sibling?.SetName ?? set.Name, rarity, variant, set, Now());
+                        printing = await CatalogPrintingFactory.CreateByHandAsync(card, setCode, rarity, variant, "Created from the review inbox", prefix => _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken), _reviewRepository.AddSet, Now()).ConfigureAwait(false);
                         await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
@@ -240,7 +224,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return FinishPlacement(result);
+            return FinishPlacement(result, item);
         }
 
         public async Task<int> DismissAllInformationalAsync(CatalogReviewItemKind? kind, string? query = null, CancellationToken cancellationToken = default)
@@ -271,6 +255,7 @@ namespace CardCollector.Services
 
             Close(item, CatalogReviewItemStatus.Dismissed, "Dismissed", Now());
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            LogDecision(item);
             return SaveResult.Success();
         }
 
@@ -311,7 +296,7 @@ namespace CardCollector.Services
                 return failed.Result;
             }
 
-            return FinishPlacement(result);
+            return FinishPlacement(result, item);
         }
 
         public async Task<SaveResult> RejectAsync(int id, CancellationToken cancellationToken = default)
@@ -330,6 +315,7 @@ namespace CardCollector.Services
             };
             Close(item, CatalogReviewItemStatus.Rejected, resolution, Now());
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            LogDecision(item);
             return SaveResult.Success();
         }
 
@@ -398,12 +384,20 @@ namespace CardCollector.Services
             PrintingsBySetCode = _cardDataRepository.GetPrintingsBySetCode
         };
 
-        private SaveResult FinishPlacement(SaveResult result)
+        private SaveResult FinishPlacement(SaveResult result, CatalogReviewItem item)
         {
-            if (result.Succeeded)
-                _cardDataRepository.QueueReload();
+            if (!result.Succeeded)
+                return result;
+
+            LogDecision(item);
+            _cardDataRepository.QueueReload();
             return result;
         }
+
+        private void LogDecision(CatalogReviewItem item) =>
+            _logger.LogInformation(
+                "Catalog review item {ItemID} ({Kind}) {Status}: {Resolution} (card {CardID}, printing {PrintingID})",
+                item.ID, item.Kind, item.Status, item.Resolution, item.CatalogCardID, item.CatalogPrintingID);
 
         private DateTime Now() => _timeProvider.GetUtcNow().UtcDateTime;
 

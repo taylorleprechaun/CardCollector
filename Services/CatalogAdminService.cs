@@ -1,5 +1,4 @@
 using CardCollector.Data.Models.Catalog;
-using CardCollector.DTO;
 using CardCollector.Models;
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
@@ -51,9 +50,7 @@ namespace CardCollector.Services
             if (card is null)
                 return SaveResult.Missing("That card no longer exists.");
 
-            var rarity = RarityExtensions.NormalizeRarityName(rawRarity) ?? rawRarity;
-            var rawVariant = input.PrintVariant?.Trim();
-            var variant = string.IsNullOrEmpty(rawVariant) || RarityExtensions.IsRarityRestatement(rawVariant, rarity) ? null : rawVariant;
+            var (rarity, variant) = CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, input.PrintVariant?.Trim());
 
             var existing = card.Printings.FirstOrDefault(p =>
                 string.Equals(p.SetCode, setCode, StringComparison.OrdinalIgnoreCase)
@@ -64,27 +61,15 @@ namespace CardCollector.Services
                     ? $"{CatalogPrintingFactory.Describe(existing)} already exists but is retired; restore it instead."
                     : $"{CatalogPrintingFactory.Describe(existing)} already exists."]);
 
-            var now = Now();
-            var sibling = card.Printings.FirstOrDefault(p => string.Equals(p.SetCode, setCode, StringComparison.OrdinalIgnoreCase));
-            var prefix = CardDataMapper.GetSetPrefix(setCode);
-            var set = sibling?.Set ?? await _adminRepository.GetSetByPrefixAsync(prefix, cancellationToken).ConfigureAwait(false);
-            if (set is null)
-            {
-                set = new CatalogSet { DateCreated = now, DateModified = now, Name = prefix, Prefix = prefix };
-                _adminRepository.AddSet(set);
-            }
-
-            var printing = CatalogPrintingFactory.Create(card, setCode, sibling?.SetName ?? set.Name, rarity, variant, set, now);
-            printing.Sources.Add(new CatalogPrintingSource
-            {
-                DateCreated = now,
-                DateModified = now,
-                ExternalKey = $"card:{card.ID}|{setCode}|{rarity}|{variant}",
-                ExternalSummary = "Added by hand",
-                FirstSeenUTC = now,
-                LastSeenUTC = now,
-                Source = CatalogSource.Manual
-            });
+            var printing = await CatalogPrintingFactory.CreateByHandAsync(
+                card,
+                setCode,
+                rarity,
+                variant,
+                "Added by hand",
+                prefix => _adminRepository.GetSetByPrefixAsync(prefix, cancellationToken),
+                _adminRepository.AddSet,
+                Now()).ConfigureAwait(false);
 
             await _adminRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Added printing {Printing} to catalog card {CardID} by hand", CatalogPrintingFactory.Describe(printing), card.ID);

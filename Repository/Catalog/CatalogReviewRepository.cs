@@ -32,16 +32,10 @@ namespace CardCollector.Repository.Catalog
                 .ConfigureAwait(false);
 
         public async Task<int> CountUserRowsForCardAsync(int catalogCardID, CancellationToken cancellationToken = default) =>
-            await _context.CollectionEntries.CountAsync(e => e.CatalogPrinting!.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false)
-            + await _context.PreferredVersions.CountAsync(v => v.CatalogPrinting!.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false)
-            + await _context.CheckedOutCards.CountAsync(c => c.CatalogPrinting!.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false)
-            + await _context.PendingOrderLines.CountAsync(l => l.CatalogPrinting!.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false);
+            (await _context.CountUserRowsByPrintingAsync(p => p.CatalogCardID == catalogCardID, cancellationToken).ConfigureAwait(false)).Values.Sum();
 
         public async Task<int> CountUserRowsForPrintingAsync(int catalogPrintingID, CancellationToken cancellationToken = default) =>
-            await _context.CollectionEntries.CountAsync(e => e.CatalogPrintingID == catalogPrintingID, cancellationToken).ConfigureAwait(false)
-            + await _context.PreferredVersions.CountAsync(v => v.CatalogPrintingID == catalogPrintingID, cancellationToken).ConfigureAwait(false)
-            + await _context.CheckedOutCards.CountAsync(c => c.CatalogPrintingID == catalogPrintingID, cancellationToken).ConfigureAwait(false)
-            + await _context.PendingOrderLines.CountAsync(l => l.CatalogPrintingID == catalogPrintingID, cancellationToken).ConfigureAwait(false);
+            (await _context.CountUserRowsByPrintingAsync(p => p.ID == catalogPrintingID, cancellationToken).ConfigureAwait(false)).Values.Sum();
 
         public async Task<CatalogCard?> FindCardByNameAsync(string name, CancellationToken cancellationToken = default) =>
             await _context.CatalogCards
