@@ -85,7 +85,7 @@ else
     <div class="list-group mb-4 cc-table-card" id="reviewItems" data-reload-when-empty>
         @foreach (var item in Model.Results.Items)
         {
-            <partial name="_ReviewItemRow" model='new CatalogReviewRowViewModel { FilterParams = filterParams, Item = item }' />
+            <partial name="_ReviewItemRow" model='new CatalogReviewRowViewModel { FilterParams = filterParams, Item = item, ShowKind = Model.Kind is null }' />
         }
     </div>
 
