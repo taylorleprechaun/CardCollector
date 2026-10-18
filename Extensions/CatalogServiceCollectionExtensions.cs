@@ -1,7 +1,6 @@
 using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Repository.Catalog;
-using CardCollector.Repository.Legacy;
 using CardCollector.Services;
 
 namespace CardCollector.Extensions
@@ -21,9 +20,6 @@ namespace CardCollector.Extensions
             services.AddScoped<ICatalogReviewRepository, CatalogReviewRepository>();
             services.AddScoped<ICatalogReviewService, CatalogReviewService>();
             services.AddScoped<ICatalogSyncService, CatalogSyncService>();
-            services.AddSingleton<ILegacyDatabaseReader, LegacyDatabaseReader>();
-            services.AddScoped<ILegacyImportRepository, LegacyImportRepository>();
-            services.AddScoped<ILegacyMigrationService, LegacyMigrationService>();
 
             return services;
         }

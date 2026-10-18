@@ -1,4 +1,3 @@
-using CardCollector.DTO.YGOProDeck;
 using CardCollector.Repository.Sources;
 
 namespace CardCollector.Tests.Repository.Sources
@@ -6,26 +5,6 @@ namespace CardCollector.Tests.Repository.Sources
     [TestClass]
     public sealed class YGOProDeckSourceTests
     {
-        [TestMethod]
-        public void HasMiscInfo_CardHasMiscInfo_ReturnsTrue()
-        {
-            var cards = new List<YGOProDeckCard> { new() { ID = 1 }, new() { ID = 2, MiscInfo = [new YGOProDeckMiscInfo()] } };
-
-            var result = YGOProDeckSource.HasMiscInfo(cards);
-
-            Assert.IsTrue(result);
-        }
-
-        [TestMethod]
-        public void HasMiscInfo_NoCardHasMiscInfo_ReturnsFalse()
-        {
-            var cards = new List<YGOProDeckCard> { new() { ID = 1 }, new() { ID = 2 } };
-
-            var result = YGOProDeckSource.HasMiscInfo(cards);
-
-            Assert.IsFalse(result);
-        }
-
         [TestMethod]
         public void ParseCards_MalformedJson_ReturnsEmpty()
         {

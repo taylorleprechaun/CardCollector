@@ -1,16 +1,13 @@
 using CardCollector.Data;
 using CardCollector.Extensions;
-using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Repository.Sources;
 using CardCollector.Services;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 // A maintenance command (e.g. catalog-sync) runs against its own database and exits instead of starting the server.
 var catalogCommand = CardCollector.CatalogCommandLine.Parse(args);
-catalogCommand?.PrepareDatabase();
 var builder = WebApplication.CreateBuilder(catalogCommand is null ? args : []);
 
 builder.Configuration.AddJsonFile("appsettings-private.json", optional: true, reloadOnChange: true);
@@ -75,21 +72,6 @@ builder.Services.AddHostedService<CatalogWarmupHostedService>();
 builder.Services.AddHostedService<PriceRefreshBackgroundService>();
 
 var app = builder.Build();
-
-// The first start after the catalog cutover finds no database at the configured path but finds the legacy one: build the
-// new database from it before anything opens the database. The legacy file is only read, so it stays the rollback.
-if (catalogCommand is null)
-{
-    var databasePath = new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).DataSource;
-    var legacyDatabasePath = builder.Configuration.GetValue<string>("LegacyMigration:LegacyDatabasePath");
-    CardCollector.LegacyMigrationRunner.DiscardIncompleteMigration(databasePath, app.Services.GetRequiredService<ILogger<Program>>());
-    if (!File.Exists(databasePath) && !string.IsNullOrWhiteSpace(legacyDatabasePath) && File.Exists(legacyDatabasePath))
-    {
-        var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-        startupLogger.LogWarning("No database at {DatabasePath}; migrating the legacy database {LegacyDatabasePath}", databasePath, legacyDatabasePath);
-        await CardCollector.LegacyMigrationRunner.RunAsync(app.Services, legacyDatabasePath, databasePath, CatalogSourceMode.IfStale, startupLogger);
-    }
-}
 
 using (var scope = app.Services.CreateScope())
 {

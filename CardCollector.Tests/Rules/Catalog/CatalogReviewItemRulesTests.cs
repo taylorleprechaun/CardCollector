@@ -71,25 +71,6 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
-        public void Reconcile_NewDetectionWithLinkedIDs_StoresThemOnTheItem()
-        {
-            var detected = new DetectedReviewItem
-            {
-                ExternalSubject = "legacy:CollectionEntries:5",
-                Kind = CatalogReviewItemKind.LegacyRowAutoMapped,
-                LinkedCardID = 42,
-                LinkedPrintingID = 420,
-                Payload = new { Table = "CollectionEntries" },
-                Summary = "Synthetic summary"
-            };
-
-            var item = CatalogReviewItemRules.Reconcile([], [detected], AllSucceeded, 7, NowUTC).NewItems.Single();
-
-            Assert.AreEqual(42, item.CatalogCardID);
-            Assert.AreEqual(420, item.CatalogPrintingID);
-        }
-
-        [TestMethod]
         public void Reconcile_OpenItemDetectedAgain_AccumulatesInsteadOfDuplicating()
         {
             var payload = new { ProductID = 500 };

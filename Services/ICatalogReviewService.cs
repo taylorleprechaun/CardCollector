@@ -5,8 +5,8 @@ using CardCollector.ViewModels;
 namespace CardCollector.Services
 {
     /// <summary>
-    /// The catalog review inbox: lists what the sync and the legacy migration found, and applies the user's decisions to the
-    /// catalog (and, for unmapped legacy rows, to the collection).
+    /// The catalog review inbox: lists what the sync found (plus the legacy migration's items, kept as history) and applies
+    /// the user's decisions to the catalog.
     /// </summary>
     public interface ICatalogReviewService
     {
@@ -24,7 +24,7 @@ namespace CardCollector.Services
 
         /// <summary>
         /// Creates the missing printing on the chosen card from the item's set code, rarity, and variant, then links the
-        /// product to it or restores the legacy row on it.
+        /// product to it.
         /// </summary>
         Task<SaveResult> CreatePrintingAsync(int id, int catalogCardID, CancellationToken cancellationToken = default);
 
@@ -43,10 +43,10 @@ namespace CardCollector.Services
         /// <summary>Counts open items per kind, for the inbox's kind filter.</summary>
         Task<IReadOnlyDictionary<CatalogReviewItemKind, int>> GetOpenCountsByKindAsync(CancellationToken cancellationToken = default);
 
-        /// <summary>Links an unmapped product to an existing printing, or restores an unmapped legacy row on it.</summary>
+        /// <summary>Links an unmapped product to an existing printing.</summary>
         Task<SaveResult> MapToPrintingAsync(int id, int catalogPrintingID, CancellationToken cancellationToken = default);
 
-        /// <summary>Keeps the catalog as it is (for an unmapped legacy row, discards the row).</summary>
+        /// <summary>Keeps the catalog as it is.</summary>
         Task<SaveResult> RejectAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>Puts a rejected or dismissed item back in the inbox, undecided.</summary>

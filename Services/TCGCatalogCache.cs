@@ -109,32 +109,17 @@ namespace CardCollector.Services
 
         public IReadOnlyList<TCGPriceSet> GetAllPrintings() => _printings;
 
-        /// <summary>
-        /// True when at least one printing carries a TCGPlayer product ID; false means the cache predates the field
-        /// (public for direct unit testing).
-        /// </summary>
-        public static bool HasProductIDs(IEnumerable<TCGPriceSet> printings) =>
-            printings.Any(p => p.ProductID > 0);
-
         [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus HTTP fetch orchestration; I/O, not testable logic.")]
         public async Task LoadIfStaleAsync()
         {
             var (cacheDir, cachePath, timestampPath) = GetCachePaths();
             if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTtl))
             {
-                if (HasProductIDs(_printings))
-                {
-                    _logger.LogInformation("Catalog cache already fresh — skipping startup warm-up fetch");
-                    return;
-                }
-
-                _logger.LogInformation("Catalog cache predates TCGPlayer product IDs — fetching from tcgcsv.com");
-            }
-            else
-            {
-                _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
+                _logger.LogInformation("Catalog cache already fresh — skipping startup warm-up fetch");
+                return;
             }
 
+            _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
             await FetchAndStoreAsync(cacheDir, cachePath, timestampPath).ConfigureAwait(false);
         }
 

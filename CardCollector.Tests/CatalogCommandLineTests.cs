@@ -27,28 +27,8 @@ namespace CardCollector.Tests
         }
 
         [TestMethod]
-        public void Parse_MigrateLegacyWithoutFrom_Throws()
-        {
-            Assert.ThrowsExactly<ArgumentException>(() => CatalogCommandLine.Parse(["migrate-legacy", "--to", "Data/new.db"]));
-        }
-
-        [TestMethod]
-        public void Parse_MigrateLegacyWithPaths_ReturnsCommand()
-        {
-            var command = CatalogCommandLine.Parse(["migrate-legacy", "--from", "Data/collection.db", "--to", "Data/new.db", "--offline", "--overwrite"]);
-
-            Assert.IsNotNull(command);
-            Assert.AreEqual(CatalogCommandLine.MIGRATE_LEGACY, command.Command);
-            Assert.AreEqual("Data/collection.db", command.LegacyDatabasePath);
-            Assert.AreEqual("Data/new.db", command.DatabasePath);
-            Assert.IsTrue(command.Offline);
-            Assert.IsTrue(command.Overwrite);
-        }
-
-        [TestMethod]
         [DataRow(new string[0], DisplayName = "No arguments")]
-        [DataRow(new[] { "--urls", "http://localhost:5000" }, DisplayName = "Web server arguments")]
-        public void Parse_NotACommand_ReturnsNull(string[] args)
+        [DataRow(new[] { "--urls", "http://localhost:5000" }, DisplayName = "Web server arguments")]        public void Parse_NotACommand_ReturnsNull(string[] args)
         {
             var command = CatalogCommandLine.Parse(args);
 

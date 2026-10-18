@@ -69,8 +69,8 @@ namespace CardCollector.Rules.Catalog
                 {
                     stored = new CatalogReviewItem
                     {
-                        CatalogCardID = item.Card?.ID ?? item.Printing?.CatalogCardID ?? item.LinkedCardID,
-                        CatalogPrintingID = item.Printing?.ID ?? item.LinkedPrintingID,
+                        CatalogCardID = item.Card?.ID ?? item.Printing?.CatalogCardID,
+                        CatalogPrintingID = item.Printing?.ID,
                         DateCreated = nowUTC,
                         DateModified = nowUTC,
                         DetectionCount = 1,

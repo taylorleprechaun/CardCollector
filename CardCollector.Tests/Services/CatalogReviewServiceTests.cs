@@ -3,7 +3,6 @@ using CardCollector.Data.Models;
 using CardCollector.Data.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Repository.Catalog;
-using CardCollector.Repository.Legacy;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
@@ -183,20 +182,32 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task CreatePrintingAsync_LegacyRow_CreatesManualPrintingAndRestoresRowOnIt()
+        public async Task CreatePrintingAsync_LegacyRowUnmapped_FailsAndLeavesItOpen()
         {
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyEntryPayload("LDS1-EN101", "Ultra Rare", "Blue"));
+            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","Quantity":2},"Reason":"No match"}""");
+
+            var result = await Service().CreatePrintingAsync(itemID, _cardID);
+
+            Assert.IsFalse(result.Succeeded);
+            using var verify = NewContext();
+            Assert.IsFalse(await verify.CatalogPrintings.AnyAsync(p => p.SetCode == "LDS1-EN101"));
+            Assert.AreEqual(CatalogReviewItemStatus.Open, (await verify.CatalogReviewItems.SingleAsync()).Status);
+        }
+
+        [TestMethod]
+        public async Task CreatePrintingAsync_MissingPrinting_CreatesManualPrintingAndLinksProduct()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.UnmappedTCGProduct,
+                """{"ProductID":79079,"CardName":"Synthetic Theory","SetCode":"LC01-EN001","RarityName":"Ultra Rare","PrintVariant":"Blue"}""");
 
             var result = await Service().CreatePrintingAsync(itemID, _cardID);
 
             Assert.IsTrue(result.Succeeded);
             using var verify = NewContext();
-            var created = await verify.CatalogPrintings.Include(p => p.Sources).SingleAsync(p => p.SetCode == "LDS1-EN101");
+            var created = await verify.CatalogPrintings.Include(p => p.Sources).SingleAsync(p => p.SetCode == "LC01-EN001");
             Assert.AreEqual("Blue", created.PrintVariant);
-            Assert.AreEqual(CatalogSource.Manual, created.Sources.Single().Source);
-            var entry = await verify.CollectionEntries.SingleAsync();
-            Assert.AreEqual(4331, entry.ID);
-            Assert.AreEqual(created.ID, entry.CatalogPrintingID);
+            CollectionAssert.AreEquivalent(new[] { CatalogSource.Manual, CatalogSource.TCGPlayer }, created.Sources.Select(x => x.Source).ToList());
+            Assert.AreEqual(CatalogReviewItemStatus.Accepted, (await verify.CatalogReviewItems.SingleAsync()).Status);
         }
 
         [TestMethod]
@@ -249,6 +260,19 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(CatalogReviewItemStatus.Dismissed, (await verify.CatalogReviewItems.SingleAsync()).Status);
         }
 
+        [TestMethod]
+        public async Task DismissAsync_OpenLegacyRowUnmapped_ClosesIt()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","Quantity":2},"Reason":"No match"}""");
+
+            var result = await Service().DismissAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(CatalogReviewItemStatus.Dismissed, (await verify.CatalogReviewItems.SingleAsync()).Status);
+            Assert.AreEqual(0, await verify.CollectionEntries.CountAsync());
+        }
+
         [TestInitialize]
         public void Initialize()
         {
@@ -270,112 +294,15 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task MapToPrintingAsync_LegacyCheckedOutRow_RestoresIt()
+        public async Task MapToPrintingAsync_LegacyRowUnmapped_FailsAndRestoresNothing()
         {
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyCheckedOutPayload(quantity: 2));
-
-            var result = await Service().MapToPrintingAsync(itemID, _printingID);
-
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            var checkedOut = await verify.CheckedOutCards.SingleAsync();
-            Assert.AreEqual(65, checkedOut.ID);
-            Assert.AreEqual(2, checkedOut.Quantity);
-            Assert.AreEqual(_printingID, checkedOut.CatalogPrintingID);
-        }
-
-        [TestMethod]
-        public async Task MapToPrintingAsync_LegacyCheckedOutRowWithExistingRow_AddsTheQuantities()
-        {
-            using (var context = NewContext())
-            {
-                context.CheckedOutCards.Add(new CheckedOutCard { CatalogPrintingID = _printingID, ID = 7, Quantity = 1 });
-                await context.SaveChangesAsync();
-            }
-
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyCheckedOutPayload(quantity: 2));
-
-            var result = await Service().MapToPrintingAsync(itemID, _printingID);
-
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            var checkedOut = await verify.CheckedOutCards.SingleAsync();
-            Assert.AreEqual(7, checkedOut.ID);
-            Assert.AreEqual(3, checkedOut.Quantity);
-        }
-
-        [TestMethod]
-        public async Task MapToPrintingAsync_LegacyEntryWhoseIDIsTaken_RestoresItUnderANewID()
-        {
-            using (var context = NewContext())
-            {
-                context.CollectionEntries.Add(new CollectionEntry { CatalogPrintingID = _printingID, ID = 4331, Quantity = 1, Status = CollectionStatus.Owned });
-                await context.SaveChangesAsync();
-            }
-
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyEntryPayload("BLGG-EN127", "Ultra Rare", null));
-
-            var result = await Service().MapToPrintingAsync(itemID, _printingID);
-
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            var entries = await verify.CollectionEntries.OrderBy(e => e.ID).ToListAsync();
-            Assert.AreEqual(2, entries.Count);
-            Assert.AreNotEqual(4331, entries[1].ID);
-            Assert.AreEqual(2, entries[1].Quantity);
-        }
-
-        [TestMethod]
-        public async Task MapToPrintingAsync_LegacyPendingOrderLine_RestoresIt()
-        {
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped,
-                """{"Table":"PendingOrderLines","Row":{"ID":12,"CardID":37440988,"SetCode":"BLGG-EN127","RarityName":"Ultra Rare","Quantity":2,"Condition":"NearMint","Edition":"FirstEdition","AcquisitionMethod":"Purchased","MarketPriceAtEntry":1.5,"DateCreated":"2026-06-13 19:05:20"}}""");
-
-            var result = await Service().MapToPrintingAsync(itemID, _printingID);
-
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            var line = await verify.PendingOrderLines.SingleAsync();
-            Assert.AreEqual(12, line.ID);
-            Assert.AreEqual(2, line.Quantity);
-            Assert.AreEqual(1.5m, line.MarketPriceAtEntry);
-        }
-
-        [TestMethod]
-        public async Task MapToPrintingAsync_LegacyPreferredVersionWithExistingRow_FoldsIntoIt()
-        {
-            using (var context = NewContext())
-            {
-                context.PreferredVersions.Add(new PreferredVersion
-                {
-                    CatalogPrintingID = _printingID,
-                    DesiredQuantity = 1,
-                    ID = 10
-                });
-                await context.SaveChangesAsync();
-            }
-
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped,
-                """{"Table":"PreferredVersions","Row":{"ID":3013,"CardID":27847700,"SetCode":"RA03-EN051","RarityName":"Secret Rare","DesiredQuantity":3,"DateCreated":"2026-06-09 23:59:38","DateModified":"2026-06-09 23:59:38"}}""");
-
-            var result = await Service().MapToPrintingAsync(itemID, _printingID);
-
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            var version = await verify.PreferredVersions.SingleAsync();
-            Assert.AreEqual(3, version.DesiredQuantity);
-        }
-
-        [TestMethod]
-        public async Task MapToPrintingAsync_LegacyRowFromAnUnsupportedTable_FailsAndLeavesItOpen()
-        {
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped,
-                """{"Table":"DeckCards","Row":{"ID":1,"CardID":37440988,"SetCode":"BLGG-EN127","RarityName":"Ultra Rare"}}""");
+            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","Quantity":2},"Reason":"No match"}""");
 
             var result = await Service().MapToPrintingAsync(itemID, _printingID);
 
             Assert.IsFalse(result.Succeeded);
             using var verify = NewContext();
+            Assert.AreEqual(0, await verify.CollectionEntries.CountAsync());
             Assert.AreEqual(CatalogReviewItemStatus.Open, (await verify.CatalogReviewItems.SingleAsync()).Status);
         }
 
@@ -407,16 +334,13 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task RejectAsync_LegacyRow_ClosesItWithoutRestoringTheRow()
+        public async Task RejectAsync_LegacyRowUnmapped_IsRefused()
         {
-            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, LegacyEntryPayload("LDS1-EN101", "Ultra Rare", null));
+            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","Quantity":2},"Reason":"No match"}""");
 
             var result = await Service().RejectAsync(itemID);
 
-            Assert.IsTrue(result.Succeeded);
-            using var verify = NewContext();
-            Assert.AreEqual(0, await verify.CollectionEntries.CountAsync());
-            Assert.AreEqual(CatalogReviewItemStatus.Rejected, (await verify.CatalogReviewItems.SingleAsync()).Status);
+            Assert.IsFalse(result.Succeeded);
         }
 
         [TestMethod]
@@ -427,6 +351,18 @@ namespace CardCollector.Tests.Services
             var result = await Service().ReopenAsync(itemID);
 
             Assert.IsFalse(result.Succeeded);
+        }
+
+        [TestMethod]
+        public async Task ReopenAsync_DismissedLegacyItem_Fails()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowAutoMapped, "{}", status: CatalogReviewItemStatus.Dismissed);
+
+            var result = await Service().ReopenAsync(itemID);
+
+            Assert.IsFalse(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(CatalogReviewItemStatus.Dismissed, (await verify.CatalogReviewItems.SingleAsync()).Status);
         }
 
         [TestMethod]
@@ -463,12 +399,6 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual(CatalogReviewItemKind.PasscodeChanged, results.Items.Single().Kind);
         }
-
-        private static string LegacyCheckedOutPayload(int quantity) =>
-            $$"""{"Table":"CheckedOutCards","Row":{"ID":65,"CardID":37440988,"SetCode":"BLGG-EN127","RarityName":"Ultra Rare","Quantity":{{quantity}},"CheckedOutDate":"2026-06-20 17:57:21","DateCreated":"2026-06-20 17:57:21","DateModified":"2026-06-20 17:57:21"},"Reason":"No match"}""";
-
-        private static string LegacyEntryPayload(string setCode, string rarity, string? variant) =>
-            $$"""{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"{{setCode}}","RarityName":"{{rarity}}","PrintVariant":{{(variant is null ? "null" : $"\"{variant}\"")}},"Status":"Owned","Condition":"NearMint","Edition":"FirstEdition","Quantity":2,"DateCreated":"2026-06-13 19:05:20","DateModified":"2026-06-13 19:05:20"},"Reason":"No match"}""";
 
         private async Task AddCollectionEntryAsync()
         {
@@ -523,7 +453,6 @@ namespace CardCollector.Tests.Services
             var context = NewContext();
             return new CatalogReviewService(
                 _cardDataRepositoryMock.Object,
-                new LegacyImportRepository(context),
                 NullLogger<CatalogReviewService>.Instance,
                 new CatalogReviewRepository(context),
                 new UnitOfWork(context),
