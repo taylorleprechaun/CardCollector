@@ -110,9 +110,9 @@ CardCollector/
 ## Testing
 
 <!-- coverage:start -->
-![C# Tests](https://img.shields.io/badge/C%23%20tests-1463%20passing-brightgreen)
-![C# Coverage](https://img.shields.io/badge/C%23%20coverage-93%25-brightgreen)
-![JS Tests](https://img.shields.io/badge/JS%20tests-269%20passing-brightgreen)
+![C# Tests](https://img.shields.io/badge/C%23%20tests-1628%20passing-brightgreen)
+![C# Coverage](https://img.shields.io/badge/C%23%20coverage-95%25-brightgreen)
+![JS Tests](https://img.shields.io/badge/JS%20tests-291%20passing-brightgreen)
 ![JS Coverage](https://img.shields.io/badge/JS%20coverage-96%25-brightgreen)
 <!-- coverage:end -->
 
