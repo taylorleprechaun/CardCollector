@@ -160,7 +160,7 @@ namespace CardCollector.Pages.Catalog
                 : item.Status != CatalogReviewItemStatus.Open;
 
         private Task<string> RenderRowAsync(CatalogReviewItemViewModel item) =>
-            _razorPartialRenderer.RenderPartialAsync(this, "_ReviewItemRow", new CatalogReviewRowViewModel { FilterParams = GetFilterParams(), Item = item });
+            _razorPartialRenderer.RenderPartialAsync(this, "_ReviewItemRow", new CatalogReviewRowViewModel { FilterParams = GetFilterParams(), Item = item, ShowKind = Kind is null });
 
         /// <summary>
         /// After a decision: a full-page post redirects back to the same view. An AJAX post gets the item's row re-rendered

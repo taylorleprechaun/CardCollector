@@ -62,6 +62,17 @@ namespace CardCollector.Tests.Services
         public void Cleanup() => _connection.Dispose();
 
         [TestMethod]
+        public async Task GetCardAsync_Printing_ReturnsItsSetCodeRarityAndVariant()
+        {
+            var card = await Service().GetCardAsync(_cardID);
+
+            var printing = card!.Printings.Single();
+            Assert.AreEqual("BLGG-EN127", printing.SetCode);
+            Assert.AreEqual("Ultra Rare", printing.RarityName);
+            Assert.IsNull(printing.PrintVariant);
+        }
+
+        [TestMethod]
         public async Task GetCardAsync_UserRowOnAPrinting_CountsItOnThatPrinting()
         {
             using (var context = NewContext())

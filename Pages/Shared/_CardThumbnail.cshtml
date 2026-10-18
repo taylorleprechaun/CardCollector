@@ -8,5 +8,5 @@
 }
 else
 {
-    <div style="width: 44px; height: 64px;" class="rounded bg-secondary flex-shrink-0"></div>
+    <div style="width: 44px; height: 64px;" class="rounded bg-secondary flex-shrink-0 @(string.IsNullOrEmpty(Model.Placeholder) ? "" : "cc-thumbnail-placeholder")">@Model.Placeholder</div>
 }

@@ -4,6 +4,7 @@ using CardCollector.Models.Catalog;
 using CardCollector.ViewModels;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace CardCollector.Rules.Catalog
 {
@@ -13,6 +14,26 @@ namespace CardCollector.Rules.Catalog
     /// </summary>
     public static class CatalogReviewPresenter
     {
+        /// <summary>Payload properties the row shows as chips, so the details leave them out.</summary>
+        private static readonly IReadOnlySet<string> ChipProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "PrintVariant",
+            "ProductID",
+            "RarityName",
+            "SetCode"
+        };
+
+        private static readonly IReadOnlyDictionary<string, string> DetailLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["CardName"] = "Card name",
+            ["LastSeenUTC"] = "Last seen",
+            ["MissingProductIDs"] = "Missing products",
+            ["PrintVariant"] = "Variant",
+            ["ProductID"] = "Product",
+            ["RarityName"] = "Rarity",
+            ["SetCode"] = "Set code"
+        };
+
         private static readonly IReadOnlySet<string> HiddenRowColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "DateCreated",
@@ -43,6 +64,38 @@ namespace CardCollector.Rules.Catalog
                     => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.CreateCard, CatalogReviewAction.Reject],
                 _ => [CatalogReviewAction.Dismiss]
             };
+        }
+
+        /// <summary>
+        /// The decision an inbox row leads with. Accept when the kind has one; for an unmapped product, creating the printing
+        /// when no printing has its set code, else mapping onto an exact match, else creating the card, else creating the
+        /// printing (rather than mapping onto a different rarity or variant), else mapping; otherwise Dismiss or Reopen. Reject is never primary: it sits apart as the quiet way out.
+        /// </summary>
+        public static CatalogReviewAction? ChoosePrimaryAction(IReadOnlyList<CatalogReviewAction> actions, CatalogReviewPlacement placement)
+        {
+            if (actions is null) throw new ArgumentNullException(nameof(actions));
+            if (placement is null) throw new ArgumentNullException(nameof(placement));
+
+            var canMap = actions.Contains(CatalogReviewAction.MapToPrinting) && placement.Printings.Count > 0;
+            var canCreate = actions.Contains(CatalogReviewAction.CreatePrinting) && placement.Cards.Count > 0;
+
+            if (actions.Contains(CatalogReviewAction.Accept))
+                return CatalogReviewAction.Accept;
+            if (canCreate && placement.SetCode is not null && !placement.SetCodeInCatalog)
+                return CatalogReviewAction.CreatePrinting;
+            if (canMap && placement.HasExactMatch)
+                return CatalogReviewAction.MapToPrinting;
+            if (actions.Contains(CatalogReviewAction.CreateCard))
+                return CatalogReviewAction.CreateCard;
+            if (canCreate)
+                return CatalogReviewAction.CreatePrinting;
+            if (canMap)
+                return CatalogReviewAction.MapToPrinting;
+            if (actions.Contains(CatalogReviewAction.Dismiss))
+                return CatalogReviewAction.Dismiss;
+            if (actions.Contains(CatalogReviewAction.Reopen))
+                return CatalogReviewAction.Reopen;
+            return null;
         }
 
         /// <summary>
@@ -78,41 +131,61 @@ namespace CardCollector.Rules.Catalog
                 actions = actions.Where(a => a != CatalogReviewAction.CreateCard).ToList();
 
             var card = item.CatalogCardID is int cardID ? lookup.CardByID(cardID) : null;
+
+            // Only a unique name match supplies the art, so a name two cards share never shows the wrong one.
+            var displayCard = card
+                ?? (ReadString(payload, "CardName") is { } reportedName && lookup.CardsByName(reportedName) is { Count: 1 } named ? named[0] : null);
             var placesOnPrinting = actions.Contains(CatalogReviewAction.MapToPrinting);
             var placement = placesOnPrinting ? BuildPlacement(payload, lookup) : new CatalogReviewPlacement([], [], null, false);
             var (acceptLabel, rejectLabel) = Labels(item.Kind, payload);
+            var cardName = card?.Name ?? ReadString(payload, "CardName") ?? ReadString(payload, "Name");
+            var headline = BuildHeadline(item.Kind, payload);
+
+            // The details leave out what the row already shows: the chips, the title's card name, and a reason used as the headline.
+            var shown = new HashSet<string>(ChipProperties, StringComparer.OrdinalIgnoreCase);
+            if (cardName is not null && string.Equals(ReadString(payload, "CardName"), cardName, StringComparison.OrdinalIgnoreCase))
+                shown.Add("CardName");
+            if (headline is not null && item.Kind == CatalogReviewItemKind.UnmappedTCGProduct)
+                shown.Add("Reason");
 
             return new CatalogReviewItemViewModel
             {
                 AcceptLabel = acceptLabel,
                 Actions = actions,
-                CardName = card?.Name ?? ReadString(payload, "CardName") ?? ReadString(payload, "Name"),
+                CardName = cardName,
                 CardOptions = placement.Cards,
                 CatalogCardID = item.CatalogCardID,
-                Details = BuildDetails(payload),
+                Details = BuildDetails(payload, shown),
                 DetectionCount = item.DetectionCount,
+                DisplayCardID = displayCard?.ID,
                 ErrorMessage = errorMessage,
                 FirstDetectedUTC = item.FirstDetectedUTC,
+                Headline = headline ?? item.Summary,
                 ID = item.ID,
-                ImageURLSmall = card?.CardImages?.FirstOrDefault()?.ImageURLSmall,
+                ImageURLSmall = displayCard?.CardImages?.FirstOrDefault()?.ImageURLSmall,
                 IsActionable = item.Kind.IsActionable(),
                 Kind = item.Kind,
                 LastDetectedUTC = item.LastDetectedUTC,
                 PlacementSetCode = placement.SetCode,
                 PlacementSetCodeInCatalog = placement.SetCodeInCatalog,
+                PrimaryAction = ChoosePrimaryAction(actions, placement),
                 PrintingOptions = placement.Printings,
+                PrintVariant = ReadString(payload, "PrintVariant"),
+                ProductID = int.TryParse(ReadString(payload, "ProductID"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var productID) ? productID : null,
+                RarityName = ReadString(payload, "RarityName"),
                 RejectLabel = rejectLabel,
                 Resolution = item.Resolution,
                 ResolvedUTC = item.ResolvedUTC,
+                SetCode = ReadString(payload, "SetCode"),
                 Status = item.Status,
                 Summary = item.Summary
             };
         }
 
-        private static IReadOnlyList<KeyValuePair<string, string>> BuildDetails(JObject payload)
+        private static IReadOnlyList<KeyValuePair<string, string>> BuildDetails(JObject payload, IReadOnlySet<string> shown)
         {
             var details = new List<KeyValuePair<string, string>>();
-            foreach (var property in payload.Properties())
+            foreach (var property in payload.Properties().Where(p => !shown.Contains(p.Name)))
             {
                 var text = property.Value switch
                 {
@@ -123,10 +196,39 @@ namespace CardCollector.Rules.Catalog
                     _ => FormatValue(property.Value)
                 };
                 if (!string.IsNullOrWhiteSpace(text))
-                    details.Add(new KeyValuePair<string, string>(property.Name, text));
+                    details.Add(new KeyValuePair<string, string>(DetailLabel(property.Name), text));
             }
 
             return details;
+        }
+
+        /// <summary>The short "what happened" line for kinds that have one; null (use the summary) for the rest or when the payload lacks a field.</summary>
+        private static string? BuildHeadline(CatalogReviewItemKind kind, JObject payload)
+        {
+            var lastSeen = payload["LastSeenUTC"] is JValue { Type: JTokenType.Date } date
+                ? date.Value<DateTime>().ToString("MMM d, yyyy", CultureInfo.InvariantCulture)
+                : null;
+
+            return kind switch
+            {
+                CatalogReviewItemKind.AliasAdded when payload["Added"] is JArray { Count: > 0 } added
+                    => $"Gained {string.Join(", ", added.Select(FormatValue))}",
+                CatalogReviewItemKind.CardAdded => "New card",
+                CatalogReviewItemKind.CardNameChanged when ReadString(payload, "Reported") is { } reported => $"Now reported as \"{reported}\"",
+                CatalogReviewItemKind.CardNotSeen when lastSeen is not null => $"No card source lists it any more (last seen {lastSeen})",
+                CatalogReviewItemKind.CardTextChanged when payload["Changes"] is JObject { Count: > 0 } changes
+                    => $"Changed: {string.Join(", ", changes.Properties().Select(p => p.Name))}",
+                CatalogReviewItemKind.PasscodeAssigned when ReadString(payload, "Passcode") is { } passcode => $"Now has passcode {passcode}",
+                CatalogReviewItemKind.PasscodeChanged when ReadString(payload, "Reported") is { } reported && ReadString(payload, "Current") is { } current
+                    => $"Passcode reported as {reported}, not {current}",
+                CatalogReviewItemKind.PrintingAdded => "New printing",
+                CatalogReviewItemKind.PrintingNotSeen when lastSeen is not null => $"No source lists this printing any more (last seen {lastSeen})",
+                CatalogReviewItemKind.TCGListingChanged => "TCGPlayer no longer lists this printing",
+                CatalogReviewItemKind.TCGProductChanged => "TCGPlayer edited the product",
+                CatalogReviewItemKind.UnmappedTCGProduct when ReadString(payload, "Reason") is { Length: > 0 } reason
+                    => char.ToUpperInvariant(reason[0]) + reason[1..],
+                _ => null
+            };
         }
 
         /// <summary>
@@ -170,9 +272,18 @@ namespace CardCollector.Rules.Catalog
                 .OrderBy(o => o.Label, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            return new CatalogReviewPlacement(printingOptions, cardOptions, setCode, underCode.Count > 0);
+            var hasExactMatch = rarity is not null
+                && underCode.Any(x => x.Printing.PrintingID > 0 && Difference(x.Printing, rarity, variant) == CatalogPlacementDifference.None);
+
+            return new CatalogReviewPlacement(printingOptions, cardOptions, setCode, underCode.Count > 0, hasExactMatch);
         }
 
+        /// <summary>A payload property name as a label: a known name's wording, else the name split into words ("ObservedKonamiID" → "Observed Konami ID").</summary>
+        private static string DetailLabel(string property) =>
+            DetailLabels.TryGetValue(property, out var label)
+                ? label
+                : Regex.Replace(property, "(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ");
+        
         /// <summary>How a candidate printing differs from the reported rarity and variant; nothing when no rarity was reported.</summary>
         private static CatalogPlacementDifference Difference(Set printing, string? rarity, string? variant)
         {

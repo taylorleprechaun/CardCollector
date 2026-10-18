@@ -6,5 +6,8 @@ namespace CardCollector.ViewModels
         public string FilterParams { get; init; } = string.Empty;
 
         public CatalogReviewItemViewModel Item { get; init; } = new();
+
+        /// <summary>True when the list mixes kinds (no Kind filter), so each row names its kind.</summary>
+        public bool ShowKind { get; init; }
     }
 }

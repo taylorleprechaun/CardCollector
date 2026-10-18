@@ -1,11 +1,17 @@
 @page
 @model CardCollector.Pages.Catalog.CardDetailsModel
 @using CardCollector.Data.Models.Catalog
+@using CardCollector.Rules.Catalog
 @{
     var card = Model.Card!;
     ViewData["Title"] = $"{card.Name} — Catalog";
     var handlerURL = (string handler) => $"/Catalog/CardDetails?handler={handler}&id={card.ID}";
-    var fields = new (string Field, string Label, string Type, string? Value, string Column)[]
+    var unlockURL = (string field) => $"{handlerURL("Unlock")}&field={field}";
+    var now = DateTime.UtcNow;
+    var values = card.Fields;
+    var statValue = (int? stat) => stat == -1 ? "?" : stat?.ToString();
+    var listValue = (string? list, string separator) => string.IsNullOrWhiteSpace(list) ? null : string.Join(separator, list.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+    var editFields = new (string Field, string Label, string Type, string? Value, string Column)[]
     {
         (CatalogCardField.NAME, "Name", "text", Model.Input.Name, "col-12 col-md-8"),
         (CatalogCardField.PASSCODE, "Passcode", "number", Model.Input.Passcode?.ToString(), "col-12 col-md-4"),
@@ -21,6 +27,198 @@
         (CatalogCardField.LINK_MARKERS, "Link arrows", "text", Model.Input.LinkMarkers, "col-12"),
         (CatalogCardField.DESCRIPTION, "Card text", "textarea", Model.Input.Description, "col-12")
     };
+    // The read-only view: the card's saved values, leaving out the empty ones (no Link rating on a spell, and so on).
+    var allReadFields = new (string Field, string Label, string? Value, bool Wide)[]
+    {
+        (CatalogCardField.CARD_TYPE, "Card type", values.CardType, false),
+        (CatalogCardField.TYPE, "Type / property", values.Type, false),
+        (CatalogCardField.ATTRIBUTE, "Attribute", values.Attribute, false),
+        (CatalogCardField.LEVEL, "Level / rank", values.Level?.ToString(), false),
+        (CatalogCardField.LINK_RATING, "Link rating", values.LinkRating?.ToString(), false),
+        (CatalogCardField.ATK, "ATK", statValue(values.ATK), false),
+        (CatalogCardField.DEF, "DEF", statValue(values.DEF), false),
+        (CatalogCardField.ARCHETYPE, "Archetype", values.Archetype, false),
+        (CatalogCardField.PASSCODE, "Passcode", values.Passcode?.ToString(), false),
+        (CatalogCardField.TYPE_LINE, "Type line", listValue(values.TypeLine, " / "), false),
+        (CatalogCardField.LINK_MARKERS, "Link arrows", listValue(values.LinkMarkers, ", "), true),
+        (CatalogCardField.DESCRIPTION, "Card text", values.Description, true)
+    };
+    var readFields = allReadFields.Where(f => !string.IsNullOrWhiteSpace(f.Value)).ToList();
+    var hiddenEmpty = allReadFields.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Label).ToList();
+    var headerChips = new[]
+    {
+        values.CardType,
+        values.Type,
+        values.Attribute,
+        values.LinkRating is int link ? $"Link {link}" : values.Level is int level ? $"Level {level}" : null
+    }.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+    var activePrintings = card.Printings.Where(p => p.Status == CatalogStatus.Active).ToList();
+    var retiredPrintings = card.Printings.Where(p => p.Status != CatalogStatus.Active).ToList();
+    var rowsLabel = (int count) => count == 1 ? "1 row" : $"{count} rows";
+
+    async Task RenderUnlock(string field)
+    {
+        <form method="post" action="@unlockURL(field)" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-link btn-sm p-0 align-baseline cc-lock-unlock">Unlock</button>
+        </form>
+    }
+
+    async Task RenderLock(string field)
+    {
+        <span class="cc-lock" title="Edited by hand; the sync leaves it alone"><i class="bi bi-lock-fill" aria-hidden="true"></i> Locked &middot; </span>
+        await RenderUnlock(field);
+    }
+
+    async Task RenderPrinting(CatalogPrintingAdminViewModel printing)
+    {
+        var moreID = $"printing-more-{printing.ID}";
+        var mergeID = $"printing-merge-{printing.ID}";
+        var tcgLinks = printing.Sources.Where(s => s.Source == CatalogSource.TCGPlayer).ToList();
+        var otherLinks = printing.Sources.Where(s => s.Source is not (CatalogSource.TCGPlayer or CatalogSource.Manual)).ToList();
+        var isRetired = printing.Status == CatalogStatus.Retired;
+        <div class="list-group-item py-2 @(isRetired ? "bg-body-tertiary" : "")">
+            <div class="d-flex flex-wrap flex-md-nowrap align-items-center gap-2">
+                <button type="button" class="cc-printing-toggle list-group-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#@moreID"
+                        aria-expanded="false" aria-controls="@moreID">
+                    <span class="chevron text-muted" aria-hidden="true">&#9656;</span>
+                    <span class="cc-chip cc-chip-code">@printing.SetCode</span>
+                    <span class="fw-medium">@printing.RarityName</span>
+                    @if (!string.IsNullOrEmpty(printing.PrintVariant))
+                    {
+                        <span class="text-muted">(@printing.PrintVariant)</span>
+                    }
+                    <span class="small text-muted text-break cc-printing-set">@(printing.SetName ?? "Unknown set")</span>
+                </button>
+                <div class="d-flex flex-wrap align-items-center gap-1 ms-auto">
+                    @if (isRetired)
+                    {
+                        <span class="cc-chip">Retired</span>
+                    }
+                    @if (printing.IsManual)
+                    {
+                        <span class="cc-chip">Added by hand</span>
+                    }
+                    @if (printing.UserRowCount > 0)
+                    {
+                        <span class="cc-chip cc-chip-accent">@rowsLabel(printing.UserRowCount)</span>
+                    }
+                    @if (tcgLinks.Count > 0)
+                    {
+                        <span class="cc-chip cc-chip-dot cc-chip-dot--good" title="Linked to a TCGPlayer product">Priced</span>
+                    }
+                    else
+                    {
+                        <span class="cc-chip cc-chip-dot cc-chip-dot--warning" title="No TCGPlayer product is linked, so this printing has no price">No price</span>
+                    }
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm btn-outline-secondary cc-menu-button" data-bs-toggle="dropdown" aria-expanded="false"
+                                aria-label="Actions for @printing.Description"><i class="bi bi-three-dots" aria-hidden="true"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end cc-catalog-menu">
+                            @if (printing.MergeTargets.Count > 0)
+                            {
+                                <li>
+                                    <button type="button" class="dropdown-item" data-bs-toggle="collapse" data-bs-target="#@mergeID"
+                                            aria-controls="@mergeID">Merge into another printing&hellip;</button>
+                                </li>
+                            }
+                            @if (!isRetired)
+                            {
+                                <li>
+                                    @if (printing.UserRowCount > 0)
+                                    {
+                                        <span class="dropdown-item-text">
+                                            <span class="d-block text-body-secondary">Retire printing</span>
+                                            <span class="d-block small text-muted">Used by @rowsLabel(printing.UserRowCount); merge it instead.</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-antiforgery="true" action="@handlerURL("PrintingStatus")" data-confirm="Retire @printing.Description?">
+                                            <input type="hidden" name="printingID" value="@printing.ID" />
+                                            <input type="hidden" name="status" value="@CatalogStatus.Retired" />
+                                            <button type="submit" class="dropdown-item text-danger">Retire printing</button>
+                                        </form>
+                                    }
+                                </li>
+                            }
+                            else
+                            {
+                                <li>
+                                    <form method="post" asp-antiforgery="true" action="@handlerURL("PrintingStatus")">
+                                        <input type="hidden" name="printingID" value="@printing.ID" />
+                                        <input type="hidden" name="status" value="@CatalogStatus.Active" />
+                                        <button type="submit" class="dropdown-item">Restore printing</button>
+                                    </form>
+                                </li>
+                            }
+                            @foreach (var source in tcgLinks.Where(s => s.CanUnlink))
+                            {
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <form method="post" asp-antiforgery="true" action="@handlerURL("Unlink")"
+                                          data-confirm="Unlink TCGPlayer product @source.ExternalKey from @printing.Description? Its prices stop applying to this printing.">
+                                        <input type="hidden" name="sourceID" value="@source.ID" />
+                                        <button type="submit" class="dropdown-item text-danger">Unlink TCGPlayer #@source.ExternalKey</button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse" id="@moreID">
+                <div class="cc-printing-details">
+                    @if (tcgLinks.Count == 0)
+                    {
+                        <div class="text-muted">No TCGPlayer product is linked yet. Link one from the review inbox to give this printing a price.</div>
+                    }
+                    @foreach (var source in tcgLinks.Concat(otherLinks))
+                    {
+                        var url = source.Source == CatalogSource.TCGPlayer ? TCGPlayerLinks.ProductURL(source.ExternalKey) : null;
+                        <div class="d-flex flex-wrap align-items-baseline column-gap-3">
+                            @if (url is not null)
+                            {
+                                <a href="@url" target="_blank" rel="noopener">TCGPlayer #@source.ExternalKey <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                            }
+                            else
+                            {
+                                <span>@source.Source.GetDisplayName() @source.ExternalKey</span>
+                            }
+                            <span class="text-muted" title="@source.LastSeenUTC.ToString("MMM d, yyyy")">last seen @source.LastSeenUTC.ToRelativeDate(now)</span>
+                        </div>
+                    }
+                    <div class="small text-muted">
+                        Printing first seen @printing.FirstSeenUTC.ToString("MMM d, yyyy") &middot; last seen @printing.LastSeenUTC.ToRelativeDate(now)
+                    </div>
+                </div>
+            </div>
+
+            @if (printing.MergeTargets.Count > 0)
+            {
+                <div class="collapse" id="@mergeID">
+                    <form method="post" asp-antiforgery="true" action="@handlerURL("Merge")" class="cc-printing-merge"
+                          data-confirm="Merge @printing.Description into the chosen printing? Your rows and its TCGPlayer links move over, and @printing.Description is retired.">
+                        <input type="hidden" name="printingID" value="@printing.ID" />
+                        <div class="flex-grow-1 min-width-0">
+                            <label class="form-label small mb-1" for="merge-@printing.ID">Merge @printing.Description into</label>
+                            <select id="merge-@printing.ID" name="intoPrintingID" class="form-select">
+                                @foreach (var target in printing.MergeTargets)
+                                {
+                                    <option value="@target.Value">@target.Label</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="d-grid d-md-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Merge</button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#@mergeID">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            }
+        </div>
+    }
 }
 
 <nav aria-label="breadcrumb" class="mb-2">
@@ -34,60 +232,123 @@
     <div class="d-flex gap-3 flex-grow-1 min-width-0">
         @if (!string.IsNullOrEmpty(card.ImageURLSmall))
         {
-            <partial name="_CardThumbnail" model='new CardThumbnailViewModel(card.ImageURLSmall, card.Name)' />
+            <img src="@card.ImageURLSmall" alt="@card.Name" class="rounded flex-shrink-0 cc-catalog-card-image" />
         }
-        <div class="min-width-0">
-            <h1 class="h3 mb-1 text-break">
+        <div class="min-width-0 d-grid gap-2 align-content-start">
+            <h1 class="h3 mb-0 text-break">
                 @card.Name
                 @if (card.Status == CatalogStatus.Retired)
                 {
                     <span class="badge text-bg-secondary align-middle fs-6">Retired</span>
                 }
             </h1>
-            <div class="small text-muted">
-                Catalog #@card.ID
-                &middot; Konami @(card.KonamiID?.ToString() ?? "unknown")
-                &middot; First seen @card.FirstSeenUTC.ToString("MMM d, yyyy")
-                &middot; Last seen @card.LastSeenUTC.ToString("MMM d, yyyy")
-            </div>
-            <div class="small text-muted">
-                @card.UserRowCount of your collection, wishlist, checked-out, or cart @(card.UserRowCount == 1 ? "row uses" : "rows use") this card
+            @if (card.IsLocked(CatalogCardField.NAME))
+            {
+                <div class="small">@{ await RenderLock(CatalogCardField.NAME); }</div>
+            }
+            @if (headerChips.Count > 0 || card.UserRowCount > 0)
+            {
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach (var chip in headerChips)
+                    {
+                        <span class="cc-chip">@chip</span>
+                    }
+                    @if (card.UserRowCount > 0)
+                    {
+                        <span class="cc-chip cc-chip-accent" title="Collection, wishlist, checked-out, and cart rows on any printing">Used by @card.UserRowCount of your rows</span>
+                    }
+                </div>
+            }
+            <div class="small text-muted d-flex flex-wrap column-gap-3">
+                <span>Konami @(card.KonamiID?.ToString() ?? "unknown")</span>
+                <span>Catalog #@card.ID</span>
+                <span title="First seen @card.FirstSeenUTC.ToString("MMM d, yyyy")">Seen by the sync @card.LastSeenUTC.ToRelativeDate(now)</span>
             </div>
         </div>
     </div>
-    <div class="d-grid d-md-flex gap-2 flex-shrink-0">
+    <div class="d-flex gap-2 flex-shrink-0">
         @if (card.Status == CatalogStatus.Active)
         {
-            <a class="btn btn-outline-primary" href="/Card?id=@card.ID">Card page</a>
-            <form method="post" asp-antiforgery="true" action="@handlerURL("CardStatus")" class="d-grid" data-confirm="Retire @card.Name? It disappears from Browse, Discover, and the rest of the app.">
-                <input type="hidden" name="status" value="@CatalogStatus.Retired" />
-                <button type="submit" class="btn btn-outline-danger" disabled="@(card.UserRowCount > 0)"
-                        title="@(card.UserRowCount > 0 ? "Still used by your rows" : "Hide this card everywhere")">Retire card</button>
-            </form>
+            <a class="btn btn-outline-primary flex-grow-1" href="/Card?id=@card.ID">Card page</a>
         }
-        else
-        {
-            <form method="post" asp-antiforgery="true" action="@handlerURL("CardStatus")" class="d-grid">
-                <input type="hidden" name="status" value="@CatalogStatus.Active" />
-                <button type="submit" class="btn btn-outline-primary">Restore card</button>
-            </form>
-        }
+        <div class="dropdown">
+            <button type="button" class="btn btn-outline-secondary cc-menu-button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More card actions">
+                <i class="bi bi-three-dots" aria-hidden="true"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end cc-catalog-menu">
+                <li>
+                    @if (card.Status == CatalogStatus.Active && card.UserRowCount > 0)
+                    {
+                        <span class="dropdown-item-text">
+                            <span class="d-block text-body-secondary">Retire card</span>
+                            <span class="d-block small text-muted">@rowsLabel(card.UserRowCount) of yours still use it. Merge or move them first.</span>
+                        </span>
+                    }
+                    else if (card.Status == CatalogStatus.Active)
+                    {
+                        <form method="post" asp-antiforgery="true" action="@handlerURL("CardStatus")" data-confirm="Retire @card.Name? It disappears from Browse, Discover, and the rest of the app.">
+                            <input type="hidden" name="status" value="@CatalogStatus.Retired" />
+                            <button type="submit" class="dropdown-item text-danger">Retire card</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form method="post" asp-antiforgery="true" action="@handlerURL("CardStatus")">
+                            <input type="hidden" name="status" value="@CatalogStatus.Active" />
+                            <button type="submit" class="dropdown-item">Restore card</button>
+                        </form>
+                    }
+                </li>
+            </ul>
+        </div>
     </div>
 </div>
 
-<section class="card mb-4">
+<section class="card mb-4" data-field-panel>
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h2 class="h5 mb-0">Card fields</h2>
-        <span class="small text-muted"><i class="bi bi-lock-fill"></i> Locked fields keep your edit; the sync won't change them.</span>
+        <h2 class="h5 mb-0">Card details</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-field-edit="open" hidden="@Model.IsEditing">
+            <i class="bi bi-pencil" aria-hidden="true"></i> Edit fields
+        </button>
     </div>
-    <div class="card-body">
+
+    <div class="card-body" data-field-view hidden="@Model.IsEditing">
+        @if (readFields.Count == 0)
+        {
+            <p class="text-muted mb-0">No card details yet. A card made from a TCGPlayer product starts with only a name until a card source lists it.</p>
+        }
+        else
+        {
+            <dl class="cc-field-grid">
+                @foreach (var field in readFields)
+                {
+                    <div class="@(field.Wide ? "cc-field-wide" : "")">
+                        <dt>
+                            @field.Label
+                            @if (card.IsLocked(field.Field))
+                            {
+                                await RenderLock(field.Field);
+                            }
+                        </dt>
+                        <dd class="text-break">@field.Value</dd>
+                    </div>
+                }
+            </dl>
+        }
+        @if (hiddenEmpty.Count > 0 && readFields.Count > 0)
+        {
+            <p class="small text-muted mt-3 mb-0">@string.Join(", ", hiddenEmpty) @(hiddenEmpty.Count == 1 ? "is" : "are") empty, so @(hiddenEmpty.Count == 1 ? "it's" : "they're") hidden here.</p>
+        }
+    </div>
+
+    <div class="card-body" data-field-editor hidden="@(!Model.IsEditing)">
         @if (Model.EditError is not null)
         {
             <div class="alert alert-danger py-2" role="alert">@Model.EditError</div>
         }
         <form method="post" asp-antiforgery="true" action="@handlerURL("Save")">
             <div class="row g-3">
-                @foreach (var field in fields)
+                @foreach (var field in editFields)
                 {
                     var inputID = $"field-{field.Field}";
                     var locked = card.IsLocked(field.Field);
@@ -102,7 +363,7 @@
                             </label>
                             @if (locked)
                             {
-                                <button type="submit" formaction="@($"{handlerURL("Unlock")}&field={field.Field}")" formnovalidate
+                                <button type="submit" formaction="@unlockURL(field.Field)" formnovalidate
                                         class="btn btn-link btn-sm p-0 small">Unlock</button>
                             }
                         </div>
@@ -117,191 +378,132 @@
                     </div>
                 }
             </div>
-            <div class="d-grid d-md-flex justify-content-md-end mt-3">
-                <button type="submit" class="btn btn-primary">Save changes</button>
+            <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-2 mt-3">
+                <span class="small text-muted"><i class="bi bi-lock-fill" aria-hidden="true"></i> Fields you edit are locked, so the sync won't change them.</span>
+                <div class="d-grid d-md-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-field-edit="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
             </div>
         </form>
     </div>
 </section>
 
-<section class="mb-4" id="printings">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 mb-0">Printings</h2>
-        <span class="badge-neutral">@card.Printings.Count(p => p.Status == CatalogStatus.Active) active</span>
+<section class="card mb-4" id="printings">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h2 class="h5 mb-0">Printings <span class="small text-muted fw-normal">@activePrintings.Count active</span></h2>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#add-printing"
+                aria-expanded="false" aria-controls="add-printing"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add printing</button>
+    </div>
+
+    <div class="collapse" id="add-printing">
+        <div class="cc-add-printing">
+            <p class="small text-muted mb-2">For a printing no source lists. It has no price until a TCGPlayer product is linked to it from the review inbox.</p>
+            <form method="post" asp-antiforgery="true" action="@handlerURL("AddPrinting")" class="row g-2 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1" for="newSetCode">Set code</label>
+                    <input id="newSetCode" name="NewPrinting.SetCode" class="form-control" placeholder="LOB-EN001" required autocomplete="off" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1" for="newRarity">Rarity</label>
+                    <input id="newRarity" name="NewPrinting.RarityName" class="form-control" list="rarityNames" required autocomplete="off" />
+                    <datalist id="rarityNames">
+                        @foreach (var rarity in card.RarityNames)
+                        {
+                            <option value="@rarity"></option>
+                        }
+                    </datalist>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1" for="newVariant">Variant (optional)</label>
+                    <input id="newVariant" name="NewPrinting.PrintVariant" class="form-control" placeholder="Extended Art" autocomplete="off" />
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Add printing</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     @if (card.Printings.Count == 0)
     {
-        <div class="alert alert-info">This card has no printings.</div>
+        <div class="card-body text-muted">This card has no printings.</div>
     }
     else
     {
-        <div class="list-group cc-table-card">
-            @foreach (var printing in card.Printings)
+        <div class="list-group list-group-flush">
+            @foreach (var printing in activePrintings)
             {
-                <div class="list-group-item py-3 @(printing.Status == CatalogStatus.Retired ? "bg-body-tertiary" : "")">
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                        <span class="fw-semibold text-break">@printing.Description</span>
-                        @if (printing.Status == CatalogStatus.Retired)
-                        {
-                            <span class="badge text-bg-secondary">Retired</span>
-                        }
-                        @if (printing.IsManual)
-                        {
-                            <span class="badge text-bg-light border">Added by hand</span>
-                        }
-                        @if (printing.UserRowCount > 0)
-                        {
-                            <span class="badge text-bg-info">Used by @printing.UserRowCount @(printing.UserRowCount == 1 ? "row" : "rows")</span>
-                        }
-                    </div>
-                    <div class="small text-muted">
-                        @(printing.SetName ?? "Unknown set")
-                        &middot; first seen @printing.FirstSeenUTC.ToString("MMM d, yyyy")
-                        &middot; last seen @printing.LastSeenUTC.ToString("MMM d, yyyy")
-                    </div>
-
-                    @{ var links = printing.Sources.Where(s => s.Source != CatalogSource.Manual).ToList(); }
-                    @if (links.Count > 0)
-                    {
-                        <ul class="list-unstyled small mb-0 mt-2">
-                            @foreach (var source in links)
-                            {
-                                <li class="d-flex flex-wrap align-items-baseline gap-2 py-1">
-                                    <span class="badge text-bg-light border">@source.Source</span>
-                                    <span class="text-break">@source.ExternalKey@(string.IsNullOrEmpty(source.ExternalSummary) ? string.Empty : $" — {source.ExternalSummary}")</span>
-                                    <span class="text-muted">seen @source.LastSeenUTC.ToString("MMM d, yyyy")</span>
-                                    @if (source.CanUnlink)
-                                    {
-                                        <form method="post" asp-antiforgery="true" action="@handlerURL("Unlink")" class="d-inline ms-auto"
-                                              data-confirm="Unlink TCGPlayer product @source.ExternalKey from @printing.Description? Its prices stop applying to this printing.">
-                                            <input type="hidden" name="sourceID" value="@source.ID" />
-                                            <button type="submit" class="btn btn-link btn-sm p-0 text-danger">Unlink</button>
-                                        </form>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <div class="small text-muted mt-2">No TCGPlayer product is linked, so this printing has no price.</div>
-                    }
-
-                    <div class="d-flex flex-column flex-md-row flex-md-wrap align-items-md-end gap-2 gap-md-3 mt-3">
-                        @if (printing.MergeTargets.Count > 0)
-                        {
-                            <form method="post" asp-antiforgery="true" action="@handlerURL("Merge")" class="d-grid d-md-flex align-items-md-end gap-2"
-                                  data-confirm="Merge @printing.Description into the chosen printing? Your rows and its TCGPlayer links move over, and @printing.Description is retired.">
-                                <input type="hidden" name="printingID" value="@printing.ID" />
-                                <div class="d-grid gap-1 cc-review-picker">
-                                    <label class="form-label small text-muted mb-0" for="merge-@printing.ID">Merge into</label>
-                                    <select id="merge-@printing.ID" name="intoPrintingID" class="form-select">
-                                        @foreach (var target in printing.MergeTargets)
-                                        {
-                                            <option value="@target.Value">@target.Label</option>
-                                        }
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-outline-primary">Merge</button>
-                            </form>
-                        }
-                        @if (printing.Status == CatalogStatus.Active)
-                        {
-                            <form method="post" asp-antiforgery="true" action="@handlerURL("PrintingStatus")" class="d-grid" data-confirm="Retire @printing.Description?">
-                                <input type="hidden" name="printingID" value="@printing.ID" />
-                                <input type="hidden" name="status" value="@CatalogStatus.Retired" />
-                                <button type="submit" class="btn btn-outline-danger" disabled="@(printing.UserRowCount > 0)"
-                                        title="@(printing.UserRowCount > 0 ? "Still used by your rows; merge it instead" : "Hide this printing everywhere")">Retire</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <form method="post" asp-antiforgery="true" action="@handlerURL("PrintingStatus")" class="d-grid">
-                                <input type="hidden" name="printingID" value="@printing.ID" />
-                                <input type="hidden" name="status" value="@CatalogStatus.Active" />
-                                <button type="submit" class="btn btn-outline-primary">Restore</button>
-                            </form>
-                        }
-                    </div>
-                </div>
+                await RenderPrinting(printing);
             }
         </div>
+        @if (retiredPrintings.Count > 0)
+        {
+            <div class="border-top px-3 py-2">
+                <button type="button" class="btn btn-link btn-sm p-0 list-group-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#retired-printings"
+                        aria-expanded="false" aria-controls="retired-printings"><span class="chevron">&#9656;</span> Show @retiredPrintings.Count retired</button>
+            </div>
+            <div class="collapse" id="retired-printings">
+                <div class="list-group list-group-flush border-top">
+                    @foreach (var printing in retiredPrintings)
+                    {
+                        await RenderPrinting(printing);
+                    }
+                </div>
+            </div>
+        }
     }
 </section>
 
 <section class="card mb-4">
-    <div class="card-header">
-        <h2 class="h5 mb-0">Add a printing</h2>
+    <div class="card-header p-0">
+        <button type="button" class="btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 list-group-toggle collapsed" data-bs-toggle="collapse"
+                data-bs-target="#aliases" aria-expanded="false" aria-controls="aliases">
+            <span class="chevron text-muted" aria-hidden="true">&#9656;</span>
+            <span class="h5 mb-0">Aliases</span>
+            <span class="badge-neutral">@card.Aliases.Count</span>
+            <span class="small text-muted d-none d-md-inline">Outside IDs that point to this card</span>
+        </button>
     </div>
-    <div class="card-body">
-        <p class="small text-muted">For a printing no source lists. It has no price until a TCGPlayer product is linked to it from the review inbox.</p>
-        <form method="post" asp-antiforgery="true" action="@handlerURL("AddPrinting")" class="row g-2 align-items-end">
-            <div class="col-12 col-md-3">
-                <label class="form-label small mb-1" for="newSetCode">Set code</label>
-                <input id="newSetCode" name="NewPrinting.SetCode" class="form-control" placeholder="LOB-EN001" required autocomplete="off" />
-            </div>
-            <div class="col-12 col-md-4">
-                <label class="form-label small mb-1" for="newRarity">Rarity</label>
-                <input id="newRarity" name="NewPrinting.RarityName" class="form-control" list="rarityNames" required autocomplete="off" />
-                <datalist id="rarityNames">
-                    @foreach (var rarity in card.RarityNames)
-                    {
-                        <option value="@rarity"></option>
-                    }
-                </datalist>
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label small mb-1" for="newVariant">Variant (optional)</label>
-                <input id="newVariant" name="NewPrinting.PrintVariant" class="form-control" placeholder="Extended Art" autocomplete="off" />
-            </div>
-            <div class="col-12 col-md-2 d-grid">
-                <button type="submit" class="btn btn-outline-primary">Add printing</button>
-            </div>
-        </form>
-    </div>
-</section>
-
-<section class="mb-4">
-    <h2 class="h5">Aliases</h2>
-    <p class="small text-muted">Outside IDs that have pointed at this card. When two cards share one, the most recently seen wins; the card's own passcode always comes first.</p>
-    @if (card.Aliases.Count == 0)
-    {
-        <div class="alert alert-info">No aliases recorded.</div>
-    }
-    else
-    {
-        <div class="table-responsive cc-table-card">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Value</th>
-                        <th>Kind</th>
-                        <th class="d-none d-md-table-cell">Source</th>
-                        <th class="d-none d-md-table-cell">First seen</th>
-                        <th class="d-none d-md-table-cell">Last seen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var alias in card.Aliases)
-                    {
+    <div class="collapse" id="aliases">
+        @if (card.Aliases.Count == 0)
+        {
+            <div class="card-body text-muted">No aliases recorded.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
                         <tr>
-                            <td>
-                                @alias.Value
-                                <div class="small text-muted d-md-none">@alias.Source &middot; last seen @alias.LastSeenUTC.ToString("MMM d, yyyy")</div>
-                            </td>
-                            <td>@alias.Kind</td>
-                            <td class="d-none d-md-table-cell">@alias.Source</td>
-                            <td class="d-none d-md-table-cell">@alias.FirstSeenUTC.ToString("MMM d, yyyy")</td>
-                            <td class="d-none d-md-table-cell">@alias.LastSeenUTC.ToString("MMM d, yyyy")</td>
+                            <th class="ps-3">Value</th>
+                            <th>What it is</th>
+                            <th class="d-none d-md-table-cell">From</th>
+                            <th class="d-none d-md-table-cell">Last seen</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+                    </thead>
+                    <tbody>
+                        @foreach (var alias in card.Aliases)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    <span class="font-monospace">@alias.Value</span>
+                                    <div class="small text-muted d-md-none">@alias.Source.GetDisplayName() &middot; last seen @alias.LastSeenUTC.ToRelativeDate(now)</div>
+                                </td>
+                                <td>@alias.Kind.GetDisplayName()</td>
+                                <td class="d-none d-md-table-cell">@alias.Source.GetDisplayName()</td>
+                                <td class="d-none d-md-table-cell" title="First seen @alias.FirstSeenUTC.ToString("MMM d, yyyy")">@alias.LastSeenUTC.ToRelativeDate(now)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <p class="small text-muted px-3 py-2 mb-0 border-top">When two cards share an ID, the most recently seen one wins. The card's own passcode always comes first.</p>
+        }
+    </div>
 </section>
 
 @section Scripts {
     <script src="~/js/catalog-review.js" asp-append-version="true"></script>
+    <script src="~/js/catalog-card-details.js" asp-append-version="true"></script>
 }

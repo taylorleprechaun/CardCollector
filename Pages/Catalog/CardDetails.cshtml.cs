@@ -33,6 +33,9 @@ namespace CardCollector.Pages.Catalog
         [BindProperty]
         public CatalogCardEditInput Input { get; set; } = new();
 
+        /// <summary>True when the page opens on the field form rather than the read-only view: after a refused edit, so its values stay.</summary>
+        public bool IsEditing => EditError is not null;
+
         [BindProperty]
         public CatalogPrintingInput NewPrinting { get; set; } = new();
 
