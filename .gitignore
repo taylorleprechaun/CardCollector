@@ -22,11 +22,8 @@ Data/cardcache.json
 Data/cardcache.json.timestamp
 Data/setscache.json
 Data/setscache.json.timestamp
-Data/carddata.json
-Data/carddata.json.timestamp
 Data/yamlyugi.json
 Data/yamlyugi.json.timestamp
-Data/migration-report.txt
 Data/banlistcache.json
 Data/banlistcache.json.timestamp
 
@@ -40,9 +37,5 @@ Thumbs.db
 
 ## Claude Code project context (local only)
 .claude/
-Data/pricingcache.json
-Data/pricingcache.json.timestamp
-Data/tcgpricingcache.json
-Data/tcgpricingcache.json.timestamp
 Data/tcgcatalogcache.json
 Data/tcgcatalogcache.json.timestamp
