@@ -1,6 +1,5 @@
 using CardCollector.DTO;
 using CardCollector.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Services
 {
@@ -141,6 +140,31 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public void BuildGroupEntries_ProductWithGroup_CarriesProductAndGroupIDs()
+        {
+            var products = new List<TCGCatalogProduct>
+            {
+                new()
+                {
+                    GroupID = 24822,
+                    ProductID = 713500,
+                    Name = "Synthetic Dragon (Extended Art)",
+                    ExtendedData = [new() { Name = "Number", Value = "SYN-EN001" }, new() { Name = "Rarity", Value = "Ultra Rare" }]
+                }
+            };
+            var prices = new List<TCGCatalogPrice>
+            {
+                new() { ProductID = 713500, MarketPrice = 3m, SubTypeName = "1st Edition" },
+                new() { ProductID = 713500, MarketPrice = 2m, SubTypeName = "Unlimited" }
+            };
+
+            var result = TCGCatalogCache.BuildGroupEntries(products, prices).ToList();
+
+            Assert.AreEqual(2, result.Count);
+            Assert.IsTrue(result.All(r => r.ProductID == 713500 && r.GroupID == 24822));
+        }
+
+        [TestMethod]
         public void BuildGroupEntries_QualifierIsProductsOwnSetCode_PrintVariantIsNull()
         {
             var products = new List<TCGCatalogProduct>
@@ -159,6 +183,27 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Tri-Horned Dragon", result[0].CardName);
             Assert.IsNull(result[0].PrintVariant);
         }
+
+        [TestMethod]
+        public void HasProductIDs_CacheWrittenBeforeProductIDs_ReturnsFalse()
+        {
+            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002" } };
+
+            var result = TCGCatalogCache.HasProductIDs(printings);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void HasProductIDs_PrintingHasProductID_ReturnsTrue()
+        {
+            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002", ProductID = 713500 } };
+
+            var result = TCGCatalogCache.HasProductIDs(printings);
+
+            Assert.IsTrue(result);
+        }
+
         [TestMethod]
         public void ParseProductName_NoParentheticalQualifier_ReturnsNameUnchangedAndNullVariant()
         {
@@ -175,6 +220,18 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Dark Magical Curtain", cardName);
             Assert.AreEqual("Extended Art", printVariant);
+        }
+
+        [TestMethod]
+        [DataRow("Synthetic Clown (Starfoil)", "Starfoil Rare", DisplayName = "Starfoil")]
+        [DataRow("Synthetic Clown (Shatterfoil)", "Shatterfoil Rare", DisplayName = "Shatterfoil")]
+        [DataRow("Synthetic Dragon (Secret)", "Secret Rare", DisplayName = "Secret")]
+        public void ParseProductName_QualifierIsRarityWithoutRareSuffix_TreatedAsRedundant(string productName, string rarityName)
+        {
+            var (cardName, printVariant) = TCGCatalogCache.ParseProductName(productName, rarityName);
+
+            Assert.IsNull(printVariant);
+            Assert.IsFalse(cardName.Contains('('));
         }
 
         [TestMethod]
@@ -205,6 +262,15 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public void ParseProductName_QualifierMatchesRarityWithDifferentApostrophe_TreatedAsRedundant()
+        {
+            var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Synthetic God (Ultra Pharaoh's Rare)", "Ultra Pharaoh’s Rare");
+
+            Assert.AreEqual("Synthetic God", cardName);
+            Assert.IsNull(printVariant);
+        }
+
+        [TestMethod]
         public void ParseProductName_TwoTrailingQualifiers_StripsBothAndKeepsOnlyTheNonRedundantOne()
         {
             var (cardName, printVariant) = TCGCatalogCache.ParseProductName(
@@ -213,6 +279,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Dark Magical Curtain", cardName);
             Assert.AreEqual("Extended Art", printVariant);
         }
+
         [TestMethod]
         public void ParseProductName_UnrecognizedQualifier_IsKeptAsDistinctVariant()
         {

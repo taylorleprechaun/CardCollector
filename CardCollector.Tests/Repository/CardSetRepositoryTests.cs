@@ -1,6 +1,5 @@
 using CardCollector.DTO;
 using CardCollector.Repository;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {

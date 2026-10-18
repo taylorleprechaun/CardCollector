@@ -40,6 +40,9 @@ namespace CardCollector.DTO
         [JsonProperty("extendedData")]
         public IEnumerable<TCGCatalogProductField> ExtendedData { get; set; } = [];
 
+        [JsonProperty("groupId")]
+        public int GroupID { get; set; }
+
         [JsonProperty("name")]
         public string Name { get; set; } = string.Empty;
 
@@ -71,10 +74,21 @@ namespace CardCollector.DTO
         [JsonProperty("set_edition")]
         public string Edition { get; set; } = string.Empty;
 
+        /// <summary>The tcgcsv group (TCGPlayer set listing) the product belongs to. 0 in a cache written before it was captured.</summary>
+        [JsonProperty("group_id")]
+        public int GroupID { get; set; }
+
         public decimal Price => decimal.TryParse(PriceRaw, out var p) ? p : 0m;
 
         [JsonProperty("set_price")]
         public string PriceRaw { get; set; } = "0";
+
+        /// <summary>
+        /// TCGPlayer's product ID: one sellable printing, including its print variant. Stable across catalog refreshes, unlike the
+        /// variant text parsed from the product name. 0 in a cache written before it was captured.
+        /// </summary>
+        [JsonProperty("product_id")]
+        public int ProductID { get; set; }
 
         /// <summary>
         /// Null for a normal/base print. Parsed from a tcgcsv product name qualifier that isn't just a

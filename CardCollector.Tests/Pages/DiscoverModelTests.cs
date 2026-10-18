@@ -4,7 +4,6 @@ using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -81,12 +80,11 @@ namespace CardCollector.Tests.Pages
         {
             var page = CreatePage();
             page.CardID = 5;
-            page.SetCode = "LOB-EN001";
-            page.RarityName = "Ultra Rare";
+            page.PrintingID = 501;
 
             var result = await page.OnPostSetPreferredAsync();
 
-            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(5, "LOB-EN001", "Ultra Rare"), Times.Once);
+            _cardServiceMock.Verify(s => s.SavePreferredVersionAsync(501, null), Times.Once);
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
         }
 

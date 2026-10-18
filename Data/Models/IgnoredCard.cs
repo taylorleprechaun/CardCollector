@@ -5,7 +5,7 @@ namespace CardCollector.Data.Models
     public sealed class IgnoredCard
     {
         [Required]
-        public int CardID { get; set; }
+        public int CatalogCardID { get; set; }
 
         public DateTime DateCreated { get; set; }
 

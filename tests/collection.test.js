@@ -20,8 +20,8 @@ describe('collection.js', () => {
 
   it('blank rarityName defaults to an empty string', async () => {
     document.body.innerHTML = `
-      <input id="addCardID" /><input id="addImageID" /><input id="addSetCode" />
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <input id="atcPrintingID" />
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup"></div>
       <input type="hidden" id="atcQuantity" />
       <select id="atcCondition"><option value="4"></option></select>
@@ -31,7 +31,7 @@ describe('collection.js', () => {
       <input type="checkbox" id="atcSetAsPreferred" /><input id="atcMarketPrice" />
       <form id="addForm"></form>
       <div id="addModal"></div>
-      <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001"></button>`;
+      <button id="btn" data-printing-id="101" data-set-code="LOB-EN001"></button>`;
     loadScript('enums.js');
     loadScript('site.js');
     loadScript('collection-groups.js');
@@ -40,7 +40,6 @@ describe('collection.js', () => {
 
     await openAddModal(document.getElementById('btn'));
 
-    expect(document.getElementById('atcRarityName').value).toBe('');
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('');
   });
 
@@ -49,8 +48,8 @@ describe('collection.js', () => {
 
     await openAddModal(document.getElementById('btn'));
 
-    expect(document.getElementById('addCardID').value).toBe('1');
-    expect(document.getElementById('addSetCode').value).toBe('LOB-EN001');
+    expect(document.getElementById('atcPrintingID').value).toBe('101');
+    expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/price?printingID=101&'));
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('Ultra Rare');
     expect(document.getElementById('atcAcquisitionGroup').style.display).toBe('block');
     expect(document.getElementById('addForm').dataset.ajaxTarget).toBe('group-row-5');
@@ -58,8 +57,8 @@ describe('collection.js', () => {
 
   function setupForm() {
     document.body.innerHTML = `
-      <input id="addCardID" /><input id="addImageID" /><input id="addSetCode" />
-      <input id="atcRarityName" /><span id="atcRarityDisplay"></span>
+      <input id="atcPrintingID" />
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup" style="display: none;"></div>
       <input type="hidden" id="atcQuantity" />
       <select id="atcCondition"><option value="4"></option></select>
@@ -70,7 +69,7 @@ describe('collection.js', () => {
       <form id="addForm"></form>
       <div id="addModal"></div>
       <div id="group-row-5">
-        <button id="btn" data-card-id="1" data-image-id="10" data-set-code="LOB-EN001" data-rarity-name="Ultra Rare"
+        <button id="btn" data-printing-id="101" data-set-code="LOB-EN001" data-rarity-name="Ultra Rare"
                 data-tcg-date="2002-03-08"></button>
       </div>`;
     loadScript('enums.js');

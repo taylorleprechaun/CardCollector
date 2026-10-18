@@ -631,3 +631,20 @@ th[aria-sort="descending"] .cc-sort-button::after {
 .cc-min-matches-input {
     width: 6rem;
 }
+
+/* Catalog review rows: pickers run full width on phones, and keep a readable width in the action row from md up. */
+@media (min-width: 768px) {
+    .cc-review-picker {
+        min-width: 18rem;
+        max-width: 28rem;
+    }
+}
+
+/* Stand-in for the large card image when no source has one (cards created from a TCGPlayer product). */
+.cc-card-image-placeholder {
+    aspect-ratio: 59 / 86;
+    background-color: var(--bs-secondary-bg);
+    border: 1px dashed var(--bs-border-color);
+    max-width: 280px;
+    width: 100%;
+}

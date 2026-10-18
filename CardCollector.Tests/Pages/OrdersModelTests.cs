@@ -6,7 +6,6 @@ using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages
@@ -92,21 +91,6 @@ namespace CardCollector.Tests.Pages
             await page.OnPostEditAsync(1, 0, null, null, null, null, null, null);
 
             Assert.AreEqual(1, captured!.Quantity);
-        }
-
-        [TestMethod]
-        public async Task OnPostEditAsync_RarityNameProvided_StoresRarityName()
-        {
-            CollectionEntry? captured = null;
-            _collectionRepositoryMock
-                .Setup(r => r.UpdateAsync(It.IsAny<CollectionEntry>()))
-                .Callback<CollectionEntry>(e => captured = e)
-                .ReturnsAsync(true);
-            var page = CreatePage();
-
-            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null, rarityName: "Ultra Rare");
-
-            Assert.AreEqual("Ultra Rare", captured!.RarityName);
         }
 
         [TestMethod]

@@ -1,11 +1,10 @@
-using System.Reflection;
 using CardCollector.Data.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Reflection;
 
 namespace CardCollector.Tests
 {
@@ -13,28 +12,27 @@ namespace CardCollector.Tests
     public sealed class APIEndpointsTests
     {
         [TestMethod]
-        [DataRow(null, DisplayName = "Null card name")]
-        [DataRow("", DisplayName = "Empty card name")]
-        [DataRow("   ", DisplayName = "Whitespace card name")]
-        public async Task GetCardPriceHistoryAsync_BlankCardName_ReturnsBadRequest(string? cardName)
+        [DataRow(0, DisplayName = "Zero card ID")]
+        [DataRow(-1, DisplayName = "Negative card ID")]
+        public async Task GetCardPriceHistoryAsync_NonPositiveCardID_ReturnsBadRequest(int cardID)
         {
             var cardServiceMock = new Mock<ICardService>();
 
-            var result = await APIEndpoints.GetCardPriceHistoryAsync(cardName!, cardServiceMock.Object);
+            var result = await APIEndpoints.GetCardPriceHistoryAsync(cardID, cardServiceMock.Object);
 
             Assert.IsInstanceOfType<BadRequest<string>>(result);
         }
 
         [TestMethod]
-        public async Task GetCardPriceHistoryAsync_ValidCardName_ReturnsJsonSeries()
+        public async Task GetCardPriceHistoryAsync_ValidCardID_ReturnsJsonSeries()
         {
             var cardServiceMock = new Mock<ICardService>();
-            cardServiceMock.Setup(s => s.GetCardPriceHistoryAsync("Dark Magician")).ReturnsAsync(
+            cardServiceMock.Setup(s => s.GetCardPriceHistoryAsync(1)).ReturnsAsync(
             [
                 new CardPriceHistorySeries { Label = "LOB — Ultra Rare", Dates = ["2026-01-01"], Values = [10m] }
             ]);
 
-            var result = await APIEndpoints.GetCardPriceHistoryAsync("Dark Magician", cardServiceMock.Object);
+            var result = await APIEndpoints.GetCardPriceHistoryAsync(1, cardServiceMock.Object);
 
             var json = result as IValueHttpResult;
             Assert.IsNotNull(json);
@@ -46,30 +44,24 @@ namespace CardCollector.Tests
         public async Task GetPriceAsync_UnparsableEditionString_TreatsEditionAsNull()
         {
             var pricingServiceMock = new Mock<IPricingService>();
-            pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
-                .ReturnsAsync(5.00m);
+            pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(4210, null)).ReturnsAsync(5.00m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "not-a-real-edition", null, pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(4210, "not-a-real-edition", pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
-            Assert.IsNotNull(json);
-            Assert.AreEqual(5.00m, GetPropertyValue(json.Value, "price"));
+            Assert.AreEqual(5.00m, GetPropertyValue(json!.Value, "price"));
         }
 
         [TestMethod]
-        public async Task GetPriceAsync_ValidEditionString_ParsesEditionAndReturnsPrice()
+        public async Task GetPriceAsync_ValidEditionString_ReturnsPrintingPriceForThatEdition()
         {
             var pricingServiceMock = new Mock<IPricingService>();
-            pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition))
-                .ReturnsAsync(9.99m);
+            pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(4210, CardEdition.Unlimited)).ReturnsAsync(3.25m);
 
-            var result = await APIEndpoints.GetPriceAsync(1, "LOB-EN001", "Ultra Rare", "FirstEdition", null, pricingServiceMock.Object);
+            var result = await APIEndpoints.GetPriceAsync(4210, "Unlimited", pricingServiceMock.Object);
 
             var json = result as IValueHttpResult;
-            Assert.IsNotNull(json);
-            Assert.AreEqual(9.99m, GetPropertyValue(json.Value, "price"));
+            Assert.AreEqual(3.25m, GetPropertyValue(json!.Value, "price"));
         }
 
         private static object? GetPropertyValue(object? source, string propertyName) =>

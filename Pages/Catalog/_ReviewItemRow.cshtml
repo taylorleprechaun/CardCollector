@@ -1,0 +1,152 @@
+@model CatalogReviewRowViewModel
+@using CardCollector.Data.Models.Catalog
+@{
+    var item = Model.Item;
+    var rowId = $"review-row-{item.ID}";
+    var detailsId = $"review-details-{item.ID}";
+    var handlerURL = (string handler) => $"/Catalog/Review?handler={handler}&{Model.FilterParams}";
+    var canAccept = item.Actions.Contains(CatalogReviewAction.Accept);
+    var canReject = item.Actions.Contains(CatalogReviewAction.Reject);
+    var canDismiss = item.Actions.Contains(CatalogReviewAction.Dismiss);
+    var canMap = item.Actions.Contains(CatalogReviewAction.MapToPrinting);
+    var canCreate = item.Actions.Contains(CatalogReviewAction.CreatePrinting);
+    var canCreateCard = item.Actions.Contains(CatalogReviewAction.CreateCard);
+    var canReopen = item.Actions.Contains(CatalogReviewAction.Reopen);
+    // When no printing has the reported set code, the map options are all other set codes, so creating the printing comes first.
+    var createFirst = canCreate && item.CardOptions.Count > 0 && item.PlacementSetCode is not null && !item.PlacementSetCodeInCatalog;
+}
+<div class="list-group-item py-3" id="@rowId">
+    <div class="d-flex flex-column gap-3">
+        <div class="d-flex gap-3 flex-grow-1 min-width-0">
+            @if (!string.IsNullOrEmpty(item.ImageURLSmall))
+            {
+                <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName ?? string.Empty)' />
+            }
+            <div class="flex-grow-1 min-width-0">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <span class="badge @(item.IsActionable ? "text-bg-warning" : "text-bg-secondary")">@item.Kind.GetDisplayName()</span>
+                    @if (item.Status != CatalogReviewItemStatus.Open)
+                    {
+                        <span class="badge text-bg-light border">@item.Status.GetDisplayName()</span>
+                    }
+                    @if (item.CatalogCardID is int cardID && item.CardName is not null)
+                    {
+                        <a class="small" href="/Card?id=@cardID">@item.CardName</a>
+                    }
+                </div>
+                <div class="fw-semibold text-break">@item.Summary</div>
+                <div class="small text-muted">
+                    First seen @item.FirstDetectedUTC.ToString("MMM d, yyyy")
+                    @if (item.DetectionCount > 1)
+                    {
+                        <span>&middot; reported @item.DetectionCount times, last @item.LastDetectedUTC.ToString("MMM d, yyyy")</span>
+                    }
+                    @if (item.ResolvedUTC is DateTime resolved)
+                    {
+                        <span>&middot; @item.Resolution (@resolved.ToString("MMM d, yyyy"))</span>
+                    }
+                </div>
+                @if (item.Details.Count > 0)
+                {
+                    <button type="button" class="btn btn-link btn-sm p-0 small" data-bs-toggle="collapse" data-bs-target="#@detailsId"
+                            aria-expanded="false" aria-controls="@detailsId">Details</button>
+                    <div class="collapse" id="@detailsId">
+                        <dl class="small text-muted mb-0 mt-1">
+                            @foreach (var detail in item.Details)
+                            {
+                                <dt class="fw-normal">@detail.Key</dt>
+                                <dd class="mb-1 text-break">@detail.Value</dd>
+                            }
+                        </dl>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(item.ErrorMessage))
+                {
+                    <div class="alert alert-danger small py-1 px-2 mt-2 mb-0" role="alert">@item.ErrorMessage</div>
+                }
+            </div>
+        </div>
+
+        @if (item.Actions.Count > 0)
+        {
+            <div class="d-flex flex-column flex-md-row flex-md-wrap align-items-md-end gap-2 gap-md-3">
+                @if (canAccept || canReject || canDismiss || canReopen)
+                {
+                    <form method="post" class="d-grid d-md-flex flex-md-wrap align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.ID" />
+                        @if (canAccept)
+                        {
+                            <button type="submit" formaction="@handlerURL("Accept")" class="btn btn-primary">@item.AcceptLabel</button>
+                        }
+                        @if (canReject)
+                        {
+                            <button type="submit" formaction="@handlerURL("Reject")" class="btn btn-outline-secondary">@item.RejectLabel</button>
+                        }
+                        @if (canDismiss)
+                        {
+                            <button type="submit" formaction="@handlerURL("Dismiss")" class="btn btn-outline-secondary">Dismiss</button>
+                        }
+                        @if (canReopen)
+                        {
+                            <button type="submit" formaction="@handlerURL("Reopen")" class="btn btn-outline-secondary">Reopen</button>
+                        }
+                    </form>
+                }
+                @if (canMap)
+                {
+                    @if (item.PrintingOptions.Count > 0)
+                    {
+                        <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.ID" />
+                            <div class="d-grid gap-1 cc-review-picker">
+                                <label class="form-label small text-muted mb-0" for="review-map-@item.ID">@(createFirst ? "Or map onto a printing with a different set code" : "Map onto an existing printing")</label>
+                                <select id="review-map-@item.ID" name="printingID" class="form-select">
+                                    @foreach (var option in item.PrintingOptions)
+                                    {
+                                        <option value="@option.Value">@option.Label</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" formaction="@handlerURL("Map")" class="btn btn-outline-primary">@(createFirst ? "Map anyway" : "Map")</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="small text-muted">No existing printing fits.</div>
+                    }
+                }
+                @if (canCreate && item.CardOptions.Count > 0)
+                {
+                    <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form @(createFirst ? "order-first" : "")" data-ajax-target="@rowId">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.ID" />
+                        <div class="d-grid gap-1 cc-review-picker">
+                            <label class="form-label small text-muted mb-0" for="review-create-@item.ID">@(createFirst ? $"No printing has set code {item.PlacementSetCode} yet; create it on" : "Or create the printing on a card")</label>
+                            <select id="review-create-@item.ID" name="cardID" class="form-select">
+                                @foreach (var option in item.CardOptions)
+                                {
+                                    <option value="@option.Value">@option.Label</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" formaction="@handlerURL("CreatePrinting")" class="btn @(createFirst ? "btn-primary" : "btn-outline-primary")">Create printing</button>
+                    </form>
+                }
+                @if (canCreateCard)
+                {
+                    <form method="post" class="d-grid d-md-flex align-items-md-end gap-2 ajax-form" data-ajax-target="@rowId"
+                          data-confirm="Create a new catalog card named &quot;@item.CardName&quot;? It starts with only a name until a card source lists it.">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.ID" />
+                        <div class="d-grid gap-1">
+                            <span class="form-label small text-muted mb-0">No catalog card has this name</span>
+                            <button type="submit" formaction="@handlerURL("CreateCard")" class="btn btn-outline-primary">Create card &ldquo;@item.CardName&rdquo;</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+</div>

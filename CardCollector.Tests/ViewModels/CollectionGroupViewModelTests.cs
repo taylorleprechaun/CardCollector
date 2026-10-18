@@ -1,6 +1,5 @@
 using CardCollector.Data.Models;
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.ViewModels
 {
@@ -91,6 +90,7 @@ namespace CardCollector.Tests.ViewModels
 
             Assert.IsFalse(group.IsCheckedOut);
         }
+
         private static OrderEntryViewModel MakeEntry(int quantity) => new() { Quantity = quantity };
     }
 }

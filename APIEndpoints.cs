@@ -1,6 +1,5 @@
 using CardCollector.Data.Models;
 using CardCollector.Services;
-using Microsoft.AspNetCore.Http;
 
 namespace CardCollector
 {
@@ -10,19 +9,21 @@ namespace CardCollector
     /// </summary>
     public static class APIEndpoints
     {
-        public static async Task<IResult> GetCardPriceHistoryAsync(string cardName, ICardService cardService)
+        /// <summary>Returns a catalog card's value history, one series per collection entry.</summary>
+        public static async Task<IResult> GetCardPriceHistoryAsync(int cardID, ICardService cardService)
         {
-            if (string.IsNullOrWhiteSpace(cardName))
-                return Results.BadRequest("cardName is required.");
+            if (cardID <= 0)
+                return Results.BadRequest("cardID is required.");
 
-            var history = await cardService.GetCardPriceHistoryAsync(cardName).ConfigureAwait(false);
+            var history = await cardService.GetCardPriceHistoryAsync(cardID).ConfigureAwait(false);
             return Results.Json(history.Select(s => new { label = s.Label, dates = s.Dates, values = s.Values }));
         }
 
-        public static async Task<IResult> GetPriceAsync(int cardID, string setCode, string rarityName, string? edition, string? printVariant, IPricingService pricingService)
+        /// <summary>Returns a catalog printing's market price for an edition (any edition when it's missing or unknown).</summary>
+        public static async Task<IResult> GetPriceAsync(int printingID, string? edition, IPricingService pricingService)
         {
             CardEdition? parsedEdition = Enum.TryParse<CardEdition>(edition, out var e) ? e : null;
-            var price = await pricingService.GetPrintingPriceAsync(cardID, setCode, rarityName, parsedEdition, printVariant).ConfigureAwait(false);
+            var price = await pricingService.GetPrintingPriceAsync(printingID, parsedEdition).ConfigureAwait(false);
             return Results.Json(new { price });
         }
     }

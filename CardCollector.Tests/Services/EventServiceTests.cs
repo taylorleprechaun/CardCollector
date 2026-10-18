@@ -258,6 +258,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("Alpha Era", byLocation["First day"]);
             Assert.AreEqual("Alpha Era", byLocation["Last day"]);
         }
+
         [TestMethod]
         public async Task SearchAsync_EventWithByeAndRounds_ComputesRecordFromStoredResults()
         {
@@ -325,6 +326,7 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
+
         [TestMethod]
         public async Task SearchAsync_FormatFilterWithDisjointDateRange_ReturnsNothing()
         {
@@ -385,6 +387,7 @@ namespace CardCollector.Tests.Services
 
             Assert.AreEqual("Inside", result.Items.Single().Event.Location);
         }
+
         [TestMethod]
         public async Task SearchAsync_LinkedEventSharesURLWithUnlinkedEvents_CountsAllUnlinkedEvents()
         {
@@ -437,6 +440,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(0, result.Items.Count);
             Assert.AreEqual(3, result.Page);
         }
+
         [TestMethod]
         public async Task UpdateAsync_EventMissing_ReturnsNotFoundError()
         {
@@ -491,6 +495,7 @@ namespace CardCollector.Tests.Services
             Assert.IsTrue(result.Succeeded);
             Assert.AreEqual("Changed Shop", (await context.Events.SingleAsync()).Location);
         }
+
         private static int AddEvent(AppDBContext context, string date, string location)
         {
             var entity = new Event
@@ -520,6 +525,7 @@ namespace CardCollector.Tests.Services
             context.SaveChanges();
             return entity.ID;
         }
+
         private static int AddFormat(AppDBContext context, string name, string start, string? end, params string[] strategies)
         {
             var entity = new Format

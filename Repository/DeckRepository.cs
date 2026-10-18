@@ -24,7 +24,8 @@ namespace CardCollector.Repository
                 Cards = deck.Cards
                     .Select(c => new DeckCard
                     {
-                        CardID = c.CardID,
+                        CatalogCardID = c.CatalogCardID,
+                        PastedPasscode = c.PastedPasscode,
                         Quantity = c.Quantity,
                         Section = c.Section,
                         SortOrder = c.SortOrder

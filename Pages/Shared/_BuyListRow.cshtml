@@ -4,7 +4,7 @@
 @{
     var item = Model;
 }
-<div class="list-group-item" data-set-code="@item.SetCode"
+<div class="list-group-item" data-printing-id="@item.PrintingID" data-set-code="@item.SetCode"
      data-line-total="@item.LineTotal.ToString(CultureInfo.InvariantCulture)"
      data-mass-entry-line="@($"{item.QuantityNeeded} {item.CardName} [{item.SetCode.ToTCGPlayerSetCode()}]")">
     <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center py-1">
@@ -46,8 +46,7 @@
                 &middot; Total $@item.LineTotal.ToString("F2")
             </div>
             <button type="button" class="btn btn-sm btn-primary"
-                    data-card-id="@item.CardID"
-                    data-set-code="@item.SetCode"
+                    data-printing-id="@item.PrintingID"
                     data-rarity-name="@item.RarityName"
                     data-print-variant="@item.PrintVariant"
                     data-card-name="@item.CardName"

@@ -48,6 +48,7 @@ namespace CardCollector.Tests.Rules
 
             Assert.AreSame(later, result);
         }
+
         [TestMethod]
         public void Normalize_BlankAndPaddedNotes_TrimsAndNullsEmpty()
         {
@@ -113,6 +114,7 @@ namespace CardCollector.Tests.Rules
 
             CollectionAssert.AreEqual(new[] { "Alpha Deck", "Beta Deck" }, result.Strategies.Select(s => s.Name).ToArray());
         }
+
         [TestMethod]
         public void Validate_EndBeforeStart_ReturnsError()
         {
@@ -171,6 +173,7 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(1, errors.Count);
             StringAssert.Contains(errors[0], "Name must be");
         }
+
         [TestMethod]
         [DataRow("2024-04-01", "2024-06-30", DisplayName = "Adjacent after (no shared day)")]
         [DataRow("2023-10-01", "2023-12-31", DisplayName = "Adjacent before (no shared day)")]
@@ -250,6 +253,7 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual(1, errors.Count);
             StringAssert.Contains(errors[0], "at most");
         }
+
         private static Format Build(int id, string name, string start, string? end, params string[] strategies) =>
             new()
             {

@@ -13,20 +13,21 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<string>> GetDistinctCardNamesAsync()
+        public async Task<IReadOnlySet<int>> GetCatalogCardIDsAsync()
         {
-            return await _context.CollectionEntryValueSnapshots
-                .Select(s => s.CardName)
+            var ids = await _context.CollectionEntryValueSnapshots
+                .Where(s => s.CatalogCardID != null)
+                .Select(s => s.CatalogCardID!.Value)
                 .Distinct()
-                .OrderBy(n => n)
                 .ToListAsync()
                 .ConfigureAwait(false);
+            return ids.ToHashSet();
         }
 
-        public async Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardNameAsync(string cardName)
+        public async Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardIDAsync(int cardID)
         {
             return await _context.CollectionEntryValueSnapshots
-                .Where(s => s.CardName == cardName)
+                .Where(s => s.CatalogCardID == cardID)
                 .OrderBy(s => s.SnapshotDate)
                 .ToListAsync()
                 .ConfigureAwait(false);
@@ -62,7 +63,7 @@ namespace CardCollector.Repository
                   )
                 """).ConfigureAwait(false);
         }
-        
+
         public async Task UpsertSnapshotsAsync(IEnumerable<CollectionEntryValueSnapshot> snapshots, string snapshotDate)
         {
             var existing = await _context.CollectionEntryValueSnapshots

@@ -1,0 +1,75 @@
+@page
+@model CardCollector.Pages.Catalog.CardsModel
+@using CardCollector.Data.Models.Catalog
+@{
+    ViewData["Title"] = "Catalog Cards";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Catalog Cards</h1>
+    <span class="badge-neutral fs-6">@Model.Results.TotalCount cards</span>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-6">
+        <label for="catalogQuery" class="form-label small mb-1">Name, set code, or number</label>
+        <input id="catalogQuery" name="q" value="@Model.Query" class="form-control" placeholder="e.g. Theorealize, BLGG-EN127, 48739627" autocomplete="off" />
+    </div>
+    <div class="col-8 col-md-3">
+        <label for="catalogStatus" class="form-label small mb-1">Status</label>
+        <select id="catalogStatus" name="status" class="form-select">
+            <option value="">Active and retired</option>
+            @foreach (var status in Enum.GetValues<CatalogStatus>())
+            {
+                <option value="@status" selected="@(Model.Status == status)">@status</option>
+            }
+        </select>
+    </div>
+    <div class="col-4 col-md-auto d-grid">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">No catalog cards match.</div>
+}
+else
+{
+    <div class="list-group mb-4 cc-table-card">
+        @foreach (var card in Model.Results.Items)
+        {
+            <a class="list-group-item list-group-item-action py-2 d-flex gap-3 align-items-center" href="/Catalog/CardDetails?id=@card.ID">
+                @if (!string.IsNullOrEmpty(card.ImageURLSmall))
+                {
+                    <partial name="_CardThumbnail" model='new CardThumbnailViewModel(card.ImageURLSmall, card.Name)' />
+                }
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="fw-semibold text-break">@card.Name</span>
+                        @if (card.Status == CatalogStatus.Retired)
+                        {
+                            <span class="badge text-bg-secondary">Retired</span>
+                        }
+                        @if (card.HasLockedFields)
+                        {
+                            <span class="badge text-bg-light border" title="Some fields were edited by hand"><i class="bi bi-lock"></i> Edited</span>
+                        }
+                    </div>
+                    <div class="small text-muted">
+                        #@card.ID
+                        &middot; Passcode @(card.Passcode?.ToString() ?? "none")
+                        @if (card.KonamiID is int konamiID)
+                        {
+                            <span>&middot; Konami @konamiID</span>
+                        }
+                        &middot; @card.PrintingCount @(card.PrintingCount == 1 ? "printing" : "printings")
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+            </a>
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Catalog card pagination", PageName = "/Catalog/Cards", PageNumber = Model.PageNumber, PageSize = Model.PageSize, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}

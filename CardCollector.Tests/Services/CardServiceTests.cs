@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Models.Catalog;
 using CardCollector.Repository;
 using CardCollector.Services;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ namespace CardCollector.Tests.Services
         private CardService _service = null!;
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
         private Mock<IWishlistValueRepository> _wishlistValueRepositoryMock = null!;
+
         [TestInitialize]
         public void Setup()
         {
@@ -55,27 +57,22 @@ namespace CardCollector.Tests.Services
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(It.IsAny<int>())).ReturnsAsync(new List<PreferredVersion>());
             _preferredVersionRepositoryMock.Setup(r => r.GetPreferredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
             _checkedOutRepositoryMock.Setup(r => r.GetCheckedOutLookupAsync())
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>());
-            _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync())
-                .ReturnsAsync(new HashSet<(int CardID, string SetCode, string RarityName, string? PrintVariant)>());
+                .ReturnsAsync(new Dictionary<int, (DateTime Date, int Quantity)>());
+            _dismissedNewPrintingRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new HashSet<int>());
             _ignoredCardRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new Dictionary<int, DateTime>());
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int>());
-            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
-            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
-            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int CardID, string SetCode, string? RarityName)>>()))
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode), int>());
+            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int>());
+            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int>());
             _collectionRepositoryMock.Setup(r => r.GetOwnedStatsAsync()).ReturnsAsync(new OwnedCollectionStats(0, null, null));
-            _collectionRepositoryMock.Setup(r => r.GetOwnedPairsAsync()).ReturnsAsync(new HashSet<(int, string)>());
+            _collectionRepositoryMock.Setup(r => r.GetOwnedPrintingIDsAsync()).ReturnsAsync(new HashSet<int>());
             _collectionRepositoryMock.Setup(r => r.GetStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, CollectionStatus>());
             _collectionRepositoryMock.Setup(r => r.GetCompletionStatusByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, CollectionCompletionStatus>());
-            _pricingServiceMock.Setup(p => p.GetCardEditionMapAsync(It.IsAny<int>()))
-                .ReturnsAsync(new Dictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>());
-            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesForPairsAsync(It.IsAny<IEnumerable<(int CardID, string SetCode, string RarityName)>>()))
-                .ReturnsAsync(new Dictionary<(int CardID, string SetCode, string RarityName), int>());
+            _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(It.IsAny<int>()))
+                .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>>());
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int>());
             _wishlistValueRepositoryMock.Setup(r => r.GetAllSnapshotsAsync()).ReturnsAsync(new List<WishlistValueSnapshot>());
             _wishlistValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((WishlistValueSnapshot?)null);
 
@@ -95,5 +92,21 @@ namespace CardCollector.Tests.Services
                 _unitOfWorkMock.Object,
                 _wishlistValueRepositoryMock.Object);
         }
+
+        /// <summary>Registers a card and each of its printings (and the printings' card ID) with the card data mock, and returns the card.</summary>
+        private Card SetUpCard(int cardID, string name, params Set[] printings)
+        {
+            var card = new Card { ID = cardID, Name = name, CardSets = printings };
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(cardID)).Returns(card);
+            foreach (var printing in printings)
+            {
+                _cardDataRepositoryMock.Setup(r => r.GetCardIDByPrintingID(printing.PrintingID)).Returns(cardID);
+                _cardDataRepositoryMock.Setup(r => r.GetPrintingByID(printing.PrintingID)).Returns(new CatalogPrintingRef(card, printing));
+            }
+            return card;
+        }
+
+        private void SetUpPrinting(int printingID, string setCode, string rarityName, string? printVariant = null) =>
+            SetUpCard(1, "Dark Magician", new Set { Code = setCode, PrintingID = printingID, PrintVariant = printVariant, RarityName = rarityName });
     }
 }

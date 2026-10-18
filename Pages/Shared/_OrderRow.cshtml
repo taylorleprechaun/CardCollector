@@ -19,7 +19,7 @@
                         }
                         else if (Model.Category == EditionAuditCategory.Unverifiable)
                         {
-                            <span class="badge-status badge-status--warning ms-1" title="No matching printing found in TCGPlayer's live data for this set/rarity.">Unverifiable</span>
+                            <span class="badge-status badge-status--warning ms-1" title="No TCGPlayer product is linked to this printing, so its edition can't be checked.">Unverifiable</span>
                         }
                     </span>
                     <span>&middot; @(Model.AcquisitionMethod.HasValue ? Model.AcquisitionMethod.GetDisplayName() : "—")</span>

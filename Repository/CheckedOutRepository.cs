@@ -1,6 +1,5 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -18,7 +17,6 @@ namespace CardCollector.Repository
         {
             if (entry is null) throw new ArgumentNullException(nameof(entry));
 
-            entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName) ?? entry.RarityName;
             _context.CheckedOutCards.Add(entry);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -29,31 +27,24 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<CheckedOutCard?> GetAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
-        {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
-            return await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.CardID == cardID && c.SetCode == setCode && c.RarityName == rarityName && c.PrintVariant == printVariant)
+        public async Task<CheckedOutCard?> GetAsync(int printingID) =>
+            await _context.CheckedOutCards
+                .FirstOrDefaultAsync(c => c.CatalogPrintingID == printingID)
                 .ConfigureAwait(false);
-        }
 
-        public async Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName, string? PrintVariant), (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
+        public async Task<IReadOnlyDictionary<int, (DateTime Date, int Quantity)>> GetCheckedOutLookupAsync()
         {
             var records = await _context.CheckedOutCards
-                .Select(c => new { c.CardID, c.SetCode, c.RarityName, c.PrintVariant, c.CheckedOutDate, c.Quantity })
+                .Select(c => new { PrintingID = c.CatalogPrintingID, c.CheckedOutDate, c.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return records.ToDictionary(r => (r.CardID, r.SetCode, r.RarityName, r.PrintVariant), r => (r.CheckedOutDate, r.Quantity));
+            return records.ToDictionary(r => r.PrintingID, r => (r.CheckedOutDate, r.Quantity));
         }
 
-        public async Task<bool> RemoveAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
+        public async Task<bool> RemoveAsync(int printingID)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
-            var entry = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.CardID == cardID && c.SetCode == setCode && c.RarityName == rarityName && c.PrintVariant == printVariant)
-                .ConfigureAwait(false);
-
+            var entry = await GetAsync(printingID).ConfigureAwait(false);
             if (entry is null)
                 return false;
 
@@ -62,13 +53,9 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task UpdateAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null)
+        public async Task UpdateAsync(int printingID, int quantity)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
-            var entry = await _context.CheckedOutCards
-                .FirstOrDefaultAsync(c => c.CardID == cardID && c.SetCode == setCode && c.RarityName == rarityName && c.PrintVariant == printVariant)
-                .ConfigureAwait(false);
-
+            var entry = await GetAsync(printingID).ConfigureAwait(false);
             if (entry is null)
                 return;
 

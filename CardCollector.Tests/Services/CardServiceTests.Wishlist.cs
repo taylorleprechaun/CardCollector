@@ -9,24 +9,17 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetWishlistAsync_CalledMultipleTimes_OnlyQueriesRepositoriesOnce()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
-            _collectionRepositoryMock
-                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int>());
-            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int>());
-            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int>());
 
             await _service.GetWishlistAsync();
             await _service.GetWishlistAsync();
 
             _preferredVersionRepositoryMock.Verify(r => r.GetAllAsync(), Times.Once());
-            _collectionRepositoryMock.Verify(
-                r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()), Times.Once());
+            _collectionRepositoryMock.Verify(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()), Times.Once());
             _collectionRepositoryMock.Verify(r => r.GetOrderedQuantitiesAsync(), Times.Once());
             _pendingOrderRepositoryMock.Verify(r => r.GetStagedQuantitiesAsync(), Times.Once());
         }
@@ -34,12 +27,12 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetWishlistAsync_MultipleItems_OrdersByCardNameThenSetCode()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Zeta Card" });
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(2)).Returns(new Card { ID = 2, Name = "Alpha Card" });
+            SetUpCard(1, "Zeta Card", new Set { Code = "ZZZ-EN001", PrintingID = 101, RarityName = "Common" });
+            SetUpCard(2, "Alpha Card", new Set { Code = "AAA-EN001", PrintingID = 201, RarityName = "Common" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "ZZZ-EN001" },
-                new PreferredVersion { CardID = 2, SetCode = "AAA-EN001" }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 }
             ]);
 
             var result = (await _service.GetWishlistAsync()).ToList();
@@ -66,15 +59,17 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetWishlistAsync_OwnedQuantityAtCustomDesiredQuantity_ExcludesItem()
+        [DataRow(1, 1, DisplayName = "Custom target of 1 met")]
+        [DataRow(3, 3, DisplayName = "Default target of 3 met")]
+        public async Task GetWishlistAsync_OwnedQuantityMeetsTarget_ExcludesItem(int desiredQuantity, int owned)
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", DesiredQuantity = 1 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = desiredQuantity }
             ]);
-            _collectionRepositoryMock
-                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 1 });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = owned });
 
             var result = await _service.GetWishlistAsync();
 
@@ -82,92 +77,91 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetWishlistAsync_OwnedQuantityAtOrAboveThreshold_ExcludesItem()
+        public async Task GetWishlistAsync_OwnedQuantityBelowThreshold_IncludesItemWithItsPrintingsQuantities()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
-            _collectionRepositoryMock
-                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 3 });
-
-            var result = await _service.GetWishlistAsync();
-
-            Assert.AreEqual(0, result.Count());
-        }
-        [TestMethod]
-        public async Task GetWishlistAsync_OwnedQuantityBelowThreshold_IncludesItemWithQuantities()
-        {
-            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
-            [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
-            ]);
-            _collectionRepositoryMock
-                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 1 });
-            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Ultra Rare")] = 1 });
-            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Ultra Rare")] = 1 });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
+            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int> { [101] = 1, [102] = 5 });
+            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int> { [101] = 1, [102] = 5 });
 
             var result = (await _service.GetWishlistAsync()).ToList();
 
             Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(101, result[0].PrintingID);
             Assert.AreEqual(1, result[0].QuantityOwned);
             Assert.AreEqual(1, result[0].OrderedQuantity);
             Assert.AreEqual(1, result[0].CartQuantity);
         }
 
         [TestMethod]
-        public async Task GetWishlistAsync_PreferredVersionIsCommonButCatalogRarityIsShortPrint_ResolvesPriceAndSetName()
+        public async Task GetWishlistAsync_OwnedCopiesOfAVariant_DoNotCountTowardThePlainPrinting()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                Name = "Dark Magician",
-                CardSets = [new Set { Code = "LOB-EN001", RarityName = "Short Print", Price = 5m, Name = "Legend of Blue Eyes White Dragon" }]
-            });
+            SetUpCard(1, "Synthetic Dragon",
+                new Set { Code = "RA05-EN146", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "RA05-EN146", PrintingID = 102, PrintVariant = "Extended Art", RarityName = "Ultra Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Common" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [102] = 3 });
 
             var result = (await _service.GetWishlistAsync()).ToList();
 
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("Common", result[0].RarityName);
-            Assert.AreEqual("(C)", result[0].RarityCode);
-            Assert.AreEqual("Legend of Blue Eyes White Dragon", result[0].SetName);
-            Assert.AreEqual(5m, result[0].Price);
+            Assert.AreEqual(0, result.Single().QuantityOwned);
+        }
+
+        [TestMethod]
+        public async Task GetWishlistAsync_PrintingFromCatalog_ResolvesPriceSetNameAndRarityCode()
+        {
+            SetUpCard(1, "Dark Magician", new Set { Code = "LOB-EN001", Name = "Legend of Blue Eyes White Dragon", Price = 5m, PrintingID = 101, RarityName = "Common" });
+            _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PreferredVersion { CatalogPrintingID = 101 }
+            ]);
+
+            var result = (await _service.GetWishlistAsync()).Single();
+
+            Assert.AreEqual("Common", result.RarityName);
+            Assert.AreEqual("(C)", result.RarityCode);
+            Assert.AreEqual("Legend of Blue Eyes White Dragon", result.SetName);
+            Assert.AreEqual(5m, result.Price);
         }
 
         [TestMethod]
         public async Task GetWishlistAsync_TwoTrackedPrintingsForSameCard_BothAppearIndependently()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "A Bao A Qu, the Lightless Shadow" });
+            SetUpCard(1, "A Bao A Qu, the Lightless Shadow",
+                new Set { Code = "SUDA-EN001", PrintingID = 101, RarityName = "Secret Rare" },
+                new Set { Code = "RA04-EN001", PrintingID = 102, RarityName = "Quarter Century Secret Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "SUDA-EN001", RarityName = "Secret Rare", DesiredQuantity = 3 },
-                new PreferredVersion { CardID = 1, SetCode = "RA04-EN001", RarityName = "Quarter Century Secret Rare", DesiredQuantity = 1 }
+                new PreferredVersion { CatalogPrintingID = 101, DesiredQuantity = 3 },
+                new PreferredVersion { CatalogPrintingID = 102, DesiredQuantity = 1 }
             ]);
 
             var result = (await _service.GetWishlistAsync()).ToList();
 
-            Assert.AreEqual(2, result.Count);
-            var suda = result.Single(r => r.SetCode == "SUDA-EN001");
-            var qcsr = result.Single(r => r.SetCode == "RA04-EN001");
-            Assert.AreEqual(3, suda.QuantityNeeded);
-            Assert.AreEqual(1, qcsr.QuantityNeeded);
+            Assert.AreEqual(3, result.Single(r => r.SetCode == "SUDA-EN001").QuantityNeeded);
+            Assert.AreEqual(1, result.Single(r => r.SetCode == "RA04-EN001").QuantityNeeded);
         }
+
         [TestMethod]
         public async Task GetWishlistDistinctRarityNamesAsync_ReturnsSortedDistinctNonEmptyNames()
         {
+            SetUpCard(1, "Card A", new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" });
+            SetUpCard(2, "Card B", new Set { Code = "LOB-EN002", PrintingID = 201, RarityName = "Common" });
+            SetUpCard(3, "Card C", new Set { Code = "LOB-EN003", PrintingID = 301, RarityName = "Ultra Rare" });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" },
-                new PreferredVersion { CardID = 2, SetCode = "LOB-EN002", RarityName = "Common" },
-                new PreferredVersion { CardID = 3, SetCode = "LOB-EN003", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 201 },
+                new PreferredVersion { CatalogPrintingID = 301 }
             ]);
 
             var result = await _service.GetWishlistDistinctRarityNamesAsync();
@@ -178,9 +172,10 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetWishlistDistinctSetNamesAsync_MapsSetCodeToCanonicalNameWhenKnown()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _cardDataRepositoryMock.Setup(r => r.GetSetNamesByCode())
                 .Returns(new Dictionary<string, string> { ["LOB-EN001"] = "Legend of Blue Eyes White Dragon" });

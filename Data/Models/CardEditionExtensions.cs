@@ -19,12 +19,15 @@ namespace CardCollector.Data.Models
                 case "1st Edition":
                     edition = CardEdition.FirstEdition;
                     return true;
+
                 case "Limited":
                     edition = CardEdition.LimitedEdition;
                     return true;
+
                 case "Unlimited":
                     edition = CardEdition.Unlimited;
                     return true;
+
                 default:
                     edition = default;
                     return false;

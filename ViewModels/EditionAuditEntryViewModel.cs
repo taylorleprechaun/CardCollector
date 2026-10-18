@@ -8,37 +8,33 @@ namespace CardCollector.ViewModels
 
         public EditionAuditCategory? Category { get; init; }
 
-        public IReadOnlyList<string> SuggestedPrintVariants { get; init; } = [];
-
         public static EditionAuditEntryViewModel From(
             OrderEntryViewModel entry,
             EditionAuditCategory? category,
-            IReadOnlyList<CardEdition> availableEditions,
-            IReadOnlyList<string>? suggestedPrintVariants = null) => new()
-        {
-            AcquisitionMethod = entry.AcquisitionMethod,
-            AvailableEditions = availableEditions,
-            AvailableRarities = entry.AvailableRarities,
-            CardID = entry.CardID,
-            CardName = entry.CardName,
-            CardType = entry.CardType,
-            Category = category,
-            Condition = entry.Condition,
-            DateCreated = entry.DateCreated,
-            Edition = entry.Edition,
-            EntryID = entry.EntryID,
-            ImageURLSmall = entry.ImageURLSmall,
-            MarketPriceAtEntry = entry.MarketPriceAtEntry,
-            Price = entry.Price,
-            PrintVariant = entry.PrintVariant,
-            PurchaseDate = entry.PurchaseDate,
-            PurchasePrice = entry.PurchasePrice,
-            Quantity = entry.Quantity,
-            RarityCode = entry.RarityCode,
-            RarityName = entry.RarityName,
-            SetCode = entry.SetCode,
-            SetName = entry.SetName,
-            SuggestedPrintVariants = suggestedPrintVariants ?? []
-        };
+            IReadOnlyList<CardEdition> availableEditions) => new()
+            {
+                AcquisitionMethod = entry.AcquisitionMethod,
+                AvailableEditions = availableEditions,
+                CardID = entry.CardID,
+                CardName = entry.CardName,
+                CardType = entry.CardType,
+                Category = category,
+                Condition = entry.Condition,
+                DateCreated = entry.DateCreated,
+                Edition = entry.Edition,
+                EntryID = entry.EntryID,
+                ImageURLSmall = entry.ImageURLSmall,
+                MarketPriceAtEntry = entry.MarketPriceAtEntry,
+                Price = entry.Price,
+                PrintingID = entry.PrintingID,
+                PrintVariant = entry.PrintVariant,
+                PurchaseDate = entry.PurchaseDate,
+                PurchasePrice = entry.PurchasePrice,
+                Quantity = entry.Quantity,
+                RarityCode = entry.RarityCode,
+                RarityName = entry.RarityName,
+                SetCode = entry.SetCode,
+                SetName = entry.SetName
+            };
     }
 }

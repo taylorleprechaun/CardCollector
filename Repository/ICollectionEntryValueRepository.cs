@@ -8,14 +8,14 @@ namespace CardCollector.Repository
     public interface ICollectionEntryValueRepository
     {
         /// <summary>
-        /// Returns the distinct card names that have at least one value snapshot, sorted alphabetically.
+        /// Returns every catalog card that has at least one value snapshot.
         /// </summary>
-        Task<IEnumerable<string>> GetDistinctCardNamesAsync();
+        Task<IReadOnlySet<int>> GetCatalogCardIDsAsync();
 
         /// <summary>
-        /// Returns all value snapshots for the given card name across all snapshot dates, ordered by date ascending.
+        /// Returns all value snapshots for the given catalog card across all snapshot dates, ordered by date ascending.
         /// </summary>
-        Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardNameAsync(string cardName);
+        Task<IEnumerable<CollectionEntryValueSnapshot>> GetHistoryByCardIDAsync(int cardID);
 
         /// <summary>
         /// Returns the most recent snapshot for each collection entry, regardless of whether all entries share the same snapshot date.
@@ -27,7 +27,7 @@ namespace CardCollector.Repository
         /// snapshot date per calendar month for older data.
         /// </summary>
         Task PruneSnapshotsAsync();
-        
+
         /// <summary>
         /// Inserts or updates entry-level value snapshots for the given snapshot date.
         /// </summary>

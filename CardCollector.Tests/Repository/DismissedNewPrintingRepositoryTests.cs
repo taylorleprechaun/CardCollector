@@ -1,6 +1,5 @@
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -12,72 +11,48 @@ namespace CardCollector.Tests.Repository
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
+            await repository.AddAsync([101]);
 
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
-
-            var result = await repository.GetAllAsync();
-            Assert.AreEqual(1, result.Count);
-        }
-
-        [TestMethod]
-        public async Task AddAsync_AlreadyDismissedAsCommonButRequestedAsShortPrint_DoesNotAddDuplicate()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Common");
-
-            await repository.AddAsync(1, "LOB-EN001", "Short Print");
+            await repository.AddAsync([101, 101]);
 
             var result = await repository.GetAllAsync();
             Assert.AreEqual(1, result.Count);
         }
 
         [TestMethod]
-        public async Task AddAsync_DifferentPrintVariantSameSetAndRarity_AddsBothAsDistinctRecords()
+        public async Task AddAsync_SomeAlreadyDismissed_AddsOnlyTheRest()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
+            await repository.AddAsync([101]);
 
-            await repository.AddAsync(1, "RA05-EN001", "Ultra Rare", "Extended Art");
-            await repository.AddAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            await repository.AddAsync([101, 102]);
 
-            var result = await repository.GetAllAsync();
-            Assert.AreEqual(2, result.Count);
-            Assert.IsTrue(result.Contains((1, "RA05-EN001", "Ultra Rare", "Extended Art")));
-            Assert.IsTrue(result.Contains((1, "RA05-EN001", "Ultra Rare", "Starlight Rare")));
+            Assert.AreEqual(2, context.DismissedNewPrintings.Count());
         }
 
         [TestMethod]
-        public async Task AddAsync_ShortPrintRarityName_NormalizesToCommon()
+        public async Task AddAsync_TwoPrintingsInOneCall_AddsBoth()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
 
-            await repository.AddAsync(1, "LOB-EN001", "Short Print");
+            await repository.AddAsync([101, 102]);
 
             var result = await repository.GetAllAsync();
-            Assert.IsTrue(result.Contains((1, "LOB-EN001", "Common", (string?)null)));
+            CollectionAssert.AreEquivalent(new[] { 101, 102 }, result.ToArray());
         }
-        [TestMethod]
-        public async Task AddAsync_ThenGetAllAsync_ContainsRecord()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new DismissedNewPrintingRepository(context);
 
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
-
-            var result = await repository.GetAllAsync();
-            Assert.IsTrue(result.Contains((1, "LOB-EN001", "Ultra Rare", (string?)null)));
-        }
         [TestMethod]
         public async Task AnyAsync_HasRecords_ReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
-            await repository.AddAsync(1, "LOB-EN001", "Ultra Rare");
+            await repository.AddAsync([101]);
 
-            Assert.IsTrue(await repository.AnyAsync());
+            var result = await repository.AnyAsync();
+
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -86,7 +61,9 @@ namespace CardCollector.Tests.Repository
             using var context = InMemoryDbContextFactory.Create();
             var repository = new DismissedNewPrintingRepository(context);
 
-            Assert.IsFalse(await repository.AnyAsync());
+            var result = await repository.AnyAsync();
+
+            Assert.IsFalse(result);
         }
     }
 }

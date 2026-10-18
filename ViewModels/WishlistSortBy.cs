@@ -1,4 +1,5 @@
 namespace CardCollector.ViewModels
 {
-    public enum WishlistSortBy { Name }
+    public enum WishlistSortBy
+    { Name }
 }

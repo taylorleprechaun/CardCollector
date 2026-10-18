@@ -10,32 +10,29 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetDashboardStatsAsync_AggregatesCountsAndValuesAcrossRepositories()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
-            [
-                new Card { ID = 1, Name = "Dark Magician", CardSets = [new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" }] },
-                new Card { ID = 2, Name = "Ignored Card" }
-            ]);
+            var darkMagician = SetUpCard(1, "Dark Magician", new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" });
+            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns([darkMagician, new Card { ID = 2, Name = "Ignored Card" }]);
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 2 });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 3 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 3 }
             ]);
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDsAsync(It.IsAny<IEnumerable<int>>()))
-                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }] });
+                .ReturnsAsync(new Dictionary<int, IReadOnlyList<PreferredVersion>> { [1] = [new() { CatalogPrintingID = 101 }] });
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 2, CardID = 3 },
-                new CollectionEntry { ID = 3, CardID = 4 }
+                new CollectionEntry { ID = 2 },
+                new CollectionEntry { ID = 3 }
             ]);
             _collectionRepositoryMock.Setup(r => r.GetOwnedStatsAsync()).ReturnsAsync(new OwnedCollectionStats(5, null, 50m));
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync())
                 .ReturnsAsync(new CollectionValueSnapshot { TotalValue = 123.45m, SnapshotDate = "2026-01-01" });
-            _collectionRepositoryMock.Setup(r => r.GetOwnedPairsAsync())
-                .ReturnsAsync(new HashSet<(int, string)> { (1, "LOB-EN001") });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedPrintingIDsAsync())
+                .ReturnsAsync(new HashSet<int> { 101 });
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001" },
-                new PreferredVersion { CardID = 5, SetCode = "XYZ-EN001" }
+                new PreferredVersion { CatalogPrintingID = 101 },
+                new PreferredVersion { CatalogPrintingID = 501 }
             ]);
 
             var stats = await _service.GetDashboardStatsAsync();

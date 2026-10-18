@@ -204,6 +204,7 @@ namespace CardCollector.Tests.Repository
             var rounds = await repository.GetByEventAsync(1);
             CollectionAssert.AreEqual(new[] { "First", "Second" }, rounds.Select(m => m.OpponentDeck).ToArray());
         }
+
         [TestMethod]
         public async Task AddAsync_RoundInAnotherEvent_DoesNotAffectSequencing()
         {
@@ -216,6 +217,7 @@ namespace CardCollector.Tests.Repository
             var saved = await FindAsync(context, 1, id);
             Assert.AreEqual(1, saved!.Sequence);
         }
+
         [TestMethod]
         public async Task DeleteAsync_LastRound_LeavesTheOthersUnchanged()
         {
@@ -358,6 +360,7 @@ namespace CardCollector.Tests.Repository
 
             CollectionAssert.AreEqual(new[] { "Common", "Alpha", "Beta", "Rare" }, opponents.ToArray());
         }
+
         [TestMethod]
         public async Task GetOpponentDecksAsync_MoreThanTwoHundredDecks_ReturnsTwoHundred()
         {
@@ -511,6 +514,7 @@ namespace CardCollector.Tests.Repository
             var saved = await FindAsync(context, 1, id);
             Assert.AreEqual(MatchResult.Win, saved!.Result);
         }
+
         [TestMethod]
         public async Task UpdateAsync_RoundBelongsToAnotherEvent_ReturnsNullAndChangesNothing()
         {
@@ -524,6 +528,7 @@ namespace CardCollector.Tests.Repository
             Assert.IsNull(updated);
             Assert.AreEqual("First", saved!.OpponentDeck);
         }
+
         private static async Task<int> AddAtAsync(MatchRepository repository, int eventID, Match match, int position)
         {
             var (index, rounds) = (await repository.AddAsync(eventID, match, _ => position))!.Value;

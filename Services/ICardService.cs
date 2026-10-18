@@ -1,5 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
+using CardCollector.Models.Catalog;
 using CardCollector.ViewModels;
 
 namespace CardCollector.Services
@@ -10,22 +11,22 @@ namespace CardCollector.Services
     public interface ICardService
     {
         /// <summary>
-        /// Adds a new entry to the collection.
+        /// Adds a new entry for the catalog printing to the collection.
         /// </summary>
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
         Task AddEntryAsync(
-            int cardID, string setCode, CollectionStatus status,
+            int printingID, CollectionStatus status,
             int quantity, CardCondition? condition, CardEdition? edition,
             AcquisitionMethod? acquisitionMethod,
-            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null,
-            string? rarityName = null, string? printVariant = null);
+            DateTime? purchaseDate, decimal? purchasePrice, decimal? marketPriceAtEntry = null);
 
         /// <summary>
-        /// Stages a printing into the cart as a pending order line, defaulting Condition to Near Mint,
-        /// Edition to 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page.
-        /// Returns the cart's new total line count and cost, plus the new staged quantity for this printing.
+        /// Stages the catalog printing into the cart as a pending order line, defaulting Condition to Near Mint, Edition to
+        /// 1st Edition, and Purchase Date to today — the rest is filled in later from the Cart page. Returns the cart's new
+        /// total line count and cost, plus the new staged quantity for this printing.
         /// </summary>
-        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(
-            int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task<(int Count, decimal Total, int CartQuantity)> AddToCartAsync(int printingID, int quantity, decimal? marketPrice);
 
         /// <summary>
         /// Fetches live prices for all owned entries, persists a daily snapshot, and returns the total value with a per-set breakdown.
@@ -40,25 +41,29 @@ namespace CardCollector.Services
         Task<(decimal TotalValue, int CountRemaining)> CalculateWishlistRemainingValueAsync();
 
         /// <summary>
-        /// Checks whether the given (setCode, rarityName, printVariant, edition) is a printing the live pricing
-        /// data actually lists that edition for. Returns null if it looks fine, or the audit category otherwise.
+        /// Checks whether TCGPlayer lists the catalog printing in the given edition. Returns null if it does,
+        /// <see cref="EditionAuditCategory.EditionMismatch"/> if it lists other editions only, and
+        /// <see cref="EditionAuditCategory.Unverifiable"/> if the printing has no linked TCGPlayer product.
         /// </summary>
-        Task<EditionAuditCategory?> CheckEntryEditionAsync(int cardID, string setCode, string rarityName, CardEdition edition, string? printVariant = null);
+        Task<EditionAuditCategory?> CheckEntryEditionAsync(int printingID, CardEdition edition);
 
         /// <summary>
-        /// Clears the checked-out status for the given (cardID, setCode, rarityName, printVariant) group.
+        /// Clears the checked-out status of the catalog printing.
         /// </summary>
-        Task CheckInCardAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        Task CheckInCardAsync(int printingID);
 
         /// <summary>
-        /// Sets the checked-out quantity for the given group. Creates a new record if none exists (recording today as the checkout date); updates quantity on an existing record.
+        /// Sets the checked-out quantity of the catalog printing. Creates a new record if none exists (recording today as
+        /// the checkout date); updates the quantity on an existing record.
         /// </summary>
-        Task CheckOutCardAsync(int cardID, string setCode, string rarityName, int quantity, string? printVariant = null);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task CheckOutCardAsync(int printingID, int quantity);
 
         /// <summary>
-        /// Records the given card set+rarity+variant combination as dismissed so it no longer appears as an upgrade opportunity.
+        /// Records the catalog printings as dismissed so they no longer appear as upgrade opportunities.
         /// </summary>
-        Task DismissNewPrintingAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        /// <exception cref="ArgumentException">A printing is not an active catalog printing; nothing is dismissed.</exception>
+        Task DismissNewPrintingsAsync(IReadOnlyCollection<int> printingIDs);
 
         /// <summary>
         /// Returns the card with the given ID from the in-memory card data, or null if not found.
@@ -66,14 +71,19 @@ namespace CardCollector.Services
         Card? GetCardByID(int cardID);
 
         /// <summary>
+        /// Returns an active catalog printing with its card, or null when the ID names none.
+        /// </summary>
+        CatalogPrintingRef? GetPrintingByID(int printingID);
+
+        /// <summary>
         /// Returns up to maxResults card name suggestions whose names contain the given query string.
         /// </summary>
         IEnumerable<string> GetCardNameSuggestions(string query, int maxResults = 10);
 
         /// <summary>
-        /// Returns the price history for the given card name, with one series per tracked printing.
+        /// Returns the price history for the given catalog card, with one series per collection entry.
         /// </summary>
-        Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(string cardName);
+        Task<IReadOnlyList<CardPriceHistorySeries>> GetCardPriceHistoryAsync(int cardID);
 
         /// <summary>
         /// Returns the total line count and total cost across every staged (not-yet-submitted) cart line.
@@ -118,9 +128,20 @@ namespace CardCollector.Services
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
 
         /// <summary>
+        /// Returns the distinct set codes and rarity names of the owned collection's printings, sorted, for filter lists.
+        /// </summary>
+        Task<(IReadOnlyList<string> SetCodes, IReadOnlyList<string> RarityNames)> GetOwnedSetCodesAndRarityNamesAsync();
+
+        /// <summary>
         /// Returns every staged (not-yet-submitted) cart line, enriched with card and set data.
         /// </summary>
         Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync();
+
+        /// <summary>
+        /// Returns every active catalog card that has value history, under its current name and sorted by it, for the Stats
+        /// page's price-history picker.
+        /// </summary>
+        Task<IReadOnlyList<PriceHistoryCardViewModel>> GetPriceHistoryCardsAsync();
 
         /// <summary>
         /// Builds a purchase plan by walking the purchase-priority list in order and taking candidates that fit
@@ -128,14 +149,14 @@ namespace CardCollector.Services
         /// any candidate too expensive to fit so a cheaper, lower-priority one further down can still be taken.
         /// Each candidate's cost accounts for the quantity still needed to complete that printing.
         /// </summary>
-        Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUtc = null);
+        Task<PurchasePlanViewModel> GetPurchasePlanAsync(decimal? totalBudget = null, int? maxCards = null, decimal? maxPricePerCard = null, DateTime? asOfUTC = null);
 
         /// <summary>
         /// Single-item counterpart to <see cref="GetPurchasePriorityCandidatesAsync"/> — no budget-fill, no
-        /// wishlist-wide iteration. Returns null if the card is excluded, already covered, or over <paramref name="maxPrice"/>.
+        /// wishlist-wide iteration. Returns null if the printing is unknown, already covered, or over
+        /// <paramref name="maxPrice"/>.
         /// </summary>
-        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(
-            int cardID, string setCode, string? rarityName, decimal? maxPrice = null, DateTime? asOfUtc = null);
+        Task<PurchasePriorityCandidateViewModel?> GetPurchasePriorityCandidateAsync(int printingID, decimal? maxPrice = null, DateTime? asOfUTC = null);
 
         /// <summary>
         /// Returns every not-yet-complete preferred printing on the wishlist, ordered so the ones worth
@@ -145,17 +166,12 @@ namespace CardCollector.Services
         /// fully collected. When <paramref name="maxPrice"/> is given, only printings currently priced at or
         /// below it are returned.
         /// </summary>
-        Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUtc = null, decimal? maxPrice = null);
+        Task<IReadOnlyList<PurchasePriorityCandidateViewModel>> GetPurchasePriorityCandidatesAsync(DateTime? asOfUTC = null, decimal? maxPrice = null);
 
         /// <summary>
         /// Returns a random card that has no preferred version set for any of its artworks.
         /// </summary>
         Task<Card?> GetRandomUncollectedAsync();
-
-        /// <summary>
-        /// Returns a map of card name → small image URL for every card that has at least one price snapshot.
-        /// </summary>
-        Task<IReadOnlyDictionary<string, string>> GetTrackedCardImageMapAsync();
 
         /// <summary>
         /// Returns every tracked printing for the given card ID. A card can have any number of tracked
@@ -194,13 +210,13 @@ namespace CardCollector.Services
         Task RemoveFromWishlistAsync(int preferredVersionID);
 
         /// <summary>
-        /// Tracks the given (cardID, setCode, rarityName) printing, inserting a new tracked printing if
-        /// that exact printing isn't already tracked, or updating it in place if it is. A card can have
-        /// any number of tracked printings at once. When <paramref name="desiredQuantity"/> is null, a
-        /// newly-created tracked printing defaults to wanting 3 copies and an existing one keeps its
-        /// current target.
+        /// Tracks the catalog printing, inserting a new tracked printing if it isn't already tracked, or updating it in
+        /// place if it is. A card can have any number of tracked printings at once. When
+        /// <paramref name="desiredQuantity"/> is null, a newly-created tracked printing defaults to wanting 3 copies and
+        /// an existing one keeps its current target.
         /// </summary>
-        Task SavePreferredVersionAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null);
+        /// <exception cref="ArgumentException">The printing is not an active catalog printing.</exception>
+        Task SavePreferredVersionAsync(int printingID, int? desiredQuantity = null);
 
         /// <summary>
         /// Returns a paginated, filtered page of browseable cards matching the given criteria.
@@ -241,6 +257,7 @@ namespace CardCollector.Services
         /// raised while committing.
         /// </summary>
         Task<(int Count, decimal Total, IReadOnlyList<string> EditionWarnings)> SubmitCartAsync(IReadOnlyList<CartLineOverride> overrides);
+
         /// <summary>
         /// Clears the ignored status for the given card, resuming Dashboard progress tracking for it. No-ops if not currently ignored.
         /// </summary>
@@ -253,9 +270,10 @@ namespace CardCollector.Services
         Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
 
         /// <summary>
-        /// Updates the tracked printing with the given ID to point at the specified newer printing,
-        /// preserving its desired quantity.
+        /// Moves the tracked printing with the given ID to a newer catalog printing of the same card, preserving its
+        /// desired quantity.
         /// </summary>
-        Task UpgradePreferredVersionAsync(int preferredVersionID, int cardID, string newSetCode, string newRarityName, string? newPrintVariant = null);
+        /// <exception cref="ArgumentException">The new printing is not an active catalog printing.</exception>
+        Task UpgradePreferredVersionAsync(int preferredVersionID, int newPrintingID);
     }
 }

@@ -19,7 +19,8 @@ public sealed class LoginModel : PageModel
 
     public LoginModel(IConfiguration config) => _config = config;
 
-    public void OnGet() { }
+    public void OnGet()
+    { }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl)
     {

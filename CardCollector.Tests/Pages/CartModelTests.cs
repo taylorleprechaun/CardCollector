@@ -1,11 +1,9 @@
-using CardCollector.Data.Models;
 using CardCollector.Pages;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.Tests.TestHelpers;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Pages

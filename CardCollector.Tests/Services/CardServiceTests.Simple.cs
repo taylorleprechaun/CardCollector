@@ -1,6 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.DTO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using CardCollector.ViewModels;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -8,172 +8,117 @@ namespace CardCollector.Tests.Services
     public partial class CardServiceTests
     {
         [TestMethod]
-        public async Task AddEntryAsync_CardHasNoCardSets_DoesNotAutoDismissAnything()
-        {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, CardSets = null });
-
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
-
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [TestMethod]
         public async Task AddEntryAsync_EnteredSetCodeHasNoKnownReleaseDate_DoesNotAutoDismissAnything()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                CardSets = [new Set { Code = "SDK-EN001", RarityName = "Ultra Rare" }]
-            });
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "SDK-EN001", PrintingID = 102, RarityName = "Ultra Rare" });
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns((string?)null);
 
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+            await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<IReadOnlyCollection<int>>()), Times.Never);
         }
 
         [TestMethod]
         public async Task AddEntryAsync_NewerPrintingsAlreadyReleased_AreAutoDismissed_OlderAndFuturePrintingsAreNot()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                CardSets =
-                [
-                    new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" },
-                    new Set { Code = "SDK-EN001", RarityName = "Common" },
-                    new Set { Code = "FUT-EN001", RarityName = "Secret Rare" },
-                    new Set { Code = "OLD-EN001", RarityName = "Common" },
-                    new Set { Code = "UNK-EN001", RarityName = "Common" }
-                ]
-            });
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "SDK-EN001", PrintingID = 102, RarityName = "Common" },
+                new Set { Code = "FUT-EN001", PrintingID = 103, RarityName = "Secret Rare" },
+                new Set { Code = "OLD-EN001", PrintingID = 104, RarityName = "Common" },
+                new Set { Code = "UNK-EN001", PrintingID = 105, RarityName = "Common" });
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2002-03-08");
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("SDK-EN001")).Returns("2020-01-01");
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("FUT-EN001")).Returns("2999-01-01");
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("OLD-EN001")).Returns("1999-01-01");
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("UNK-EN001")).Returns((string?)null);
 
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+            await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "SDK-EN001", "Common"), Times.Once);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "LOB-EN001", It.IsAny<string>()), Times.Never);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "FUT-EN001", It.IsAny<string>()), Times.Never);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "OLD-EN001", It.IsAny<string>()), Times.Never);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "UNK-EN001", It.IsAny<string>()), Times.Never);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 102 }))), Times.Once);
         }
 
         [TestMethod]
-        public async Task AddEntryAsync_NewerSetHasTwoPrintVariantsOfSameRarity_BothAutoDismissedWithOwnVariant()
+        public async Task AddEntryAsync_NewerSetHasTwoPrintVariantsOfSameRarity_DismissesEachPrinting()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                CardSets =
-                [
-                    new Set { Code = "LOB-EN001", RarityName = "Ultra Rare" },
-                    new Set { Code = "RA05-EN001", RarityName = "Ultra Rare", PrintVariant = "Extended Art" },
-                    new Set { Code = "RA05-EN001", RarityName = "Ultra Rare", PrintVariant = "Starlight Rare" }
-                ]
-            });
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "LOB-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "RA05-EN001", PrintingID = 102, RarityName = "Ultra Rare", PrintVariant = "Extended Art" },
+                new Set { Code = "RA05-EN001", PrintingID = 103, RarityName = "Ultra Rare", PrintVariant = "Starlight Rare" });
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("LOB-EN001")).Returns("2002-03-08");
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("RA05-EN001")).Returns("2020-01-01");
 
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null);
+            await _service.AddEntryAsync(101, CollectionStatus.Owned, 1, null, null, null, null, null);
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "RA05-EN001", "Ultra Rare", "Extended Art"), Times.Once);
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 102, 103 }))), Times.Once);
         }
 
         [TestMethod]
-        public async Task AddEntryAsync_QuantityLessThanOne_ClampsToOne()
+        public async Task AddEntryAsync_Printing_AddsEntryOnThatPrinting()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+
+            await _service.AddEntryAsync(101, CollectionStatus.Owned, 2, CardCondition.NearMint, CardEdition.FirstEdition, null, null, null);
+
+            _collectionRepositoryMock.Verify(r => r.AddAsync(It.Is<CollectionEntry>(e =>
+                e.CatalogPrintingID == 101 && e.Quantity == 2 && e.Status == CollectionStatus.Owned)), Times.Once);
+        }
+
+        [TestMethod]
+        [DataRow(0, 1, DisplayName = "Below one clamps to one")]
+        [DataRow(2, 2, DisplayName = "Valid quantity passes through")]
+        public async Task AddEntryAsync_Quantity_IsAtLeastOne(int requested, int expected)
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             CollectionEntry? captured = null;
             _collectionRepositoryMock
                 .Setup(r => r.AddAsync(It.IsAny<CollectionEntry>()))
                 .Callback<CollectionEntry>(e => captured = e)
                 .Returns(Task.CompletedTask);
 
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 0, null, null, null, null, null);
+            await _service.AddEntryAsync(101, CollectionStatus.Owned, requested, null, null, null, null, null);
 
-            Assert.AreEqual(1, captured!.Quantity);
+            Assert.AreEqual(expected, captured!.Quantity);
         }
 
         [TestMethod]
-        public async Task AddEntryAsync_RarityNameIsWhitespace_StoresNullRarityName()
+        public async Task AddEntryAsync_UnknownPrinting_ThrowsArgumentException()
         {
-            CollectionEntry? captured = null;
-            _collectionRepositoryMock
-                .Setup(r => r.AddAsync(It.IsAny<CollectionEntry>()))
-                .Callback<CollectionEntry>(e => captured = e)
-                .Returns(Task.CompletedTask);
-
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 1, null, null, null, null, null, rarityName: "   ");
-
-            Assert.IsNull(captured!.RarityName);
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
+                _service.AddEntryAsync(999, CollectionStatus.Owned, 1, null, null, null, null, null));
         }
 
         [TestMethod]
-        public async Task AddEntryAsync_ValidQuantity_PassesThroughUnchanged()
+        [DataRow(10, 3, DisplayName = "Above the cart maximum")]
+        [DataRow(0, 1, DisplayName = "Below one")]
+        public async Task AddToCartAsync_Quantity_IsClampedToCartRange(int requested, int expected)
         {
-            CollectionEntry? captured = null;
-            _collectionRepositoryMock
-                .Setup(r => r.AddAsync(It.IsAny<CollectionEntry>()))
-                .Callback<CollectionEntry>(e => captured = e)
-                .Returns(Task.CompletedTask);
-
-            await _service.AddEntryAsync(1, "LOB-EN001", CollectionStatus.Owned, 2, null, null, null, null, null);
-
-            Assert.AreEqual(2, captured!.Quantity);
-        }
-
-        [TestMethod]
-        public async Task AddToCartAsync_QuantityAboveMax_ClampsToMaxCartQuantity()
-        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             PendingOrderLine? captured = null;
             _pendingOrderRepositoryMock
                 .Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<PendingOrderLine>>()))
                 .Callback<IEnumerable<PendingOrderLine>>(lines => captured = lines.Single())
                 .Returns(Task.CompletedTask);
             _pendingOrderRepositoryMock.Setup(r => r.GetSummaryAsync()).ReturnsAsync((1, 10m));
-            _pendingOrderRepositoryMock
-                .Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int>());
 
-            await _service.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 10, 5m);
+            await _service.AddToCartAsync(101, requested, 5m);
 
-            Assert.AreEqual(3, captured!.Quantity);
+            Assert.AreEqual(expected, captured!.Quantity);
+            Assert.AreEqual(101, captured.CatalogPrintingID);
         }
 
         [TestMethod]
-        public async Task AddToCartAsync_QuantityBelowMin_ClampsToOne()
+        public async Task AddToCartAsync_ReturnsSummaryAndThePrintingsCartQuantity()
         {
-            PendingOrderLine? captured = null;
-            _pendingOrderRepositoryMock
-                .Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<PendingOrderLine>>()))
-                .Callback<IEnumerable<PendingOrderLine>>(lines => captured = lines.Single())
-                .Returns(Task.CompletedTask);
-            _pendingOrderRepositoryMock.Setup(r => r.GetSummaryAsync()).ReturnsAsync((1, 10m));
-            _pendingOrderRepositoryMock
-                .Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int>());
-
-            await _service.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 0, 5m);
-
-            Assert.AreEqual(1, captured!.Quantity);
-        }
-
-        [TestMethod]
-        public async Task AddToCartAsync_ReturnsSummaryAndMatchingCartQuantity()
-        {
-            _pendingOrderRepositoryMock
-                .Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<PendingOrderLine>>()))
-                .Returns(Task.CompletedTask);
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetSummaryAsync()).ReturnsAsync((4, 42.50m));
             _pendingOrderRepositoryMock
                 .Setup(r => r.GetStagedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Ultra Rare")] = 3 });
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 3, [102] = 1 });
 
-            var (count, total, cartQuantity) = await _service.AddToCartAsync(1, "LOB-EN001", "Ultra Rare", 2, 5m);
+            var (count, total, cartQuantity) = await _service.AddToCartAsync(101, 2, 5m);
 
             Assert.AreEqual(4, count);
             Assert.AreEqual(42.50m, total);
@@ -181,69 +126,106 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        [DataRow(null, DisplayName = "Null set code")]
-        [DataRow("", DisplayName = "Empty set code")]
-        [DataRow("   ", DisplayName = "Whitespace set code")]
-        public async Task CheckInCardAsync_SetCodeIsBlank_ThrowsArgumentException(string? setCode)
+        public async Task AddToCartAsync_UnknownPrinting_ThrowsArgumentException()
         {
-            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.CheckInCardAsync(1, setCode!, "Ultra Rare"));
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.AddToCartAsync(999, 1, null));
         }
 
         [TestMethod]
-        public async Task CheckInCardAsync_ValidSetCode_RemovesCheckedOutRecord()
+        public async Task CheckEntryEditionAsync_EditionListedForPrinting_ReturnsNull()
         {
-            _checkedOutRepositoryMock.Setup(r => r.RemoveAsync(1, "LOB-EN001", "Ultra Rare")).ReturnsAsync(true);
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(1))
+                .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>> { [101] = new HashSet<CardEdition> { CardEdition.FirstEdition } });
 
-            await _service.CheckInCardAsync(1, "LOB-EN001", "Ultra Rare");
+            var result = await _service.CheckEntryEditionAsync(101, CardEdition.FirstEdition);
 
-            _checkedOutRepositoryMock.Verify(r => r.RemoveAsync(1, "LOB-EN001", "Ultra Rare"), Times.Once);
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task CheckEntryEditionAsync_OnlyOtherEditionsListed_ReturnsMismatch()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(1))
+                .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>> { [101] = new HashSet<CardEdition> { CardEdition.Unlimited } });
+
+            var result = await _service.CheckEntryEditionAsync(101, CardEdition.FirstEdition);
+
+            Assert.AreEqual(EditionAuditCategory.EditionMismatch, result);
+        }
+
+        [TestMethod]
+        public async Task CheckEntryEditionAsync_PrintingWithoutProduct_ReturnsUnverifiable()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _pricingServiceMock.Setup(p => p.GetEditionsByPrintingAsync(1))
+                .ReturnsAsync(new Dictionary<int, IReadOnlySet<CardEdition>>());
+
+            var result = await _service.CheckEntryEditionAsync(101, CardEdition.FirstEdition);
+
+            Assert.AreEqual(EditionAuditCategory.Unverifiable, result);
+        }
+
+        [TestMethod]
+        public async Task CheckInCardAsync_Printing_RemovesItsCheckedOutRecord()
+        {
+            _checkedOutRepositoryMock.Setup(r => r.RemoveAsync(101)).ReturnsAsync(true);
+
+            await _service.CheckInCardAsync(101);
+
+            _checkedOutRepositoryMock.Verify(r => r.RemoveAsync(101), Times.Once);
         }
 
         [TestMethod]
         public async Task CheckOutCardAsync_ExistingRecord_UpdatesQuantityInsteadOfCreating()
         {
             _checkedOutRepositoryMock
-                .Setup(r => r.GetAsync(1, "LOB-EN001", "Ultra Rare", null))
-                .ReturnsAsync(new CheckedOutCard { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 });
+                .Setup(r => r.GetAsync(101))
+                .ReturnsAsync(new CheckedOutCard { CatalogPrintingID = 101, Quantity = 1 });
 
-            await _service.CheckOutCardAsync(1, "LOB-EN001", "Ultra Rare", 3);
+            await _service.CheckOutCardAsync(101, 3);
 
-            _checkedOutRepositoryMock.Verify(r => r.UpdateAsync(1, "LOB-EN001", "Ultra Rare", 3, null), Times.Once);
+            _checkedOutRepositoryMock.Verify(r => r.UpdateAsync(101, 3), Times.Once);
             _checkedOutRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CheckedOutCard>()), Times.Never);
         }
 
         [TestMethod]
-        public async Task CheckOutCardAsync_NoExistingRecord_CreatesNewRecord()
+        public async Task CheckOutCardAsync_NoExistingRecord_CreatesRecordOnThePrinting()
         {
-            _checkedOutRepositoryMock.Setup(r => r.GetAsync(1, "LOB-EN001", "Ultra Rare", null)).ReturnsAsync((CheckedOutCard?)null);
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _checkedOutRepositoryMock.Setup(r => r.GetAsync(101)).ReturnsAsync((CheckedOutCard?)null);
 
-            await _service.CheckOutCardAsync(1, "LOB-EN001", "Ultra Rare", 3);
+            await _service.CheckOutCardAsync(101, 3);
 
-            _checkedOutRepositoryMock.Verify(r => r.AddAsync(It.Is<CheckedOutCard>(c => c.CardID == 1 && c.Quantity == 3)), Times.Once);
-            _checkedOutRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
+            _checkedOutRepositoryMock.Verify(r => r.AddAsync(It.Is<CheckedOutCard>(c => c.CatalogPrintingID == 101 && c.Quantity == 3)), Times.Once);
         }
 
         [TestMethod]
-        [DataRow(null, DisplayName = "Null set code")]
-        [DataRow("", DisplayName = "Empty set code")]
-        public async Task CheckOutCardAsync_SetCodeIsBlank_ThrowsArgumentException(string? setCode)
+        public async Task CheckOutCardAsync_UnknownPrinting_ThrowsArgumentException()
         {
-            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.CheckOutCardAsync(1, setCode!, "Ultra Rare", 1));
-        }
-        [TestMethod]
-        public async Task DismissNewPrintingAsync_DelegatesToRepository()
-        {
-            await _service.DismissNewPrintingAsync(1, "LOB-EN001", "Ultra Rare");
-
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "LOB-EN001", "Ultra Rare", null), Times.Once);
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.CheckOutCardAsync(999, 1));
         }
 
         [TestMethod]
-        public async Task DismissNewPrintingAsync_PrintVariantSpecified_DelegatesToRepositoryWithVariant()
+        public async Task DismissNewPrintingsAsync_ActivePrintings_DismissesThemTogether()
         {
-            await _service.DismissNewPrintingAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            SetUpPrinting(101, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+            SetUpPrinting(102, "RA05-EN001", "Ultra Rare", "Extended Art");
 
-            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(1, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
+            await _service.DismissNewPrintingsAsync([101, 102]);
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 101, 102 }))), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task DismissNewPrintingsAsync_UnknownPrinting_ThrowsAndDismissesNothing()
+        {
+            SetUpPrinting(101, "RA05-EN001", "Ultra Rare", "Starlight Rare");
+
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.DismissNewPrintingsAsync([101, 999]));
+
+            _dismissedNewPrintingRepositoryMock.Verify(r => r.AddAsync(It.IsAny<IReadOnlyCollection<int>>()), Times.Never);
         }
 
         [TestMethod]
@@ -300,9 +282,10 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetEnrichedOwnedAsync_ReturnsEnrichedEntriesForOwnedStatus()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
 
             var result = (await _service.GetEnrichedOwnedAsync()).ToList();
@@ -312,9 +295,27 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetEnrichedOwnedAsync_EntryOnARetiredPrinting_ShowsItsCardWithANoteInsteadOfThePrinting()
+        {
+            _cardDataRepositoryMock.Setup(r => r.GetCardIDByPrintingID(150)).Returns(1);
+            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
+            [
+                new CollectionEntry { ID = 1, CatalogPrintingID = 150, Quantity = 1 }
+            ]);
+
+            var entry = (await _service.GetEnrichedOwnedAsync()).Single();
+
+            Assert.AreEqual(1, entry.CardID);
+            Assert.AreEqual("Dark Magician", entry.CardName);
+            Assert.AreEqual(150, entry.PrintingID);
+            Assert.AreEqual("Printing no longer in the catalog", entry.SetName);
+        }
+
+        [TestMethod]
         public async Task GetEntriesByCardIDAsync_DelegatesToRepository()
         {
-            var entries = new List<CollectionEntry> { new() { CardID = 1 } };
+            var entries = new List<CollectionEntry> { new() { CatalogPrintingID = 101 } };
             _collectionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(entries);
 
             var result = await _service.GetEntriesByCardIDAsync(1);
@@ -323,11 +324,27 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetOwnedSetCodesAndRarityNamesAsync_OwnedPrintings_ReturnsSortedDistinctValuesAndSkipsUnknownPrintings()
+        {
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "SDK-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN001", PrintingID = 102, RarityName = "Short Print" },
+                new Set { Code = "LOB-EN001", PrintingID = 103, RarityName = "Ultra Rare", PrintVariant = "Starfoil" });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedPrintingIDsAsync()).ReturnsAsync(new HashSet<int> { 101, 102, 103, 999 });
+
+            var (setCodes, rarityNames) = await _service.GetOwnedSetCodesAndRarityNamesAsync();
+
+            CollectionAssert.AreEqual(new[] { "LOB-EN001", "SDK-EN001" }, setCodes.ToArray());
+            CollectionAssert.AreEqual(new[] { "Common", "Ultra Rare" }, rarityNames.ToArray());
+        }
+
+        [TestMethod]
         public async Task GetPendingCartAsync_ReturnsEnrichedLinesForEachPendingOrderLine()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _pendingOrderRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PendingOrderLine { ID = 1, CardID = 1, SetCode = "LOB-EN001", Quantity = 2 }
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101, Quantity = 2 }
             ]);
 
             var result = await _service.GetPendingCartAsync();
@@ -335,6 +352,30 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(1, result[0].PendingOrderLineID);
             Assert.AreEqual(2, result[0].Quantity);
+        }
+
+        [TestMethod]
+        public async Task GetPriceHistoryCardsAsync_CardsWithHistory_ReturnsCurrentNamesSortedWithSmallImages()
+        {
+            _collectionEntryValueRepositoryMock.Setup(r => r.GetCatalogCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1, 2 });
+            SetUpCard(1, "Theorealize").CardImages = [new Image { ID = 10, ImageURL = "large.jpg", ImageURLSmall = "small.jpg" }];
+            SetUpCard(2, "Dark Magician");
+
+            var cards = await _service.GetPriceHistoryCardsAsync();
+
+            CollectionAssert.AreEqual(new[] { "Dark Magician", "Theorealize" }, cards.Select(c => c.Name).ToArray());
+            Assert.AreEqual("small.jpg", cards[1].ImageURL);
+            Assert.IsNull(cards[0].ImageURL);
+        }
+
+        [TestMethod]
+        public async Task GetPriceHistoryCardsAsync_CardNoLongerInTheCatalog_IsLeftOut()
+        {
+            _collectionEntryValueRepositoryMock.Setup(r => r.GetCatalogCardIDsAsync()).ReturnsAsync(new HashSet<int> { 999 });
+
+            var cards = await _service.GetPriceHistoryCardsAsync();
+
+            Assert.AreEqual(0, cards.Count);
         }
 
         [TestMethod]
@@ -374,13 +415,7 @@ namespace CardCollector.Tests.Services
             [
                 new Card { ID = 1, Name = "Dark Magician" }
             ]);
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card
-            {
-                ID = 1,
-                Name = "Dark Magician",
-                CardSets = [new Set { Code = "SDK-EN001", RarityName = "Ultra Rare" }],
-                CardImages = [new Image { ID = 10 }]
-            });
+            SetUpCard(1, "Dark Magician", new Set { Code = "SDK-EN001", PrintingID = 101, RarityName = "Ultra Rare" });
             _cardSetRepositoryMock.Setup(r => r.GetTCGDateBySetCode("SDK-EN001")).Returns("2020-01-01");
             _ignoredCardRepositoryMock.Setup(r => r.GetIgnoredCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1 });
             _ignoredCardRepositoryMock.Setup(r => r.GetAllAsync())
@@ -410,39 +445,44 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetTrackedCardImageMapAsync_CardNameNotFoundInBrowseableCards_IsOmitted()
-        {
-            _collectionEntryValueRepositoryMock.Setup(r => r.GetDistinctCardNamesAsync()).ReturnsAsync(["Unknown Card"]);
-
-            var map = await _service.GetTrackedCardImageMapAsync();
-
-            Assert.AreEqual(0, map.Count);
-        }
-
-        [TestMethod]
-        public async Task GetTrackedCardImageMapAsync_MapsCardNamesToSmallImageUrl()
-        {
-            _collectionEntryValueRepositoryMock.Setup(r => r.GetDistinctCardNamesAsync()).ReturnsAsync(["Dark Magician"]);
-            _cardDataRepositoryMock.Setup(r => r.GetBrowseableCards()).Returns(
-            [
-                new Card { Name = "Dark Magician", CardImages = [new Image { ID = 1, ImageURLSmall = "small.jpg" }] }
-            ]);
-
-            var map = await _service.GetTrackedCardImageMapAsync();
-
-            Assert.AreEqual("small.jpg", map["Dark Magician"]);
-        }
-
-        [TestMethod]
         public async Task GetTrackedPrintingsByCardIDAsync_DelegatesToRepository()
         {
-            var trackedPrintings = (IReadOnlyList<PreferredVersion>)[new PreferredVersion { CardID = 1 }];
+            var trackedPrintings = (IReadOnlyList<PreferredVersion>)[new PreferredVersion { }];
             _preferredVersionRepositoryMock.Setup(r => r.GetByCardIDAsync(1)).ReturnsAsync(trackedPrintings);
 
             var result = await _service.GetTrackedPrintingsByCardIDAsync(1);
 
             Assert.AreSame(trackedPrintings, result);
         }
+
+        [TestMethod]
+        public async Task SavePreferredVersionAsync_Printing_TracksItAndClearsIgnoredStatus()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+
+            await _service.SavePreferredVersionAsync(101);
+
+            _preferredVersionRepositoryMock.Verify(r => r.AddOrUpdateAsync(101, null), Times.Once);
+            _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task SavePreferredVersionAsync_UnknownPrinting_ThrowsArgumentException()
+        {
+            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.SavePreferredVersionAsync(999));
+        }
+
+        [TestMethod]
+        public async Task UpgradePreferredVersionAsync_MovesTrackedPrintingAndClearsIgnoredStatus()
+        {
+            SetUpPrinting(102, "NEW-EN001", "Secret Rare");
+
+            await _service.UpgradePreferredVersionAsync(2, 102);
+
+            _preferredVersionRepositoryMock.Verify(r => r.UpgradeAsync(2, 102), Times.Once);
+            _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
+        }
+
         [TestMethod]
         public async Task IgnoreCardAsync_DelegatesToRepository()
         {
@@ -470,14 +510,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task SavePreferredVersionAsync_SavesAndClearsIgnoredStatus()
-        {
-            await _service.SavePreferredVersionAsync(1, "LOB-EN001", "Ultra Rare");
-
-            _preferredVersionRepositoryMock.Verify(r => r.AddOrUpdateAsync(1, "LOB-EN001", "Ultra Rare", null, null), Times.Once);
-            _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
-        }
-        [TestMethod]
         public async Task UnignoreCardAsync_DelegatesToRepository()
         {
             await _service.UnignoreCardAsync(1);
@@ -504,22 +536,6 @@ namespace CardCollector.Tests.Services
 
             Assert.IsTrue(result);
             _pendingOrderRepositoryMock.Verify(r => r.UpdateQuantityAsync(1, 3), Times.Once);
-        }
-        [TestMethod]
-        public async Task UpgradePreferredVersionAsync_NewPrintVariantSpecified_ForwardsVariantToRepository()
-        {
-            await _service.UpgradePreferredVersionAsync(2, 1, "RA05-EN001", "Ultra Rare", "Starlight Rare");
-
-            _preferredVersionRepositoryMock.Verify(r => r.UpgradeAsync(2, "RA05-EN001", "Ultra Rare", "Starlight Rare"), Times.Once);
-        }
-
-        [TestMethod]
-        public async Task UpgradePreferredVersionAsync_UpgradesTrackedPrintingAndClearsIgnoredStatus()
-        {
-            await _service.UpgradePreferredVersionAsync(2, 1, "NEW-EN001", "Secret Rare");
-
-            _preferredVersionRepositoryMock.Verify(r => r.UpgradeAsync(2, "NEW-EN001", "Secret Rare", null), Times.Once);
-            _ignoredCardRepositoryMock.Verify(r => r.RemoveAsync(1), Times.Once);
         }
     }
 }

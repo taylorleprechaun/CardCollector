@@ -1,6 +1,5 @@
 using CardCollector.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Extensions
 {

@@ -66,12 +66,9 @@ else
                         </div>
                     </div>
                     <form method="post" asp-page-handler="DismissAll">
-                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
                         @foreach (var printing in opportunity.NewerPrintings)
                         {
-                            <input type="hidden" name="SetCodes" value="@printing.SetCode" />
-                            <input type="hidden" name="RarityNames" value="@printing.RarityName" />
-                            <input type="hidden" name="PrintVariants" value="@printing.PrintVariant" />
+                            <input type="hidden" name="PrintingIDs" value="@printing.PrintingID" />
                         }
                         <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss All</button>
                     </form>
@@ -111,18 +108,12 @@ else
                                 <td>@(printing.ReleaseDate ?? "—")</td>
                                 <td class="text-end">
                                     <form method="post" asp-page-handler="Upgrade" class="d-inline">
-                                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
                                         <input type="hidden" name="PreferredVersionID" value="@opportunity.PreferredVersionID" />
-                                        <input type="hidden" name="NewSetCode" value="@printing.SetCode" />
-                                        <input type="hidden" name="NewRarityName" value="@printing.RarityName" />
-                                        <input type="hidden" name="NewPrintVariant" value="@printing.PrintVariant" />
+                                        <input type="hidden" name="NewPrintingID" value="@printing.PrintingID" />
                                         <button type="submit" class="btn btn-sm btn-success">Choose This</button>
                                     </form>
                                     <form method="post" asp-page-handler="Dismiss" class="d-inline ms-1">
-                                        <input type="hidden" name="CardID" value="@opportunity.CardID" />
-                                        <input type="hidden" name="SetCode" value="@printing.SetCode" />
-                                        <input type="hidden" name="RarityName" value="@printing.RarityName" />
-                                        <input type="hidden" name="PrintVariant" value="@printing.PrintVariant" />
+                                        <input type="hidden" name="PrintingID" value="@printing.PrintingID" />
                                         <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss</button>
                                     </form>
                                 </td>

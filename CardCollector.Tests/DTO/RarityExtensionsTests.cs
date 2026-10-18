@@ -1,5 +1,4 @@
 using CardCollector.DTO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.DTO
 {
@@ -70,6 +69,16 @@ namespace CardCollector.Tests.DTO
         }
 
         [TestMethod]
+        [DataRow("Starfoil", DisplayName = "Bare Starfoil")]
+        [DataRow("starfoil", DisplayName = "Case-insensitive match")]
+        public void NormalizeRarityName_BareStarfoil_ReturnsStarfoilRare(string rarityName)
+        {
+            var result = RarityExtensions.NormalizeRarityName(rarityName);
+
+            Assert.AreEqual("Starfoil Rare", result);
+        }
+
+        [TestMethod]
         [DataRow(null, DisplayName = "Null")]
         [DataRow("", DisplayName = "Empty")]
         [DataRow("Common", DisplayName = "Already Common")]
@@ -80,7 +89,7 @@ namespace CardCollector.Tests.DTO
 
             Assert.AreEqual(rarityName, result);
         }
-        
+
         [TestMethod]
         [DataRow("Short Print", DisplayName = "Short Print")]
         [DataRow("Super Short Print", DisplayName = "Super Short Print")]

@@ -46,26 +46,26 @@ namespace CardCollector.ViewModels
             int checkedOutQuantity = 0,
             DateTime? checkedOutDate = null,
             int completeThreshold = 3) => new()
-        {
-            AvailableRarities = printing.AvailableRarities,
-            CardID = printing.CardID,
-            CardName = printing.CardName,
-            CardType = printing.CardType,
-            CheckedOutDate = checkedOutDate,
-            CheckedOutQuantity = checkedOutQuantity,
-            CompleteThreshold = completeThreshold,
-            ImageURLSmall = printing.ImageURLSmall,
-            Price = printing.Price,
-            PrintVariant = printing.PrintVariant,
-            RarityCode = printing.RarityCode,
-            RarityName = printing.RarityName,
-            SetCode = printing.SetCode,
-            SetName = printing.SetName,
-            Entries = entries,
-            IsPreferredVersion = isPreferredVersion,
-            PreferredVersionIsComplete = preferredVersionIsComplete,
-            TotalCost = totalCost,
-            TotalQuantity = totalQuantity
-        };
+            {
+                CardID = printing.CardID,
+                CardName = printing.CardName,
+                CardType = printing.CardType,
+                CheckedOutDate = checkedOutDate,
+                CheckedOutQuantity = checkedOutQuantity,
+                CompleteThreshold = completeThreshold,
+                ImageURLSmall = printing.ImageURLSmall,
+                Price = printing.Price,
+                PrintingID = printing.PrintingID,
+                PrintVariant = printing.PrintVariant,
+                RarityCode = printing.RarityCode,
+                RarityName = printing.RarityName,
+                SetCode = printing.SetCode,
+                SetName = printing.SetName,
+                Entries = entries,
+                IsPreferredVersion = isPreferredVersion,
+                PreferredVersionIsComplete = preferredVersionIsComplete,
+                TotalCost = totalCost,
+                TotalQuantity = totalQuantity
+            };
     }
 }

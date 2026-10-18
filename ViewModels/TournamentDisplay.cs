@@ -1,5 +1,5 @@
-using System.Globalization;
 using CardCollector.Data.Models;
+using System.Globalization;
 
 namespace CardCollector.ViewModels
 {

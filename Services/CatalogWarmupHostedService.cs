@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using CardCollector.Repository;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CardCollector.Services
 {
@@ -11,12 +11,10 @@ namespace CardCollector.Services
     {
         private readonly IBanlistRepository _banlistRepository;
         private readonly ICardDataRepository _cardDataRepository;
-        private readonly ICardSetRepository _cardSetRepository;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly ILogger<CatalogWarmupHostedService> _logger;
         private readonly IPricingDataCache _pricingDataCache;
-        private readonly ITCGCatalogCache _tcgCatalogCache;
-        
+
         /// <summary>
         /// Set on the ApplicationStarted callback and read when the host stops, which can be on another thread.
         /// </summary>
@@ -25,19 +23,15 @@ namespace CardCollector.Services
         public CatalogWarmupHostedService(
             IBanlistRepository banlistRepository,
             ICardDataRepository cardDataRepository,
-            ICardSetRepository cardSetRepository,
             IHostApplicationLifetime lifetime,
             ILogger<CatalogWarmupHostedService> logger,
-            IPricingDataCache pricingDataCache,
-            ITCGCatalogCache tcgCatalogCache)
+            IPricingDataCache pricingDataCache)
         {
             _banlistRepository = banlistRepository;
             _cardDataRepository = cardDataRepository;
-            _cardSetRepository = cardSetRepository;
             _lifetime = lifetime;
             _logger = logger;
             _pricingDataCache = pricingDataCache;
-            _tcgCatalogCache = tcgCatalogCache;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -69,15 +63,12 @@ namespace CardCollector.Services
             {
                 _logger.LogInformation("Startup cache warm-up: beginning background refresh of stale/missing caches");
 
-                var catalogTask = _tcgCatalogCache.LoadIfStaleAsync();
-                var setTask = _cardSetRepository.LoadIfStaleAsync();
                 var banlistTask = _banlistRepository.LoadIfStaleAsync(_lifetime.ApplicationStopping);
 
-                await catalogTask.ConfigureAwait(false);
+                // Downloads whichever sources are stale (TCGPlayer prices, set dates, card data), syncs them into the catalog, and reloads the in-memory card data.
                 await _cardDataRepository.LoadIfStaleAsync().ConfigureAwait(false);
                 _pricingDataCache.RebuildIndex();
 
-                await setTask.ConfigureAwait(false);
                 await banlistTask.ConfigureAwait(false);
 
                 _logger.LogInformation("Startup cache warm-up: complete");

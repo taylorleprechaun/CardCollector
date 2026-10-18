@@ -6,9 +6,10 @@ namespace CardCollector.Repository
     public interface IDismissedNewPrintingRepository
     {
         /// <summary>
-        /// Records the given card set+rarity+variant combination as dismissed. No-ops if already dismissed.
+        /// Records the catalog printings as dismissed so they no longer appear as upgrade opportunities, in one save.
+        /// Printings already dismissed are skipped.
         /// </summary>
-        Task AddAsync(int cardID, string setCode, string rarityName, string? printVariant = null);
+        Task AddAsync(IReadOnlyCollection<int> printingIDs);
 
         /// <summary>
         /// Returns true if any dismissed records exist.
@@ -16,8 +17,8 @@ namespace CardCollector.Repository
         Task<bool> AnyAsync();
 
         /// <summary>
-        /// Returns all dismissed combinations as a set for fast lookup.
+        /// Returns the catalog printing IDs of every dismissed printing.
         /// </summary>
-        Task<IReadOnlySet<(int CardID, string SetCode, string RarityName, string? PrintVariant)>> GetAllAsync();
+        Task<IReadOnlySet<int>> GetAllAsync();
     }
 }

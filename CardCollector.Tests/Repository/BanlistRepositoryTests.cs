@@ -1,4 +1,3 @@
-using System.Net;
 using CardCollector.Models;
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
@@ -6,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace CardCollector.Tests.Repository
 {
@@ -445,6 +445,7 @@ namespace CardCollector.Tests.Repository
 
             return new BanlistRepository(new Mock<ILogger<BanlistRepository>>().Object, factory.Object, Options.Create(settings), _cacheDir, timeProvider);
         }
+
         // Writes in the on-disk cache shape BanlistRepository.WriteCache produces (Current/Lists of Banlist,
         // not the raw {date, regulation} vector-file shape BuildListJson fakes for HTTP responses).
         private void SeedCache(DateOnly effectiveDate, int ageDays, params (int KonamiID, BanlistLimit Limit)[] limits)

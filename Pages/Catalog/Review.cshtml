@@ -1,0 +1,98 @@
+@page
+@model CardCollector.Pages.Catalog.ReviewModel
+@using CardCollector.Data.Models.Catalog
+@{
+    ViewData["Title"] = "Catalog Review";
+    var filterParams = Model.GetFilterParams();
+    var search = Model.Query?.Trim();
+    var searchParam = string.IsNullOrEmpty(search) ? string.Empty : $"&q={Uri.EscapeDataString(search)}";
+    var tabs = new[]
+    {
+        (Filter: CatalogReviewFilter.NeedsDecision, Label: "Needs decision", Count: (int?)Model.CountOpen(actionable: true)),
+        (Filter: CatalogReviewFilter.Informational, Label: "Informational", Count: (int?)Model.CountOpen(actionable: false)),
+        (Filter: CatalogReviewFilter.Resolved, Label: "Resolved", Count: (int?)null)
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Catalog Review</h1>
+    <span class="badge-neutral fs-6" id="totalCountBadge" data-suffix="items">@Model.Results.TotalCount items</span>
+</div>
+
+<ul class="nav nav-pills mb-3">
+    @foreach (var tab in tabs)
+    {
+        var active = Model.Filter == tab.Filter;
+        <li class="nav-item">
+            <a class="nav-link @(active ? "active" : "")" href="/Catalog/Review?filter=@tab.Filter@searchParam">
+                @tab.Label
+                @if (tab.Count is int count)
+                {
+                    <span class="badge @(active ? "text-bg-light" : "text-bg-secondary") ms-1 @(count > 0 ? "" : "d-none")" data-review-tab-count="@tab.Filter">@count</span>
+                }
+            </a>
+        </li>
+    }
+</ul>
+
+<div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end" id="reviewFilterForm">
+        <input type="hidden" name="filter" value="@Model.Filter" />
+        <div>
+            <label for="reviewKind" class="form-label small mb-1">Kind</label>
+            <select id="reviewKind" name="kind" class="form-select form-select-sm" data-auto-submit>
+                <option value="">All kinds</option>
+                @foreach (var kind in Model.FilterKinds)
+                {
+                    var open = Model.OpenCountsByKind.GetValueOrDefault(kind);
+                    var showCount = Model.Filter != CatalogReviewFilter.Resolved;
+                    <option value="@kind" selected="@(Model.Kind == kind)" data-label="@kind.GetDisplayName()" data-show-count="@(showCount ? "true" : "false")">@kind.GetDisplayName()@(showCount && open > 0 ? $" ({open})" : string.Empty)</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="reviewSearch" class="form-label small mb-1">Search</label>
+            <input type="search" id="reviewSearch" name="q" value="@search" class="form-control form-control-sm" placeholder="Card, set code, product" />
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Search</button>
+    </form>
+
+    @if (Model.Filter == CatalogReviewFilter.Informational && Model.Results.TotalCount > 0)
+    {
+        var dismissAll = Model.DescribeDismissAll();
+        <form method="post" asp-page-handler="DismissAll" class="ms-md-auto d-grid gap-1" data-confirm="Dismiss @dismissAll?">
+            <input type="hidden" name="filter" value="@Model.Filter" />
+            <input type="hidden" name="kind" value="@Model.Kind" />
+            <input type="hidden" name="q" value="@search" />
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss all shown</button>
+            <span class="small text-muted">Dismisses @dismissAll.</span>
+        </form>
+    }
+</div>
+
+@if (!Model.Results.Items.Any())
+{
+    <div class="alert alert-info text-center py-5">
+        @Model.DescribeEmpty()
+        @if (Model.Kind is not null || !string.IsNullOrEmpty(search))
+        {
+            <div class="mt-2"><a href="/Catalog/Review?filter=@Model.Filter">Show everything in this tab</a></div>
+        }
+    </div>
+}
+else
+{
+    <div class="list-group mb-4 cc-table-card" id="reviewItems" data-reload-when-empty>
+        @foreach (var item in Model.Results.Items)
+        {
+            <partial name="_ReviewItemRow" model='new CatalogReviewRowViewModel { FilterParams = filterParams, Item = item }' />
+        }
+    </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Review pagination", PageName = "/Catalog/Review", PageNumber = Model.PageNumber, PageSize = Model.PageSize, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
+}
+
+@section Scripts {
+    <script src="~/js/collection-groups.js" asp-append-version="true"></script>
+    <script src="~/js/catalog-review.js" asp-append-version="true"></script>
+}

@@ -10,7 +10,7 @@ describe('collection-entry-modal.js', () => {
   it('action=Order sets order-specific label, button text/class, and hides the acquisition group', async () => {
     setupForm();
 
-    await openModal('LOB-EN001', 'Legend', 'Order', 'Ultra Rare', '2002-03-08');
+    await openModal(101, 'LOB-EN001', 'Legend', 'Order', 'Ultra Rare', '2002-03-08');
 
     expect(document.getElementById('orderModalLabel').textContent).toBe('Order Printing');
     expect(document.getElementById('modalSubmitBtn').textContent).toBe('Confirm Order');
@@ -22,7 +22,7 @@ describe('collection-entry-modal.js', () => {
   it('action=Own sets own-specific label, button text/class, and shows the acquisition group', async () => {
     setupForm();
 
-    await openModal('LOB-EN001', 'Legend', 'Own', 'Ultra Rare', '2002-03-08');
+    await openModal(101, 'LOB-EN001', 'Legend', 'Own', 'Ultra Rare', '2002-03-08');
 
     expect(document.getElementById('orderModalLabel').textContent).toBe('Already Own This Printing');
     expect(document.getElementById('modalSubmitBtn').textContent).toBe('Add to Collection');
@@ -33,7 +33,7 @@ describe('collection-entry-modal.js', () => {
   it('applies card defaults, checks setAsPreferred, and clears purchase price', async () => {
     setupForm();
 
-    await openModal('LOB-EN001', 'Legend', 'Own', 'Ultra Rare', null);
+    await openModal(101, 'LOB-EN001', 'Legend', 'Own', 'Ultra Rare', null);
 
     expect(document.getElementById('atcCondition').value).toBe(CardDefaults.Condition);
     expect(document.getElementById('atcEdition').value).toBe(CardDefaults.Edition);
@@ -42,12 +42,21 @@ describe('collection-entry-modal.js', () => {
     expect(document.getElementById('atcPurchasePrice').value).toBe('');
   });
 
-  it('blank rarityName defaults the rarity fields to empty strings', async () => {
+  it('sets the printing and looks its price up by printing ID', async () => {
     setupForm();
 
-    await openModal('LOB-EN001', 'Legend', 'Order', null, null);
+    await openModal(101, 'RA05-EN146', 'Rarity Collection 5', 'Own', 'Ultra Rare', null, 'Extended Art');
 
-    expect(document.getElementById('atcRarityName').value).toBe('');
+    expect(document.getElementById('atcPrintingID').value).toBe('101');
+    expect(document.getElementById('atcRarityDisplay').textContent).toBe('Ultra Rare (Extended Art)');
+    expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/price?printingID=101&'));
+  });
+
+  it('blank rarityName leaves the rarity display empty', async () => {
+    setupForm();
+
+    await openModal(101, 'LOB-EN001', 'Legend', 'Order', null, null);
+
     expect(document.getElementById('atcRarityDisplay').textContent).toBe('');
   });
 
@@ -56,9 +65,9 @@ describe('collection-entry-modal.js', () => {
       <form id="orderForm" data-page-url="/Card/1">
         <input name="CardID" value="1" />
       </form>
-      <input id="atcSetCode" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
+      <input id="atcPrintingID" /><span id="atcSetNameLabel"></span><span id="orderModalLabel"></span>
       <button id="modalSubmitBtn"></button>
-      <input id="atcRarityName" /><input id="atcPrintVariant" /><span id="atcRarityDisplay"></span>
+      <span id="atcRarityDisplay"></span>
       <div id="atcAcquisitionGroup"></div>
       <select id="atcCondition"><option value="4"></option></select>
       <select id="atcEdition"><option value="0"></option></select>

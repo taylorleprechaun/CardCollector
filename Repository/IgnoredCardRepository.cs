@@ -16,7 +16,7 @@ namespace CardCollector.Repository
         public async Task AddAsync(int cardID)
         {
             var exists = await _context.IgnoredCards
-                .AnyAsync(i => i.CardID == cardID)
+                .AnyAsync(i => i.CatalogCardID == cardID)
                 .ConfigureAwait(false);
 
             if (exists)
@@ -24,7 +24,7 @@ namespace CardCollector.Repository
 
             _context.IgnoredCards.Add(new IgnoredCard
             {
-                CardID = cardID,
+                CatalogCardID = cardID,
                 DateCreated = DateTime.UtcNow,
                 DateModified = DateTime.UtcNow
             });
@@ -35,17 +35,17 @@ namespace CardCollector.Repository
         public async Task<IReadOnlyDictionary<int, DateTime>> GetAllAsync()
         {
             var rows = await _context.IgnoredCards
-                .Select(i => new { i.CardID, i.DateCreated })
+                .Select(i => new { i.CatalogCardID, i.DateCreated })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return rows.ToDictionary(r => r.CardID, r => r.DateCreated);
+            return rows.ToDictionary(r => r.CatalogCardID, r => r.DateCreated);
         }
 
         public async Task<IReadOnlySet<int>> GetIgnoredCardIDsAsync()
         {
             var ids = await _context.IgnoredCards
-                .Select(i => i.CardID)
+                .Select(i => i.CatalogCardID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -54,13 +54,13 @@ namespace CardCollector.Repository
 
         public async Task<bool> IsIgnoredAsync(int cardID) =>
             await _context.IgnoredCards
-                .AnyAsync(i => i.CardID == cardID)
+                .AnyAsync(i => i.CatalogCardID == cardID)
                 .ConfigureAwait(false);
 
         public async Task RemoveAsync(int cardID)
         {
             var entity = await _context.IgnoredCards
-                .FirstOrDefaultAsync(i => i.CardID == cardID)
+                .FirstOrDefaultAsync(i => i.CatalogCardID == cardID)
                 .ConfigureAwait(false);
 
             if (entity is not null)

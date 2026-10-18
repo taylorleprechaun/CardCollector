@@ -1,5 +1,4 @@
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.ViewModels
 {
@@ -21,6 +20,7 @@ namespace CardCollector.Tests.ViewModels
 
             Assert.AreEqual(0, stats.PercentCompleted);
         }
+
         [TestMethod]
         public void PercentIncompleteCopies_TotalCardsIsPositive_ReturnsPercentageOfMissingCopies()
         {
@@ -37,6 +37,7 @@ namespace CardCollector.Tests.ViewModels
 
             Assert.AreEqual(0, stats.PercentIncompleteCopies);
         }
+
         [TestMethod]
         public void PercentOrdered_TotalCardsIsPositive_ReturnsPercentage()
         {
@@ -52,6 +53,7 @@ namespace CardCollector.Tests.ViewModels
 
             Assert.AreEqual(0, stats.PercentOrdered);
         }
+
         [TestMethod]
         public void RemainingCount_SubtractsCompletedAndOrderedFromTotal()
         {

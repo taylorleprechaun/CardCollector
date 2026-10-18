@@ -5,7 +5,7 @@
 @{
     var group = Model.Group;
     var filterParams = Model.FilterParams;
-    var rowKey = $"{group.CardID}-{group.SetCode}";
+    var rowKey = group.PrintingID > 0 ? group.PrintingID.ToString() : $"{group.CardID}-{group.SetCode}";
     var collapseID = "group-" + rowKey;
     var status = group.CompletionStatus;
 }
@@ -32,10 +32,7 @@
         </div>
         <form method="post" class="d-flex flex-column flex-shrink-0 py-2 px-3 pe-md-3 ps-md-0 ajax-form">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="cardID" value="@group.CardID" />
-            <input type="hidden" name="setCode" value="@group.SetCode" />
-            <input type="hidden" name="rarityName" value="@group.RarityName" />
-            <input type="hidden" name="printVariant" value="@group.PrintVariant" />
+            <input type="hidden" name="printingID" value="@group.PrintingID" />
             <div class="d-flex align-items-center gap-1">
                 <small class="text-muted">Check Out:</small>
                 <div class="btn-group btn-group-sm" role="group" aria-label="Check out quantity">
@@ -65,12 +62,11 @@
     <!-- Expanded entries -->
     <div class="collapse border-top" id="@collapseID">
         <div class="p-3 ps-4">
-            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = true, DeleteActionUrl = $"/Collection?handler=Delete&{filterParams}" }' />
+            <partial name="_CollectionEntriesTable" model='new CollectionEntriesTableViewModel { Entries = group.Entries, ShowRemoveButton = true, DeleteActionURL = $"/Collection?handler=Delete&{filterParams}" }' />
             <button type="button" class="btn btn-sm btn-outline-primary"
-                    data-card-id="@group.CardID"
+                    data-printing-id="@group.PrintingID"
                     data-rarity-name="@group.RarityName"
                     data-print-variant="@group.PrintVariant"
-                    data-rarities="@string.Join(",", group.AvailableRarities)"
                     data-set-code="@group.SetCode"
                     data-tcg-date="@Model.TCGDate"
                     onclick="openAddModal(this)">

@@ -41,6 +41,7 @@ namespace CardCollector.Tests.Data
 
             Assert.AreEqual(expected, stored);
         }
+
         [TestMethod]
         public void ConvertToProvider_UndefinedResult_Throws()
         {

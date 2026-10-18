@@ -264,6 +264,13 @@ function buildPriceHistoryChart(series) {
     wrapper.style.display = '';
 }
 
+// Matches a typed or picked name to a card with price history; names are the cards' current catalog names.
+function findPriceHistoryCard(name) {
+    if (typeof priceHistoryCards === 'undefined') return null;
+    const wanted = name.toLowerCase();
+    return priceHistoryCards.find(c => c.name.toLowerCase() === wanted) ?? null;
+}
+
 async function loadCardPriceHistory() {
     const input = document.getElementById('cardHistoryInput');
     const status = document.getElementById('cardHistoryStatus');
@@ -271,12 +278,18 @@ async function loadCardPriceHistory() {
     const cardName = input?.value?.trim();
     if (!cardName) return;
 
-    status.textContent = 'Loading…';
     status.style.display = '';
     if (wrapper) wrapper.style.display = 'none';
 
+    const card = findPriceHistoryCard(cardName);
+    if (!card) {
+        status.textContent = 'No price history found for this card.';
+        return;
+    }
+
+    status.textContent = 'Loading…';
     try {
-        const resp = await fetch(`/api/stats/card-price-history?cardName=${encodeURIComponent(cardName)}`);
+        const resp = await fetch(`/api/stats/card-price-history?cardID=${encodeURIComponent(card.cardID)}`);
         if (!resp.ok) {
             status.textContent = 'Failed to load price history.';
             return;
@@ -289,7 +302,7 @@ async function loadCardPriceHistory() {
         status.style.display = 'none';
         buildPriceHistoryChart(series);
 
-        const imgUrl = typeof trackedCardImageMap !== 'undefined' ? trackedCardImageMap[cardName] : null;
+        const imgUrl = card.imageURL;
         const sideImg = document.getElementById('cardHistoryImg');
         const sideWrapper = document.getElementById('cardHistoryImageWrapper');
         if (imgUrl && sideImg && sideWrapper) {
@@ -302,7 +315,7 @@ async function loadCardPriceHistory() {
 }
 
 (function () {
-    const cardNames = typeof trackedCardImageMap !== 'undefined' ? Object.keys(trackedCardImageMap) : [];
+    const cardNames = typeof priceHistoryCards !== 'undefined' ? priceHistoryCards.map(c => c.name) : [];
     const input = document.getElementById('cardHistoryInput');
     const dropdown = document.getElementById('cardHistoryDropdown');
     if (!input || !dropdown || !cardNames.length) return;

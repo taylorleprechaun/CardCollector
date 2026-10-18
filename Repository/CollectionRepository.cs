@@ -1,6 +1,5 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -16,7 +15,8 @@ namespace CardCollector.Repository
 
         public async Task AddAsync(CollectionEntry entry)
         {
-            entry.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
+            if (entry is null) throw new ArgumentNullException(nameof(entry));
+
             _context.CollectionEntries.Add(entry);
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -34,7 +34,7 @@ namespace CardCollector.Repository
 
         public async Task<IEnumerable<CollectionEntry>> GetByCardIDAsync(int cardID) =>
             await _context.CollectionEntries
-                .Where(e => e.CardID == cardID)
+                .Where(e => e.CatalogPrinting!.CatalogCardID == cardID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -52,22 +52,11 @@ namespace CardCollector.Repository
         {
             var ids = await _context.CollectionEntries
                 .Where(e => e.Status == status)
-                .Select(e => e.CardID)
+                .Select(e => e.CatalogPrinting!.CatalogCardID)
                 .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
             return ids.ToHashSet();
-        }
-
-        public async Task<IReadOnlySet<(int CardID, string SetCode)>> GetCollectedPairsAsync()
-        {
-            var pairs = await _context.CollectionEntries
-                .Select(e => new { e.CardID, e.SetCode })
-                .Distinct()
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            return pairs.Select(p => (p.CardID, p.SetCode)).ToHashSet();
         }
 
         public async Task<IReadOnlyDictionary<int, CollectionCompletionStatus>> GetCompletionStatusByCardIDsAsync(IEnumerable<int> cardIDs)
@@ -77,8 +66,8 @@ namespace CardCollector.Repository
                 return new Dictionary<int, CollectionCompletionStatus>();
 
             var ownedEntries = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.SetCode, e.RarityName, e.Quantity })
+                .Where(e => ids.Contains(e.CatalogPrinting!.CatalogCardID) && e.Status == CollectionStatus.Owned)
+                .Select(e => new { CardID = e.CatalogPrinting!.CatalogCardID, e.CatalogPrintingID, e.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -86,8 +75,8 @@ namespace CardCollector.Repository
                 return new Dictionary<int, CollectionCompletionStatus>();
 
             var trackedPrintings = await _context.PreferredVersions
-                .Where(pv => ids.Contains(pv.CardID))
-                .Select(pv => new { pv.CardID, pv.SetCode, pv.RarityName, pv.DesiredQuantity })
+                .Where(pv => ids.Contains(pv.CatalogPrinting!.CatalogCardID))
+                .Select(pv => new { CardID = pv.CatalogPrinting!.CatalogCardID, pv.CatalogPrintingID, pv.DesiredQuantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -103,9 +92,8 @@ namespace CardCollector.Repository
 
                 foreach (var tracked in trackedForCard)
                 {
-                    var matchingEntries = group.Where(e =>
-                        e.SetCode.Equals(tracked.SetCode, StringComparison.OrdinalIgnoreCase) &&
-                        (tracked.RarityName is null || tracked.RarityName.Equals(e.RarityName, StringComparison.OrdinalIgnoreCase)))
+                    var matchingEntries = group
+                        .Where(e => e.CatalogPrintingID == tracked.CatalogPrintingID)
                         .ToList();
 
                     if (matchingEntries.Count == 0)
@@ -156,130 +144,81 @@ namespace CardCollector.Repository
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-        public async Task<IReadOnlyList<string>> GetDistinctRarityNamesAsync() =>
-            await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Owned && e.RarityName != null)
-                .Select(e => e.RarityName!)
-                .Distinct()
-                .OrderBy(r => r)
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-        public async Task<IReadOnlyList<string>> GetDistinctSetCodesAsync() =>
-            await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Owned)
-                .Select(e => e.SetCode)
-                .Distinct()
-                .OrderBy(s => s)
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-        public async Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOrderedQuantitiesAsync()
+        public async Task<IReadOnlyDictionary<int, int>> GetOrderedQuantitiesAsync()
         {
             var grouped = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Ordered)
-                .GroupBy(e => new { e.CardID, e.SetCode, RarityName = e.RarityName ?? string.Empty })
-                .Select(g => new { g.Key.CardID, g.Key.SetCode, g.Key.RarityName, Quantity = g.Sum(e => e.Quantity) })
+                .GroupBy(e => e.CatalogPrintingID)
+                .Select(g => new { PrintingID = g.Key, Quantity = g.Sum(e => e.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return grouped.ToDictionary(g => (g.CardID, g.SetCode, g.RarityName), g => g.Quantity);
+            return grouped.ToDictionary(g => g.PrintingID, g => g.Quantity);
         }
 
-        public async Task<IReadOnlyList<(int CardID, string SetCode, string? RarityName)>> GetOwnedCardPrintingsAsync()
+        public async Task<IReadOnlyList<(int CardID, int PrintingID)>> GetOwnedCardPrintingsAsync()
         {
             var entries = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.SetCode, e.RarityName })
+                .Select(e => new { CardID = e.CatalogPrinting!.CatalogCardID, PrintingID = e.CatalogPrintingID })
                 .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return entries.Select(e => (e.CardID, e.SetCode, e.RarityName)).ToList();
+            return entries.Select(e => (e.CardID, e.PrintingID)).ToList();
         }
 
-        public async Task<IReadOnlySet<(int CardID, string SetCode)>> GetOwnedPairsAsync()
+        public async Task<IReadOnlyDictionary<int, int>> GetQuantitiesByPrintingAsync(IEnumerable<int> cardIDs, CollectionStatus status)
         {
-            var pairs = await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.SetCode })
-                .Distinct()
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            return pairs.Select(p => (p.CardID, p.SetCode)).ToHashSet();
-        }
-        public async Task<IReadOnlyDictionary<(int CardID, string SetCode, string RarityName), int>> GetOwnedQuantitiesForPairsAsync(IEnumerable<(int CardID, string SetCode, string RarityName)> pairs)
-        {
-            var pairList = pairs.ToList();
-            if (pairList.Count == 0)
-                return new Dictionary<(int CardID, string SetCode, string RarityName), int>();
-
-            var cardIDs = pairList.Select(p => p.CardID).ToHashSet();
+            var ids = cardIDs.ToHashSet();
+            if (ids.Count == 0)
+                return new Dictionary<int, int>();
 
             var entries = await _context.CollectionEntries
-                .Where(e => cardIDs.Contains(e.CardID) && e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.SetCode, e.RarityName, e.Quantity })
+                .Where(e => ids.Contains(e.CatalogPrinting!.CatalogCardID) && e.Status == status)
+                .Select(e => new { PrintingID = e.CatalogPrintingID, e.Quantity })
                 .ToListAsync()
                 .ConfigureAwait(false);
-
-            var pairSet = pairList.ToHashSet();
 
             return entries
-                .Where(e => pairSet.Contains((e.CardID, e.SetCode, e.RarityName ?? string.Empty)))
-                .GroupBy(e => (e.CardID, e.SetCode, RarityName: e.RarityName ?? string.Empty))
+                .GroupBy(e => e.PrintingID)
                 .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
         }
 
-        public async Task<IReadOnlyDictionary<(int CardID, string SetCode), int>> GetOwnedQuantitiesForPreferredVersionsAsync(
-            IEnumerable<(int CardID, string SetCode, string? RarityName)> preferredVersions)
+        public async Task<IReadOnlySet<int>> GetOwnedPrintingIDsAsync()
         {
-            var pvList = preferredVersions.ToList();
-            if (pvList.Count == 0)
-                return new Dictionary<(int CardID, string SetCode), int>();
-
-            // No ID filter here: preferredVersions can cover the entire card catalog (thousands of rows),
-            // which would otherwise translate into a SQL IN clause with one parameter per ID. The owned
-            // collection itself is small, so pulling all Owned rows and matching in memory is far cheaper.
-            var entries = await _context.CollectionEntries
+            var ids = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.SetCode, e.RarityName, e.Quantity })
+                .Select(e => e.CatalogPrintingID)
+                .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            var totalsByPair = new Dictionary<(int CardID, string SetCodeUpper), int>();
-            var totalsByPairAndRarity = new Dictionary<(int CardID, string SetCodeUpper, string RarityNameUpper), int>();
+            return ids.ToHashSet();
+        }
 
-            foreach (var e in entries)
-            {
-                var setCodeUpper = e.SetCode.ToUpperInvariant();
+        public async Task<IReadOnlyDictionary<int, int>> GetOwnedQuantitiesByPrintingAsync(IEnumerable<int> printingIDs)
+        {
+            var ids = printingIDs.ToHashSet();
+            if (ids.Count == 0)
+                return new Dictionary<int, int>();
 
-                var pairKey = (e.CardID, setCodeUpper);
-                totalsByPair[pairKey] = totalsByPair.GetValueOrDefault(pairKey) + e.Quantity;
+            var entries = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned && ids.Contains(e.CatalogPrintingID))
+                .Select(e => new { PrintingID = e.CatalogPrintingID, e.Quantity })
+                .ToListAsync()
+                .ConfigureAwait(false);
 
-                var rarityKey = (e.CardID, setCodeUpper, (e.RarityName ?? string.Empty).ToUpperInvariant());
-                totalsByPairAndRarity[rarityKey] = totalsByPairAndRarity.GetValueOrDefault(rarityKey) + e.Quantity;
-            }
-
-            var result = new Dictionary<(int CardID, string SetCode), int>();
-            foreach (var pv in pvList)
-            {
-                var setCodeUpper = pv.SetCode.ToUpperInvariant();
-                var qty = pv.RarityName is null
-                    ? totalsByPair.GetValueOrDefault((pv.CardID, setCodeUpper))
-                    : totalsByPairAndRarity.GetValueOrDefault((pv.CardID, setCodeUpper, pv.RarityName.ToUpperInvariant()));
-
-                if (qty > 0)
-                    result[(pv.CardID, pv.SetCode)] = qty;
-            }
-            return result;
+            return entries
+                .GroupBy(e => e.PrintingID)
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
         }
 
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
         {
             var entries = await _context.CollectionEntries
                 .Where(e => e.Status == CollectionStatus.Owned)
-                .Select(e => new { e.CardID, e.AcquisitionMethod, e.Quantity, e.MarketPriceAtEntry, e.PurchasePrice })
+                .Select(e => new { e.Quantity, e.MarketPriceAtEntry, e.PurchasePrice })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -298,33 +237,6 @@ namespace CardCollector.Repository
             return new OwnedCollectionStats(totalQuantity, marketValueAtEntry, totalSpent);
         }
 
-        public async Task<IReadOnlyDictionary<int, int>> GetQuantitiesByCardIDsForPrintingAsync(
-                                    IEnumerable<int> cardIDs, CollectionStatus status, string? setPrefix, string? rarityName)
-        {
-            var ids = cardIDs.ToHashSet();
-            if (ids.Count == 0)
-                return new Dictionary<int, int>();
-
-            var query = _context.CollectionEntries.Where(e => ids.Contains(e.CardID) && e.Status == status);
-
-            if (!string.IsNullOrWhiteSpace(setPrefix))
-            {
-                var prefixMatch = setPrefix + "-";
-                query = query.Where(e => e.SetCode.StartsWith(prefixMatch));
-            }
-
-            var entries = await query
-                .Select(e => new { e.CardID, e.RarityName, e.Quantity })
-                .ToListAsync()
-                .ConfigureAwait(false);
-
-            if (!string.IsNullOrWhiteSpace(rarityName))
-                entries = entries.Where(e => string.Equals(e.RarityName, rarityName, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            return entries
-                .GroupBy(e => e.CardID)
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
-        }
         public async Task<IReadOnlyDictionary<int, CollectionStatus>> GetStatusByCardIDsAsync(IEnumerable<int> cardIDs)
         {
             var ids = cardIDs.ToHashSet();
@@ -332,8 +244,8 @@ namespace CardCollector.Repository
                 return new Dictionary<int, CollectionStatus>();
 
             var rows = await _context.CollectionEntries
-                .Where(e => ids.Contains(e.CardID))
-                .GroupBy(e => e.CardID)
+                .Where(e => ids.Contains(e.CatalogPrinting!.CatalogCardID))
+                .GroupBy(e => e.CatalogPrinting!.CatalogCardID)
                 .Select(g => new
                 {
                     CardID = g.Key,
@@ -360,19 +272,6 @@ namespace CardCollector.Repository
             existing.PurchaseDate = entry.PurchaseDate;
             existing.PurchasePrice = entry.PurchasePrice;
             existing.Quantity = entry.Quantity;
-            existing.RarityName = RarityExtensions.NormalizeRarityName(entry.RarityName);
-            existing.DateModified = DateTime.UtcNow;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-            return true;
-        }
-
-        public async Task<bool> UpdatePrintVariantAsync(int id, string? printVariant)
-        {
-            var existing = await _context.CollectionEntries.FindAsync(id).ConfigureAwait(false);
-            if (existing is null)
-                return false;
-
-            existing.PrintVariant = printVariant;
             existing.DateModified = DateTime.UtcNow;
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;

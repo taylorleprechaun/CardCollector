@@ -1,9 +1,9 @@
-using System.Text.Json;
 using CardCollector.Data.Models;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace CardCollector.Pages.Tournaments
 {

@@ -18,7 +18,6 @@ namespace CardCollector.ViewModels
 
         public static WishlistItemViewModel From(CardPrinting printing, int preferredVersionID, int quantityOwned = 0, int cartQuantity = 0, int orderedQuantity = 0, int completeThreshold = 3) => new()
         {
-            AvailableRarities = printing.AvailableRarities,
             CardID = printing.CardID,
             CardName = printing.CardName,
             CardType = printing.CardType,
@@ -28,6 +27,7 @@ namespace CardCollector.ViewModels
             OrderedQuantity = orderedQuantity,
             PreferredVersionID = preferredVersionID,
             Price = printing.Price,
+            PrintingID = printing.PrintingID,
             PrintVariant = printing.PrintVariant,
             QuantityOwned = quantityOwned,
             RarityCode = printing.RarityCode,

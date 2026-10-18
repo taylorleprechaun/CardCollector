@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using CardCollector.Models;
 using CardCollector.Repository;
 using CardCollector.Rules;
@@ -135,8 +136,8 @@ namespace CardCollector.Services
                     .Where(c => c.Section == section)
                     .Select(c => new DeckCardViewModel
                     {
-                        Card = _cardDataRepository.GetCardByID(c.CardID),
-                        CardID = c.CardID,
+                        Card = ResolveCard(c),
+                        PastedPasscode = c.PastedPasscode,
                         Quantity = c.Quantity
                     }))
             };
@@ -166,6 +167,14 @@ namespace CardCollector.Services
             return (DeckListBuilder.Build(parsed.Deck!, _cardDataRepository.GetPasscodeAliases()), null);
         }
 
+        /// <summary>
+        /// The row's catalog card, or for a passcode that was unknown on import, whichever card has it now, so a deck picks up
+        /// cards the sources add later.
+        /// </summary>
+        private Card? ResolveCard(DeckCard deckCard) =>
+            (deckCard.CatalogCardID is int catalogCardID ? _cardDataRepository.GetCardByID(catalogCardID) : null)
+            ?? _cardDataRepository.GetCardByPasscode(deckCard.PastedPasscode);
+
         private DeckImportResult Summarize(IReadOnlyList<DeckCard> cards, int deckID, int linkedEventCount) =>
             new()
             {
@@ -175,9 +184,9 @@ namespace CardCollector.Services
                 MainCount = CountCopies(cards, DeckSection.Main),
                 SideCount = CountCopies(cards, DeckSection.Side),
                 UnknownPasscodes = cards
-                    .Select(c => c.CardID)
+                    .Where(c => ResolveCard(c) is null)
+                    .Select(c => c.PastedPasscode)
                     .Distinct()
-                    .Where(cardID => _cardDataRepository.GetCardByID(cardID) is null)
                     .ToList()
             };
     }

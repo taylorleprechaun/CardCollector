@@ -8,19 +8,15 @@ namespace CardCollector.Services
     public interface IPricingService
     {
         /// <summary>
-        /// Returns every (set code, rarity name, print variant) printing of the given card mapped to its set of
-        /// listed editions, fetched from a single live API call. Returns an empty map if the card or its
-        /// printings can't be fetched.
+        /// Returns the editions TCGPlayer lists for each of the card's printings, keyed by catalog printing ID. A printing
+        /// with no linked TCGPlayer product is left out.
         /// </summary>
-        Task<IReadOnlyDictionary<(string SetCode, string RarityName, string? PrintVariant), IReadOnlySet<CardEdition>>> GetCardEditionMapAsync(int cardID);
+        Task<IReadOnlyDictionary<int, IReadOnlySet<CardEdition>>> GetEditionsByPrintingAsync(int cardID);
 
         /// <summary>
-        /// Returns the current TCGPlayer market price for the specified card printing, or null if unavailable.
-        /// <paramref name="printVariant"/> distinguishes a base print (null) from a distinct sellable variant of
-        /// the same rarity (e.g. "Extended Art"). When <paramref name="edition"/> is provided, matches the
-        /// printing with that specific edition first, falling back to a set/rarity/variant-only match if no
-        /// edition-qualified printing is found.
+        /// Returns the current TCGPlayer market price of a catalog printing, or null if unavailable. When
+        /// <paramref name="edition"/> is provided, that edition's listing is preferred, falling back to any edition.
         /// </summary>
-        Task<decimal?> GetPrintingPriceAsync(int cardID, string setCode, string rarityName, CardEdition? edition = null, string? printVariant = null);
+        Task<decimal?> GetPrintingPriceAsync(int printingID, CardEdition? edition = null);
     }
 }

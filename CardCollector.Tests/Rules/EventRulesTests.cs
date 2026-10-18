@@ -58,6 +58,7 @@ namespace CardCollector.Tests.Rules
             Assert.AreEqual("Sample Deck", normalized.DeckName);
             Assert.AreEqual("note", normalized.Notes);
         }
+
         [TestMethod]
         [DataRow("http://example.test/deck", DisplayName = "http URL")]
         [DataRow("https://example.test/deck?id=1", DisplayName = "https URL")]
@@ -94,6 +95,7 @@ namespace CardCollector.Tests.Rules
 
             CollectionAssert.Contains(errors.ToArray(), $"Deck name must be {EventRules.MAX_DECK_NAME_LENGTH} characters or fewer.");
         }
+
         [TestMethod]
         public void Validate_DefaultDate_ReturnsDateRequired()
         {
@@ -122,6 +124,7 @@ namespace CardCollector.Tests.Rules
 
             CollectionAssert.Contains(errors.ToArray(), "Finish must be at least 1.");
         }
+
         [TestMethod]
         public void Validate_FinishEqualToPlayers_ReturnsNoErrors()
         {
@@ -167,6 +170,7 @@ namespace CardCollector.Tests.Rules
 
             CollectionAssert.Contains(errors.ToArray(), "Location is required.");
         }
+
         [TestMethod]
         public void Validate_NullEvent_ThrowsArgumentNullException()
         {
@@ -204,6 +208,7 @@ namespace CardCollector.Tests.Rules
 
             CollectionAssert.Contains(errors.ToArray(), "Event type is not valid.");
         }
+
         [TestMethod]
         public void Validate_ValidEvent_ReturnsNoErrors()
         {
@@ -235,6 +240,5 @@ namespace CardCollector.Tests.Rules
                 Players = players,
                 TopCut = topCut
             };
-
     }
 }

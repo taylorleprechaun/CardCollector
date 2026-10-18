@@ -1,7 +1,6 @@
 using CardCollector.Data.Models;
 using CardCollector.Repository;
 using CardCollector.Tests.TestHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Repository
 {
@@ -9,40 +8,49 @@ namespace CardCollector.Tests.Repository
     public sealed class PendingOrderRepositoryTests
     {
         [TestMethod]
-        public async Task AddRangeAsync_ShortPrintRarityName_NormalizesToCommon()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = "Short Print" };
-
-            await repository.AddRangeAsync([line]);
-
-            var result = await repository.GetAllAsync();
-            Assert.AreEqual("Common", result[0].RarityName);
-        }
-
-        [TestMethod]
         public async Task AddRangeAsync_ThenGetAllAsync_OrdersByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, SetCode = "OLD-EN001", DateCreated = new DateTime(2020, 1, 1) },
-                new PendingOrderLine { CardID = 2, SetCode = "NEW-EN001", DateCreated = new DateTime(2026, 1, 1) }
+                new PendingOrderLine { CatalogPrintingID = 101, DateCreated = new DateTime(2020, 1, 1) },
+                new PendingOrderLine { CatalogPrintingID = 201, DateCreated = new DateTime(2026, 1, 1) }
             ]);
 
             var result = await repository.GetAllAsync();
 
-            Assert.AreEqual("NEW-EN001", result[0].SetCode);
-            Assert.AreEqual("OLD-EN001", result[1].SetCode);
+            Assert.AreEqual(201, result[0].CatalogPrintingID);
+            Assert.AreEqual(101, result[1].CatalogPrintingID);
         }
+
+        [TestMethod]
+        public async Task GetStagedQuantitiesAsync_SumsStagedQuantityPerPrinting()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
+            var repository = new PendingOrderRepository(context);
+            await repository.AddRangeAsync(
+            [
+                new PendingOrderLine { CatalogPrintingID = 101, Quantity = 2 },
+                new PendingOrderLine { CatalogPrintingID = 101, Quantity = 1 },
+                new PendingOrderLine { CatalogPrintingID = 102, Quantity = 1 }
+            ]);
+
+            var result = await repository.GetStagedQuantitiesAsync();
+
+            Assert.AreEqual(3, result[101]);
+            Assert.AreEqual(1, result[102]);
+        }
+
         [TestMethod]
         public async Task DeleteAsync_ExistingLine_RemovesItAndReturnsTrue()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" };
+            var line = new PendingOrderLine { CatalogPrintingID = 101 };
             await repository.AddRangeAsync([line]);
 
             var result = await repository.DeleteAsync(line.ID);
@@ -66,8 +74,9 @@ namespace CardCollector.Tests.Repository
         public async Task DeleteRangeAsync_EmptyIDs_DoesNothing()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PendingOrderRepository(context);
-            await repository.AddRangeAsync([new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" }]);
+            await repository.AddRangeAsync([new PendingOrderLine { CatalogPrintingID = 101 }]);
 
             await repository.DeleteRangeAsync([]);
 
@@ -78,17 +87,19 @@ namespace CardCollector.Tests.Repository
         public async Task DeleteRangeAsync_RemovesOnlyMatchingLines()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new PendingOrderRepository(context);
-            var line1 = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001" };
-            var line2 = new PendingOrderLine { CardID = 2, SetCode = "LOB-EN002" };
+            var line1 = new PendingOrderLine { CatalogPrintingID = 101 };
+            var line2 = new PendingOrderLine { CatalogPrintingID = 201 };
             await repository.AddRangeAsync([line1, line2]);
 
             await repository.DeleteRangeAsync([line1.ID]);
 
             var remaining = await repository.GetAllAsync();
             Assert.AreEqual(1, remaining.Count);
-            Assert.AreEqual("LOB-EN002", remaining[0].SetCode);
+            Assert.AreEqual(201, remaining[0].CatalogPrintingID);
         }
+
         [TestMethod]
         public async Task GetByIDsAsync_EmptyIDs_ReturnsEmpty()
         {
@@ -104,48 +115,34 @@ namespace CardCollector.Tests.Repository
         public async Task GetByIDsAsync_MatchingIDs_ReturnsOnlyMatchesOrderedByDateCreatedDescending()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2), (301, 3));
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 1, DateCreated = new DateTime(2026, 1, 1) },
-                new PendingOrderLine { CardID = 2, SetCode = "MRD-EN001", Quantity = 1, DateCreated = new DateTime(2026, 2, 1) },
-                new PendingOrderLine { CardID = 3, SetCode = "SDK-EN001", Quantity = 1, DateCreated = new DateTime(2026, 3, 1) }
+                new PendingOrderLine { CatalogPrintingID = 101, Quantity = 1, DateCreated = new DateTime(2026, 1, 1) },
+                new PendingOrderLine { CatalogPrintingID = 201, Quantity = 1, DateCreated = new DateTime(2026, 2, 1) },
+                new PendingOrderLine { CatalogPrintingID = 301, Quantity = 1, DateCreated = new DateTime(2026, 3, 1) }
             ]);
             var allLines = await repository.GetAllAsync();
-            var matchingIDs = allLines.Where(l => l.CardID != 3).Select(l => l.ID);
+            var matchingIDs = allLines.Where(l => l.CatalogPrintingID != 301).Select(l => l.ID);
 
             var result = await repository.GetByIDsAsync(matchingIDs);
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual(2, result[0].CardID);
-            Assert.AreEqual(1, result[1].CardID);
-        }
-
-        [TestMethod]
-        public async Task GetStagedQuantitiesAsync_GroupsByImageSetAndRarityNullBecomesEmptyString()
-        {
-            using var context = InMemoryDbContextFactory.Create();
-            var repository = new PendingOrderRepository(context);
-            await repository.AddRangeAsync(
-            [
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 2 },
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 1 }
-            ]);
-
-            var result = await repository.GetStagedQuantitiesAsync();
-
-            Assert.AreEqual(3, result[(1, "LOB-EN001", "")]);
+            Assert.AreEqual(201, result[0].CatalogPrintingID);
+            Assert.AreEqual(101, result[1].CatalogPrintingID);
         }
 
         [TestMethod]
         public async Task GetSummaryAsync_SumsPriceTimesQuantityTreatingNullPriceAsZero()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (201, 2));
             var repository = new PendingOrderRepository(context);
             await repository.AddRangeAsync(
             [
-                new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 2, PurchasePrice = 5m },
-                new PendingOrderLine { CardID = 2, SetCode = "LOB-EN002", Quantity = 1, PurchasePrice = null }
+                new PendingOrderLine { CatalogPrintingID = 101, Quantity = 2, PurchasePrice = 5m },
+                new PendingOrderLine { CatalogPrintingID = 201, Quantity = 1, PurchasePrice = null }
             ]);
 
             var (count, total) = await repository.GetSummaryAsync();
@@ -158,8 +155,9 @@ namespace CardCollector.Tests.Repository
         public async Task UpdateQuantityAsync_ExistingLine_UpdatesQuantity()
         {
             using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
             var repository = new PendingOrderRepository(context);
-            var line = new PendingOrderLine { CardID = 1, SetCode = "LOB-EN001", Quantity = 1 };
+            var line = new PendingOrderLine { CatalogPrintingID = 101, Quantity = 1 };
             await repository.AddRangeAsync([line]);
 
             var result = await repository.UpdateQuantityAsync(line.ID, 3);

@@ -41,6 +41,7 @@ namespace CardCollector.Pages
         public string? OrderedFilter { get; set; }
 
         public PagedResult<CardListItemViewModel> Results { get; private set; } = new();
+
         [BindProperty(SupportsGet = true)]
         public string? TrackedFilter { get; set; }
 
@@ -48,6 +49,7 @@ namespace CardCollector.Pages
         public string? WishlistFilter { get; set; }
 
         protected override ICardService CardService => _cardService;
+
         public override IReadOnlyDictionary<string, string?> GetPaginationParams() =>
             new Dictionary<string, string?>(base.GetPaginationParams())
             {

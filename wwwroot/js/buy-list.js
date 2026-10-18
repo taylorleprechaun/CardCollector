@@ -40,10 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function openPurchaseModal(btn) {
     const ds = btn.dataset;
-    document.getElementById('poCardID').value = ds.cardId;
-    document.getElementById('poImageID').value = ds.imageId;
-    document.getElementById('poSetCode').value = ds.setCode;
-    document.getElementById('poRarityName').value = ds.rarityName || '';
+    document.getElementById('poPrintingID').value = ds.printingId;
     document.getElementById('poMarketPrice').value = ds.price || '';
     document.getElementById('poCardName').textContent = ds.cardName;
     document.getElementById('poSetNameLabel').textContent = ds.setName;
@@ -88,8 +85,8 @@ async function submitAddToCart() {
 
 // Only patches this one row's delta — the plan is never re-run, so nothing else reorders or disappears.
 function applyBuyListUpdate(result) {
-    const imageID = document.getElementById('poImageID').value;
-    const row = document.querySelector(`#buyListResults .list-group-item[data-image-id="${CSS.escape(imageID)}"]`);
+    const printingID = document.getElementById('poPrintingID').value;
+    const row = document.querySelector(`#buyListResults .list-group-item[data-printing-id="${CSS.escape(printingID)}"]`);
     if (!row) return;
 
     const oldLineTotal = Number(row.dataset.lineTotal) || 0;
@@ -106,10 +103,10 @@ function applyBuyListUpdate(result) {
         return;
     }
 
-    if (!result.rowHtml) return;
+    if (!result.rowHTML) return;
 
-    row.outerHTML = result.rowHtml;
-    const newRow = document.querySelector(`#buyListResults .list-group-item[data-image-id="${CSS.escape(imageID)}"]`);
+    row.outerHTML = result.rowHTML;
+    const newRow = document.querySelector(`#buyListResults .list-group-item[data-printing-id="${CSS.escape(printingID)}"]`);
     const newLineTotal = newRow ? (Number(newRow.dataset.lineTotal) || 0) : 0;
     const newMassEntryLine = newRow ? (newRow.dataset.massEntryLine || '') : '';
 

@@ -1,5 +1,4 @@
 using CardCollector.Data.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.Data.Models
 {

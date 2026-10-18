@@ -1,7 +1,7 @@
-using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Extensions;
 using CardCollector.ViewModels;
+using System.Globalization;
 
 namespace CardCollector.Rules
 {

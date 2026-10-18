@@ -1,5 +1,4 @@
 using CardCollector.ViewModels;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CardCollector.Tests.ViewModels
 {
@@ -29,8 +28,7 @@ namespace CardCollector.Tests.ViewModels
                 RarityCode = "(UR)",
                 RarityName = "Ultra Rare",
                 SetCode = "LOB-EN001",
-                SetName = "Legend of Blue Eyes White Dragon",
-                AvailableRarities = ["Ultra Rare", "Common"]
+                SetName = "Legend of Blue Eyes White Dragon"
             };
 
             var result = original.WithPrice(25.50m);
@@ -39,7 +37,6 @@ namespace CardCollector.Tests.ViewModels
             Assert.AreEqual(original.CardID, result.CardID);
             Assert.AreEqual(original.CardName, result.CardName);
             Assert.AreEqual(original.SetCode, result.SetCode);
-            Assert.AreSame(original.AvailableRarities, result.AvailableRarities);
         }
     }
 }

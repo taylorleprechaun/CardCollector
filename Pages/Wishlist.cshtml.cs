@@ -1,10 +1,10 @@
-using System.Globalization;
 using CardCollector.Data.Models;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace CardCollector.Pages
 {
@@ -21,9 +21,6 @@ namespace CardCollector.Pages
 
         public IReadOnlyList<string> AvailableSetNames { get; private set; } = [];
 
-        [BindProperty]
-        public int CardID { get; set; }
-
         protected override ICardService CardService => _cardService;
 
         [BindProperty]
@@ -39,7 +36,7 @@ namespace CardCollector.Pages
         public int PreferredVersionID { get; set; }
 
         [BindProperty]
-        public string? PrintVariant { get; set; }
+        public int PrintingID { get; set; }
 
         [BindProperty]
         public DateTime? PurchaseDate { get; set; }
@@ -51,9 +48,6 @@ namespace CardCollector.Pages
         public int Quantity { get; set; } = 1;
 
         public PagedResult<WishlistItemViewModel> Results { get; private set; } = new();
-
-        [BindProperty]
-        public string SetCode { get; set; } = string.Empty;
 
         [BindProperty(SupportsGet = true)]
         public WishlistSortBy SortBy { get; set; } = WishlistSortBy.Name;
@@ -70,8 +64,7 @@ namespace CardCollector.Pages
 
         public string GetFilterParams()
         {
-            var rarityName = Request.Query["rarityName"].FirstOrDefault();
-            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(rarityName ?? string.Empty)}&sortBy={SortBy}&sortDescending={SortDescending}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
+            return $"cardType={Uri.EscapeDataString(CardType ?? string.Empty)}&setName={Uri.EscapeDataString(SetName ?? string.Empty)}&rarityName={Uri.EscapeDataString(RarityName ?? string.Empty)}&sortBy={SortBy}&sortDescending={SortDescending}&pageNumber={PageNumber}&pageSize={PageSize}&query={Uri.EscapeDataString(Query ?? string.Empty)}";
         }
 
         public override IReadOnlyDictionary<string, string?> GetPaginationParams()
@@ -110,25 +103,25 @@ namespace CardCollector.Pages
             Results = result.PagedItems;
         }
 
-        public async Task<IActionResult> OnPostAddToCartAsync(int cardID, string setCode, string? rarityName, int quantity, decimal? marketPrice, int preferredVersionID)
+        public async Task<IActionResult> OnPostAddToCartAsync(int printingID, int quantity, decimal? marketPrice, int preferredVersionID)
         {
-            if (cardID <= 0 || string.IsNullOrWhiteSpace(setCode))
+            if (_cardService.GetPrintingByID(printingID) is null)
                 return BadRequest();
 
-            await _cardService.AddToCartAsync(cardID, setCode, rarityName, quantity, marketPrice).ConfigureAwait(false);
+            await _cardService.AddToCartAsync(printingID, quantity, marketPrice).ConfigureAwait(false);
 
             return await RespondAfterMutationAsync(preferredVersionID).ConfigureAwait(false);
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
         {
-            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, RarityName, Edition);
+            await this.WarnIfEditionMismatchAsync(_cardService, PrintingID, Edition);
 
             await _cardService.AddEntryAsync(
-                CardID, SetCode, CollectionStatus.Owned,
+                PrintingID, CollectionStatus.Owned,
                 Quantity, Condition, Edition,
                 AcquisitionMethod,
-                PurchaseDate, PurchasePrice, MarketPriceAtEntry, RarityName, PrintVariant);
+                PurchaseDate, PurchasePrice, MarketPriceAtEntry);
 
             return await RespondAfterMutationAsync(PreferredVersionID).ConfigureAwait(false);
         }
@@ -141,20 +134,19 @@ namespace CardCollector.Pages
 
         private WishlistSearchCriteria BuildCurrentCriteria(int page, int pageSize)
         {
-            var rarityName = Request.Query["rarityName"].FirstOrDefault();
             return new WishlistSearchCriteria
             {
                 CardType = CardType,
                 Page = page,
                 PageSize = pageSize,
                 Query = Query,
-                RarityName = rarityName,
+                RarityName = RarityName,
                 SetName = SetName,
                 SortBy = SortBy,
                 SortDescending = SortDescending
             };
         }
-        
+
         // Reads filter-state fields from the query string directly because POST body values
         // share names with filter BindProperties and would override the query-string values.
         private object BuildFilterRedirect() => new
@@ -163,7 +155,7 @@ namespace CardCollector.Pages
             pageNumber = PageNumber,
             pageSize = PageSize,
             query = Query,
-            rarityName = Request.Query["rarityName"].FirstOrDefault(),
+            rarityName = RarityName,
             setName = SetName,
             sortBy = SortBy,
             sortDescending = SortDescending

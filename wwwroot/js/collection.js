@@ -1,10 +1,8 @@
 async function openAddModal(btn) {
-    document.getElementById('addCardID').value = btn.dataset.cardId;
-    document.getElementById('addImageID').value = btn.dataset.imageId;
-    document.getElementById('addSetCode').value = btn.dataset.setCode;
+    const printingID = btn.dataset.printingId;
+    document.getElementById('atcPrintingID').value = printingID;
 
     const rarity = btn.dataset.rarityName || '';
-    document.getElementById('atcRarityName').value = rarity;
     document.getElementById('atcRarityDisplay').textContent = rarity;
     document.getElementById('atcAcquisitionGroup').style.display = 'block';
     setQuantityButtons('atcQuantity', 1);
@@ -23,9 +21,7 @@ async function openAddModal(btn) {
 
     new bootstrap.Modal(document.getElementById('addModal')).show();
 
-    const cardID = btn.dataset.cardId;
-    const setCode = btn.dataset.setCode;
     const editionSelect = document.getElementById('atcEdition');
 
-    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ cardID, setCode, rarityName: rarity }));
+    await initLiveMarketPrice(editionSelect, marketPriceEl, () => ({ printingID }));
 }

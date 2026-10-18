@@ -5,6 +5,7 @@ namespace CardCollector.Data.Models
         public DateTime DateCreated { get; set; }
         public int ID { get; set; }
         public int RemainingCount { get; set; }
+
         int IValueSnapshotEntity.Count
         {
             get => RemainingCount;

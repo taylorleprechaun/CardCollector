@@ -12,7 +12,7 @@ namespace CardCollector.Rules
     public static class DeckLegalityEvaluator
     {
         /// <summary>
-        /// Returns the status of every restricted card in the deck, keyed by <see cref="DeckCardViewModel.CardID"/>.
+        /// Returns the status of every restricted card in the deck, keyed by <see cref="DeckCardViewModel.PastedPasscode"/>.
         /// Cards within their limit are included too, so the viewer can badge them.
         /// </summary>
         public static IReadOnlyDictionary<int, DeckLegalityCardStatus> Evaluate(IEnumerable<DeckCardViewModel> cards, Banlist banlist)
@@ -34,13 +34,13 @@ namespace CardCollector.Rules
 
                 var status = new DeckLegalityCardStatus { IsViolation = group.Sum(c => c.Quantity) > (int)limit, Limit = limit };
                 foreach (var card in group)
-                    cardStatuses[card.CardID] = status;
+                    cardStatuses[card.PastedPasscode] = status;
             }
 
             return cardStatuses;
         }
 
         private static string GetGroupKey(DeckCardViewModel card) =>
-            card.Card?.Name ?? $"Unknown passcode {card.CardID}";
+            card.Card?.Name ?? $"Unknown passcode {card.PastedPasscode}";
     }
 }

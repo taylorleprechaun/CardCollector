@@ -1,5 +1,4 @@
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -9,13 +8,13 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task CalculateWishlistRemainingValueAsync_LivePriceUnavailable_ContributesZeroToTotal()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
+                .Setup(p => p.GetPrintingPriceAsync(101, null))
                 .ReturnsAsync((decimal?)null);
 
             var (totalValue, countRemaining) = await _service.CalculateWishlistRemainingValueAsync();
@@ -27,13 +26,13 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task CalculateWishlistRemainingValueAsync_NoSnapshotYet_FetchesLivePriceAndPersistsSnapshot()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
             _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
+                .Setup(p => p.GetPrintingPriceAsync(101, null))
                 .ReturnsAsync(10m);
 
             var (totalValue, countRemaining) = await _service.CalculateWishlistRemainingValueAsync();
@@ -48,18 +47,16 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task CalculateWishlistRemainingValueAsync_QuantityNeededIsZero_ContributesZeroToTotalAndCount()
         {
-            _cardDataRepositoryMock.Setup(r => r.GetCardByID(1)).Returns(new Card { ID = 1, Name = "Dark Magician" });
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _preferredVersionRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
             [
-                new PreferredVersion { CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare" }
+                new PreferredVersion { CatalogPrintingID = 101 }
             ]);
-            _collectionRepositoryMock
-                .Setup(r => r.GetOwnedQuantitiesForPreferredVersionsAsync(It.IsAny<IEnumerable<(int, string, string?)>>()))
-                .ReturnsAsync(new Dictionary<(int, string), int> { [(1, "LOB-EN001")] = 1 });
-            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync())
-                .ReturnsAsync(new Dictionary<(int, string, string), int> { [(1, "LOB-EN001", "Ultra Rare")] = 2 });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
+            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int> { [101] = 2 });
             _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
+                .Setup(p => p.GetPrintingPriceAsync(101, null))
                 .ReturnsAsync(10m);
 
             var (totalValue, countRemaining) = await _service.CalculateWishlistRemainingValueAsync();

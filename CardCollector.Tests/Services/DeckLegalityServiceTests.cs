@@ -1,5 +1,5 @@
-using CardCollector.DTO;
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using CardCollector.Models;
 using CardCollector.Repository;
 using CardCollector.Services;
@@ -233,7 +233,7 @@ namespace CardCollector.Tests.Services
                 Deck = new Deck { ID = 9, Name = "Test Deck" },
                 Events = events,
                 Extra = empty,
-                Main = new DeckSectionViewModel { Cards = [new DeckCardViewModel { Card = restrictedCard, CardID = RESTRICTED_CARD_ID, Quantity = 1 }] },
+                Main = new DeckSectionViewModel { Cards = [new DeckCardViewModel { Card = restrictedCard, PastedPasscode = RESTRICTED_CARD_ID, Quantity = 1 }] },
                 MainTypes = new DeckTypeCounts(0, 0, 0),
                 Side = empty
             };

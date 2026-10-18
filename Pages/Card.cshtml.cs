@@ -3,7 +3,6 @@ using CardCollector.DTO;
 using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
-using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -19,8 +18,9 @@ namespace CardCollector.Pages
 
         public bool CardNotFound { get; private set; }
 
-        public IReadOnlyDictionary<(string SetCode, string RarityName, string PrintVariant), (CollectionStatus Status, int TotalQuantity)> CollectionEntriesBySetCode { get; private set; }
-            = new Dictionary<(string, string, string), (CollectionStatus, int)>();
+        /// <summary>The collection's status and total quantity of each of the card's printings, by catalog printing ID.</summary>
+        public IReadOnlyDictionary<int, (CollectionStatus Status, int TotalQuantity)> CollectionByPrinting { get; private set; }
+            = new Dictionary<int, (CollectionStatus, int)>();
 
         public Card? CurrentCard { get; private set; }
 
@@ -30,16 +30,10 @@ namespace CardCollector.Pages
         public bool IsIgnored { get; private set; }
 
         [BindProperty]
-        public string? PrintVariant { get; set; }
-
-        [BindProperty]
-        public string? RarityName { get; set; }
+        public int PrintingID { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? ReturnURL { get; set; }
-
-        [BindProperty]
-        public string SetCode { get; set; } = string.Empty;
 
         public IReadOnlyList<PreferredVersion> TrackedPrintings { get; private set; } = [];
 
@@ -49,14 +43,11 @@ namespace CardCollector.Pages
             _cardSetRepository = cardSetRepository;
         }
 
-        public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, string setCode, string rarityName, string printVariant)
+        public CollectionCompletionStatus? GetCompletionStatus(CollectionStatus status, int totalQuantity, int printingID)
         {
             if (status != CollectionStatus.Owned) return null;
 
-            var tracked = TrackedPrintings.FirstOrDefault(pv =>
-                pv.SetCode.Equals(setCode, StringComparison.OrdinalIgnoreCase)
-                && (pv.RarityName is null || pv.RarityName.Equals(rarityName, StringComparison.OrdinalIgnoreCase))
-                && string.Equals(pv.PrintVariant ?? string.Empty, printVariant, StringComparison.OrdinalIgnoreCase));
+            var tracked = GetTrackedPrinting(printingID);
 
             if (tracked is not null)
                 return totalQuantity >= tracked.DesiredQuantity
@@ -66,7 +57,8 @@ namespace CardCollector.Pages
             // This particular printing isn't one of the tracked ones — if some other tracked printing for
             // this card is already complete, this copy still counts as "owned," just not the target.
             var anyOtherTrackedComplete = TrackedPrintings.Any(pv =>
-                CollectionEntriesBySetCode.TryGetValue((pv.SetCode, pv.RarityName ?? string.Empty, pv.PrintVariant ?? string.Empty), out var summary)
+                pv.CatalogPrintingID is int trackedID
+                && CollectionByPrinting.TryGetValue(trackedID, out var summary)
                 && summary.Status == CollectionStatus.Owned
                 && summary.TotalQuantity >= pv.DesiredQuantity);
 
@@ -75,6 +67,9 @@ namespace CardCollector.Pages
 
         public string GetTCGDate(string setCode) =>
             _cardSetRepository.GetTCGDateBySetCode(setCode) ?? string.Empty;
+
+        /// <summary>The tracked printing for the catalog printing, or null when it isn't tracked.</summary>
+        public PreferredVersion? GetTrackedPrinting(int printingID) => TrackedPrintings.FirstOrDefault(pv => pv.CatalogPrintingID == printingID);
 
         public async Task OnGetAsync()
         {
@@ -92,8 +87,8 @@ namespace CardCollector.Pages
             }
 
             var entries = await _cardService.GetEntriesByCardIDAsync(ID);
-            CollectionEntriesBySetCode = entries
-                .GroupBy(e => (e.SetCode, e.RarityName ?? string.Empty, e.PrintVariant ?? string.Empty))
+            CollectionByPrinting = entries
+                .GroupBy(e => e.CatalogPrintingID)
                 .ToDictionary(
                     g => g.Key,
                     g => (
@@ -115,19 +110,18 @@ namespace CardCollector.Pages
             int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
             AcquisitionMethod? acquisitionMethod = null,
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
-            bool setAsPreferred = false, string? rarityName = null, string? printVariant = null)
+            bool setAsPreferred = false)
         {
-            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
+            await this.WarnIfEditionMismatchAsync(_cardService, PrintingID, edition);
 
             await _cardService.AddEntryAsync(
-                CardID, SetCode, CollectionStatus.Ordered,
+                PrintingID, CollectionStatus.Ordered,
                 quantity, condition, edition,
                 acquisitionMethod,
-                purchaseDate, purchasePrice, marketPriceAtEntry,
-                rarityName, printVariant);
+                purchaseDate, purchasePrice, marketPriceAtEntry);
 
             if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, SetCode, rarityName, printVariant);
+                await _cardService.SavePreferredVersionAsync(PrintingID);
 
             return RedirectToPage(new { ID, ReturnURL });
         }
@@ -136,19 +130,18 @@ namespace CardCollector.Pages
             int quantity = 1, CardCondition? condition = null, CardEdition? edition = null,
             AcquisitionMethod? acquisitionMethod = null,
             DateTime? purchaseDate = null, decimal? purchasePrice = null, decimal? marketPriceAtEntry = null,
-            bool setAsPreferred = false, string? rarityName = null, string? printVariant = null)
+            bool setAsPreferred = false)
         {
-            await this.WarnIfEditionMismatchAsync(_cardService, CardID, SetCode, rarityName, edition);
+            await this.WarnIfEditionMismatchAsync(_cardService, PrintingID, edition);
 
             await _cardService.AddEntryAsync(
-                CardID, SetCode, CollectionStatus.Owned,
+                PrintingID, CollectionStatus.Owned,
                 quantity, condition, edition,
                 acquisitionMethod,
-                purchaseDate, purchasePrice, marketPriceAtEntry,
-                rarityName, printVariant);
+                purchaseDate, purchasePrice, marketPriceAtEntry);
 
             if (setAsPreferred)
-                await _cardService.SavePreferredVersionAsync(CardID, SetCode, rarityName, printVariant);
+                await _cardService.SavePreferredVersionAsync(PrintingID);
 
             return RedirectToPage(new { ID, ReturnURL });
         }
@@ -169,7 +162,7 @@ namespace CardCollector.Pages
 
         public async Task<IActionResult> OnPostSetPreferredAsync()
         {
-            await _cardService.SavePreferredVersionAsync(CardID, SetCode, RarityName, PrintVariant);
+            await _cardService.SavePreferredVersionAsync(PrintingID);
             return RedirectToPage(new { ID, ReturnURL });
         }
 

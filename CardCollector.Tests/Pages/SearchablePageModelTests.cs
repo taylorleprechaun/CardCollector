@@ -94,6 +94,7 @@ namespace CardCollector.Tests.Pages
 
             Assert.AreEqual(expected, _page.PageSize);
         }
+
         [TestMethod]
         public void OnGetAutocomplete_BlankQuery_ReturnsEmptyArrayWithoutCallingCardService()
         {
@@ -125,6 +126,7 @@ namespace CardCollector.Tests.Pages
         {
             public ICardService? CardServiceOverride { get; set; }
             protected override ICardService CardService => CardServiceOverride!;
+
             public void CallNormalizeSearchParameters() => NormalizeSearchParameters();
         }
     }

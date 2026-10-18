@@ -25,7 +25,7 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 **Insights**
 - **Stats** &mdash; breakdown of your collection by rarity, set, and acquisition method; track collection value and wishlist cost-to-complete over time with historical snapshots updated automatically each night; look up price history for any individual card with a per-card chart
-- **Edition Audit** &mdash; flags owned entries whose recorded edition or print variant doesn&rsquo;t match (or can&rsquo;t be verified against) the live API data, with suggested fixes and inline editing to correct them
+- **Edition Audit** &mdash; flags owned and ordered entries whose recorded edition isn&rsquo;t one TCGPlayer lists for that printing, with inline editing to correct them. A printing with no linked TCGPlayer product can&rsquo;t be checked; it links to its card in the catalog admin so the product can be linked
 
 **Tournaments**
 - **Formats** &mdash; metagame periods with a date range, notes, and ranked top strategies. Ranges can&rsquo;t overlap; an open-ended format shows as &ldquo;Ongoing&rdquo; and the one containing today is badged &ldquo;Current&rdquo;
@@ -35,6 +35,11 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
 
 **Export**
 - **Export** &mdash; download your collection or wishlist as a CSV
+
+**Catalog admin**
+- **Review inbox** &mdash; changes the nightly catalog sync couldn&rsquo;t apply on its own (a card or printing a source stopped listing, a renamed card, a TCGPlayer product that matches no printing, a legacy row the migration couldn&rsquo;t place). Each item offers its fixes; decided items can be reopened
+- **Cards** &mdash; search the catalog, edit a card&rsquo;s fields (an edited field is locked so the sync won&rsquo;t overwrite it), add, link, merge, or retire printings, and see how many collection rows use each printing
+- **Sync history** &mdash; every catalog sync run with what each source returned and what changed, warning when a source keeps failing
 
 ## Tech Stack
 
@@ -74,26 +79,26 @@ A personal Yu-Gi-Oh card collection tracker built with ASP.NET Core Razor Pages.
    dotnet run --project CardCollector
    ```
 
-   On first run the app fetches card data from yaml-yugi, card images from the YGO Pro Deck API, and prices and print variants from tcgcsv, caching each locally (the caches warm up in the background, so the app is usable before they finish). The SQLite database (`Data/collection.db`) is created automatically, and later releases patch it in place at startup.
+   On first run the app downloads yaml-yugi, YGOProDeck, and tcgcsv, caches each locally, and builds the card catalog in a new SQLite database at `Data/cardcollector.db`. When a pre-catalog database exists at `LegacyMigration:LegacyDatabasePath` (`Data/collection.db`) and `Data/cardcollector.db` doesn&rsquo;t, the app first migrates it: it builds the catalog, points every collection row at a catalog printing, and writes `Data/migration-report.txt`. The legacy file is only read, so it stays as the rollback. Rows it can&rsquo;t place land in the review inbox instead of being dropped.
 
-4. Open `https://localhost:5001` in your browser and log in.
+4. Open `http://localhost:5000` (the default launch profile) in your browser and log in.
 
 ## Project Structure
 
 ```
 CardCollector/
 ├── APIEndpoints.cs          # Minimal-API handlers (printing price lookup, card price history)
-├── Config/                  # RarityCorrections.json (rarity name fixes applied at card load)
+├── Config/                  # RarityCorrections.json (rarity name fixes applied during the catalog sync)
 ├── Data/
 │   ├── AppDbContext.cs
 │   ├── Models/              # EF entities and enums
-│   └── ...                  # Startup schema patching and cache helpers
+│   └── ...                  # Cache helpers
 ├── DTO/                     # Card data structures (yaml-yugi, YGOProDeck, and tcgcsv pricing)
 ├── Extensions/              # Enum/set-code helpers and DI registration modules
 ├── Models/                  # Domain, request, and result types (not EF entities)
 ├── Pages/                   # Razor Pages, one per feature (see Features above)
-├── Repository/              # Data access and card-data merging
-├── Rules/                   # Pure business rules, parsers, and calculators
+├── Repository/              # Data access: catalog, card sources, collection, and the legacy import
+├── Rules/                   # Pure business rules, parsers, and calculators (including the catalog sync and legacy mapping)
 ├── Services/                # Business logic (joins card data with collection state, pricing, background refresh)
 ├── ViewModels/              # Page-specific view models
 ├── scripts/                 # Deployment script and systemd unit
@@ -146,13 +151,16 @@ C# coverage excludes compiled Razor views and the `Program.cs` bootstrap (via `[
 
 ## Data Notes
 
-- Card data (names, stats, sets, rarities) is fetched from the [yaml-yugi](https://github.com/DawnbrandBots/yaml-yugi) dataset on startup and cached locally for 7 days (configurable via `CardDataSettings:CacheTtlDays`). Card images are fetched separately from the YGO Pro Deck API and cached for 30 days (`CardDataSettings:ImageCacheTtlDays`); the same response is also used to fill in cards and set printings yaml-yugi is missing. The caches fall back to stale data if the upstream source is unreachable.
-- Prices and print variants (Extended Art, Alternate Art, Retail Exclusive) come from [tcgcsv](https://tcgcsv.com), a mirror of TCGPlayer&rsquo;s catalog, and are cached for 20 hours (`CardDataSettings:PricingCacheTtlHours`). A card&rsquo;s printing is identified by its card, set code, rarity, and print variant.
-- Known rarity naming problems in the source data are patched at load time from `Config/RarityCorrections.json`.
+- The app keeps its own card catalog in the database: cards and printings with permanent IDs, built from three sources. [yaml-yugi](https://github.com/DawnbrandBots/yaml-yugi) supplies card data, sets, and rarities (cached 7 days, `CardDataSettings:CacheTtlDays`). The YGO Pro Deck API supplies images and the cards yaml-yugi lacks (cached 30 days, `CardDataSettings:ImageCacheTtlDays`). [tcgcsv](https://tcgcsv.com), a mirror of TCGPlayer&rsquo;s catalog, supplies prices and print variants such as Extended Art (cached 20 hours, `CardDataSettings:PricingCacheTtlHours`). The caches fall back to stale data if a source is unreachable.
+- Every collection, wishlist, checked-out, cart, and dismissed row points at a catalog printing by its ID, so a source renaming a card, changing a passcode, or reshuffling rarities doesn&rsquo;t orphan your data. A printing is a set code, a rarity, and an optional print variant.
+- The catalog syncs at startup (skipped when no source has changed since the last run) and again each night. A sync applies new cards and printings on its own and sends anything ambiguous or destructive to the review inbox. Its guardrails live in `CatalogSync`: a source returning less than `MinSourceRatio` of its last good count is ignored for that run, a run that would open more than `MaxNewActionableItems` inbox items is rolled back and recorded as one anomaly, and the sync history warns once a source has failed `SourceFailureWarningRuns` runs in a row.
+- Known rarity naming problems in the source data are corrected during the sync from `Config/RarityCorrections.json`.
+- Two command-line modes run without starting the web app: `catalog-sync --db <path> [--offline]` builds or updates a catalog database, and `migrate-legacy --from <legacy path> --to <new path> [--offline] [--overwrite]` builds a new database from a pre-catalog one and prints the migration report. `--offline` uses only the local source caches.
+- Per-card price history on the Stats page follows the catalog card, so it survives a card being renamed. History migrated from a pre-catalog database is linked to its card through its collection entry, or by exact card name when the entry is gone.
 - Tournament data lives in the SQLite database. An event&rsquo;s format isn&rsquo;t stored; it comes from the event&rsquo;s date, so editing a format&rsquo;s dates re-classifies its events. Round results (`W`, `L`, `T`) are stored as recorded rather than computed from the score, so manual overrides stick. Win % is `(W + T/2) / (W + L + T)`.
 - A round allows at most two game wins and two losses, and a bye is stored as a win with no games. New rounds are placed by their label: numbered rounds, then Top 8, Top 4, and Finals.
-- Decks are pasted, since DuelingBook deck pages can&rsquo;t be fetched. Every passcode, including alternate-art and YGOProDeck-only ones, is mapped to the yaml-yugi card ID; a passcode the card data doesn&rsquo;t know is kept and shown as an unknown card.
+- Decks are pasted, since DuelingBook deck pages can&rsquo;t be fetched. Every passcode, including alternate-art and YGOProDeck-only ones, resolves to its catalog card; a passcode the catalog doesn&rsquo;t know is kept as pasted, shown as an unknown card, and resolved again each time the deck is read.
 - Forbidden &amp; Limited lists come from [yaml-yugi-limit-regulation](https://github.com/DawnbrandBots/yaml-yugi-limit-regulation), keyed by Konami ID and cached for 7 days (`BanlistSettings:CacheTtlDays`). `BanlistSettings:EffectiveDateOverrides` moves two lists recorded under a regional date to the AMER date they took effect.
-- Speed Duel sets are excluded from all card data at load time.
+- Speed Duel sets are excluded from the catalog during the sync.
 - Card images are loaded from CDN URLs; no images are stored locally.
 - Collection value and wishlist cost-to-complete are both refreshed automatically each night at midnight US Eastern time by the same background service. It fetches live prices for all owned and wishlisted cards, persists the results as dated snapshots for each, and prunes old snapshot data (keeping daily granularity for the last 30 days and one snapshot per calendar month beyond that). The Dashboard and Stats page display values from the most recent snapshots.

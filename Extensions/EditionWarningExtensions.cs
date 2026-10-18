@@ -1,26 +1,44 @@
 using CardCollector.Data.Models;
+using CardCollector.DTO;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CardCollector.Extensions
 {
+    /// <summary>Warns a page's user when a collection entry records an edition TCGPlayer doesn't list for its printing.</summary>
     public static class EditionWarningExtensions
     {
+        /// <summary>The warning shown when TCGPlayer doesn't list the edition for the printing.</summary>
+        /// <param name="edition">The edition the user picked.</param>
+        /// <param name="setCode">The printing's set code.</param>
+        /// <param name="rarityName">The printing's rarity name.</param>
+        /// <returns>The message text.</returns>
         public static string BuildEditionMismatchMessage(CardEdition edition, string setCode, string rarityName) =>
                     $"TCGPlayer doesn't list a {edition.GetDisplayName()} printing of {setCode} {rarityName} for this card — double-check the edition you selected.";
 
-        // Non-blocking nudge: the live pricing dataset can legitimately be missing obscure/promo
-        // printings that are still real, so this warns instead of rejecting the entry.
-        public static async Task WarnIfEditionMismatchAsync(
-            this PageModel page, ICardService cardService, int cardID, string setCode, string? rarityName, CardEdition? edition)
+        /// <summary>
+        /// Sets a warning in the page's <c>TempData</c> when TCGPlayer lists the catalog printing, but not in
+        /// <paramref name="edition"/>.
+        /// </summary>
+        /// <remarks>
+        /// A non-blocking nudge: the price data can legitimately miss obscure or promo printings that are still real, so this
+        /// warns instead of rejecting the entry. A printing with no TCGPlayer product at all gets no warning.
+        /// </remarks>
+        /// <param name="page">The page whose next render shows the warning.</param>
+        /// <param name="cardService">Checks the edition and supplies the printing's set code and rarity for the message.</param>
+        /// <param name="printingID">The catalog printing the entry is for.</param>
+        /// <param name="edition">The edition the user picked; null skips the check.</param>
+        /// <returns>A task that completes once the check (and any warning) is done.</returns>
+        public static async Task WarnIfEditionMismatchAsync(this PageModel page, ICardService cardService, int printingID, CardEdition? edition)
         {
-            if (edition is null || string.IsNullOrWhiteSpace(rarityName))
+            if (edition is null)
                 return;
 
-            var category = await cardService.CheckEntryEditionAsync(cardID, setCode, rarityName, edition.Value).ConfigureAwait(false);
-            if (category == EditionAuditCategory.EditionMismatch)
-                page.TempData["Warning"] = BuildEditionMismatchMessage(edition.Value, setCode, rarityName);
+            var category = await cardService.CheckEntryEditionAsync(printingID, edition.Value).ConfigureAwait(false);
+            if (category == EditionAuditCategory.EditionMismatch && cardService.GetPrintingByID(printingID) is { } printing)
+                page.TempData["Warning"] = BuildEditionMismatchMessage(
+                    edition.Value, printing.Printing.Code ?? string.Empty, RarityExtensions.NormalizeRarityName(printing.Printing.RarityName) ?? string.Empty);
         }
     }
 }

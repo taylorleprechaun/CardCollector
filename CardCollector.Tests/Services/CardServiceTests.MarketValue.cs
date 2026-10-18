@@ -1,5 +1,4 @@
 using CardCollector.Data.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace CardCollector.Tests.Services
@@ -9,31 +8,29 @@ namespace CardCollector.Tests.Services
         private static readonly string Today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
         [TestMethod]
-        public async Task CalculateCurrentMarketValueAsync_EntryWithBlankRarityName_IsExcludedFromTotal()
+        public async Task CalculateCurrentMarketValueAsync_EntryWhosePrintingLeftTheCatalog_FallsBackWithoutPricing()
         {
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((CollectionValueSnapshot?)null);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = null, Quantity = 1, MarketPriceAtEntry = 10m }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 999, Quantity = 1, MarketPriceAtEntry = 10m }
             ]);
 
             var (totalValue, _, _, _) = await _service.CalculateCurrentMarketValueAsync();
 
-            Assert.AreEqual(0m, totalValue);
-            _pricingServiceMock.Verify(p => p.GetPrintingPriceAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CardEdition?>()), Times.Never);
+            Assert.AreEqual(10m, totalValue);
+            _pricingServiceMock.Verify(p => p.GetPrintingPriceAsync(It.IsAny<int>(), It.IsAny<CardEdition?>()), Times.Never);
         }
 
         [TestMethod]
         public async Task CalculateCurrentMarketValueAsync_NoPriceNoSnapshotNoMarketPriceAtEntry_EntryIsSkipped()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((CollectionValueSnapshot?)null);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1, MarketPriceAtEntry = null }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1, MarketPriceAtEntry = null }
             ]);
-            _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
-                .ReturnsAsync((decimal?)null);
 
             var (totalValue, _, _, _) = await _service.CalculateCurrentMarketValueAsync();
 
@@ -41,14 +38,15 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task CalculateCurrentMarketValueAsync_NoSnapshotYet_FetchesLivePricesAndPersistsSnapshot()
+        public async Task CalculateCurrentMarketValueAsync_NoSnapshotYet_PricesEachPrintingAndEditionAndPersistsSnapshot()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((CollectionValueSnapshot?)null);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Edition = CardEdition.FirstEdition, Quantity = 2 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Edition = CardEdition.FirstEdition, Quantity = 2 }
             ]);
-            _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", CardEdition.FirstEdition)).ReturnsAsync(10.00m);
+            _pricingServiceMock.Setup(p => p.GetPrintingPriceAsync(101, CardEdition.FirstEdition)).ReturnsAsync(10.00m);
 
             var progressCalls = new List<(int Current, int Total)>();
 
@@ -58,25 +56,24 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(20.00m, totalValue);
             Assert.AreEqual(2, cardCount);
             CollectionAssert.AreEqual(new[] { (1, 1) }, progressCalls);
-            _collectionEntryValueRepositoryMock.Verify(r => r.UpsertSnapshotsAsync(It.IsAny<IEnumerable<CollectionEntryValueSnapshot>>(), Today), Times.Once);
+            _collectionEntryValueRepositoryMock.Verify(r => r.UpsertSnapshotsAsync(
+                It.Is<IEnumerable<CollectionEntryValueSnapshot>>(s => s.Single().SetCode == "LOB-EN001" && s.Single().CardName == "Dark Magician" && s.Single().CatalogCardID == 1), Today), Times.Once);
             _collectionValueRepositoryMock.Verify(r => r.UpsertSnapshotAsync(It.Is<CollectionValueSnapshot>(s => s.TotalValue == 20.00m && s.CardCount == 2)), Times.Once);
         }
 
         [TestMethod]
         public async Task CalculateCurrentMarketValueAsync_PriceUnavailableButPreviousSnapshotExists_FallsBackToPreviousValue()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((CollectionValueSnapshot?)null);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 1 }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 1 }
             ]);
             _collectionEntryValueRepositoryMock.Setup(r => r.GetLatestSnapshotsAsync()).ReturnsAsync(
             [
                 new CollectionEntryValueSnapshot { CollectionEntryID = 1, MarketValue = 42m }
             ]);
-            _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
-                .ReturnsAsync((decimal?)null);
 
             var (totalValue, _, _, _) = await _service.CalculateCurrentMarketValueAsync();
 
@@ -86,14 +83,12 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task CalculateCurrentMarketValueAsync_PriceUnavailableNoSnapshotButMarketPriceAtEntryExists_FallsBackToThat()
         {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
             _collectionValueRepositoryMock.Setup(r => r.GetLatestSnapshotAsync()).ReturnsAsync((CollectionValueSnapshot?)null);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", Quantity = 2, MarketPriceAtEntry = 7m }
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, Quantity = 2, MarketPriceAtEntry = 7m }
             ]);
-            _pricingServiceMock
-                .Setup(p => p.GetPrintingPriceAsync(1, "LOB-EN001", "Ultra Rare", null))
-                .ReturnsAsync((decimal?)null);
 
             var (totalValue, _, _, _) = await _service.CalculateCurrentMarketValueAsync();
 
@@ -111,7 +106,7 @@ namespace CardCollector.Tests.Services
             ]);
             _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Owned)).ReturnsAsync(
             [
-                new CollectionEntry { ID = 1, CardID = 1, Quantity = 1 }
+                new CollectionEntry { ID = 1, Quantity = 1 }
             ]);
 
             var (totalValue, cardCount, setBreakdown, topCards) = await _service.CalculateCurrentMarketValueAsync();
@@ -120,18 +115,13 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(5, cardCount);
             Assert.AreEqual(1, setBreakdown.Count);
             Assert.AreEqual(1, topCards.Count);
-            _pricingServiceMock.Verify(p => p.GetPrintingPriceAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CardEdition?>()), Times.Never);
-        }
-        [TestMethod]
-        public async Task GetCardPriceHistoryAsync_BlankCardName_ThrowsArgumentException()
-        {
-            await Assert.ThrowsExactlyAsync<ArgumentException>(() => _service.GetCardPriceHistoryAsync("  "));
+            _pricingServiceMock.Verify(p => p.GetPrintingPriceAsync(It.IsAny<int>(), It.IsAny<CardEdition?>()), Times.Never);
         }
 
         [TestMethod]
         public async Task GetCardPriceHistoryAsync_GroupsSnapshotsByEntryAndComputesPerUnitValue()
         {
-            _collectionEntryValueRepositoryMock.Setup(r => r.GetHistoryByCardNameAsync("Dark Magician")).ReturnsAsync(
+            _collectionEntryValueRepositoryMock.Setup(r => r.GetHistoryByCardIDAsync(1)).ReturnsAsync(
             [
                 new CollectionEntryValueSnapshot { CollectionEntryID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", MarketValue = 20m, SnapshotDate = "2026-01-01" }
             ]);
@@ -140,7 +130,7 @@ namespace CardCollector.Tests.Services
                 new CollectionEntry { ID = 1, Quantity = 2 }
             ]);
 
-            var result = await _service.GetCardPriceHistoryAsync("Dark Magician");
+            var result = await _service.GetCardPriceHistoryAsync(1);
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual("LOB-EN001 — Ultra Rare", result[0].Label);
@@ -150,12 +140,12 @@ namespace CardCollector.Tests.Services
         [TestMethod]
         public async Task GetCardPriceHistoryAsync_NoOwnedQuantityFound_TreatsQuantityAsOne()
         {
-            _collectionEntryValueRepositoryMock.Setup(r => r.GetHistoryByCardNameAsync("Dark Magician")).ReturnsAsync(
+            _collectionEntryValueRepositoryMock.Setup(r => r.GetHistoryByCardIDAsync(1)).ReturnsAsync(
             [
                 new CollectionEntryValueSnapshot { CollectionEntryID = 1, SetCode = "LOB-EN001", RarityName = "Ultra Rare", MarketValue = 20m, SnapshotDate = "2026-01-01" }
             ]);
 
-            var result = await _service.GetCardPriceHistoryAsync("Dark Magician");
+            var result = await _service.GetCardPriceHistoryAsync(1);
 
             Assert.AreEqual(20m, result[0].Values[0]);
         }

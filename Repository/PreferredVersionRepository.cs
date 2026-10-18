@@ -1,6 +1,5 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -14,25 +13,20 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddOrUpdateAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null)
+        public async Task AddOrUpdateAsync(int printingID, int? desiredQuantity = null)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName);
-
             var existing = await _context.PreferredVersions
-                .FirstOrDefaultAsync(pv => pv.CardID == cardID && pv.SetCode == setCode && pv.RarityName == rarityName && pv.PrintVariant == printVariant)
+                .FirstOrDefaultAsync(pv => pv.CatalogPrintingID == printingID)
                 .ConfigureAwait(false);
 
             if (existing is null)
             {
                 _context.PreferredVersions.Add(new PreferredVersion
                 {
-                    CardID = cardID,
-                    DesiredQuantity = desiredQuantity ?? 3,
-                    PrintVariant = printVariant,
-                    RarityName = rarityName,
-                    SetCode = setCode,
+                    CatalogPrintingID = printingID,
                     DateCreated = DateTime.UtcNow,
-                    DateModified = DateTime.UtcNow
+                    DateModified = DateTime.UtcNow,
+                    DesiredQuantity = desiredQuantity ?? 3
                 });
             }
             else
@@ -60,7 +54,7 @@ namespace CardCollector.Repository
 
         public async Task<IReadOnlyList<PreferredVersion>> GetByCardIDAsync(int cardID) =>
             await _context.PreferredVersions
-                .Where(pv => pv.CardID == cardID)
+                .Where(pv => pv.CatalogPrinting!.CatalogCardID == cardID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -71,20 +65,22 @@ namespace CardCollector.Repository
                 return new Dictionary<int, IReadOnlyList<PreferredVersion>>();
 
             // Filter in memory, not in SQL: cardIDs can cover the whole owned collection (thousands of rows).
+            // The card ID is projected in the query: the printing navigation isn't loaded once the rows are in memory.
             var all = await _context.PreferredVersions
+                .Select(pv => new { CardID = pv.CatalogPrinting!.CatalogCardID, Version = pv })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             return all
-                .Where(pv => ids.Contains(pv.CardID))
-                .GroupBy(pv => pv.CardID)
-                .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.ToList());
+                .Where(x => ids.Contains(x.CardID))
+                .GroupBy(x => x.CardID)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.Select(x => x.Version).ToList());
         }
 
         public async Task<IReadOnlySet<int>> GetPreferredCardIDsAsync()
         {
             var ids = await _context.PreferredVersions
-                .Select(pv => pv.CardID)
+                .Select(pv => pv.CatalogPrinting!.CatalogCardID)
                 .Distinct()
                 .ToListAsync()
                 .ConfigureAwait(false);
@@ -104,16 +100,30 @@ namespace CardCollector.Repository
             return true;
         }
 
-        public async Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName, string? newPrintVariant = null)
+        public async Task<bool> UpgradeAsync(int id, int newPrintingID)
         {
             var entity = await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
             if (entity is null)
                 return false;
+            if (entity.CatalogPrintingID == newPrintingID)
+                return true;
 
-            entity.SetCode = newSetCode;
-            entity.RarityName = RarityExtensions.NormalizeRarityName(newRarityName);
-            entity.PrintVariant = newPrintVariant;
-            entity.DateModified = DateTime.UtcNow;
+            // A printing is tracked at most once, so moving onto one that is already tracked folds the two together.
+            var existing = await _context.PreferredVersions
+                .FirstOrDefaultAsync(pv => pv.CatalogPrintingID == newPrintingID)
+                .ConfigureAwait(false);
+            if (existing is not null)
+            {
+                existing.DesiredQuantity = Math.Max(existing.DesiredQuantity, entity.DesiredQuantity);
+                existing.DateModified = DateTime.UtcNow;
+                _context.PreferredVersions.Remove(entity);
+            }
+            else
+            {
+                entity.CatalogPrintingID = newPrintingID;
+                entity.DateModified = DateTime.UtcNow;
+            }
+
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }

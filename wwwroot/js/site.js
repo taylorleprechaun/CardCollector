@@ -19,13 +19,18 @@ function setQuantityButtons(targetId, value) {
     });
 }
 
+// The price lookup URL for a catalog printing in an edition; null when there's no printing to look up.
+function buildPriceURL({ printingID }, edition) {
+    if (!printingID) return null;
+    return `/api/price?printingID=${encodeURIComponent(printingID)}&edition=${encodeURIComponent(edition)}`;
+}
+
 function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
     async function refreshPrice() {
-        const { cardID, setCode, rarityName, printVariant } = getParams();
-        if (!(cardID && setCode && rarityName)) return;
+        const url = buildPriceURL(getParams(), editionSelect.value);
+        if (!url) return;
         try {
-            const variantParam = printVariant ? `&printVariant=${encodeURIComponent(printVariant)}` : '';
-            const resp = await fetch(`/api/price?cardID=${cardID}&setCode=${encodeURIComponent(setCode)}&rarityName=${encodeURIComponent(rarityName)}&edition=${encodeURIComponent(editionSelect.value)}${variantParam}`);
+            const resp = await fetch(url);
             if (resp.ok) {
                 const { price } = await resp.json();
                 if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);
@@ -64,6 +69,46 @@ function updateCartBadge(rawCount, rawTotal) {
     const total = Number(rawTotal) || 0;
     badge.title = total ? `$${total.toFixed(2)} staged` : '';
     badge.classList.toggle('d-none', count === 0);
+}
+
+// Shows how many catalog review items need a decision; the header comes back on every review-inbox AJAX post.
+function updateReviewBadge(rawCount) {
+    if (rawCount === null || rawCount === undefined) return;
+
+    const badge = document.getElementById('navReviewBadge');
+    const countEl = document.getElementById('navReviewCount');
+    if (!badge || !countEl) return;
+
+    const count = Number(rawCount) || 0;
+    countEl.textContent = count;
+    badge.classList.toggle('d-none', count === 0);
+}
+
+// Updates the review inbox's tab badges and kind-filter counts from the X-Review-Open-Counts header
+// ({ needsDecision, informational, kinds: { KindName: count } }) that comes back on every inbox AJAX post.
+function updateReviewOpenCounts(rawJSON) {
+    if (!rawJSON) return;
+
+    let counts;
+    try {
+        counts = JSON.parse(rawJSON);
+    } catch {
+        return;
+    }
+
+    const tabCounts = { NeedsDecision: counts.needsDecision, Informational: counts.informational };
+    document.querySelectorAll('[data-review-tab-count]').forEach(badge => {
+        const count = Number(tabCounts[badge.dataset.reviewTabCount]) || 0;
+        badge.textContent = count;
+        badge.classList.toggle('d-none', count === 0);
+    });
+
+    const kinds = counts.kinds || {};
+    document.querySelectorAll('option[data-label]').forEach(option => {
+        if (option.dataset.showCount !== 'true') return;
+        const count = Number(kinds[option.value]) || 0;
+        option.textContent = count > 0 ? `${option.dataset.label} (${count})` : option.dataset.label;
+    });
 }
 
 // Every AJAX POST goes through here, so the X-Requested-With header the server checks for is never left off.

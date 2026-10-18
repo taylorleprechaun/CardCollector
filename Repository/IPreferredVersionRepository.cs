@@ -9,12 +9,10 @@ namespace CardCollector.Repository
     public interface IPreferredVersionRepository
     {
         /// <summary>
-        /// Inserts a new tracked printing for the given (cardID, setCode, rarityName, printVariant) combination,
-        /// or updates the existing one if that exact printing is already tracked. When
-        /// <paramref name="desiredQuantity"/> is null, a newly-created record defaults to 3 and an
-        /// existing one keeps its current target.
+        /// Tracks the catalog printing, or updates its desired quantity when it is already tracked. A new
+        /// tracked printing wants 3 copies unless <paramref name="desiredQuantity"/> says otherwise.
         /// </summary>
-        Task AddOrUpdateAsync(int cardID, string setCode, string? rarityName = null, string? printVariant = null, int? desiredQuantity = null);
+        Task AddOrUpdateAsync(int printingID, int? desiredQuantity = null);
 
         /// <summary>
         /// Deletes the tracked printing with the given ID.
@@ -49,9 +47,10 @@ namespace CardCollector.Repository
         Task<bool> UpdateDesiredQuantityAsync(int id, int desiredQuantity);
 
         /// <summary>
-        /// Updates the set/rarity/variant of the tracked printing with the given ID (e.g. swapping to a newer
-        /// reprint), preserving its desired quantity. Returns false if no such record exists.
+        /// Moves a tracked printing to another catalog printing of the same card, keeping its desired quantity. When the
+        /// new printing is already tracked, the two are folded into that one, keeping the higher desired quantity. Returns
+        /// false if no such tracked printing exists.
         /// </summary>
-        Task<bool> UpgradeAsync(int id, string newSetCode, string newRarityName, string? newPrintVariant = null);
+        Task<bool> UpgradeAsync(int id, int newPrintingID);
     }
 }

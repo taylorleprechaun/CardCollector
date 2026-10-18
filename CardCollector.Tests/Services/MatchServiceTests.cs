@@ -113,6 +113,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual("1", saved.Round);
             Assert.IsNull(saved.Notes);
         }
+
         [TestMethod]
         public async Task AddAsync_RoundBelongsFirst_HasNoPreviousRound()
         {
@@ -146,6 +147,7 @@ namespace CardCollector.Tests.Services
             CollectionAssert.AreEqual(new[] { 1, 2, 3, 4, 5 }, rounds.Select(m => m.Sequence).ToArray());
             Assert.AreEqual(second.ID, result.PreviousMatchID);
         }
+
         [TestMethod]
         public async Task AddAsync_TopCutRound_GoesAfterTheNumberedRounds()
         {
@@ -160,6 +162,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(last.Match!.ID, result.PreviousMatchID);
             Assert.AreEqual("Top 8", (await new MatchRepository(context).GetByEventAsync(eventID))[2].Round);
         }
+
         [TestMethod]
         public async Task DeleteAsync_MiddleRound_ResequencesAndReturnsTheNewSummary()
         {
@@ -399,6 +402,7 @@ namespace CardCollector.Tests.Services
             Assert.AreEqual(saved.ID, result.Match!.ID);
             Assert.AreEqual("1-2-0", result.Summary!.GameRecord.ToString());
         }
+
         private static async Task<int> AddEventAsync(AppDBContext context)
         {
             var tournamentEvent = new Event { Date = new DateOnly(2024, 5, 4), DeckName = "Sample Deck", Location = "Test Hobby Shop" };

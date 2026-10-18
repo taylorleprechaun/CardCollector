@@ -5,11 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Cart's Market Price starts pre-filled from the stage-time snapshot, so unlike the
         // entry modals this only wires the refresh — it doesn't fetch immediately on load.
-        bindPriceRefresh(editionSelect, marketPriceEl, () => ({
-            cardID: editionSelect.dataset.cardId,
-            setCode: editionSelect.dataset.setCode,
-            rarityName: editionSelect.dataset.rarityName
-        }));
+        bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: editionSelect.dataset.printingId }));
     });
 
     // Purchase Price starts blank on every line (it's unknown until staged), so the total

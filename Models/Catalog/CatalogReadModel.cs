@@ -1,0 +1,48 @@
+using CardCollector.DTO;
+
+namespace CardCollector.Models.Catalog
+{
+    /// <summary>
+    /// The catalog as the rest of the app reads it: every card in the <see cref="Card"/>/<see cref="Set"/> shape, plus the
+    /// lookups built from them. Immutable, so a reload swaps in a whole new instance.
+    /// </summary>
+    public sealed class CatalogReadModel
+    {
+        public static CatalogReadModel Empty { get; } = new();
+
+        /// <summary>Every rarity name an active printing uses, as stored (not normalized), sorted and distinct ignoring case.</summary>
+        public IReadOnlyList<string> AllRarityNames { get; init; } = [];
+
+        /// <summary>Cards with at least one active printing; the ones Browse and the collection views list.</summary>
+        public IReadOnlyList<Card> BrowseableCards { get; init; } = [];
+
+        /// <summary>Every printing the catalog has, retired ones included, mapped to its card's ID.</summary>
+        public IReadOnlyDictionary<int, int> CardIDsByPrintingID { get; init; } = new Dictionary<int, int>();
+
+        public IReadOnlyList<Card> Cards { get; init; } = [];
+
+        public IReadOnlyDictionary<int, Card> CardsByID { get; init; } = new Dictionary<int, Card>();
+
+        /// <summary>Active cards by name, ignoring case; a name more than one card carries lists them all.</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<Card>> CardsByName { get; init; } =
+            new Dictionary<string, IReadOnlyList<Card>>(StringComparer.OrdinalIgnoreCase);
+
+        public IReadOnlyList<string> DistinctRarityNames { get; init; } = [];
+
+        public IReadOnlyList<string> DistinctSetNames { get; init; } = [];
+
+        /// <summary>Every known passcode or source id, mapped to the catalog card it belongs to.</summary>
+        public IReadOnlyDictionary<int, int> PasscodeAliases { get; init; } = new Dictionary<int, int>();
+
+        /// <summary>Every active printing of an active card, by catalog printing ID.</summary>
+        public IReadOnlyDictionary<int, CatalogPrintingRef> PrintingsByID { get; init; } = new Dictionary<int, CatalogPrintingRef>();
+
+        /// <summary>Every active printing of an active card, by set code (ignoring case).</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<CatalogPrintingRef>> PrintingsBySetCode { get; init; } =
+            new Dictionary<string, IReadOnlyList<CatalogPrintingRef>>(StringComparer.OrdinalIgnoreCase);
+
+        public IReadOnlyDictionary<string, string> SetNamesByCode { get; init; } = new Dictionary<string, string>();
+
+        public IReadOnlyDictionary<string, string> SetPrefixByName { get; init; } = new Dictionary<string, string>();
+    }
+}

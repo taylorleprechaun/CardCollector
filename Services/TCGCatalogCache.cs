@@ -1,9 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.RegularExpressions;
 using CardCollector.Data;
 using CardCollector.DTO;
 using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace CardCollector.Services
 {
@@ -27,6 +27,9 @@ namespace CardCollector.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<TCGCatalogCache> _logger;
         private IReadOnlyList<TCGPriceSet> _printings;
+
+        [ExcludeFromCodeCoverage(Justification = "Reads a timestamp file on disk; I/O, not testable logic.")]
+        public DateTime? CachedAtUTC => FileCacheHelper.ReadTimestamp(GetCachePaths().TimestampPath);
 
         [ExcludeFromCodeCoverage(Justification = "Loads cached catalog data from disk on construction; I/O, not testable logic.")]
         public TCGCatalogCache(ILogger<TCGCatalogCache> logger, IHttpClientFactory httpClientFactory, IConfiguration config)
@@ -66,8 +69,10 @@ namespace CardCollector.Services
                         CardName = cardName,
                         Code = setCode,
                         Edition = price.SubTypeName ?? string.Empty,
+                        GroupID = product.GroupID,
                         PriceRaw = price.MarketPrice!.Value.ToString(CultureInfo.InvariantCulture),
                         PrintVariant = printVariant,
+                        ProductID = product.ProductID,
                         RarityName = rarityName
                     };
                 }
@@ -93,7 +98,7 @@ namespace CardCollector.Services
                 var qualifier = match.Groups[1].Value.Trim();
                 name = name[..match.Index].TrimEnd();
 
-                if (!IsRedundantRarityQualifier(qualifier, rarityName) && !IsRedundantSetCodeQualifier(qualifier, setCode))
+                if (!RarityExtensions.IsRarityRestatement(qualifier, rarityName) && !IsRedundantSetCodeQualifier(qualifier, setCode))
                     variants.Insert(0, qualifier);
 
                 match = TrailingParenRegex().Match(name);
@@ -104,17 +109,32 @@ namespace CardCollector.Services
 
         public IReadOnlyList<TCGPriceSet> GetAllPrintings() => _printings;
 
+        /// <summary>
+        /// True when at least one printing carries a TCGPlayer product ID; false means the cache predates the field
+        /// (public for direct unit testing).
+        /// </summary>
+        public static bool HasProductIDs(IEnumerable<TCGPriceSet> printings) =>
+            printings.Any(p => p.ProductID > 0);
+
         [ExcludeFromCodeCoverage(Justification = "Cache-freshness check plus HTTP fetch orchestration; I/O, not testable logic.")]
         public async Task LoadIfStaleAsync()
         {
             var (cacheDir, cachePath, timestampPath) = GetCachePaths();
             if (FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTtl))
             {
-                _logger.LogInformation("Catalog cache already fresh — skipping startup warm-up fetch");
-                return;
+                if (HasProductIDs(_printings))
+                {
+                    _logger.LogInformation("Catalog cache already fresh — skipping startup warm-up fetch");
+                    return;
+                }
+
+                _logger.LogInformation("Catalog cache predates TCGPlayer product IDs — fetching from tcgcsv.com");
+            }
+            else
+            {
+                _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
             }
 
-            _logger.LogInformation("Catalog data cache is missing or stale — fetching from tcgcsv.com");
             await FetchAndStoreAsync(cacheDir, cachePath, timestampPath).ConfigureAwait(false);
         }
 
@@ -139,18 +159,6 @@ namespace CardCollector.Services
             var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
             var cachePath = Path.Combine(cacheDir, "tcgcatalogcache.json");
             return (cacheDir, cachePath, cachePath + ".timestamp");
-        }
-
-        private static bool IsRedundantRarityQualifier(string qualifier, string? rarityName)
-        {
-            if (string.IsNullOrWhiteSpace(rarityName))
-                return false;
-
-            if (string.Equals(qualifier, rarityName, StringComparison.OrdinalIgnoreCase))
-                return true;
-
-            var code = RarityExtensions.GetRarityCode(rarityName)?.Trim('(', ')');
-            return code is not null && string.Equals(qualifier, code, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsRedundantSetCodeQualifier(string qualifier, string? setCode) =>
@@ -228,6 +236,7 @@ namespace CardCollector.Services
                 return null;
             }
         }
+
         [ExcludeFromCodeCoverage(Justification = "Reads catalog JSON from disk; I/O, not testable logic.")]
         private IReadOnlyList<TCGPriceSet> LoadEntriesFromJson(string path)
         {
@@ -242,6 +251,7 @@ namespace CardCollector.Services
                 return [];
             }
         }
+
         private void LogUnrecognizedVariantQualifiers(IReadOnlyList<TCGPriceSet> entries)
         {
             var unrecognized = entries

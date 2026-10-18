@@ -7,13 +7,20 @@ namespace CardCollector.DTO
     {
         private static readonly IReadOnlyDictionary<string, Rarity> _map = BuildMap();
 
-        // Some providers label plain Common cards as "Short Print"/"Super Short Print" instead.
-        // Program.cs's startup migration calls NormalizeRarityName directly to fix historical data,
-        // so this is the single place to add a newly discovered bad variant string.
-        private static readonly IReadOnlySet<string> _shortPrintVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        /// <summary>
+        /// Alternate spellings sources use for a rarity, mapped to the name the app uses. Program.cs's startup migration
+        /// calls NormalizeRarityName directly to fix historical data, so this is the single place to add a newly discovered
+        /// bad spelling.
+        /// </summary>
+        /// <remarks>
+        /// Some providers label plain Common cards as "Short Print"/"Super Short Print". YGOProDeck lists 49 Star Pack VRAINS
+        /// cards with a bare "Starfoil" entry alongside their real "Starfoil Rare" one.
+        /// </remarks>
+        private static readonly IReadOnlyDictionary<string, string> _rarityAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Short Print",
-            "Super Short Print"
+            ["Short Print"] = "Common",
+            ["Starfoil"] = "Starfoil Rare",
+            ["Super Short Print"] = "Common"
         };
 
         public static string? GetRarityCode(string? rarityName) => rarityName switch
@@ -66,8 +73,31 @@ namespace CardCollector.DTO
             _ => null
         };
 
+        /// <summary>
+        /// True when a qualifier (a product-name parenthetical or a stored print variant) only restates the rarity: the full name, the name without its
+        /// trailing " Rare" (e.g. "Starfoil" for "Starfoil Rare"), or the rarity code.
+        /// </summary>
+        /// <remarks>
+        /// Apostrophes are compared loosely because TCGPlayer writes "Ultra Pharaoh's Rare" with a straight apostrophe in
+        /// product names but a curly one (U+2019) in the rarity field.
+        /// </remarks>
+        public static bool IsRarityRestatement(string qualifier, string? rarityName)
+        {
+            if (string.IsNullOrWhiteSpace(rarityName))
+                return false;
+
+            var normalizedQualifier = NormalizeApostrophes(qualifier);
+            var normalizedRarity = NormalizeApostrophes(rarityName);
+            if (string.Equals(normalizedQualifier, normalizedRarity, StringComparison.OrdinalIgnoreCase)
+                || string.Equals($"{normalizedQualifier} Rare", normalizedRarity, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var code = GetRarityCode(rarityName)?.Trim('(', ')');
+            return code is not null && string.Equals(qualifier, code, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string? NormalizeRarityName(string? rarityName) =>
-            rarityName is not null && _shortPrintVariants.Contains(rarityName) ? "Common" : rarityName;
+            rarityName is not null && _rarityAliases.TryGetValue(rarityName, out var canonical) ? canonical : rarityName;
 
         public static Rarity ParseRarity(string? value)
         {
@@ -93,5 +123,7 @@ namespace CardCollector.DTO
 
             return map;
         }
+
+        private static string NormalizeApostrophes(string text) => text.Replace('’', '\'').Replace('‘', '\'');
     }
 }

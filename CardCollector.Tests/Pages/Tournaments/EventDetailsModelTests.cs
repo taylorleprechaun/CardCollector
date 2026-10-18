@@ -1,4 +1,3 @@
-using System.Text.Json;
 using CardCollector.Data.Models;
 using CardCollector.Models;
 using CardCollector.Pages.Tournaments.Events;
@@ -9,6 +8,7 @@ using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
+using System.Text.Json;
 using Match = CardCollector.Data.Models.Match;
 
 namespace CardCollector.Tests.Pages.Tournaments
@@ -40,6 +40,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreSame(detail, context.Model.Detail);
             CollectionAssert.AreEqual(new[] { "Test Opponent" }, context.Model.OpponentDecks.ToArray());
         }
+
         [TestMethod]
         public async Task OnGetAsync_EventMissing_ReturnsNotFound()
         {
@@ -114,6 +115,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             var errors = JsonSerializer.SerializeToElement(badRequest.Value).GetProperty("errors");
             Assert.AreEqual("Opponent deck is required.", errors[0].GetString());
         }
+
         [TestMethod]
         public async Task OnPostAddMatchAsync_BlankGames_AreSentAsZero()
         {
@@ -166,6 +168,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.IsInstanceOfType<RedirectToPageResult>(result);
             Assert.AreEqual("Round is required. Opponent deck is required.", context.Model.TempData["Error"]);
         }
+
         [TestMethod]
         public async Task OnPostAddMatchAsync_NoResultChosen_UsesTheSuggestionFromTheScore()
         {
@@ -180,6 +183,7 @@ namespace CardCollector.Tests.Pages.Tournaments
 
             Assert.AreEqual(MatchResult.Loss, sent!.Result);
         }
+
         [TestMethod]
         public async Task OnPostDeleteMatchAsync_AjaxRoundMissing_ReturnsNotFound()
         {
@@ -205,6 +209,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreEqual("<summary/>", json.GetProperty("summaryHtml").GetString());
             Assert.IsFalse(json.TryGetProperty("rowHtml", out _));
         }
+
         [TestMethod]
         public async Task OnPostDeleteMatchAsync_NonAjaxRoundMissing_SetsErrorAndRedirects()
         {
@@ -267,6 +272,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreEqual("<row/>", json.GetProperty("rowHtml").GetString());
             Assert.AreEqual("4", json.GetProperty("nextRound").GetString());
         }
+
         [TestMethod]
         public async Task OnPostEditMatchAsync_AjaxValidationFailure_ReturnsBadRequest()
         {
@@ -314,6 +320,7 @@ namespace CardCollector.Tests.Pages.Tournaments
             Assert.AreEqual("rounds", redirect.Fragment);
             Assert.AreEqual("Rounds sorted.", context.Model.TempData["Success"]);
         }
+
         private static EventDetailViewModel BuildDetail(int id, params Match[] rounds) =>
             new()
             {

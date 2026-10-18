@@ -3,6 +3,10 @@ namespace CardCollector.Data.Models
     public sealed class CollectionEntryValueSnapshot
     {
         public string CardName { get; set; } = string.Empty;
+
+        /// <summary>The catalog card the entry was a printing of. Null for history no card could be found for.</summary>
+        public int? CatalogCardID { get; set; }
+
         public int CollectionEntryID { get; set; }
         public DateTime DateCreated { get; set; }
         public CardEdition? Edition { get; set; }

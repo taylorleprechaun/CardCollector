@@ -1,6 +1,5 @@
 using CardCollector.Data;
 using CardCollector.Data.Models;
-using CardCollector.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CardCollector.Repository
@@ -14,26 +13,30 @@ namespace CardCollector.Repository
             _context = context;
         }
 
-        public async Task AddAsync(int cardID, string setCode, string rarityName, string? printVariant = null)
+        public async Task AddAsync(IReadOnlyCollection<int> printingIDs)
         {
-            rarityName = RarityExtensions.NormalizeRarityName(rarityName) ?? rarityName;
+            if (printingIDs is null) throw new ArgumentNullException(nameof(printingIDs));
 
-            var exists = await _context.DismissedNewPrintings
-                .AnyAsync(d => d.CardID == cardID && d.SetCode == setCode && d.RarityName == rarityName && d.PrintVariant == printVariant)
-                .ConfigureAwait(false);
-
-            if (exists)
+            var requested = printingIDs.ToHashSet();
+            if (requested.Count == 0)
                 return;
 
-            _context.DismissedNewPrintings.Add(new DismissedNewPrinting
+            var existing = await _context.DismissedNewPrintings
+                .Where(d => requested.Contains(d.CatalogPrintingID))
+                .Select(d => d.CatalogPrintingID)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            requested.ExceptWith(existing);
+            if (requested.Count == 0)
+                return;
+
+            var now = DateTime.UtcNow;
+            _context.DismissedNewPrintings.AddRange(requested.Select(printingID => new DismissedNewPrinting
             {
-                CardID = cardID,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
-                PrintVariant = printVariant,
-                RarityName = rarityName,
-                SetCode = setCode
-            });
+                CatalogPrintingID = printingID,
+                DateCreated = now,
+                DateModified = now
+            }));
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -41,14 +44,14 @@ namespace CardCollector.Repository
         public async Task<bool> AnyAsync() =>
             await _context.DismissedNewPrintings.AnyAsync().ConfigureAwait(false);
 
-        public async Task<IReadOnlySet<(int CardID, string SetCode, string RarityName, string? PrintVariant)>> GetAllAsync()
+        public async Task<IReadOnlySet<int>> GetAllAsync()
         {
-            var rows = await _context.DismissedNewPrintings
-                .Select(d => new { d.CardID, d.SetCode, d.RarityName, d.PrintVariant })
+            var ids = await _context.DismissedNewPrintings
+                .Select(d => d.CatalogPrintingID)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return rows.Select(r => (r.CardID, r.SetCode, r.RarityName, r.PrintVariant)).ToHashSet();
+            return ids.ToHashSet();
         }
     }
 }

@@ -4398,5 +4398,30 @@
     "SetCode": "DOR-001",
     "OldRarityName": "Prismatic Secret Rare",
     "NewRarityName": "Secret Rare"
+  },
+  {
+    "SetCode": "KICO-EN063",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "KICO-EN064",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "KICO-EN065",
+    "OldRarityName": "Ultra Rare (Pharaoh's Rare)",
+    "NewRarityName": "Ultra Pharaoh’s Rare"
+  },
+  {
+    "SetCode": "2017-EN001",
+    "OldRarityName": "Extra Secret",
+    "NewRarityName": "Extra Secret Rare"
+  },
+  {
+    "SetCode": "2017-EN002",
+    "OldRarityName": "Extra Secret",
+    "NewRarityName": "Extra Secret Rare"
   }
 ]

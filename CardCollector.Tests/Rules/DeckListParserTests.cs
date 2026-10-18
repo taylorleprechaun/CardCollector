@@ -1,6 +1,5 @@
-using System.Buffers.Binary;
-using CardCollector.Models;
 using CardCollector.Rules;
+using System.Buffers.Binary;
 
 namespace CardCollector.Tests.Rules
 {
@@ -277,6 +276,7 @@ namespace CardCollector.Tests.Rules
             Assert.IsFalse(result.Succeeded);
             StringAssert.Contains(result.Error, "Line 2");
         }
+
         private static string Encode(params int[] passcodes)
         {
             var bytes = new byte[passcodes.Length * 4];

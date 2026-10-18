@@ -28,14 +28,14 @@ namespace CardCollector.Services
             _scopeFactory = scopeFactory;
         }
 
-        // Public for direct unit testing — pure timezone math, no I/O. nowUtc is a parameter (rather
+        // Public for direct unit testing — pure timezone math, no I/O. nowUTC is a parameter (rather
         // than always DateTime.UtcNow) so tests can exercise specific instants deterministically.
-        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUtc)
+        public static TimeSpan GetDelayUntilNextMidnightEastern(DateTime nowUTC)
         {
-            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, EasternTz);
+            var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(nowUTC, EasternTz);
             var nextMidnightEastern = nowEastern.Date.AddDays(1);
-            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
-            var delay = nextMidnightUtc - nowUtc;
+            var nextMidnightUTC = TimeZoneInfo.ConvertTimeToUtc(nextMidnightEastern, EasternTz);
+            var delay = nextMidnightUTC - nowUTC;
             return delay <= TimeSpan.Zero ? TimeSpan.FromSeconds(5) : delay;
         }
 
@@ -64,14 +64,16 @@ namespace CardCollector.Services
                 await RunNightlyRefreshAsync(stoppingToken);
             }
         }
+
         [ExcludeFromCodeCoverage(Justification = "Orchestrates a real DI scope and downstream services; a mocked-scope test would only re-assert the mock setup, not real behavior.")]
         private async Task RunNightlyRefreshAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("PriceRefreshBackgroundService: starting nightly price and card data refresh");
             try
             {
-                await _pricingDataCache.RefreshAsync();
+                // Downloads every source again (including TCGPlayer prices), syncs them into the catalog, and reloads.
                 await _cardDataRepository.RefreshAsync();
+                _pricingDataCache.RebuildIndex();
                 await _banlistRepository.LoadIfStaleAsync(stoppingToken);
 
                 await using var scope = _scopeFactory.CreateAsyncScope();
