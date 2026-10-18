@@ -185,26 +185,6 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public void HasProductIDs_CacheWrittenBeforeProductIDs_ReturnsFalse()
-        {
-            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002" } };
-
-            var result = TCGCatalogCache.HasProductIDs(printings);
-
-            Assert.IsFalse(result);
-        }
-
-        [TestMethod]
-        public void HasProductIDs_PrintingHasProductID_ReturnsTrue()
-        {
-            var printings = new List<TCGPriceSet> { new() { Code = "SYN-EN001" }, new() { Code = "SYN-EN002", ProductID = 713500 } };
-
-            var result = TCGCatalogCache.HasProductIDs(printings);
-
-            Assert.IsTrue(result);
-        }
-
-        [TestMethod]
         public void ParseProductName_NoParentheticalQualifier_ReturnsNameUnchangedAndNullVariant()
         {
             var (cardName, printVariant) = TCGCatalogCache.ParseProductName("Dark Magical Curtain", "Ultra Rare");

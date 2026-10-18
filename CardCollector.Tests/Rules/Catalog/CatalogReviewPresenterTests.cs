@@ -20,9 +20,20 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        [DataRow(CatalogReviewItemKind.LegacyDismissalUnmapped, CatalogReviewItemStatus.Dismissed, DisplayName = "Dismissed legacy dismissal")]
+        [DataRow(CatalogReviewItemKind.LegacyRowAutoMapped, CatalogReviewItemStatus.Dismissed, DisplayName = "Dismissed auto-mapped row")]
+        [DataRow(CatalogReviewItemKind.LegacyRowUnmapped, CatalogReviewItemStatus.Accepted, DisplayName = "Restored row")]
+        [DataRow(CatalogReviewItemKind.LegacyRowUnmapped, CatalogReviewItemStatus.Rejected, DisplayName = "Discarded row")]
+        public void AllowedActions_ClosedLegacyItem_AllowsNothing(CatalogReviewItemKind kind, CatalogReviewItemStatus status)
+        {
+            var actions = CatalogReviewPresenter.AllowedActions(kind, status);
+
+            Assert.AreEqual(0, actions.Count);
+        }
+
+        [TestMethod]
         [DataRow(CatalogReviewItemKind.PasscodeChanged, CatalogReviewAction.Accept, DisplayName = "Passcode change can be accepted")]
         [DataRow(CatalogReviewItemKind.UnmappedTCGProduct, CatalogReviewAction.MapToPrinting, DisplayName = "Unmapped product can be mapped")]
-        [DataRow(CatalogReviewItemKind.LegacyRowUnmapped, CatalogReviewAction.CreatePrinting, DisplayName = "Legacy row can get a new printing")]
         [DataRow(CatalogReviewItemKind.CardAdded, CatalogReviewAction.Dismiss, DisplayName = "Informational item can be dismissed")]
         [DataRow(CatalogReviewItemKind.SyncAnomaly, CatalogReviewAction.Dismiss, DisplayName = "Anomaly can be dismissed")]
         public void AllowedActions_OpenItem_IncludesExpectedAction(CatalogReviewItemKind kind, CatalogReviewAction expected)
@@ -33,6 +44,17 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        [DataRow(CatalogReviewItemKind.LegacyDismissalUnmapped, DisplayName = "Legacy dismissal")]
+        [DataRow(CatalogReviewItemKind.LegacyRowAutoMapped, DisplayName = "Auto-mapped row")]
+        [DataRow(CatalogReviewItemKind.LegacyRowUnmapped, DisplayName = "Unmapped row")]
+        public void AllowedActions_OpenLegacyItem_AllowsOnlyDismiss(CatalogReviewItemKind kind)
+        {
+            var actions = CatalogReviewPresenter.AllowedActions(kind, CatalogReviewItemStatus.Open);
+
+            CollectionAssert.AreEqual(new[] { CatalogReviewAction.Dismiss }, actions.ToArray());
+        }
+
+        [TestMethod]
         [DataRow(CatalogReviewItemStatus.Rejected, DisplayName = "Rejected")]
         [DataRow(CatalogReviewItemStatus.Dismissed, DisplayName = "Dismissed")]
         public void AllowedActions_RejectedOrDismissedItem_AllowsOnlyReopen(CatalogReviewItemStatus status)
@@ -40,22 +62,6 @@ namespace CardCollector.Tests.Rules.Catalog
             var actions = CatalogReviewPresenter.AllowedActions(CatalogReviewItemKind.UnmappedTCGProduct, status);
 
             CollectionAssert.AreEqual(new[] { CatalogReviewAction.Reopen }, actions.ToArray());
-        }
-
-        [TestMethod]
-        public void ToViewModel_LegacyRowWithSeveralPrintingsUnderItsSetCode_OffersEachPrinting()
-        {
-            var card = Card(5, "Synthetic Duelist", 37440988, Printing(51, "LDS1-EN101", "Ultra Rare", "Blue"), Printing(52, "LDS1-EN101", "Ultra Rare", "Green"));
-            var item = Item(CatalogReviewItemKind.LegacyRowUnmapped,
-                """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","DateCreated":"2026-06-13"},"Reason":"No match"}""");
-
-            var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
-
-            CollectionAssert.AreEquivalent(new[] { 51, 52 }, model.PrintingOptions.Select(o => o.Value).ToArray());
-            Assert.AreEqual("LDS1-EN101 Ultra Rare (Blue) — different variant", model.PrintingOptions.Single(o => o.Value == 51).Label);
-            Assert.AreEqual(5, model.CardOptions.Single().Value);
-            Assert.AreEqual("Discard row", model.RejectLabel);
-            Assert.IsFalse(model.Details.Single(d => d.Key == "Row").Value.Contains("DateCreated"));
         }
 
         [TestMethod]
@@ -137,6 +143,24 @@ namespace CardCollector.Tests.Rules.Catalog
             Assert.IsTrue(model.PlacementSetCodeInCatalog);
         }
 
+        [TestMethod]
+        public void ToViewModel_ResolvedLegacyRow_ShowsItsValuesWithoutPlacementOrHiddenColumns()
+        {
+            var card = Card(5, "Synthetic Duelist", 37440988, Printing(51, "LDS1-EN101", "Ultra Rare", "Blue"));
+            var item = Item(CatalogReviewItemKind.LegacyRowUnmapped,
+                """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","DateCreated":"2026-06-13"},"Reason":"No match"}""");
+            item.Status = CatalogReviewItemStatus.Accepted;
+
+            var model = CatalogReviewPresenter.ToViewModel(item, Lookup(card));
+
+            Assert.AreEqual(0, model.Actions.Count);
+            Assert.AreEqual(0, model.PrintingOptions.Count);
+            Assert.IsNull(model.RejectLabel);
+            var row = model.Details.Single(d => d.Key == "Row").Value;
+            StringAssert.Contains(row, "SetCode LDS1-EN101");
+            Assert.IsFalse(row.Contains("DateCreated"));
+        }
+
         private static Card Card(int id, string name, int passcode, params Set[] printings) =>
             new() { CardSets = printings, ID = id, Name = name, Passcode = passcode };
 
@@ -153,7 +177,6 @@ namespace CardCollector.Tests.Rules.Catalog
         private static CatalogReviewLookup Lookup(params Card[] cards) => new()
         {
             CardByID = id => cards.FirstOrDefault(c => c.ID == id),
-            CardByPasscode = passcode => cards.FirstOrDefault(c => c.Passcode == passcode),
             CardsByName = name => cards.Where(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)).ToList(),
             PrintingsBySetCode = setCode => cards
                 .SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s)))

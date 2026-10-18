@@ -18,12 +18,6 @@ namespace CardCollector.Models.Catalog
 
         public CatalogReviewItemKind Kind { get; init; }
 
-        /// <summary>The catalog card to link the item to when it holds no <see cref="Card"/> or <see cref="Printing"/> (a legacy row matched by ID).</summary>
-        public int? LinkedCardID { get; init; }
-
-        /// <summary>The catalog printing to link the item to when it holds no <see cref="Printing"/>, like <see cref="LinkedCardID"/>.</summary>
-        public int? LinkedPrintingID { get; init; }
-
         /// <summary>Serialized to <see cref="CatalogReviewItem.PayloadJSON"/>; keep property order stable so its hash is too.</summary>
         public object Payload { get; init; } = new { };
 

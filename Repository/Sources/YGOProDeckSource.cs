@@ -31,9 +31,6 @@ namespace CardCollector.Repository.Sources
             _cacheTTL = TimeSpan.FromDays(config.GetValue<int>("CardDataSettings:ImageCacheTtlDays", 30));
         }
 
-        /// <summary>True when at least one card carries a misc_info block; false means the cache predates misc=yes.</summary>
-        public static bool HasMiscInfo(IEnumerable<YGOProDeckCard> cards) => cards.Any(c => c.MiscInfo is not null);
-
         /// <summary>
         /// Parses a cardinfo.php response into cards, copying each card's Konami ID out of its misc_info block onto
         /// <see cref="DTO.Card.KonamiID"/> (public for direct unit testing). Malformed JSON yields an empty list.
@@ -62,20 +59,11 @@ namespace CardCollector.Repository.Sources
 
             if (!forceRefresh && FileCacheHelper.IsCacheFresh(cachePath, timestampPath, _cacheTTL))
             {
-                var cached = ReadCached();
-                if (cached.Count == 0 || HasMiscInfo(cached))
-                {
-                    _logger.LogInformation("Loading YGOProDeck card data from cache ({Path})", cachePath);
-                    return cached;
-                }
-
-                _logger.LogInformation("YGOProDeck card cache predates Konami IDs — fetching a fresh copy");
-            }
-            else
-            {
-                _logger.LogInformation("YGOProDeck card cache is missing or stale — fetching from YGOProDeck API");
+                _logger.LogInformation("Loading YGOProDeck card data from cache ({Path})", cachePath);
+                return ReadCached();
             }
 
+            _logger.LogInformation("YGOProDeck card cache is missing or stale — fetching from YGOProDeck API");
             var json = await FetchAsync().ConfigureAwait(false);
             if (json is not null)
             {

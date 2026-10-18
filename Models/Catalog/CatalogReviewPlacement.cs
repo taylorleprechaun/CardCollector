@@ -2,7 +2,7 @@ using CardCollector.ViewModels;
 
 namespace CardCollector.Models.Catalog
 {
-    /// <summary>Where an unmapped product or legacy row can be placed.</summary>
+    /// <summary>Where an unmapped product can be placed.</summary>
     /// <param name="Printings">Existing printings it can be mapped onto, best match first.</param>
     /// <param name="Cards">Cards a missing printing can be created on.</param>
     /// <param name="SetCode">The set code the item reports; null when it reports none.</param>

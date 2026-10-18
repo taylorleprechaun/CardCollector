@@ -33,11 +33,21 @@ namespace CardCollector.Data.Models.Catalog
             CatalogReviewItemKind.CardTextChanged => false,
             CatalogReviewItemKind.LegacyDismissalUnmapped => false,
             CatalogReviewItemKind.LegacyRowAutoMapped => false,
+            CatalogReviewItemKind.LegacyRowUnmapped => false,
             CatalogReviewItemKind.PasscodeAssigned => false,
             CatalogReviewItemKind.PrintingAdded => false,
             CatalogReviewItemKind.TCGProductChanged => false,
             _ => true
         };
+
+        /// <summary>
+        /// True for the kinds the one-time move from the pre-catalog database created. Nothing creates them any more; the
+        /// inbox keeps them as history, and an open one can only be dismissed.
+        /// </summary>
+        public static bool IsLegacy(this CatalogReviewItemKind kind) =>
+            kind is CatalogReviewItemKind.LegacyDismissalUnmapped
+                or CatalogReviewItemKind.LegacyRowAutoMapped
+                or CatalogReviewItemKind.LegacyRowUnmapped;
 
         /// <summary>
         /// The sources that must all succeed in a run before an open item of this kind that the run no longer detects

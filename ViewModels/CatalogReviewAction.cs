@@ -15,10 +15,10 @@ namespace CardCollector.ViewModels
         /// <summary>Acknowledge an informational item.</summary>
         Dismiss,
 
-        /// <summary>Link the product, or restore the legacy row, on a chosen existing printing.</summary>
+        /// <summary>Link the product to a chosen existing printing.</summary>
         MapToPrinting,
 
-        /// <summary>Keep the catalog as it is (or discard the legacy row).</summary>
+        /// <summary>Keep the catalog as it is.</summary>
         Reject,
 
         /// <summary>Put a rejected or dismissed item back in front of the user, undecided.</summary>

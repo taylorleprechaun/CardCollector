@@ -9,7 +9,7 @@ namespace CardCollector.Rules.Catalog
 {
     /// <summary>
     /// Turns stored review items into inbox rows: the decisions each kind allows, button wording, the payload as readable
-    /// lines, and the printings or cards an unmapped product or legacy row can be placed on.
+    /// lines, and the printings or cards an unmapped product can be placed on.
     /// </summary>
     public static class CatalogReviewPresenter
     {
@@ -22,10 +22,13 @@ namespace CardCollector.Rules.Catalog
 
         /// <summary>
         /// The decisions an item of this kind and status allows. A rejected or dismissed item can only be reopened; one that
-        /// was accepted or resolved by its source allows nothing, since its effect is already applied.
+        /// was accepted or resolved by its source allows nothing, since its effect is already applied. A legacy item is
+        /// history: an open one can only be dismissed, and a closed one allows nothing.
         /// </summary>
         public static IReadOnlyList<CatalogReviewAction> AllowedActions(CatalogReviewItemKind kind, CatalogReviewItemStatus status)
         {
+            if (kind.IsLegacy())
+                return status == CatalogReviewItemStatus.Open ? [CatalogReviewAction.Dismiss] : [];
             if (status is CatalogReviewItemStatus.Rejected or CatalogReviewItemStatus.Dismissed)
                 return [CatalogReviewAction.Reopen];
             if (status != CatalogReviewItemStatus.Open)
@@ -36,8 +39,6 @@ namespace CardCollector.Rules.Catalog
                 CatalogReviewItemKind.CardNameChanged or CatalogReviewItemKind.CardNotSeen or CatalogReviewItemKind.PasscodeChanged
                     or CatalogReviewItemKind.PrintingNotSeen or CatalogReviewItemKind.TCGListingChanged
                     => [CatalogReviewAction.Accept, CatalogReviewAction.Reject],
-                CatalogReviewItemKind.LegacyRowUnmapped
-                    => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.Reject],
                 CatalogReviewItemKind.UnmappedTCGProduct
                     => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.CreateCard, CatalogReviewAction.Reject],
                 _ => [CatalogReviewAction.Dismiss]
@@ -78,7 +79,7 @@ namespace CardCollector.Rules.Catalog
 
             var card = item.CatalogCardID is int cardID ? lookup.CardByID(cardID) : null;
             var placesOnPrinting = actions.Contains(CatalogReviewAction.MapToPrinting);
-            var placement = placesOnPrinting ? BuildPlacement(item.Kind, payload, lookup) : new CatalogReviewPlacement([], [], null, false);
+            var placement = placesOnPrinting ? BuildPlacement(payload, lookup) : new CatalogReviewPlacement([], [], null, false);
             var (acceptLabel, rejectLabel) = Labels(item.Kind, payload);
 
             return new CatalogReviewItemViewModel
@@ -129,37 +130,26 @@ namespace CardCollector.Rules.Catalog
         }
 
         /// <summary>
-        /// The printings an unmapped product or legacy row could be placed on (every printing under its set code, else every
-        /// printing of the card it names), and the cards a missing printing could be created on. Under the set code, options
-        /// whose rarity or variant differ from the reported one say so and sort after the exact matches.
+        /// The printings an unmapped product could be placed on (every printing under its set code, else every printing of the
+        /// card it names), and the cards a missing printing could be created on. Under the set code, options whose rarity or
+        /// variant differ from the reported one say so and sort after the exact matches.
         /// </summary>
-        private static CatalogReviewPlacement BuildPlacement(CatalogReviewItemKind kind, JObject payload, CatalogReviewLookup lookup)
+        private static CatalogReviewPlacement BuildPlacement(JObject payload, CatalogReviewLookup lookup)
         {
-            var source = kind == CatalogReviewItemKind.UnmappedTCGProduct ? payload : payload["Row"] as JObject ?? new JObject();
-            var setCode = ReadString(source, "SetCode");
-            var rawRarity = ReadString(source, "RarityName");
+            var setCode = ReadString(payload, "SetCode");
+            var rawRarity = ReadString(payload, "RarityName");
             var (rarity, variant) = string.IsNullOrWhiteSpace(rawRarity)
                 ? (null, null)
-                : CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, ReadString(source, "PrintVariant"));
+                : CatalogPrintingFactory.NormalizeRarityAndVariant(rawRarity, ReadString(payload, "PrintVariant"));
 
-            var namedCards = new List<Card>();
-            if (kind == CatalogReviewItemKind.UnmappedTCGProduct)
-            {
-                if (ReadString(payload, "CardName") is { } name)
-                    namedCards.AddRange(lookup.CardsByName(name));
-            }
-            else if (int.TryParse(ReadString(source, "CardID"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var passcode)
-                && lookup.CardByPasscode(passcode) is { } passcodeCard)
-            {
-                namedCards.Add(passcodeCard);
-            }
+            IReadOnlyList<Card> namedCards = ReadString(payload, "CardName") is { } name ? lookup.CardsByName(name) : [];
 
             var underCode = setCode is not null ? lookup.PrintingsBySetCode(setCode) : [];
             var candidates = underCode.Count > 0
                 ? underCode
                 : namedCards.SelectMany(c => (c.CardSets ?? []).Select(s => new CatalogPrintingRef(c, s))).ToList();
 
-            // The row already names the card, so the card name only helps when the options belong to different cards.
+            // The product already names the card, so the card name only helps when the options belong to different cards.
             var spansCards = candidates.Select(x => x.Card.ID).Distinct().Count() > 1;
             var printingOptions = candidates
                 .Where(x => x.Printing.PrintingID > 0)
@@ -207,7 +197,6 @@ namespace CardCollector.Rules.Catalog
         {
             CatalogReviewItemKind.CardNameChanged => ($"Rename to \"{ReadString(payload, "Reported")}\"", "Keep name"),
             CatalogReviewItemKind.CardNotSeen => ("Retire card", "Keep card"),
-            CatalogReviewItemKind.LegacyRowUnmapped => (null, "Discard row"),
             CatalogReviewItemKind.PasscodeChanged => ($"Use {ReadString(payload, "Reported")}", $"Keep {ReadString(payload, "Current")}"),
             CatalogReviewItemKind.PrintingNotSeen or CatalogReviewItemKind.TCGListingChanged => ("Retire printing", "Keep printing"),
             CatalogReviewItemKind.UnmappedTCGProduct => (null, "Ignore product"),

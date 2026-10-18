@@ -30,9 +30,11 @@ namespace CardCollector.Data.Models.Catalog
         [Display(Name = "Legacy Dismissal Unmapped")]
         LegacyDismissalUnmapped,
 
+        /// <summary>A legacy row the migration placed on a printing other than its exact one (kept as history).</summary>
         [Display(Name = "Legacy Row Auto-Mapped")]
         LegacyRowAutoMapped,
 
+        /// <summary>A legacy row the migration couldn't place; its values stay on the item (kept as history).</summary>
         [Display(Name = "Legacy Row Unmapped")]
         LegacyRowUnmapped,
 
