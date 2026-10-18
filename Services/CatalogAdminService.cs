@@ -103,6 +103,9 @@ namespace CardCollector.Services
                         .Where(t => t.ID != p.ID)
                         .Select(t => new CatalogReviewOption(t.ID, CatalogPrintingFactory.Describe(t)))
                         .ToList(),
+                    PrintVariant = p.PrintVariant,
+                    RarityName = p.RarityName,
+                    SetCode = p.SetCode,
                     SetName = p.SetName,
                     Sources = p.Sources
                         .OrderBy(s => s.Source)

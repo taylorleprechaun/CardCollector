@@ -725,6 +725,84 @@ a.cc-chip:hover { border-color: var(--bs-primary-border-subtle); color: var(--bs
 .cc-details-grid dt { font-weight: var(--cc-font-weight-medium); color: var(--bs-secondary-color); }
 .cc-details-grid dd { margin: 0; }
 
+/* Catalog card page: the read-only field grid, lock labels, one-line printing rows, and their action menus. */
+.cc-catalog-card-image {
+    width: 84px;
+    aspect-ratio: 59 / 86;
+    object-fit: cover;
+}
+.cc-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.9rem 1.25rem;
+    margin: 0;
+}
+.cc-field-grid dt {
+    font-size: var(--cc-font-size-xs);
+    font-weight: var(--cc-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.15rem;
+}
+.cc-field-grid dd { margin: 0; font-weight: var(--cc-font-weight-medium); }
+.cc-field-wide { grid-column: 1 / -1; }
+.cc-field-wide dd { font-weight: normal; line-height: 1.6; max-width: 75ch; }
+.cc-lock {
+    color: var(--bs-warning-text-emphasis);
+    font-size: var(--cc-font-size-xs);
+    font-weight: var(--cc-font-weight-medium);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-left: 0.35rem;
+}
+.cc-lock-unlock { font-size: var(--cc-font-size-xs); text-transform: none; letter-spacing: 0; }
+
+.cc-printing-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+    flex: 1 1 18rem;
+    min-width: 0;
+    padding: 0.25rem 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+}
+.cc-printing-set { flex-basis: 100%; }
+@media (min-width: 768px) {
+    .cc-printing-set { flex-basis: auto; }
+}
+.cc-menu-button { line-height: 1; }
+.cc-catalog-menu { min-width: 16rem; max-width: min(22rem, calc(100vw - 2rem)); }
+.cc-catalog-menu .dropdown-item-text { white-space: normal; }
+.cc-printing-details,
+.cc-printing-merge {
+    margin: 0.5rem 0 0.25rem 1.25rem;
+    padding: 0.75rem;
+    border-radius: var(--bs-border-radius-sm);
+    font-size: var(--cc-font-size-sm);
+}
+.cc-printing-details {
+    display: grid;
+    gap: 0.35rem;
+    background-color: var(--bs-tertiary-bg);
+}
+.cc-printing-merge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.6rem;
+    background-color: var(--bs-primary-bg-subtle);
+}
+.cc-add-printing {
+    padding: 0.75rem 1rem;
+    background-color: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
 /* The grey thumbnail box with a word in it (inbox rows whose product has no art). */
 .cc-thumbnail-placeholder {
     display: grid;

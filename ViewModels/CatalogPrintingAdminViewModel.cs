@@ -20,6 +20,12 @@ namespace CardCollector.ViewModels
         /// <summary>The card's other active printings this one can be merged into.</summary>
         public IReadOnlyList<CatalogReviewOption> MergeTargets { get; init; } = [];
 
+        public string? PrintVariant { get; init; }
+
+        public string RarityName { get; init; } = string.Empty;
+
+        public string SetCode { get; init; } = string.Empty;
+
         public string? SetName { get; init; }
 
         public IReadOnlyList<CatalogPrintingSourceViewModel> Sources { get; init; } = [];

@@ -1,4 +1,5 @@
 using CardCollector.Data.Models;
+using CardCollector.Data.Models.Catalog;
 using CardCollector.Extensions;
 
 namespace CardCollector.Tests.Extensions
@@ -47,6 +48,19 @@ namespace CardCollector.Tests.Extensions
 
             Assert.AreEqual("1st Edition", first);
             Assert.AreEqual(first, second);
+        }
+
+        [TestMethod]
+        [DataRow(CatalogAliasKind.Artwork, "Alternate artwork", DisplayName = "Artwork")]
+        [DataRow(CatalogAliasKind.BetaID, "Temporary YGOProDeck ID", DisplayName = "Beta ID")]
+        [DataRow(CatalogAliasKind.FakePassword, "Placeholder passcode", DisplayName = "Fake password")]
+        [DataRow(CatalogAliasKind.Passcode, "Passcode", DisplayName = "Passcode")]
+        [DataRow(CatalogAliasKind.YGOProDeckID, "YGOProDeck ID", DisplayName = "YGOProDeck ID")]
+        public void GetDisplayName_CatalogAliasKind_ReturnsReadableName(CatalogAliasKind kind, string expected)
+        {
+            var result = kind.GetDisplayName();
+
+            Assert.AreEqual(expected, result);
         }
 
         [TestMethod]
