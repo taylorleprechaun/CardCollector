@@ -10,7 +10,10 @@ namespace CardCollector.Services
     /// </summary>
     public interface ICatalogReviewService
     {
-        /// <summary>Applies what the item reports: a new passcode or name, or retiring a card or printing nothing uses.</summary>
+        /// <summary>
+        /// Applies what the item reports: a new passcode or name, retiring a card or printing nothing uses, or restoring a
+        /// retired printing TCGPlayer still lists and linking the product to it.
+        /// </summary>
         Task<SaveResult> AcceptAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>Counts the open items that need a decision, for the navigation badge.</summary>
@@ -42,6 +45,9 @@ namespace CardCollector.Services
 
         /// <summary>Counts open items per kind, for the inbox's kind filter.</summary>
         Task<IReadOnlyDictionary<CatalogReviewItemKind, int>> GetOpenCountsByKindAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Links a product that matches a retired printing to that printing, leaving the printing retired.</summary>
+        Task<SaveResult> LinkKeepRetiredAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>Links an unmapped product to an existing printing.</summary>
         Task<SaveResult> MapToPrintingAsync(int id, int catalogPrintingID, CancellationToken cancellationToken = default);

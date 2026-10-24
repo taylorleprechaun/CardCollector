@@ -79,6 +79,66 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void Apply_ProductMatchesRetiredPrintingBesideActiveOne_ReportsItAndCreatesNothing()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            Printing(card, 10, "SYN-EN001", "Promo");
+            var retired = Printing(card, 11, "SYN-EN001", "Promo", "Oversized");
+            retired.Status = CatalogStatus.Retired;
+
+            var result = Run(State(card), Context(), Product(500, "Synthetic Dragon", "SYN-EN001", "Promo", "Oversized"));
+
+            Assert.AreEqual(2, card.Printings.Count);
+            Assert.AreEqual(0, result.PrintingsAdded);
+            Assert.AreEqual(0, retired.Sources.Count);
+            var item = result.Items.Single();
+            Assert.AreEqual(CatalogReviewItemKind.RetiredPrintingListed, item.Kind);
+            Assert.AreSame(retired, item.Printing);
+            Assert.AreEqual("tcg:500", item.SubjectKey);
+        }
+
+        [TestMethod]
+        public void Apply_ProductMatchesRetiredPrintingWithNoVariant_ReportsItInsteadOfRecreatingIt()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            Printing(card, 10, "SYN-EN001", "Ultra Rare");
+            var retired = Printing(card, 11, "SYN-EN001", "Starlight Rare");
+            retired.Status = CatalogStatus.Retired;
+
+            var result = Run(State(card), Context(), Product(500, "Synthetic Dragon", "SYN-EN001", "Starlight Rare"));
+
+            Assert.AreEqual(2, card.Printings.Count);
+            Assert.AreSame(retired, result.Items.Single(i => i.Kind == CatalogReviewItemKind.RetiredPrintingListed).Printing);
+        }
+
+        [TestMethod]
+        public void Apply_ProductMatchesSetCodesOnlyPrintingWhichIsRetired_ReportsRetiredPrintingNotUnmapped()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            Printing(card, 10, "SYN-EN001", "Ultra Rare");
+            var retired = Printing(card, 11, "SYN-EN002", "Promo", "Oversized");
+            retired.Status = CatalogStatus.Retired;
+
+            var result = Run(State(card), Context(), Product(500, "Synthetic Dragon", "SYN-EN002", "Promo", "Oversized"));
+
+            Assert.AreEqual(0, result.ProductsUnmapped);
+            Assert.AreSame(retired, result.Items.Single(i => i.Kind == CatalogReviewItemKind.RetiredPrintingListed).Printing);
+        }
+
+        [TestMethod]
+        public void Apply_RetiredPrintingWithDifferentVariant_StillCreatesTheNewPrinting()
+        {
+            var card = Card(1, "Synthetic Dragon");
+            Printing(card, 10, "SYN-EN001", "Promo");
+            Printing(card, 11, "SYN-EN001", "Promo", "Oversized").Status = CatalogStatus.Retired;
+
+            var result = Run(State(card), Context(), Product(500, "Synthetic Dragon", "SYN-EN001", "Promo", "Jumbo"));
+
+            Assert.AreEqual(1, result.PrintingsAdded);
+            Assert.AreEqual(CatalogReviewItemKind.PrintingAdded, result.Items.Single().Kind);
+        }
+
+        [TestMethod]
         public void Apply_SetCodeSharedByTwoCards_UsesCardName()
         {
             var first = Card(1, "Synthetic Dragon");

@@ -274,6 +274,32 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task UnlinkSourceAsync_ProductLinkedToRetiredPrintingFromInbox_ReopensThatItem()
+        {
+            var sourceID = await AddSourceAsync(CatalogSource.TCGPlayer, "695684");
+            using (var context = NewContext())
+            {
+                context.CatalogReviewItems.Add(new CatalogReviewItem
+                {
+                    Kind = CatalogReviewItemKind.RetiredPrintingListed,
+                    PayloadHash = "hash",
+                    Resolution = "Linked to BLGG-EN127 Ultra Rare, kept retired",
+                    ResolvedUTC = CatalogTestData.EarlierUTC,
+                    Status = CatalogReviewItemStatus.Accepted,
+                    SubjectKey = "tcg:695684",
+                    Summary = "Synthetic summary"
+                });
+                await context.SaveChangesAsync();
+            }
+
+            var result = await Service().UnlinkSourceAsync(sourceID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(CatalogReviewItemStatus.Open, (await verify.CatalogReviewItems.SingleAsync()).Status);
+        }
+
+        [TestMethod]
         public async Task UnlockFieldAsync_LockedField_UnlocksIt()
         {
             using (var context = NewContext())

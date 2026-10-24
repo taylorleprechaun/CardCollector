@@ -307,6 +307,21 @@ namespace CardCollector.Tests.Rules.Catalog
         }
 
         [TestMethod]
+        public void ToViewModel_RetiredPrintingListed_LeadsWithRestoreAndOffersKeepRetiredAndIgnore()
+        {
+            var item = Item(CatalogReviewItemKind.RetiredPrintingListed, """{"ProductID":500,"CardName":"Synthetic Theory","SetCode":"SYN-EN001","RarityName":"Promo","PrintVariant":"Oversized"}""");
+
+            var model = CatalogReviewPresenter.ToViewModel(item, Lookup());
+
+            Assert.AreEqual(CatalogReviewAction.Accept, model.PrimaryAction);
+            Assert.AreEqual("Restore and link", model.AcceptLabel);
+            Assert.AreEqual("Ignore product", model.RejectLabel);
+            CollectionAssert.Contains(model.Actions.ToList(), CatalogReviewAction.LinkKeepRetired);
+            Assert.AreEqual("TCGPlayer lists a printing you retired", model.Headline);
+            Assert.IsTrue(model.IsActionable);
+        }
+
+        [TestMethod]
         public void ToViewModel_ResolvedLegacyRow_ShowsItsValuesWithoutPlacementOrHiddenColumns()
         {
             var card = Card(5, "Synthetic Duelist", 37440988, Printing(51, "LDS1-EN101", "Ultra Rare", "Blue"));

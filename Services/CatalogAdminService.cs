@@ -322,9 +322,13 @@ namespace CardCollector.Services
 
             // A product linked from the inbox has an accepted item; reopening it puts the product back in front of the user,
             // because the next sync would otherwise re-detect it under a closed item and say nothing.
+            var subjectKey = $"tcg:{source.ExternalKey}";
             var item = await _adminRepository
-                .GetReviewItemAsync(CatalogReviewItemKind.UnmappedTCGProduct, $"tcg:{source.ExternalKey}", cancellationToken)
-                .ConfigureAwait(false);
+                    .GetReviewItemAsync(CatalogReviewItemKind.UnmappedTCGProduct, subjectKey, cancellationToken)
+                    .ConfigureAwait(false)
+                ?? await _adminRepository
+                    .GetReviewItemAsync(CatalogReviewItemKind.RetiredPrintingListed, subjectKey, cancellationToken)
+                    .ConfigureAwait(false);
             if (item is not null && item.Status != CatalogReviewItemStatus.Open)
             {
                 item.Status = CatalogReviewItemStatus.Open;

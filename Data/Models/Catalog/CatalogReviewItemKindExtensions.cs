@@ -60,6 +60,7 @@ namespace CardCollector.Data.Models.Catalog
             CatalogReviewItemKind.CardNotSeen => CardSources,
             CatalogReviewItemKind.PasscodeChanged => CardSources,
             CatalogReviewItemKind.PrintingNotSeen => AllSources,
+            CatalogReviewItemKind.RetiredPrintingListed => TCGPlayerSource,
             CatalogReviewItemKind.TCGListingChanged => TCGPlayerSource,
             CatalogReviewItemKind.UnmappedTCGProduct => TCGPlayerSource,
             _ => NoSources

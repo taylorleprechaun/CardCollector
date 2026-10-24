@@ -62,6 +62,8 @@ namespace CardCollector.Rules.Catalog
                     => [CatalogReviewAction.Accept, CatalogReviewAction.Reject],
                 CatalogReviewItemKind.UnmappedTCGProduct
                     => [CatalogReviewAction.MapToPrinting, CatalogReviewAction.CreatePrinting, CatalogReviewAction.CreateCard, CatalogReviewAction.Reject],
+                CatalogReviewItemKind.RetiredPrintingListed
+                    => [CatalogReviewAction.Accept, CatalogReviewAction.LinkKeepRetired, CatalogReviewAction.MapToPrinting, CatalogReviewAction.Reject],
                 _ => [CatalogReviewAction.Dismiss]
             };
         }
@@ -223,6 +225,7 @@ namespace CardCollector.Rules.Catalog
                     => $"Passcode reported as {reported}, not {current}",
                 CatalogReviewItemKind.PrintingAdded => "New printing",
                 CatalogReviewItemKind.PrintingNotSeen when lastSeen is not null => $"No source lists this printing any more (last seen {lastSeen})",
+                CatalogReviewItemKind.RetiredPrintingListed => "TCGPlayer lists a printing you retired",
                 CatalogReviewItemKind.TCGListingChanged => "TCGPlayer no longer lists this printing",
                 CatalogReviewItemKind.TCGProductChanged => "TCGPlayer edited the product",
                 CatalogReviewItemKind.UnmappedTCGProduct when ReadString(payload, "Reason") is { Length: > 0 } reason
@@ -310,6 +313,7 @@ namespace CardCollector.Rules.Catalog
             CatalogReviewItemKind.CardNotSeen => ("Retire card", "Keep card"),
             CatalogReviewItemKind.PasscodeChanged => ($"Use {ReadString(payload, "Reported")}", $"Keep {ReadString(payload, "Current")}"),
             CatalogReviewItemKind.PrintingNotSeen or CatalogReviewItemKind.TCGListingChanged => ("Retire printing", "Keep printing"),
+            CatalogReviewItemKind.RetiredPrintingListed => ("Restore and link", "Ignore product"),
             CatalogReviewItemKind.UnmappedTCGProduct => (null, "Ignore product"),
             _ => (null, null)
         };

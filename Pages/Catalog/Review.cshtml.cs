@@ -141,6 +141,9 @@ namespace CardCollector.Pages.Catalog
         public async Task<IActionResult> OnPostDismissAsync(int id) =>
             await RespondAsync(id, await _catalogReviewService.DismissAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
 
+        public async Task<IActionResult> OnPostLinkKeepRetiredAsync(int id) =>
+            await RespondAsync(id, await _catalogReviewService.LinkKeepRetiredAsync(id).ConfigureAwait(false)).ConfigureAwait(false);
+
         public async Task<IActionResult> OnPostMapAsync(int id, int printingID) =>
             await RespondAsync(id, await _catalogReviewService.MapToPrintingAsync(id, printingID).ConfigureAwait(false)).ConfigureAwait(false);
 

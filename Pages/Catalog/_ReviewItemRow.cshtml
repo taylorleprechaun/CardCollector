@@ -20,6 +20,7 @@
     if (canMap && primary != CatalogReviewAction.MapToPrinting) alternatives.Add(CatalogReviewAction.MapToPrinting);
     if (canCreate && primary != CatalogReviewAction.CreatePrinting) alternatives.Add(CatalogReviewAction.CreatePrinting);
     if (canCreateCard && primary != CatalogReviewAction.CreateCard) alternatives.Add(CatalogReviewAction.CreateCard);
+    if (item.Actions.Contains(CatalogReviewAction.LinkKeepRetired)) alternatives.Insert(0, CatalogReviewAction.LinkKeepRetired);
     var printingLabel = $"{item.SetCode} {item.RarityName}".Trim();
     var title = item.CardName ?? item.Kind.GetDisplayName();
 
@@ -70,6 +71,17 @@
                 </select>
                 <button type="submit" formaction="@handlerURL("CreatePrinting")" class="btn @(isPrimary ? "btn-primary" : "btn-outline-primary")">Create printing</button>
             }
+        </form>
+    }
+
+    async Task RenderLinkKeepRetired()
+    {
+        <form method="post" class="d-grid d-md-flex align-items-md-center gap-2 flex-grow-1 ajax-form" data-ajax-target="@rowId">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@item.ID" />
+            <span class="small fw-medium cc-review-alt-label">Keep it retired</span>
+            <span class="small text-muted flex-grow-1">Links the product so the sync stops asking; the printing stays hidden.</span>
+            <button type="submit" formaction="@handlerURL("LinkKeepRetired")" class="btn btn-outline-primary">Link, keep retired</button>
         </form>
     }
 
@@ -224,6 +236,10 @@
                                 else if (alternative == CatalogReviewAction.CreatePrinting)
                                 {
                                     await RenderCreatePrinting(isPrimary: false);
+                                }
+                                else if (alternative == CatalogReviewAction.LinkKeepRetired)
+                                {
+                                    await RenderLinkKeepRetired();
                                 }
                                 else
                                 {

@@ -15,6 +15,9 @@ namespace CardCollector.ViewModels
         /// <summary>Acknowledge an informational item.</summary>
         Dismiss,
 
+        /// <summary>Link the product to the retired printing it matches, leaving that printing retired.</summary>
+        LinkKeepRetired,
+
         /// <summary>Link the product to a chosen existing printing.</summary>
         MapToPrinting,
 
