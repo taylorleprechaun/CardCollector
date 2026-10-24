@@ -48,6 +48,8 @@ namespace CardCollector.Services
                 return SaveResult.Missing("That review item is not open.");
             if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.Accept))
                 return SaveResult.Failure([$"{item.Kind} items can't be accepted."]);
+            if (item.Kind == CatalogReviewItemKind.RetiredPrintingListed)
+                return await LinkRetiredPrintingAsync(item, restore: true, cancellationToken).ConfigureAwait(false);
 
             var payload = JObject.Parse(item.PayloadJSON);
             var now = Now();
@@ -154,7 +156,7 @@ namespace CardCollector.Services
 
                     var printing = await CatalogPrintingFactory.CreateByHandAsync(
                         card, setCode, rarity, variant, "Created from the review inbox", prefix => _reviewRepository.GetSetByPrefixAsync(prefix, cancellationToken), _reviewRepository.AddSet, now).ConfigureAwait(false);
-                    result = await PlaceOnPrintingAsync(item, payload, printing, cancellationToken).ConfigureAwait(false);
+                    result = await PlaceOnPrintingAsync(item, payload, printing, null, cancellationToken).ConfigureAwait(false);
                     if (!result.Succeeded)
                         throw new CatalogReviewDecisionException(result);
 
@@ -207,7 +209,7 @@ namespace CardCollector.Services
                         await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    result = await PlaceOnPrintingAsync(item, payload, printing, cancellationToken).ConfigureAwait(false);
+                    result = await PlaceOnPrintingAsync(item, payload, printing, null, cancellationToken).ConfigureAwait(false);
                     if (!result.Succeeded)
                         throw new CatalogReviewDecisionException(result);
                 }, cancellationToken).ConfigureAwait(false);
@@ -261,6 +263,17 @@ namespace CardCollector.Services
         public async Task<IReadOnlyDictionary<CatalogReviewItemKind, int>> GetOpenCountsByKindAsync(CancellationToken cancellationToken = default) =>
             await _reviewRepository.CountOpenByKindAsync(cancellationToken).ConfigureAwait(false);
 
+        public async Task<SaveResult> LinkKeepRetiredAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
+            if (item is null || item.Status != CatalogReviewItemStatus.Open)
+                return SaveResult.Missing("That review item is not open.");
+            if (!CatalogReviewPresenter.AllowedActions(item.Kind, item.Status).Contains(CatalogReviewAction.LinkKeepRetired))
+                return SaveResult.Failure([$"{item.Kind} items can't be linked to a retired printing."]);
+
+            return await LinkRetiredPrintingAsync(item, restore: false, cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<SaveResult> MapToPrintingAsync(int id, int catalogPrintingID, CancellationToken cancellationToken = default)
         {
             var item = await _reviewRepository.GetItemAsync(id, cancellationToken).ConfigureAwait(false);
@@ -279,7 +292,7 @@ namespace CardCollector.Services
             {
                 await _unitOfWork.ExecuteInTransactionAsync(async () =>
                 {
-                    result = await PlaceOnPrintingAsync(item, payload, printing, cancellationToken).ConfigureAwait(false);
+                    result = await PlaceOnPrintingAsync(item, payload, printing, null, cancellationToken).ConfigureAwait(false);
                     if (!result.Succeeded)
                         throw new CatalogReviewDecisionException(result);
                 }, cancellationToken).ConfigureAwait(false);
@@ -302,7 +315,7 @@ namespace CardCollector.Services
 
             var resolution = item.Kind switch
             {
-                CatalogReviewItemKind.UnmappedTCGProduct => "Product ignored",
+                CatalogReviewItemKind.RetiredPrintingListed or CatalogReviewItemKind.UnmappedTCGProduct => "Product ignored",
                 _ => "Kept the catalog as it was"
             };
             Close(item, CatalogReviewItemStatus.Rejected, resolution, Now());
@@ -385,6 +398,43 @@ namespace CardCollector.Services
             return result;
         }
 
+        /// <summary>
+        /// Links the product to the retired printing the item points at, first restoring the printing when
+        /// <paramref name="restore"/> is true.
+        /// </summary>
+        private async Task<SaveResult> LinkRetiredPrintingAsync(CatalogReviewItem item, bool restore, CancellationToken cancellationToken)
+        {
+            var printing = await _reviewRepository.GetPrintingAsync(item.CatalogPrintingID ?? 0, cancellationToken).ConfigureAwait(false);
+            if (printing is null)
+                return SaveResult.Missing("The retired printing no longer exists.");
+
+            var payload = JObject.Parse(item.PayloadJSON);
+            var described = CatalogPrintingFactory.Describe(printing);
+            var resolution = restore ? $"Restored {described} and linked the product" : $"Linked to {described}, kept retired";
+            SaveResult result = SaveResult.Success();
+            try
+            {
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    if (restore && printing.Status != CatalogStatus.Active)
+                    {
+                        printing.Status = CatalogStatus.Active;
+                        printing.DateModified = Now();
+                    }
+
+                    result = await PlaceOnPrintingAsync(item, payload, printing, resolution, cancellationToken).ConfigureAwait(false);
+                    if (!result.Succeeded)
+                        throw new CatalogReviewDecisionException(result);
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            catch (CatalogReviewDecisionException failed)
+            {
+                return failed.Result;
+            }
+
+            return FinishPlacement(result, item);
+        }
+
         private void LogDecision(CatalogReviewItem item) =>
             _logger.LogInformation(
                 "Catalog review item {ItemID} ({Kind}) {Status}: {Resolution} (card {CardID}, printing {PrintingID})",
@@ -393,11 +443,12 @@ namespace CardCollector.Services
         private DateTime Now() => _timeProvider.GetUtcNow().UtcDateTime;
 
         /// <summary>
-        /// Links the item's TCGPlayer product to the printing, then closes the item. Runs inside the caller's transaction.
+        /// Links the item's TCGPlayer product to the printing, then closes the item with <paramref name="resolution"/> (or
+        /// "Linked to ..."). Runs inside the caller's transaction.
         /// </summary>
-        private async Task<SaveResult> PlaceOnPrintingAsync(CatalogReviewItem item, JObject payload, CatalogPrinting printing, CancellationToken cancellationToken)
+        private async Task<SaveResult> PlaceOnPrintingAsync(CatalogReviewItem item, JObject payload, CatalogPrinting printing, string? resolution, CancellationToken cancellationToken)
         {
-            if (item.Kind != CatalogReviewItemKind.UnmappedTCGProduct)
+            if (item.Kind is not (CatalogReviewItemKind.UnmappedTCGProduct or CatalogReviewItemKind.RetiredPrintingListed))
                 return SaveResult.Failure([$"{item.Kind} items can't be placed on a printing."]);
 
             var productID = CatalogReviewPresenter.ReadString(payload, "ProductID");
@@ -417,7 +468,7 @@ namespace CardCollector.Services
                 LastSeenUTC = now,
                 Source = CatalogSource.TCGPlayer
             });
-            Close(item, CatalogReviewItemStatus.Accepted, $"Linked to {CatalogPrintingFactory.Describe(printing)}", now);
+            Close(item, CatalogReviewItemStatus.Accepted, resolution ?? $"Linked to {CatalogPrintingFactory.Describe(printing)}", now);
             await _reviewRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return SaveResult.Success();
         }

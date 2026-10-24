@@ -39,6 +39,10 @@ namespace CardCollector.Rules.Catalog
                 .SelectMany(p => p.Sources.Where(s => s.Source == CatalogSource.TCGPlayer).Select(s => (Printing: p, Link: s)))
                 .GroupBy(x => x.Link.ExternalKey)
                 .ToDictionary(g => g.Key, g => g.First());
+            var retiredPrintings = state.Cards
+                .Where(c => c.Status == CatalogStatus.Active)
+                .SelectMany(c => c.Printings.Where(p => p.Status != CatalogStatus.Active))
+                .ToList();
 
             foreach (var product in products)
             {
@@ -50,6 +54,15 @@ namespace CardCollector.Rules.Catalog
                 }
 
                 var (card, reason) = ChooseCard(product, printingsByCode);
+
+                // A retired printing keeps its key in the database, so creating it again would break the save; the user decides instead.
+                var retired = FindRetiredPrinting(product, card is not null ? card.Printings : retiredPrintings);
+                if (retired is not null)
+                {
+                    ReportRetiredPrinting(retired, product, key, result);
+                    continue;
+                }
+
                 if (card is null)
                 {
                     if (!setResolver.IsKnownPrefix(CardDataMapper.GetSetPrefix(product.SetCode)))
@@ -165,7 +178,40 @@ namespace CardCollector.Rules.Catalog
             }
         }
 
+        /// <summary>
+        /// The retired printing among <paramref name="printings"/> with the product's exact set code, rarity, and variant; when
+        /// several cards have one, only a card named like the product counts. Null when there is none, no unique one, or an
+        /// active printing matches too (the product links to that one).
+        /// </summary>
+        private static CatalogPrinting? FindRetiredPrinting(SourceTCGProduct product, IEnumerable<CatalogPrinting> printings)
+        {
+            var matches = printings
+                .Where(p => string.Equals(p.SetCode, product.SetCode, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(p.RarityName, product.RarityName, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(p.PrintVariant, product.PrintVariant, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matches.Any(p => p.Status == CatalogStatus.Active))
+                return null;
+            if (matches.Count > 1)
+                matches = matches.Where(p => string.Equals(p.Card?.Name, product.CardName, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            return matches.Count == 1 ? matches[0] : null;
+        }
+
         private static string FormatVariant(string? printVariant) => printVariant is null ? string.Empty : $" ({printVariant})";
+
+        private static void ReportRetiredPrinting(CatalogPrinting retired, SourceTCGProduct product, string key, CatalogDiffResult result)
+        {
+            var cardName = retired.Card?.Name ?? product.CardName;
+            result.Items.Add(new DetectedReviewItem
+            {
+                ExternalSubject = $"tcg:{key}",
+                Kind = CatalogReviewItemKind.RetiredPrintingListed,
+                Payload = new { product.ProductID, CardName = cardName, product.SetCode, product.RarityName, product.PrintVariant },
+                Printing = retired,
+                Summary = $"TCGPlayer product {product.ProductID} lists \"{cardName}\" {CatalogPrintingFactory.Describe(retired)}, which is retired"
+            });
+        }
 
         private static void TouchLink(
             CatalogPrinting printing,

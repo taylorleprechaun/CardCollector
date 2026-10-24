@@ -17,6 +17,9 @@ namespace CardCollector.Tests.Services
     [TestClass]
     public sealed class CatalogReviewServiceTests
     {
+        private const string RetiredListingPayload =
+            """{"ProductID":695684,"CardName":"Synthetic Theory","SetCode":"BLGG-EN127","RarityName":"Ultra Rare","PrintVariant":null}""";
+
         private Mock<ICardDataRepository> _cardDataRepositoryMock = null!;
         private int _cardID;
         private SqliteConnection _connection = null!;
@@ -144,6 +147,40 @@ namespace CardCollector.Tests.Services
 
         [TestCleanup]
         public void Cleanup() => _connection.Dispose();
+
+        [TestMethod]
+        public async Task AcceptAsync_RetiredPrintingListed_RestoresPrintingAndLinksProduct()
+        {
+            await RetireSeededPrintingAsync();
+            var itemID = await AddItemAsync(CatalogReviewItemKind.RetiredPrintingListed, RetiredListingPayload, printingID: _printingID);
+
+            var result = await Service().AcceptAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            var printing = await verify.CatalogPrintings.Include(p => p.Sources).SingleAsync();
+            Assert.AreEqual(CatalogStatus.Active, printing.Status);
+            Assert.AreEqual("695684", printing.Sources.Single().ExternalKey);
+            var item = await verify.CatalogReviewItems.SingleAsync();
+            Assert.AreEqual(CatalogReviewItemStatus.Accepted, item.Status);
+            Assert.AreEqual("Restored BLGG-EN127 Ultra Rare and linked the product", item.Resolution);
+            _cardDataRepositoryMock.Verify(r => r.QueueReload(), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task AcceptAsync_RetiredPrintingListedButProductAlreadyLinked_FailsAndKeepsPrintingRetired()
+        {
+            await RetireSeededPrintingAsync();
+            await LinkProductAsync("695684");
+            var itemID = await AddItemAsync(CatalogReviewItemKind.RetiredPrintingListed, RetiredListingPayload, printingID: _printingID);
+
+            var result = await Service().AcceptAsync(itemID);
+
+            Assert.IsFalse(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(CatalogStatus.Retired, (await verify.CatalogPrintings.SingleAsync()).Status);
+            Assert.AreEqual(CatalogReviewItemStatus.Open, (await verify.CatalogReviewItems.SingleAsync()).Status);
+        }
 
         [TestMethod]
         public async Task CreateCardAsync_CardWithThatNameExists_FailsAndLeavesItOpen()
@@ -294,6 +331,34 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task LinkKeepRetiredAsync_RetiredPrintingListed_LinksProductAndKeepsPrintingRetired()
+        {
+            await RetireSeededPrintingAsync();
+            var itemID = await AddItemAsync(CatalogReviewItemKind.RetiredPrintingListed, RetiredListingPayload, printingID: _printingID);
+
+            var result = await Service().LinkKeepRetiredAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            var printing = await verify.CatalogPrintings.Include(p => p.Sources).SingleAsync();
+            Assert.AreEqual(CatalogStatus.Retired, printing.Status);
+            Assert.AreEqual("695684", printing.Sources.Single().ExternalKey);
+            Assert.AreEqual("Linked to BLGG-EN127 Ultra Rare, kept retired", (await verify.CatalogReviewItems.SingleAsync()).Resolution);
+        }
+
+        [TestMethod]
+        public async Task LinkKeepRetiredAsync_UnmappedProduct_IsRefused()
+        {
+            var itemID = await AddItemAsync(CatalogReviewItemKind.UnmappedTCGProduct, RetiredListingPayload);
+
+            var result = await Service().LinkKeepRetiredAsync(itemID);
+
+            Assert.IsFalse(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(0, await verify.CatalogPrintingSources.CountAsync());
+        }
+
+        [TestMethod]
         public async Task MapToPrintingAsync_LegacyRowUnmapped_FailsAndRestoresNothing()
         {
             var itemID = await AddItemAsync(CatalogReviewItemKind.LegacyRowUnmapped, """{"Table":"CollectionEntries","Row":{"ID":4331,"CardID":37440988,"SetCode":"LDS1-EN101","RarityName":"Ultra Rare","Quantity":2},"Reason":"No match"}""");
@@ -341,6 +406,21 @@ namespace CardCollector.Tests.Services
             var result = await Service().RejectAsync(itemID);
 
             Assert.IsFalse(result.Succeeded);
+        }
+
+        [TestMethod]
+        public async Task RejectAsync_RetiredPrintingListed_IgnoresProductAndKeepsPrintingRetired()
+        {
+            await RetireSeededPrintingAsync();
+            var itemID = await AddItemAsync(CatalogReviewItemKind.RetiredPrintingListed, RetiredListingPayload, printingID: _printingID);
+
+            var result = await Service().RejectAsync(itemID);
+
+            Assert.IsTrue(result.Succeeded);
+            using var verify = NewContext();
+            Assert.AreEqual(CatalogStatus.Retired, (await verify.CatalogPrintings.SingleAsync()).Status);
+            Assert.AreEqual(0, await verify.CatalogPrintingSources.CountAsync());
+            Assert.AreEqual("Product ignored", (await verify.CatalogReviewItems.SingleAsync()).Resolution);
         }
 
         [TestMethod]
@@ -447,6 +527,14 @@ namespace CardCollector.Tests.Services
 
         private AppDBContext NewContext() =>
             new(new DbContextOptionsBuilder<AppDBContext>().UseSqlite(_connection).Options);
+
+        private async Task RetireSeededPrintingAsync()
+        {
+            using var context = NewContext();
+            var printing = await context.CatalogPrintings.SingleAsync(p => p.ID == _printingID);
+            printing.Status = CatalogStatus.Retired;
+            await context.SaveChangesAsync();
+        }
 
         private CatalogReviewService Service()
         {

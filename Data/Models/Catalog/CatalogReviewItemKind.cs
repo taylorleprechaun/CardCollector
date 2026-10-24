@@ -50,6 +50,10 @@ namespace CardCollector.Data.Models.Catalog
         [Display(Name = "Printing Not Seen")]
         PrintingNotSeen,
 
+        /// <summary>A TCGPlayer product not linked to anything has the exact key of a retired printing; recreating it would duplicate that key.</summary>
+        [Display(Name = "Retired Printing Listed")]
+        RetiredPrintingListed,
+
         [Display(Name = "Sync Anomaly")]
         SyncAnomaly,
 
