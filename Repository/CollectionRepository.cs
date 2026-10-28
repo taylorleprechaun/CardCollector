@@ -203,15 +203,18 @@ namespace CardCollector.Repository
             if (ids.Count == 0)
                 return new Dictionary<int, int>();
 
-            var entries = await _context.CollectionEntries
-                .Where(e => e.Status == CollectionStatus.Owned && ids.Contains(e.CatalogPrintingID))
-                .Select(e => new { PrintingID = e.CatalogPrintingID, e.Quantity })
+            // Filter in memory, not in SQL: printingIDs can be every tracked printing (about 14,000), and sending them as an
+            // IN list made one parameter per ID. Summing per printing in SQL keeps the result to one row per owned printing.
+            var owned = await _context.CollectionEntries
+                .Where(e => e.Status == CollectionStatus.Owned)
+                .GroupBy(e => e.CatalogPrintingID)
+                .Select(g => new { PrintingID = g.Key, Quantity = g.Sum(e => e.Quantity) })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return entries
-                .GroupBy(e => e.PrintingID)
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+            return owned
+                .Where(o => ids.Contains(o.PrintingID))
+                .ToDictionary(o => o.PrintingID, o => o.Quantity);
         }
 
         public async Task<OwnedCollectionStats> GetOwnedStatsAsync()
