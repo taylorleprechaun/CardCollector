@@ -5,6 +5,7 @@ using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Globalization;
 
 namespace CardCollector.Pages
 {
@@ -14,7 +15,11 @@ namespace CardCollector.Pages
         private readonly ICollectionRepository _collectionRepository;
         private readonly IRazorPartialRenderer _razorPartialRenderer;
 
+        public int CardCount => Orders.Sum(o => o.Quantity);
+
         public IReadOnlyList<EditionAuditEntryViewModel> Orders { get; private set; } = [];
+
+        public decimal TotalCost => Orders.Sum(o => (o.PurchasePrice ?? 0) * o.Quantity);
 
         public OrdersModel(ICardService cardService, ICollectionRepository collectionRepository, IRazorPartialRenderer razorPartialRenderer)
         {
@@ -58,8 +63,12 @@ namespace CardCollector.Pages
             if (!Request.IsAjaxRequest())
                 return RedirectToPage();
 
-            var orders = await _cardService.GetEnrichedOrdersAsync();
-            var match = orders.FirstOrDefault(o => o.EntryID == entryID);
+            Orders = (await _cardService.GetEnrichedOrdersAsync()).ToList();
+            Response.Headers["X-Orders-Count"] = Orders.Count.ToString(CultureInfo.InvariantCulture);
+            Response.Headers["X-Orders-Cards"] = CardCount.ToString(CultureInfo.InvariantCulture);
+            Response.Headers["X-Orders-Total"] = TotalCost.ToString(CultureInfo.InvariantCulture);
+
+            var match = Orders.FirstOrDefault(o => o.EntryID == entryID);
             if (match is null)
                 return Content(string.Empty, "text/html");
 

@@ -15,6 +15,21 @@ namespace CardCollector.Tests.Pages
         private Mock<IPendingOrderRepository> _pendingOrderRepositoryMock = null!;
 
         [TestMethod]
+        public async Task OnGetAsync_LinesWithQuantities_CardCountSumsQuantities()
+        {
+            _cardServiceMock.Setup(s => s.GetPendingCartAsync()).ReturnsAsync((IReadOnlyList<PendingOrderLineViewModel>)
+            [
+                new PendingOrderLineViewModel { PendingOrderLineID = 1, Quantity = 3 },
+                new PendingOrderLineViewModel { PendingOrderLineID = 2, Quantity = 1 }
+            ]);
+            var page = CreatePage();
+
+            await page.OnGetAsync();
+
+            Assert.AreEqual(4, page.CardCount);
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_PopulatesLinesFromCardService()
         {
             _cardServiceMock.Setup(s => s.GetPendingCartAsync())

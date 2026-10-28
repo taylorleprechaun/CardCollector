@@ -249,6 +249,35 @@ describe('collection-groups.js', () => {
     });
   });
 
+  describe('updateOrdersSummary', () => {
+    it('sets the order and card counts and the total', () => {
+      document.body.innerHTML = '<span id="ordersSummary"></span><strong id="ordersTotal"></strong>';
+      loadDeps();
+
+      updateOrdersSummary('3', '7', '41.5');
+
+      expect(document.getElementById('ordersSummary').textContent).toBe('3 orders · 7 cards');
+      expect(document.getElementById('ordersTotal').textContent).toBe('$41.50');
+    });
+
+    it('missing headers leave the header alone', () => {
+      document.body.innerHTML = '<span id="ordersSummary">2 orders · 2 cards</span><strong id="ordersTotal">$5.00</strong>';
+      loadDeps();
+
+      updateOrdersSummary(null, null, null);
+
+      expect(document.getElementById('ordersSummary').textContent).toBe('2 orders · 2 cards');
+      expect(document.getElementById('ordersTotal').textContent).toBe('$5.00');
+    });
+
+    it('missing elements do not throw', () => {
+      document.body.innerHTML = '';
+      loadDeps();
+
+      expect(() => updateOrdersSummary('1', '1', '1')).not.toThrow();
+    });
+  });
+
   function loadDeps() {
     loadScript('site.js');
     loadScript('collection-groups.js');

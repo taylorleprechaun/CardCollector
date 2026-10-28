@@ -30,6 +30,17 @@ function updateTotalCountBadge(newTotal) {
     badge.textContent = `${newTotal} ${badge.dataset.suffix || ''}`.trim();
 }
 
+// Updates the Orders page header from the X-Orders-* headers an order edit sends back; a no-op anywhere else.
+function updateOrdersSummary(rawCount, rawCards, rawTotal) {
+    if (rawCount === null || rawCount === undefined) return;
+
+    const summaryEl = document.getElementById('ordersSummary');
+    if (summaryEl) summaryEl.textContent = `${formatCountLabel(Number(rawCount) || 0, 'order')} · ${formatCountLabel(Number(rawCards) || 0, 'card')}`;
+
+    const totalEl = document.getElementById('ordersTotal');
+    if (totalEl) totalEl.textContent = '$' + (Number(rawTotal) || 0).toFixed(2);
+}
+
 // Appends a row the server sent to replace one that left the list (X-Ajax-Append), unless the list already shows it.
 function appendRow(list, html) {
     const template = document.createElement('template');
@@ -103,6 +114,7 @@ async function submitAjaxForm(form, submitter) {
         updateCartBadge(response.headers.get('X-Cart-Count'), response.headers.get('X-Cart-Total'));
         updateReviewBadge(response.headers.get('X-Review-Count'));
         updateReviewOpenCounts(response.headers.get('X-Review-Open-Counts'));
+        updateOrdersSummary(response.headers.get('X-Orders-Count'), response.headers.get('X-Orders-Cards'), response.headers.get('X-Orders-Total'));
         applyAjaxGroupResponse(form, html, response.headers.get('X-Ajax-Append') === 'true');
     } catch (err) {
         console.error('AJAX form submission failed', err);

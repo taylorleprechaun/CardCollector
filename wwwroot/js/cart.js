@@ -11,10 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Purchase Price starts blank on every line (it's unknown until staged), so the total
     // has to be recomputed client-side as each row's Price/Quantity is filled in.
     document.querySelectorAll('input[id^="linePrice"]').forEach(function (priceEl) {
-        priceEl.addEventListener('input', recomputeCartTotal);
+        priceEl.addEventListener('input', recomputeCartSummary);
     });
     document.querySelectorAll('[data-qty-target^="lineQuantity"]').forEach(function (btn) {
-        btn.addEventListener('click', recomputeCartTotal);
+        btn.addEventListener('click', recomputeCartSummary);
     });
 
     // Plain POST + redirect, so the button never needs re-enabling — the next page load resets it.
@@ -52,18 +52,23 @@ async function persistCartLineQuantity(pendingOrderLineID, quantity) {
     }
 }
 
-function recomputeCartTotal() {
-    const totalEl = document.getElementById('cartTotal');
-    if (!totalEl) return;
-
+function recomputeCartSummary() {
+    let lineCount = 0;
+    let cardCount = 0;
     let total = 0;
     document.querySelectorAll('input[id^="linePrice"]').forEach(function (priceEl) {
         const index = priceEl.id.replace('linePrice', '');
         const quantityEl = document.getElementById('lineQuantity' + index);
         const price = parseFloat(priceEl.value) || 0;
         const quantity = quantityEl ? (parseFloat(quantityEl.value) || 0) : 0;
+        lineCount++;
+        cardCount += quantity;
         total += price * quantity;
     });
 
-    totalEl.textContent = '$' + total.toFixed(2);
+    const totalEl = document.getElementById('cartTotal');
+    if (totalEl) totalEl.textContent = '$' + total.toFixed(2);
+
+    const summaryEl = document.getElementById('cartSummary');
+    if (summaryEl) summaryEl.textContent = `${formatCountLabel(lineCount, 'line')} · ${formatCountLabel(cardCount, 'card')}`;
 }

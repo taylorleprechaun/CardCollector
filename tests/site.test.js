@@ -243,6 +243,18 @@ describe('site.js', () => {
     });
   });
 
+  describe('formatCountLabel', () => {
+    it.each([
+      [0, '0 cards'],
+      [1, '1 card'],
+      [3, '3 cards']
+    ])('formats %i as "%s"', (count, expected) => {
+      loadScript('site.js');
+
+      expect(formatCountLabel(count, 'card')).toBe(expected);
+    });
+  });
+
   describe('initDatePickers', () => {
     it('calls flatpickr for each .cc-date-picker element not already initialized', () => {
       document.body.innerHTML = '<input class="cc-date-picker" id="a" /><input class="cc-date-picker" id="b" />';

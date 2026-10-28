@@ -11,6 +11,8 @@ namespace CardCollector.Pages
         private readonly ICardService _cardService;
         private readonly IPendingOrderRepository _pendingOrderRepository;
 
+        public int CardCount => Lines.Sum(l => l.Quantity);
+
         public IReadOnlyList<PendingOrderLineViewModel> Lines { get; private set; } = [];
 
         public CartModel(ICardService cardService, IPendingOrderRepository pendingOrderRepository)

@@ -83,12 +83,41 @@ describe('cart.js', () => {
     });
   });
 
-  describe('recomputeCartTotal', () => {
-    it('missing #cartTotal is a no-op', () => {
+  describe('recomputeCartSummary', () => {
+    it('missing #cartTotal and #cartSummary is a no-op', () => {
       document.body.innerHTML = '';
+      loadScript('site.js');
       loadScript('cart.js');
 
-      expect(() => recomputeCartTotal()).not.toThrow();
+      expect(() => recomputeCartSummary()).not.toThrow();
+    });
+
+    it('counts lines and cards (lines times quantity) into #cartSummary', () => {
+      document.body.innerHTML = `
+        <span id="cartSummary"></span>
+        <input id="linePrice1" value="" />
+        <input id="lineQuantity1" value="2" />
+        <input id="linePrice2" value="10.00" />
+        <input id="lineQuantity2" value="1" />`;
+      loadScript('site.js');
+      loadScript('cart.js');
+
+      recomputeCartSummary();
+
+      expect(document.getElementById('cartSummary').textContent).toBe('2 lines · 3 cards');
+    });
+
+    it('uses the singular for one line holding one card', () => {
+      document.body.innerHTML = `
+        <span id="cartSummary"></span>
+        <input id="linePrice1" value="" />
+        <input id="lineQuantity1" value="1" />`;
+      loadScript('site.js');
+      loadScript('cart.js');
+
+      recomputeCartSummary();
+
+      expect(document.getElementById('cartSummary').textContent).toBe('1 line · 1 card');
     });
 
     it('non-numeric price or missing quantity element are treated as zero', () => {
@@ -99,7 +128,7 @@ describe('cart.js', () => {
         <input id="linePrice2" value="5.00" />`;
       loadScript('cart.js');
 
-      recomputeCartTotal();
+      recomputeCartSummary();
 
       expect(document.getElementById('cartTotal').textContent).toBe('$0.00');
     });
@@ -113,7 +142,7 @@ describe('cart.js', () => {
         <input id="lineQuantity2" value="3" />`;
       loadScript('cart.js');
 
-      recomputeCartTotal();
+      recomputeCartSummary();
 
       expect(document.getElementById('cartTotal').textContent).toBe('$40.00');
     });

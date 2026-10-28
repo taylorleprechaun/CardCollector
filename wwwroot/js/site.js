@@ -111,6 +111,11 @@ function updateReviewOpenCounts(rawJSON) {
     });
 }
 
+// The count with its noun, adding "s" unless the count is 1 ("1 card", "3 cards"); matches CountExtensions.ToCountLabel.
+function formatCountLabel(count, noun) {
+    return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 // Every AJAX POST goes through here, so the X-Requested-With header the server checks for is never left off.
 function postAjax(url, body) {
     return fetch(url, { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } });

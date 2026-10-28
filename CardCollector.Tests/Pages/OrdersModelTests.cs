@@ -18,6 +18,22 @@ namespace CardCollector.Tests.Pages
         private Mock<IRazorPartialRenderer> _razorPartialRendererMock = null!;
 
         [TestMethod]
+        public async Task OnGetAsync_OrdersWithQuantitiesAndPrices_SumsCardCountAndTotalCost()
+        {
+            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync()).ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)
+            [
+                new EditionAuditEntryViewModel { EntryID = 1, Quantity = 3, PurchasePrice = 2.50m },
+                new EditionAuditEntryViewModel { EntryID = 2, Quantity = 1, PurchasePrice = null }
+            ]);
+            var page = CreatePage();
+
+            await page.OnGetAsync();
+
+            Assert.AreEqual(4, page.CardCount);
+            Assert.AreEqual(7.50m, page.TotalCost);
+        }
+
+        [TestMethod]
         public async Task OnGetAsync_PopulatesOrdersFromCardService()
         {
             _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync())
@@ -50,6 +66,24 @@ namespace CardCollector.Tests.Pages
             var result = await page.OnPostEditAsync(999, 2, null, null, null, null, null, null) as ContentResult;
 
             Assert.AreEqual(string.Empty, result!.Content);
+        }
+
+        [TestMethod]
+        public async Task OnPostEditAsync_AjaxRequest_SendsOrderCountCardCountAndTotalHeaders()
+        {
+            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync()).ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)
+            [
+                new EditionAuditEntryViewModel { EntryID = 1, Quantity = 2, PurchasePrice = 1.25m },
+                new EditionAuditEntryViewModel { EntryID = 2, Quantity = 3, PurchasePrice = 4m }
+            ]);
+            var page = CreatePage(isAjax: true);
+
+            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null);
+
+            var headers = page.HttpContext.Response.Headers;
+            Assert.AreEqual("2", headers["X-Orders-Count"].ToString());
+            Assert.AreEqual("5", headers["X-Orders-Cards"].ToString());
+            Assert.AreEqual("14.50", headers["X-Orders-Total"].ToString());
         }
 
         [TestMethod]
