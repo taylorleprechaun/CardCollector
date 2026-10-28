@@ -264,10 +264,10 @@ namespace CardCollector.Services
         Task UnignoreCardAsync(int cardID);
 
         /// <summary>
-        /// Updates the staged quantity for a single cart line, clamped to the valid cart quantity range.
-        /// Returns false if no such line exists.
+        /// Saves a cart line's condition, edition, market price, purchase date, purchase price, and quantity
+        /// (clamped to the valid cart quantity range). Returns false if no such line exists.
         /// </summary>
-        Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
+        Task<bool> UpdateCartLineAsync(CartLineOverride line);
 
         /// <summary>
         /// Moves the tracked printing with the given ID to a newer catalog printing of the same card, preserving its

@@ -25,7 +25,8 @@ function buildPriceURL({ printingID }, edition) {
     return `/api/price?printingID=${encodeURIComponent(printingID)}&edition=${encodeURIComponent(edition)}`;
 }
 
-function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
+// onUpdated (optional) runs after a fetched price is written into marketPriceEl, since a script-set value fires no input event.
+function bindPriceRefresh(editionSelect, marketPriceEl, getParams, onUpdated) {
     async function refreshPrice() {
         const url = buildPriceURL(getParams(), editionSelect.value);
         if (!url) return;
@@ -33,7 +34,10 @@ function bindPriceRefresh(editionSelect, marketPriceEl, getParams) {
             const resp = await fetch(url);
             if (resp.ok) {
                 const { price } = await resp.json();
-                if (price !== null && price !== undefined) marketPriceEl.value = price.toFixed(2);
+                if (price !== null && price !== undefined) {
+                    marketPriceEl.value = price.toFixed(2);
+                    onUpdated?.();
+                }
             }
         } catch (err) { console.warn('Failed to fetch price:', err); }
     }

@@ -537,24 +537,48 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
-        public async Task UpdateCartLineQuantityAsync_NoSuchLine_ReturnsFalse()
+        public async Task UpdateCartLineAsync_NoSuchLine_ReturnsFalse()
         {
-            _pendingOrderRepositoryMock.Setup(r => r.UpdateQuantityAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(false);
+            _pendingOrderRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<PendingOrderLine>())).ReturnsAsync(false);
 
-            var result = await _service.UpdateCartLineQuantityAsync(999, 1);
+            var result = await _service.UpdateCartLineAsync(new CartLineOverride { PendingOrderLineID = 999 });
 
             Assert.IsFalse(result);
         }
 
         [TestMethod]
-        public async Task UpdateCartLineQuantityAsync_QuantityAboveMax_ClampsBeforeCallingRepository()
+        public async Task UpdateCartLineAsync_NullLine_ThrowsArgumentNullException()
         {
-            _pendingOrderRepositoryMock.Setup(r => r.UpdateQuantityAsync(1, 3)).ReturnsAsync(true);
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => _service.UpdateCartLineAsync(null!));
+        }
 
-            var result = await _service.UpdateCartLineQuantityAsync(1, 10);
+        [TestMethod]
+        public async Task UpdateCartLineAsync_QuantityAboveMax_SavesEveryFieldWithQuantityClamped()
+        {
+            PendingOrderLine? saved = null;
+            _pendingOrderRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<PendingOrderLine>()))
+                .Callback<PendingOrderLine>(l => saved = l)
+                .ReturnsAsync(true);
+
+            var result = await _service.UpdateCartLineAsync(new CartLineOverride
+            {
+                Condition = CardCondition.LightlyPlayed,
+                Edition = CardEdition.Unlimited,
+                MarketPriceAtEntry = 4.25m,
+                PendingOrderLineID = 1,
+                PurchaseDate = new DateTime(2026, 10, 20),
+                PurchasePrice = 3.50m,
+                Quantity = 10
+            });
 
             Assert.IsTrue(result);
-            _pendingOrderRepositoryMock.Verify(r => r.UpdateQuantityAsync(1, 3), Times.Once);
+            Assert.AreEqual(1, saved!.ID);
+            Assert.AreEqual(CardCondition.LightlyPlayed, saved.Condition);
+            Assert.AreEqual(CardEdition.Unlimited, saved.Edition);
+            Assert.AreEqual(4.25m, saved.MarketPriceAtEntry);
+            Assert.AreEqual(new DateTime(2026, 10, 20), saved.PurchaseDate);
+            Assert.AreEqual(3.50m, saved.PurchasePrice);
+            Assert.AreEqual(3, saved.Quantity);
         }
     }
 }

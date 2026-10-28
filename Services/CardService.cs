@@ -1170,8 +1170,21 @@ namespace CardCollector.Services
         public async Task UnignoreCardAsync(int cardID) =>
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
 
-        public async Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity) =>
-            await _pendingOrderRepository.UpdateQuantityAsync(pendingOrderLineID, Math.Clamp(quantity, 1, MaxCartQuantity)).ConfigureAwait(false);
+        public async Task<bool> UpdateCartLineAsync(CartLineOverride line)
+        {
+            ArgumentNullException.ThrowIfNull(line);
+
+            return await _pendingOrderRepository.UpdateAsync(new PendingOrderLine
+            {
+                Condition = line.Condition,
+                Edition = line.Edition,
+                ID = line.PendingOrderLineID,
+                MarketPriceAtEntry = line.MarketPriceAtEntry,
+                PurchaseDate = line.PurchaseDate,
+                PurchasePrice = line.PurchasePrice,
+                Quantity = Math.Clamp(line.Quantity, 1, MaxCartQuantity)
+            }).ConfigureAwait(false);
+        }
 
         public async Task UpgradePreferredVersionAsync(int preferredVersionID, int newPrintingID)
         {

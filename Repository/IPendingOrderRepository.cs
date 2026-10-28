@@ -43,8 +43,9 @@ namespace CardCollector.Repository
         Task<(int Count, decimal Total)> GetSummaryAsync();
 
         /// <summary>
-        /// Updates the Quantity of the pending order line with the given ID. Returns false if no such line exists.
+        /// Updates the editable fields (condition, edition, market price, purchase date, purchase price, and quantity)
+        /// of the pending order line whose ID matches <paramref name="line"/>. Returns false if no such line exists.
         /// </summary>
-        Task<bool> UpdateQuantityAsync(int id, int quantity);
+        Task<bool> UpdateAsync(PendingOrderLine line);
     }
 }

@@ -1,8 +1,10 @@
+using CardCollector.Extensions;
 using CardCollector.Repository;
 using CardCollector.Services;
 using CardCollector.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Globalization;
 
 namespace CardCollector.Pages
 {
@@ -29,7 +31,14 @@ namespace CardCollector.Pages
         public async Task<IActionResult> OnPostRemoveAsync(int id)
         {
             await _pendingOrderRepository.DeleteAsync(id).ConfigureAwait(false);
-            return RedirectToPage();
+
+            if (!Request.IsAjaxRequest())
+                return RedirectToPage();
+
+            var (cartCount, cartTotal) = await _cardService.GetCartSummaryAsync().ConfigureAwait(false);
+            Response.Headers["X-Cart-Count"] = cartCount.ToString(CultureInfo.InvariantCulture);
+            Response.Headers["X-Cart-Total"] = cartTotal.ToString(CultureInfo.InvariantCulture);
+            return new OkResult();
         }
 
         public async Task<IActionResult> OnPostSubmitAllAsync(IReadOnlyList<CartLineOverride>? lines)
@@ -55,9 +64,12 @@ namespace CardCollector.Pages
             return RedirectToPage("/Orders");
         }
 
-        public async Task<IActionResult> OnPostUpdateQuantityAsync(int id, int quantity)
+        public async Task<IActionResult> OnPostUpdateLineAsync(CartLineOverride? line)
         {
-            var updated = await _cardService.UpdateCartLineQuantityAsync(id, quantity).ConfigureAwait(false);
+            if (line is null)
+                return BadRequest();
+
+            var updated = await _cardService.UpdateCartLineAsync(line).ConfigureAwait(false);
             return updated ? new OkResult() : NotFound();
         }
     }

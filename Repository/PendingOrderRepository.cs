@@ -86,13 +86,20 @@ namespace CardCollector.Repository
             return (lines.Count, total);
         }
 
-        public async Task<bool> UpdateQuantityAsync(int id, int quantity)
+        public async Task<bool> UpdateAsync(PendingOrderLine line)
         {
-            var line = await _context.PendingOrderLines.FindAsync(id).ConfigureAwait(false);
-            if (line is null)
+            ArgumentNullException.ThrowIfNull(line);
+
+            var existing = await _context.PendingOrderLines.FindAsync(line.ID).ConfigureAwait(false);
+            if (existing is null)
                 return false;
 
-            line.Quantity = quantity;
+            existing.Condition = line.Condition;
+            existing.Edition = line.Edition;
+            existing.MarketPriceAtEntry = line.MarketPriceAtEntry;
+            existing.PurchaseDate = line.PurchaseDate;
+            existing.PurchasePrice = line.PurchasePrice;
+            existing.Quantity = line.Quantity;
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return true;
         }

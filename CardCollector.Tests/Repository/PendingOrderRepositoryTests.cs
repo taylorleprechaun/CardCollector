@@ -152,7 +152,7 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
-        public async Task UpdateQuantityAsync_ExistingLine_UpdatesQuantity()
+        public async Task UpdateAsync_ExistingLine_SavesEditableFieldsAndKeepsThePrinting()
         {
             using var context = InMemoryDbContextFactory.Create();
             CatalogTestData.SeedPrintings(context, (101, 1));
@@ -160,22 +160,46 @@ namespace CardCollector.Tests.Repository
             var line = new PendingOrderLine { CatalogPrintingID = 101, Quantity = 1 };
             await repository.AddRangeAsync([line]);
 
-            var result = await repository.UpdateQuantityAsync(line.ID, 3);
+            var result = await repository.UpdateAsync(new PendingOrderLine
+            {
+                Condition = CardCondition.LightlyPlayed,
+                Edition = CardEdition.Unlimited,
+                ID = line.ID,
+                MarketPriceAtEntry = 4.25m,
+                PurchaseDate = new DateTime(2026, 10, 20),
+                PurchasePrice = 3.50m,
+                Quantity = 3
+            });
 
             Assert.IsTrue(result);
-            var lines = await repository.GetAllAsync();
-            Assert.AreEqual(3, lines[0].Quantity);
+            var saved = (await repository.GetAllAsync()).Single();
+            Assert.AreEqual(101, saved.CatalogPrintingID);
+            Assert.AreEqual(CardCondition.LightlyPlayed, saved.Condition);
+            Assert.AreEqual(CardEdition.Unlimited, saved.Edition);
+            Assert.AreEqual(4.25m, saved.MarketPriceAtEntry);
+            Assert.AreEqual(new DateTime(2026, 10, 20), saved.PurchaseDate);
+            Assert.AreEqual(3.50m, saved.PurchasePrice);
+            Assert.AreEqual(3, saved.Quantity);
         }
 
         [TestMethod]
-        public async Task UpdateQuantityAsync_NoSuchLine_ReturnsFalse()
+        public async Task UpdateAsync_NoSuchLine_ReturnsFalse()
         {
             using var context = InMemoryDbContextFactory.Create();
             var repository = new PendingOrderRepository(context);
 
-            var result = await repository.UpdateQuantityAsync(999, 2);
+            var result = await repository.UpdateAsync(new PendingOrderLine { ID = 999, Quantity = 2 });
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public async Task UpdateAsync_NullLine_ThrowsArgumentNullException()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PendingOrderRepository(context);
+
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         }
     }
 }

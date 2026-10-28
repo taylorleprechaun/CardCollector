@@ -42,6 +42,20 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostRemoveAsync_AjaxRequest_DeletesLineAndReturnsOkWithCartSummaryHeaders()
+        {
+            _cardServiceMock.Setup(s => s.GetCartSummaryAsync()).ReturnsAsync((2, 7.5m));
+            var page = CreatePage(isAjax: true);
+
+            var result = await page.OnPostRemoveAsync(5);
+
+            _pendingOrderRepositoryMock.Verify(r => r.DeleteAsync(5), Times.Once);
+            Assert.IsInstanceOfType<OkResult>(result);
+            Assert.AreEqual("2", page.HttpContext.Response.Headers["X-Cart-Count"].ToString());
+            Assert.AreEqual("7.5", page.HttpContext.Response.Headers["X-Cart-Total"].ToString());
+        }
+
+        [TestMethod]
         public async Task OnPostRemoveAsync_DeletesLineAndRedirects()
         {
             var page = CreatePage();
@@ -128,23 +142,35 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public async Task OnPostUpdateQuantityAsync_NoSuchLine_ReturnsNotFound()
+        public async Task OnPostUpdateLineAsync_NoSuchLine_ReturnsNotFound()
         {
-            _cardServiceMock.Setup(s => s.UpdateCartLineQuantityAsync(999, 2)).ReturnsAsync(false);
+            var line = new CartLineOverride { PendingOrderLineID = 999 };
+            _cardServiceMock.Setup(s => s.UpdateCartLineAsync(line)).ReturnsAsync(false);
             var page = CreatePage();
 
-            var result = await page.OnPostUpdateQuantityAsync(999, 2);
+            var result = await page.OnPostUpdateLineAsync(line);
 
             Assert.IsInstanceOfType<NotFoundResult>(result);
         }
 
         [TestMethod]
-        public async Task OnPostUpdateQuantityAsync_UpdateSucceeds_ReturnsOk()
+        public async Task OnPostUpdateLineAsync_NullLine_ReturnsBadRequest()
         {
-            _cardServiceMock.Setup(s => s.UpdateCartLineQuantityAsync(1, 2)).ReturnsAsync(true);
             var page = CreatePage();
 
-            var result = await page.OnPostUpdateQuantityAsync(1, 2);
+            var result = await page.OnPostUpdateLineAsync(null);
+
+            Assert.IsInstanceOfType<BadRequestResult>(result);
+        }
+
+        [TestMethod]
+        public async Task OnPostUpdateLineAsync_UpdateSucceeds_ReturnsOk()
+        {
+            var line = new CartLineOverride { PendingOrderLineID = 1, PurchasePrice = 2.50m };
+            _cardServiceMock.Setup(s => s.UpdateCartLineAsync(line)).ReturnsAsync(true);
+            var page = CreatePage();
+
+            var result = await page.OnPostUpdateLineAsync(line);
 
             Assert.IsInstanceOfType<OkResult>(result);
         }
@@ -156,10 +182,14 @@ namespace CardCollector.Tests.Pages
             _pendingOrderRepositoryMock = new Mock<IPendingOrderRepository>();
         }
 
-        private CartModel CreatePage()
+        private CartModel CreatePage(bool isAjax = false)
         {
             var page = new CartModel(_cardServiceMock.Object, _pendingOrderRepositoryMock.Object);
-            PageContextFactory.Attach(page);
+            PageContextFactory.Attach(page, httpContext =>
+            {
+                if (isAjax)
+                    httpContext.Request.Headers["X-Requested-With"] = "XMLHttpRequest";
+            });
             return page;
         }
     }
