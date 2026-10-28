@@ -4,38 +4,100 @@
 @using CardCollector.ViewModels
 @{
     ViewData["Title"] = "Orders";
+    var isSearching = !string.IsNullOrWhiteSpace(Model.Query) || Model.HasActiveFilters;
+    var filterRouteValues = Model.GetFilterRouteValues();
+    var editAction = Url.Page("/Orders", "Edit", filterRouteValues);
+
+    string SortURL()
+    {
+        var q = string.IsNullOrWhiteSpace(Model.Query) ? "" : $"&query={Uri.EscapeDataString(Model.Query)}";
+        var ct = string.IsNullOrWhiteSpace(Model.CardType) ? "" : $"&cardType={Uri.EscapeDataString(Model.CardType)}";
+        var sn = string.IsNullOrWhiteSpace(Model.SetName) ? "" : $"&setName={Uri.EscapeDataString(Model.SetName)}";
+        var rn = string.IsNullOrWhiteSpace(Model.RarityName) ? "" : $"&rarityName={Uri.EscapeDataString(Model.RarityName)}";
+        return $"/Orders?sortDescending={!Model.SortDescending}&pageSize={Model.PageSize}&pageNumber=1{q}{ct}{sn}{rn}";
+    }
+
+    var clearFiltersURL = $"/Orders?sortDescending={Model.SortDescending}&pageSize={Model.PageSize}{(!string.IsNullOrWhiteSpace(Model.Query) ? $"&query={Uri.EscapeDataString(Model.Query)}" : "")}";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
     <h1>Orders</h1>
     <div class="d-flex flex-wrap align-items-center gap-3">
         <span class="fs-6">Total: <strong id="ordersTotal">$@Model.TotalCost.ToString("F2")</strong></span>
-        <span class="badge-neutral fs-6" id="ordersSummary">@Model.Orders.Count.ToCountLabel("order") &middot; @Model.CardCount.ToCountLabel("card")</span>
+        <span class="badge-neutral fs-6" id="ordersSummary">@Model.Results.TotalCount.ToCountLabel("order") &middot; @Model.CardCount.ToCountLabel("card")</span>
     </div>
 </div>
 
-@if (Model.Orders.Count == 0)
+<p class="text-muted mb-4">
+    @if (isSearching)
+    {
+        <text>The counts and total cover only the orders matching your search or filters.</text>
+    }
+    else
+    {
+        <text>Cards you&rsquo;ve bought that haven&rsquo;t arrived yet. Submit the <a href="/Cart">Cart</a> to add more.</text>
+    }
+</p>
+
+<partial name="_SearchForm" model='new SearchFormViewModel
+{
+    ActiveFilterCount = Model.ActiveFilterCount,
+    AutocompleteURL = "?handler=OrderAutocomplete",
+    ClearFiltersURL = clearFiltersURL,
+    ExtraHiddenInputs = new Dictionary<string, string>
+    {
+        ["sortDescending"] = Model.SortDescending.ToString()
+    },
+    Filters = new AdvancedFiltersViewModel
+    {
+        AvailableRarityNames = Model.AvailableRarityNames,
+        AvailableSetNames = Model.AvailableSetNames,
+        CurrentCardType = Model.CardType,
+        CurrentRarityName = Model.RarityName,
+        CurrentSetName = Model.SetName
+    },
+    HasActiveFilters = Model.HasActiveFilters,
+    PageSize = Model.PageSize,
+    Placeholder = "Search by name, set, or rarity…",
+    Query = Model.Query
+}' />
+
+@if (!Model.Results.Items.Any())
 {
     <div class="alert alert-info text-center py-5">
-        <h4>No orders yet</h4>
-        <p class="mb-3">Head to <a href="/Discover">Discover</a> to find cards to order.</p>
+        @if (!isSearching)
+        {
+            <h4>No orders yet</h4>
+            <p class="mb-3">Head to <a href="/Discover">Discover</a> to find cards to order.</p>
+        }
+        else
+        {
+            <span>No orders match your search or filters.</span>
+        }
     </div>
 }
 else
 {
+    <div class="mb-2">
+        <a href="@SortURL()" class="text-body text-decoration-none fw-bold">
+            Card @(Model.SortDescending ? "↓" : "↑")
+        </a>
+    </div>
     <div class="list-group mb-4 cc-table-card" id="ordersList">
-        @foreach (var order in Model.Orders)
+        @foreach (var order in Model.Results.Items)
         {
             <partial name="_OrderRow" model="order" />
         }
     </div>
+
+    <partial name="_Pagination" model='new PaginationViewModel { AriaLabel = "Orders pagination", PageName = "Orders", PageNumber = Model.PageNumber, PageSize = Model.PageSize, Query = Model.Query, TotalPages = Model.Results.TotalPages, HasPreviousPage = Model.Results.HasPreviousPage, HasNextPage = Model.Results.HasNextPage, AdditionalParams = Model.GetPaginationParams() }' />
 }
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content">
-            <form method="post" action="/Orders?handler=Edit" id="editForm" class="ajax-form">
+            <form method="post" action="@editAction" id="editForm" class="ajax-form">
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Edit Order</h5>
@@ -58,7 +120,7 @@ else
 <div class="modal fade" id="markOwnedModal" tabindex="-1" aria-labelledby="markOwnedModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content">
-            <form method="post" asp-page-handler="MarkOwned">
+            <form method="post" asp-page-handler="MarkOwned" asp-all-route-data="filterRouteValues">
                 <div class="modal-header">
                     <h5 class="modal-title" id="markOwnedModalLabel">Add to Collection</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

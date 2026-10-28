@@ -59,7 +59,8 @@
                     onclick="openMarkOwnedModal(this)">
                 Add to Collection
             </button>
-            <form method="post" asp-page-handler="Delete" class="d-inline"
+            @* Carries the request's search, filters, sort, and page so they survive a Delete; an AJAX edit's re-render posts to a URL carrying them too. *@
+            <form method="post" asp-page-handler="Delete" asp-all-route-data='Context.Request.Query.Where(kv => kv.Key != "handler").ToDictionary(kv => kv.Key, kv => kv.Value.ToString())' class="d-inline"
                   onsubmit="return confirm('Remove this order?')">
                 <input type="hidden" name="entryID" value="@Model.EntryID" />
                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>

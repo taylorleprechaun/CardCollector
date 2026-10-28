@@ -18,31 +18,127 @@ namespace CardCollector.Tests.Pages
         private Mock<IRazorPartialRenderer> _razorPartialRendererMock = null!;
 
         [TestMethod]
-        public async Task OnGetAsync_OrdersWithQuantitiesAndPrices_SumsCardCountAndTotalCost()
+        public void GetFilterRouteValues_SearchFiltersAndPage_IncludesEachAndLeavesBlankOnesOut()
         {
-            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync()).ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)
-            [
-                new EditionAuditEntryViewModel { EntryID = 1, Quantity = 3, PurchasePrice = 2.50m },
-                new EditionAuditEntryViewModel { EntryID = 2, Quantity = 1, PurchasePrice = null }
-            ]);
             var page = CreatePage();
+            page.PageNumber = 2;
+            page.PageSize = 25;
+            page.Query = "magician";
+            page.RarityName = "Ultra Rare";
+            page.SortDescending = true;
 
-            await page.OnGetAsync();
+            var values = page.GetFilterRouteValues();
 
-            Assert.AreEqual(4, page.CardCount);
-            Assert.AreEqual(7.50m, page.TotalCost);
+            Assert.AreEqual("2", values["pageNumber"]);
+            Assert.AreEqual("25", values["pageSize"]);
+            Assert.AreEqual("magician", values["query"]);
+            Assert.AreEqual("Ultra Rare", values["rarityName"]);
+            Assert.AreEqual("True", values["sortDescending"]);
+            Assert.IsFalse(values.ContainsKey("cardType"));
+            Assert.IsFalse(values.ContainsKey("setName"));
         }
 
         [TestMethod]
-        public async Task OnGetAsync_PopulatesOrdersFromCardService()
+        public void GetPaginationParams_SortDescending_IncludesSortAndFilters()
         {
-            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync())
-                .ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)[new EditionAuditEntryViewModel { CardName = "Dark Magician" }]);
+            var page = CreatePage();
+            page.SetName = "Metal Raiders";
+            page.SortDescending = true;
+
+            var values = page.GetPaginationParams();
+
+            Assert.AreEqual("Metal Raiders", values["setName"]);
+            Assert.AreEqual("True", values["sortDescending"]);
+        }
+
+        [TestMethod]
+        public async Task OnGetAsync_SearchResult_ExposesPageCountsTotalAndFilterOptions()
+        {
+            SetUpSearchResult(new OrderSearchResult
+            {
+                AvailableRarityNames = ["Ultra Rare"],
+                AvailableSetNames = ["Metal Raiders"],
+                PagedItems = new PagedResult<EditionAuditEntryViewModel>
+                {
+                    Items = [new EditionAuditEntryViewModel { EntryID = 1, Quantity = 3 }],
+                    Page = 1,
+                    PageSize = 50,
+                    TotalCount = 4,
+                    TotalQuantitySum = 9
+                },
+                TotalCost = 12.50m
+            });
             var page = CreatePage();
 
             await page.OnGetAsync();
 
-            Assert.AreEqual(1, page.Orders.Count);
+            Assert.AreEqual(1, page.Results.Items.Count);
+            Assert.AreEqual(4, page.Results.TotalCount);
+            Assert.AreEqual(9, page.CardCount);
+            Assert.AreEqual(12.50m, page.TotalCost);
+            CollectionAssert.AreEqual(new[] { "Ultra Rare" }, page.AvailableRarityNames.ToArray());
+            CollectionAssert.AreEqual(new[] { "Metal Raiders" }, page.AvailableSetNames.ToArray());
+        }
+
+        [TestMethod]
+        public async Task OnGetAsync_SearchAndFilters_PassesTrimmedValuesToCardService()
+        {
+            OrderSearchCriteria? captured = null;
+            _cardServiceMock.Setup(s => s.SearchOrdersAsync(It.IsAny<OrderSearchCriteria>()))
+                .Callback<OrderSearchCriteria>(c => captured = c)
+                .ReturnsAsync(new OrderSearchResult());
+            var page = CreatePage();
+            page.CardType = "Monster";
+            page.PageNumber = 2;
+            page.Query = "  magician  ";
+            page.RarityName = "Ultra Rare";
+            page.SetName = "Metal Raiders";
+            page.SortDescending = true;
+
+            await page.OnGetAsync();
+
+            Assert.AreEqual("Monster", captured!.CardType);
+            Assert.AreEqual(2, captured.Page);
+            Assert.AreEqual("magician", captured.Query);
+            Assert.AreEqual("Ultra Rare", captured.RarityName);
+            Assert.AreEqual("Metal Raiders", captured.SetName);
+            Assert.IsTrue(captured.SortDescending);
+        }
+
+        [TestMethod]
+        public async Task OnGetOrderAutocompleteAsync_BlankQuery_ReturnsEmptyWithoutAskingTheService()
+        {
+            var page = CreatePage();
+
+            var result = (JsonResult)await page.OnGetOrderAutocompleteAsync("  ");
+
+            Assert.AreEqual(0, ((string[])result.Value!).Length);
+            _cardServiceMock.Verify(s => s.GetOrderedCardNameSuggestionsAsync(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task OnGetOrderAutocompleteAsync_Query_ReturnsOrderedCardNameSuggestions()
+        {
+            _cardServiceMock.Setup(s => s.GetOrderedCardNameSuggestionsAsync("dark", It.IsAny<int>()))
+                .ReturnsAsync((IReadOnlyList<string>)["Dark Magician"]);
+            var page = CreatePage();
+
+            var result = (JsonResult)await page.OnGetOrderAutocompleteAsync(" dark ");
+
+            CollectionAssert.AreEqual(new[] { "Dark Magician" }, ((IReadOnlyList<string>)result.Value!).ToArray());
+        }
+
+        [TestMethod]
+        public async Task OnPostDeleteAsync_ActiveSearch_RedirectKeepsTheSearchAndPage()
+        {
+            var page = CreatePage();
+            page.PageNumber = 2;
+            page.Query = "magician";
+
+            var result = (RedirectToPageResult)await page.OnPostDeleteAsync(5);
+
+            Assert.AreEqual("magician", result.RouteValues!["query"]);
+            Assert.AreEqual("2", result.RouteValues["pageNumber"]);
         }
 
         [TestMethod]
@@ -57,10 +153,42 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostDeleteAsync_NoSearch_RedirectLeavesTheQueryOut()
+        {
+            var page = CreatePage();
+
+            var result = (RedirectToPageResult)await page.OnPostDeleteAsync(5);
+
+            Assert.IsFalse(result.RouteValues!.ContainsKey("query"));
+        }
+
+        [TestMethod]
+        public async Task OnPostEditAsync_AjaxRequest_SendsMatchCountCardCountAndTotalHeaders()
+        {
+            SetUpSearchResult(new OrderSearchResult
+            {
+                PagedItems = new PagedResult<EditionAuditEntryViewModel>
+                {
+                    Items = [new EditionAuditEntryViewModel { EntryID = 1, Quantity = 2 }],
+                    TotalCount = 7,
+                    TotalQuantitySum = 12
+                },
+                TotalCost = 14.50m
+            });
+            var page = CreatePage(isAjax: true);
+
+            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null);
+
+            var headers = page.HttpContext.Response.Headers;
+            Assert.AreEqual("7", headers["X-Orders-Count"].ToString());
+            Assert.AreEqual("12", headers["X-Orders-Cards"].ToString());
+            Assert.AreEqual("14.50", headers["X-Orders-Total"].ToString());
+        }
+
+        [TestMethod]
         public async Task OnPostEditAsync_AjaxRequestNoMatch_ReturnsEmptyContent()
         {
-            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync())
-                .ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)[]);
+            SetUpSearchResult(new OrderSearchResult());
             var page = CreatePage(isAjax: true);
 
             var result = await page.OnPostEditAsync(999, 2, null, null, null, null, null, null) as ContentResult;
@@ -69,28 +197,12 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
-        public async Task OnPostEditAsync_AjaxRequest_SendsOrderCountCardCountAndTotalHeaders()
-        {
-            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync()).ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)
-            [
-                new EditionAuditEntryViewModel { EntryID = 1, Quantity = 2, PurchasePrice = 1.25m },
-                new EditionAuditEntryViewModel { EntryID = 2, Quantity = 3, PurchasePrice = 4m }
-            ]);
-            var page = CreatePage(isAjax: true);
-
-            await page.OnPostEditAsync(1, 2, null, null, null, null, null, null);
-
-            var headers = page.HttpContext.Response.Headers;
-            Assert.AreEqual("2", headers["X-Orders-Count"].ToString());
-            Assert.AreEqual("5", headers["X-Orders-Cards"].ToString());
-            Assert.AreEqual("14.50", headers["X-Orders-Total"].ToString());
-        }
-
-        [TestMethod]
         public async Task OnPostEditAsync_AjaxRequestWithMatch_ReturnsRenderedPartial()
         {
-            _cardServiceMock.Setup(s => s.GetEnrichedOrdersAsync())
-                .ReturnsAsync((IEnumerable<EditionAuditEntryViewModel>)[new EditionAuditEntryViewModel { EntryID = 1, CardName = "Dark Magician" }]);
+            SetUpSearchResult(new OrderSearchResult
+            {
+                PagedItems = new PagedResult<EditionAuditEntryViewModel> { Items = [new EditionAuditEntryViewModel { EntryID = 1, CardName = "Dark Magician" }] }
+            });
             _razorPartialRendererMock
                 .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_OrderRow", It.IsAny<EditionAuditEntryViewModel>()))
                 .ReturnsAsync("<tr>rendered</tr>");
@@ -165,5 +277,8 @@ namespace CardCollector.Tests.Pages
             });
             return page;
         }
+
+        private void SetUpSearchResult(OrderSearchResult result) =>
+            _cardServiceMock.Setup(s => s.SearchOrdersAsync(It.IsAny<OrderSearchCriteria>())).ReturnsAsync(result);
     }
 }
