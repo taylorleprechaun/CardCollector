@@ -44,6 +44,53 @@ namespace CardCollector.Tests.Pages
         }
 
         [TestMethod]
+        public async Task OnPostAddToCartAsync_AjaxRequest_RendersOnlyTheTouchedRowWithoutRebuildingTheWishlist()
+        {
+            SetUpPrinting(101);
+            _cardServiceMock.Setup(s => s.AddToCartAsync(101, 1, 5m)).ReturnsAsync((2, 7.5m, 1));
+            _cardServiceMock.Setup(s => s.GetWishlistItemAsync(100))
+                .ReturnsAsync(new WishlistItemViewModel { PreferredVersionID = 100, CardName = "Dark Magician", SetCode = "LOB-EN001" });
+            _razorPartialRendererMock
+                .Setup(r => r.RenderPartialAsync(It.IsAny<PageModel>(), "_WishlistRow", It.Is<WishlistRowViewModel>(m => m.Item.PreferredVersionID == 100)))
+                .ReturnsAsync("<div>row</div>");
+            var page = CreatePage(isAjax: true);
+
+            var result = (ContentResult)await page.OnPostAddToCartAsync(101, 1, 5m, 100);
+
+            Assert.AreEqual("<div>row</div>", result.Content);
+            _cardServiceMock.Verify(s => s.SearchWishlistAsync(It.IsAny<WishlistSearchCriteria>()), Times.Never);
+            _cardServiceMock.Verify(s => s.GetCartSummaryAsync(), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task OnPostAddToCartAsync_AjaxRequest_SendsCartHeadersFromTheAddButNoTotalCount()
+        {
+            SetUpPrinting(101);
+            _cardServiceMock.Setup(s => s.AddToCartAsync(101, 1, 5m)).ReturnsAsync((2, 7.5m, 1));
+            var page = CreatePage(isAjax: true);
+
+            await page.OnPostAddToCartAsync(101, 1, 5m, 100);
+
+            var headers = page.HttpContext.Response.Headers;
+            Assert.AreEqual("2", headers["X-Cart-Count"].ToString());
+            Assert.AreEqual("7.5", headers["X-Cart-Total"].ToString());
+            Assert.IsFalse(headers.ContainsKey("X-Total-Count"));
+        }
+
+        [TestMethod]
+        public async Task OnPostAddToCartAsync_AjaxRequestRowNoLongerOnWishlist_ReturnsEmptyContent()
+        {
+            SetUpPrinting(101);
+            _cardServiceMock.Setup(s => s.AddToCartAsync(101, 1, 5m)).ReturnsAsync((1, 5m, 1));
+            _cardServiceMock.Setup(s => s.GetWishlistItemAsync(100)).ReturnsAsync((WishlistItemViewModel?)null);
+            var page = CreatePage(isAjax: true);
+
+            var result = (ContentResult)await page.OnPostAddToCartAsync(101, 1, 5m, 100);
+
+            Assert.AreEqual(string.Empty, result.Content);
+        }
+
+        [TestMethod]
         public async Task OnPostAddToCartAsync_ValidParams_CallsAddToCartAndRedirectsWhenNotAjax()
         {
             SetUpPrinting(101);

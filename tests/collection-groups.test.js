@@ -189,6 +189,23 @@ describe('collection-groups.js', () => {
       expect(document.getElementById('row-1').textContent).toBe('updated');
     });
 
+    it('a response without X-Total-Count leaves the total-count badge alone', async () => {
+      document.body.innerHTML = `
+        <form id="theForm" action="/Wishlist?handler=AddToCart" data-ajax-target="row-1"></form>
+        <div id="row-1"></div>
+        <span id="totalCountBadge" data-suffix="needed">12 needed</span>`;
+      loadDeps();
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('<div id="row-1">updated</div>'),
+        headers: makeHeaders({ 'X-Cart-Count': '2', 'X-Cart-Total': '15' })
+      });
+
+      await submitAjaxForm(document.getElementById('theForm'), null);
+
+      expect(document.getElementById('totalCountBadge').textContent).toBe('12 needed');
+    });
+
     it('append header adds the returned row after removing the target and updates the review counts', async () => {
       document.body.innerHTML = `
         <form id="theForm" action="/Catalog/Review?handler=Map" data-ajax-target="review-row-1"></form>

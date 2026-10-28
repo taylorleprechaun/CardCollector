@@ -194,6 +194,12 @@ namespace CardCollector.Services
         Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
 
         /// <summary>
+        /// Returns the wishlist row for one tracked printing, or null if there is no such tracked printing or the
+        /// collection already holds its target quantity. Looks up only that printing, unlike <see cref="GetWishlistAsync"/>.
+        /// </summary>
+        Task<WishlistItemViewModel?> GetWishlistItemAsync(int preferredVersionID);
+
+        /// <summary>
         /// Marks the given card as ignored, excluding it from Dashboard progress tracking. No-ops if already ignored.
         /// </summary>
         Task IgnoreCardAsync(int cardID);

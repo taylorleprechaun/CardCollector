@@ -730,25 +730,12 @@ namespace CardCollector.Services
             var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
 
-            var results = new List<WishlistItemViewModel>();
-
-            foreach (var pv in allPreferred)
-            {
-                var printingID = pv.CatalogPrintingID;
-                var ownedQty = ownedQuantities.GetValueOrDefault(printingID);
-                if (ownedQty >= pv.DesiredQuantity)
-                    continue;
-
-                results.Add(WishlistItemViewModel.From(
-                    BuildCardPrinting(pv.CatalogPrintingID),
-                    pv.ID,
-                    ownedQty,
-                    stagedQuantities.GetValueOrDefault(printingID),
-                    orderedQuantities.GetValueOrDefault(printingID),
-                    pv.DesiredQuantity));
-            }
-
-            _wishlistCache = results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
+            _wishlistCache = allPreferred
+                .Select(pv => BuildWishlistItem(pv, ownedQuantities, orderedQuantities, stagedQuantities))
+                .OfType<WishlistItemViewModel>()
+                .OrderBy(r => r.CardName)
+                .ThenBy(r => r.SetCode)
+                .ToList();
             return _wishlistCache;
         }
 
@@ -757,6 +744,21 @@ namespace CardCollector.Services
 
         public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync() =>
             GetDistinctSetNames(await GetWishlistAsync().ConfigureAwait(false));
+
+        public async Task<WishlistItemViewModel?> GetWishlistItemAsync(int preferredVersionID)
+        {
+            var preferredVersion = await _preferredVersionRepository.GetByIDAsync(preferredVersionID).ConfigureAwait(false);
+            if (preferredVersion is null)
+                return null;
+
+            var ownedQuantities = await _collectionRepository
+                .GetOwnedQuantitiesByPrintingAsync([preferredVersion.CatalogPrintingID])
+                .ConfigureAwait(false);
+            var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
+
+            return BuildWishlistItem(preferredVersion, ownedQuantities, orderedQuantities, stagedQuantities);
+        }
 
         public async Task IgnoreCardAsync(int cardID) =>
             await _ignoredCardRepository.AddAsync(cardID).ConfigureAwait(false);
@@ -1429,6 +1431,29 @@ namespace CardCollector.Services
                 SetCode = set.Code ?? string.Empty,
                 SetName = set.Name ?? set.Code ?? string.Empty
             };
+        }
+
+        /// <summary>
+        /// Builds the wishlist row for a tracked printing, or null once the collection holds its target quantity.
+        /// </summary>
+        private WishlistItemViewModel? BuildWishlistItem(
+            PreferredVersion preferredVersion,
+            IReadOnlyDictionary<int, int> ownedQuantities,
+            IReadOnlyDictionary<int, int> orderedQuantities,
+            IReadOnlyDictionary<int, int> stagedQuantities)
+        {
+            var printingID = preferredVersion.CatalogPrintingID;
+            var ownedQty = ownedQuantities.GetValueOrDefault(printingID);
+            if (ownedQty >= preferredVersion.DesiredQuantity)
+                return null;
+
+            return WishlistItemViewModel.From(
+                BuildCardPrinting(printingID),
+                preferredVersion.ID,
+                ownedQty,
+                stagedQuantities.GetValueOrDefault(printingID),
+                orderedQuantities.GetValueOrDefault(printingID),
+                preferredVersion.DesiredQuantity);
         }
 
         private async Task<PurchasePriorityCandidateViewModel?> EvaluateCandidateAsync(

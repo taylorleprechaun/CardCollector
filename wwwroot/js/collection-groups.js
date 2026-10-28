@@ -110,7 +110,9 @@ async function submitAjaxForm(form, submitter) {
         }
 
         const html = await response.text();
-        updateTotalCountBadge(Number(response.headers.get('X-Total-Count')));
+        // Number(null) is 0, so a response that leaves the header out (it didn't change the count) must skip this.
+        const totalCount = response.headers.get('X-Total-Count');
+        if (totalCount !== null) updateTotalCountBadge(Number(totalCount));
         updateCartBadge(response.headers.get('X-Cart-Count'), response.headers.get('X-Cart-Total'));
         updateReviewBadge(response.headers.get('X-Review-Count'));
         updateReviewOpenCounts(response.headers.get('X-Review-Open-Counts'));

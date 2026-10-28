@@ -184,5 +184,49 @@ namespace CardCollector.Tests.Services
 
             CollectionAssert.AreEqual(new[] { "Legend of Blue Eyes White Dragon" }, result.ToArray());
         }
+
+        [TestMethod]
+        public async Task GetWishlistItemAsync_FullyOwned_ReturnsNull()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _preferredVersionRepositoryMock.Setup(r => r.GetByIDAsync(7))
+                .ReturnsAsync(new PreferredVersion { ID = 7, CatalogPrintingID = 101, DesiredQuantity = 2 });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 2 });
+
+            var result = await _service.GetWishlistItemAsync(7);
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetWishlistItemAsync_NoSuchTrackedPrinting_ReturnsNull()
+        {
+            var result = await _service.GetWishlistItemAsync(999);
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetWishlistItemAsync_StillNeeded_BuildsTheRowAndLooksUpOnlyThatPrinting()
+        {
+            SetUpPrinting(101, "LOB-EN001", "Ultra Rare");
+            _preferredVersionRepositoryMock.Setup(r => r.GetByIDAsync(7))
+                .ReturnsAsync(new PreferredVersion { ID = 7, CatalogPrintingID = 101, DesiredQuantity = 3 });
+            _collectionRepositoryMock.Setup(r => r.GetOwnedQuantitiesByPrintingAsync(It.IsAny<IEnumerable<int>>()))
+                .ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
+            _collectionRepositoryMock.Setup(r => r.GetOrderedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
+            _pendingOrderRepositoryMock.Setup(r => r.GetStagedQuantitiesAsync()).ReturnsAsync(new Dictionary<int, int> { [101] = 1 });
+
+            var result = await _service.GetWishlistItemAsync(7);
+
+            Assert.AreEqual(7, result!.PreferredVersionID);
+            Assert.AreEqual("Dark Magician", result.CardName);
+            Assert.AreEqual(1, result.QuantityOwned);
+            Assert.AreEqual(1, result.OrderedQuantity);
+            Assert.AreEqual(1, result.CartQuantity);
+            _collectionRepositoryMock.Verify(r => r.GetOwnedQuantitiesByPrintingAsync(It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 101 }))), Times.Once);
+            _preferredVersionRepositoryMock.Verify(r => r.GetAllAsync(), Times.Never);
+        }
     }
 }
