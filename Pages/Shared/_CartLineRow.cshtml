@@ -9,15 +9,18 @@
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(line.ImageURLSmall, line.CardName)' />
             <div class="min-width-0">
                 <div class="fw-semibold">@line.CardName</div>
-                <div class="text-muted small">@line.SetName &middot; <code>@line.SetCode</code> &middot; @line.RarityName</div>
+                <partial name="_PrintingSubtitle" model="line" />
             </div>
         </div>
         <div class="flex-grow-1 cc-cart-line-fields">
+            @* Lines.Index lets the indices have gaps once a row is removed in place; without it binding stops at the first gap. *@
+            <input type="hidden" name="Lines.Index" value="@Model.Index" form="cartSubmitForm" />
             <input type="hidden" name="Lines[@Model.Index].PendingOrderLineID" value="@line.PendingOrderLineID" form="cartSubmitForm" />
             <partial name="_PurchaseLineFields" model="Model" />
         </div>
-        <div class="flex-shrink-0">
-            <form method="post" asp-page-handler="Remove" class="d-inline">
+        <div class="flex-shrink-0 d-flex align-items-center gap-2">
+            <span class="small text-danger" data-save-status aria-live="polite"></span>
+            <form method="post" asp-page-handler="Remove" class="d-inline cart-remove-form">
                 <input type="hidden" name="id" value="@line.PendingOrderLineID" />
                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
             </form>

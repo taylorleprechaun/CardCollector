@@ -40,8 +40,7 @@
             {
                 <button type="button" class="btn @(q == quantity ? "btn-primary" : "btn-outline-secondary")"
                         data-qty-target="lineQuantity@(i)" data-qty-value="@q"
-                        data-pending-order-line-id="@line.PendingOrderLineID"
-                        onclick="selectCartLineQuantity(this)">@q</button>
+                        onclick="selectQuantity(this)">@q</button>
             }
         </div>
     </div>
@@ -59,7 +58,8 @@
     <div class="col-12 col-sm-4">
         <label class="form-label">Price ($)</label>
         <input type="number" step="0.01" min="0" required name="Lines[@i].PurchasePrice" id="linePrice@(i)" form="cartSubmitForm"
-               class="form-control form-control-sm" placeholder="0.00" />
+               class="form-control form-control-sm" placeholder="0.00"
+               value="@(line.PurchasePrice?.ToString("F2"))" />
     </div>
     <div class="col-12 col-sm-4">
         <label class="form-label d-flex align-items-center gap-1">

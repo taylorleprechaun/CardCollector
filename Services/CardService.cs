@@ -404,28 +404,6 @@ namespace CardCollector.Services
             };
         }
 
-        public async Task<IEnumerable<EditionAuditEntryViewModel>> GetEnrichedOrdersAsync()
-        {
-            var entries = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
-            var viewModels = new List<EditionAuditEntryViewModel>();
-
-            foreach (var group in entries.GroupBy(e => GetCardID(e.CatalogPrintingID)))
-            {
-                var editions = await _pricingService.GetEditionsByPrintingAsync(group.Key).ConfigureAwait(false);
-
-                foreach (var entry in group)
-                {
-                    var baseEntry = OrderEntryViewModel.From(BuildCardPrinting(entry.CatalogPrintingID), entry);
-                    var (category, availableEditions) = entry.Edition is CardEdition recorded
-                        ? CategorizeEdition(editions, entry.CatalogPrintingID, recorded)
-                        : (null, []);
-                    viewModels.Add(EditionAuditEntryViewModel.From(baseEntry, category, availableEditions));
-                }
-            }
-
-            return viewModels;
-        }
-
         public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync()
             => GetEnrichedByStatusAsync(CollectionStatus.Owned);
 
@@ -563,6 +541,21 @@ namespace CardCollector.Services
             return result.OrderBy(r => r.CardName).ToList();
         }
 
+        public async Task<IReadOnlyList<string>> GetOrderedCardNameSuggestionsAsync(string query, int maxResults = 10)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return [];
+
+            var orders = await GetOrderEntriesAsync().ConfigureAwait(false);
+            return orders
+                .Select(o => o.CardName)
+                .Where(n => n.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .OrderBy(n => n)
+                .Take(maxResults)
+                .ToList();
+        }
+
         public async Task<(IReadOnlyList<string> SetCodes, IReadOnlyList<string> RarityNames)> GetOwnedSetCodesAndRarityNamesAsync()
         {
             var printings = (await _collectionRepository.GetOwnedPrintingIDsAsync().ConfigureAwait(false))
@@ -578,7 +571,12 @@ namespace CardCollector.Services
         public async Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync()
         {
             var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
-            return lines.Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line.CatalogPrintingID), line)).ToList();
+            return lines
+                .Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line.CatalogPrintingID), line))
+                .OrderBy(l => l.CardName)
+                .ThenBy(l => l.SetCode)
+                .ThenBy(l => l.PendingOrderLineID)
+                .ToList();
         }
 
         public async Task<IReadOnlyList<PriceHistoryCardViewModel>> GetPriceHistoryCardsAsync()
@@ -732,50 +730,34 @@ namespace CardCollector.Services
             var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
             var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
 
-            var results = new List<WishlistItemViewModel>();
-
-            foreach (var pv in allPreferred)
-            {
-                var printingID = pv.CatalogPrintingID;
-                var ownedQty = ownedQuantities.GetValueOrDefault(printingID);
-                if (ownedQty >= pv.DesiredQuantity)
-                    continue;
-
-                results.Add(WishlistItemViewModel.From(
-                    BuildCardPrinting(pv.CatalogPrintingID),
-                    pv.ID,
-                    ownedQty,
-                    stagedQuantities.GetValueOrDefault(printingID),
-                    orderedQuantities.GetValueOrDefault(printingID),
-                    pv.DesiredQuantity));
-            }
-
-            _wishlistCache = results.OrderBy(r => r.CardName).ThenBy(r => r.SetCode).ToList();
+            _wishlistCache = allPreferred
+                .Select(pv => BuildWishlistItem(pv, ownedQuantities, orderedQuantities, stagedQuantities))
+                .OfType<WishlistItemViewModel>()
+                .OrderBy(r => r.CardName)
+                .ThenBy(r => r.SetCode)
+                .ToList();
             return _wishlistCache;
         }
 
-        public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync()
-        {
-            var items = await GetWishlistAsync().ConfigureAwait(false);
-            return items
-                .Select(i => i.RarityName)
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Distinct()
-                .OrderBy(r => r)
-                .ToList();
-        }
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctRarityNamesAsync() =>
+            GetDistinctRarityNames(await GetWishlistAsync().ConfigureAwait(false));
 
-        public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync()
+        public async Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync() =>
+            GetDistinctSetNames(await GetWishlistAsync().ConfigureAwait(false));
+
+        public async Task<WishlistItemViewModel?> GetWishlistItemAsync(int preferredVersionID)
         {
-            var items = await GetWishlistAsync().ConfigureAwait(false);
-            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
-            return items
-                .Where(i => !string.IsNullOrEmpty(i.SetCode))
-                .Select(i => setNamesByCode.TryGetValue(i.SetCode, out var name) ? name : i.SetName)
-                .Where(n => !string.IsNullOrEmpty(n))
-                .Distinct()
-                .OrderBy(n => n)
-                .ToList();
+            var preferredVersion = await _preferredVersionRepository.GetByIDAsync(preferredVersionID).ConfigureAwait(false);
+            if (preferredVersion is null)
+                return null;
+
+            var ownedQuantities = await _collectionRepository
+                .GetOwnedQuantitiesByPrintingAsync([preferredVersion.CatalogPrintingID])
+                .ConfigureAwait(false);
+            var orderedQuantities = await _collectionRepository.GetOrderedQuantitiesAsync().ConfigureAwait(false);
+            var stagedQuantities = await _pendingOrderRepository.GetStagedQuantitiesAsync().ConfigureAwait(false);
+
+            return BuildWishlistItem(preferredVersion, ownedQuantities, orderedQuantities, stagedQuantities);
         }
 
         public async Task IgnoreCardAsync(int cardID) =>
@@ -1059,6 +1041,40 @@ namespace CardCollector.Services
             };
         }
 
+        public async Task<OrderSearchResult> SearchOrdersAsync(OrderSearchCriteria criteria)
+        {
+            ArgumentNullException.ThrowIfNull(criteria);
+
+            var allOrders = await GetOrderEntriesAsync().ConfigureAwait(false);
+
+            var setPrefix = string.IsNullOrWhiteSpace(criteria.SetName) ? null : _cardDataRepository.GetSetPrefixByName(criteria.SetName);
+            var filtered = ApplyCommonPrintingFilters(allOrders, criteria.Query, criteria.CardType, setPrefix, criteria.RarityName);
+            var sorted = (criteria.SortDescending
+                    ? filtered.OrderByDescending(o => o.CardName)
+                    : filtered.OrderBy(o => o.CardName))
+                .ThenBy(o => o.SetCode)
+                .ThenByDescending(o => o.DateCreated)
+                .ToList();
+
+            // The edition check costs a price lookup per card, so it runs only for the page being shown.
+            var page = sorted.Skip((criteria.Page - 1) * criteria.PageSize).Take(criteria.PageSize).ToList();
+
+            return new OrderSearchResult
+            {
+                AvailableRarityNames = GetDistinctRarityNames(allOrders),
+                AvailableSetNames = GetDistinctSetNames(allOrders),
+                PagedItems = new PagedResult<EditionAuditEntryViewModel>
+                {
+                    Items = await AddEditionAuditAsync(page).ConfigureAwait(false),
+                    Page = criteria.Page,
+                    PageSize = criteria.PageSize,
+                    TotalCount = sorted.Count,
+                    TotalQuantitySum = sorted.Sum(o => o.Quantity)
+                },
+                TotalCost = sorted.Sum(o => (o.PurchasePrice ?? 0) * o.Quantity)
+            };
+        }
+
         public async Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria)
         {
             var allItems = (await GetWishlistAsync().ConfigureAwait(false)).ToList();
@@ -1161,8 +1177,21 @@ namespace CardCollector.Services
         public async Task UnignoreCardAsync(int cardID) =>
             await _ignoredCardRepository.RemoveAsync(cardID).ConfigureAwait(false);
 
-        public async Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity) =>
-            await _pendingOrderRepository.UpdateQuantityAsync(pendingOrderLineID, Math.Clamp(quantity, 1, MaxCartQuantity)).ConfigureAwait(false);
+        public async Task<bool> UpdateCartLineAsync(CartLineOverride line)
+        {
+            ArgumentNullException.ThrowIfNull(line);
+
+            return await _pendingOrderRepository.UpdateAsync(new PendingOrderLine
+            {
+                Condition = line.Condition,
+                Edition = line.Edition,
+                ID = line.PendingOrderLineID,
+                MarketPriceAtEntry = line.MarketPriceAtEntry,
+                PurchaseDate = line.PurchaseDate,
+                PurchasePrice = line.PurchasePrice,
+                Quantity = Math.Clamp(line.Quantity, 1, MaxCartQuantity)
+            }).ConfigureAwait(false);
+        }
 
         public async Task UpgradePreferredVersionAsync(int preferredVersionID, int newPrintingID)
         {
@@ -1291,6 +1320,14 @@ namespace CardCollector.Services
                 .ThenBy(o => o.SetCode)
                 .ToList();
 
+        private static IReadOnlyList<string> GetDistinctRarityNames(IEnumerable<CardPrinting> printings) =>
+            printings
+                .Select(p => p.RarityName)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .OrderBy(r => r)
+                .ToList();
+
         private static string GetSetPrefix(string code)
         {
             var hyphen = code.IndexOf('-');
@@ -1299,6 +1336,27 @@ namespace CardCollector.Services
 
         private static List<ValueSnapshotPoint> MapValueHistory<T>(IEnumerable<T> snapshots) where T : IValueSnapshotEntity =>
             snapshots.Select(s => new ValueSnapshotPoint(s.SnapshotDate, s.TotalValue, s.Count)).ToList();
+
+        /// <summary>
+        /// Adds the edition-audit category to each order, keeping their order. Edition data is looked up once per card.
+        /// </summary>
+        private async Task<IReadOnlyList<EditionAuditEntryViewModel>> AddEditionAuditAsync(IReadOnlyList<OrderEntryViewModel> orders)
+        {
+            var editionsByCardID = new Dictionary<int, IReadOnlyDictionary<int, IReadOnlySet<CardEdition>>>();
+            foreach (var cardID in orders.Select(o => o.CardID).Distinct())
+                editionsByCardID[cardID] = await _pricingService.GetEditionsByPrintingAsync(cardID).ConfigureAwait(false);
+
+            var results = new List<EditionAuditEntryViewModel>(orders.Count);
+            foreach (var order in orders)
+            {
+                var (category, availableEditions) = order.Edition is CardEdition recorded
+                    ? CategorizeEdition(editionsByCardID[order.CardID], order.PrintingID, recorded)
+                    : (null, []);
+                results.Add(EditionAuditEntryViewModel.From(order, category, availableEditions));
+            }
+
+            return results;
+        }
 
         /// <summary>
         /// Dismisses every printing of the card released after <paramref name="printing"/> (and not in the future), so
@@ -1373,6 +1431,29 @@ namespace CardCollector.Services
                 SetCode = set.Code ?? string.Empty,
                 SetName = set.Name ?? set.Code ?? string.Empty
             };
+        }
+
+        /// <summary>
+        /// Builds the wishlist row for a tracked printing, or null once the collection holds its target quantity.
+        /// </summary>
+        private WishlistItemViewModel? BuildWishlistItem(
+            PreferredVersion preferredVersion,
+            IReadOnlyDictionary<int, int> ownedQuantities,
+            IReadOnlyDictionary<int, int> orderedQuantities,
+            IReadOnlyDictionary<int, int> stagedQuantities)
+        {
+            var printingID = preferredVersion.CatalogPrintingID;
+            var ownedQty = ownedQuantities.GetValueOrDefault(printingID);
+            if (ownedQty >= preferredVersion.DesiredQuantity)
+                return null;
+
+            return WishlistItemViewModel.From(
+                BuildCardPrinting(printingID),
+                preferredVersion.ID,
+                ownedQty,
+                stagedQuantities.GetValueOrDefault(printingID),
+                orderedQuantities.GetValueOrDefault(printingID),
+                preferredVersion.DesiredQuantity);
         }
 
         private async Task<PurchasePriorityCandidateViewModel?> EvaluateCandidateAsync(
@@ -1460,6 +1541,19 @@ namespace CardCollector.Services
             _cardDataRepository.GetPrintingByID(printingID)
             ?? throw new ArgumentException($"{printingID} is not an active catalog printing.", nameof(printingID));
 
+        // Set names come from the catalog's set list where it knows the code, so they match what the Set filter resolves.
+        private IReadOnlyList<string> GetDistinctSetNames(IEnumerable<CardPrinting> printings)
+        {
+            var setNamesByCode = _cardDataRepository.GetSetNamesByCode();
+            return printings
+                .Where(p => !string.IsNullOrEmpty(p.SetCode))
+                .Select(p => setNamesByCode.TryGetValue(p.SetCode, out var name) ? name : p.SetName)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
+        }
+
         private async Task<IReadOnlyList<EditionAuditResult>> GetEditionAuditResultsAsync(IReadOnlyList<CollectionEntry> entries)
         {
             var results = new List<EditionAuditResult>();
@@ -1525,6 +1619,12 @@ namespace CardCollector.Services
             }
 
             return groups;
+        }
+
+        private async Task<IReadOnlyList<OrderEntryViewModel>> GetOrderEntriesAsync()
+        {
+            var entries = await _collectionRepository.GetByStatusAsync(CollectionStatus.Ordered).ConfigureAwait(false);
+            return entries.Select(e => OrderEntryViewModel.From(BuildCardPrinting(e.CatalogPrintingID), e)).ToList();
         }
 
         private async Task<IReadOnlyList<CollectionEntry>> GetOwnedAndOrderedEntriesAsync()

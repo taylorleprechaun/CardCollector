@@ -189,6 +189,23 @@ describe('collection-groups.js', () => {
       expect(document.getElementById('row-1').textContent).toBe('updated');
     });
 
+    it('a response without X-Total-Count leaves the total-count badge alone', async () => {
+      document.body.innerHTML = `
+        <form id="theForm" action="/Wishlist?handler=AddToCart" data-ajax-target="row-1"></form>
+        <div id="row-1"></div>
+        <span id="totalCountBadge" data-suffix="needed">12 needed</span>`;
+      loadDeps();
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('<div id="row-1">updated</div>'),
+        headers: makeHeaders({ 'X-Cart-Count': '2', 'X-Cart-Total': '15' })
+      });
+
+      await submitAjaxForm(document.getElementById('theForm'), null);
+
+      expect(document.getElementById('totalCountBadge').textContent).toBe('12 needed');
+    });
+
     it('append header adds the returned row after removing the target and updates the review counts', async () => {
       document.body.innerHTML = `
         <form id="theForm" action="/Catalog/Review?handler=Map" data-ajax-target="review-row-1"></form>
@@ -246,6 +263,35 @@ describe('collection-groups.js', () => {
       updateTotalCountBadge(42);
 
       expect(document.getElementById('totalCountBadge').textContent).toBe('42 cards');
+    });
+  });
+
+  describe('updateOrdersSummary', () => {
+    it('sets the order and card counts and the total', () => {
+      document.body.innerHTML = '<span id="ordersSummary"></span><strong id="ordersTotal"></strong>';
+      loadDeps();
+
+      updateOrdersSummary('3', '7', '41.5');
+
+      expect(document.getElementById('ordersSummary').textContent).toBe('3 orders · 7 cards');
+      expect(document.getElementById('ordersTotal').textContent).toBe('$41.50');
+    });
+
+    it('missing headers leave the header alone', () => {
+      document.body.innerHTML = '<span id="ordersSummary">2 orders · 2 cards</span><strong id="ordersTotal">$5.00</strong>';
+      loadDeps();
+
+      updateOrdersSummary(null, null, null);
+
+      expect(document.getElementById('ordersSummary').textContent).toBe('2 orders · 2 cards');
+      expect(document.getElementById('ordersTotal').textContent).toBe('$5.00');
+    });
+
+    it('missing elements do not throw', () => {
+      document.body.innerHTML = '';
+      loadDeps();
+
+      expect(() => updateOrdersSummary('1', '1', '1')).not.toThrow();
     });
   });
 

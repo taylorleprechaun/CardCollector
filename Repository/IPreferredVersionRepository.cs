@@ -36,6 +36,11 @@ namespace CardCollector.Repository
         Task<IReadOnlyDictionary<int, IReadOnlyList<PreferredVersion>>> GetByCardIDsAsync(IEnumerable<int> cardIDs);
 
         /// <summary>
+        /// Returns the tracked printing with the given ID, or null if there is none.
+        /// </summary>
+        Task<PreferredVersion?> GetByIDAsync(int id);
+
+        /// <summary>
         /// Returns the set of card IDs that have at least one tracked printing.
         /// </summary>
         Task<IReadOnlySet<int>> GetPreferredCardIDsAsync();

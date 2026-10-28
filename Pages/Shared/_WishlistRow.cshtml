@@ -9,7 +9,7 @@
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(item.ImageURLSmall, item.CardName)' />
             <div class="min-width-0">
                 <a href="/Card?id=@item.CardID&returnURL=%2FWishlist" class="fw-semibold text-body text-decoration-none">@item.CardName</a>
-                <div class="text-muted small">@item.SetName &middot; <code>@item.SetCode</code> &middot; @item.RarityName</div>
+                <partial name="_PrintingSubtitle" model="item" />
             </div>
         </div>
         <div class="flex-shrink-0">

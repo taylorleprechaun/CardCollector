@@ -123,6 +123,32 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetByIDAsync_ExistingID_ReturnsThatTrackedPrinting()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
+            var repository = new PreferredVersionRepository(context);
+            await repository.AddOrUpdateAsync(101, 2);
+            var created = (await repository.GetByCardIDAsync(1)).Single();
+
+            var result = await repository.GetByIDAsync(created.ID);
+
+            Assert.AreEqual(101, result!.CatalogPrintingID);
+            Assert.AreEqual(2, result.DesiredQuantity);
+        }
+
+        [TestMethod]
+        public async Task GetByIDAsync_NoSuchID_ReturnsNull()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            var repository = new PreferredVersionRepository(context);
+
+            var result = await repository.GetByIDAsync(999);
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
         public async Task GetByCardIDsAsync_EmptyInput_ReturnsEmpty()
         {
             using var context = InMemoryDbContextFactory.Create();

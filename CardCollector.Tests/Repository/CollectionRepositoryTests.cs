@@ -164,6 +164,57 @@ namespace CardCollector.Tests.Repository
         }
 
         [TestMethod]
+        public async Task GetOwnedQuantitiesByPrintingAsync_EmptyInput_ReturnsEmpty()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1));
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 2 });
+
+            var result = await repository.GetOwnedQuantitiesByPrintingAsync([]);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetOwnedQuantitiesByPrintingAsync_RequestedPrintingNotOwned_IsLeftOut()
+        {
+            using var context = InMemoryDbContextFactory.Create();
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1));
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 102, Status = CollectionStatus.Ordered, Quantity = 1 });
+
+            var result = await repository.GetOwnedQuantitiesByPrintingAsync([101, 102]);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task GetOwnedQuantitiesByPrintingAsync_ManyRequestedPrintingsOnSqlite_ReturnsOnlyTheOwnedOnesAmongThem()
+        {
+            // Real SQLite, so the grouped query is checked against the provider the app runs on.
+            var (context, connection) = InMemoryDbContextFactory.CreateSqlite();
+            using var _ = connection;
+            using var __ = context;
+            // SeedPrintings adds printings without their catalog card and set rows; this test is about the owned-quantity query.
+            using (var pragma = connection.CreateCommand())
+            {
+                pragma.CommandText = "PRAGMA foreign_keys = OFF;";
+                pragma.ExecuteNonQuery();
+            }
+            CatalogTestData.SeedPrintings(context, (101, 1), (102, 1), (103, 1));
+            var repository = new CollectionRepository(context);
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 101, Status = CollectionStatus.Owned, Quantity = 1 });
+            await repository.AddAsync(new CollectionEntry { CatalogPrintingID = 103, Status = CollectionStatus.Owned, Quantity = 2 });
+            var requested = Enumerable.Range(1000, 15000).Append(101).Append(102);
+
+            var result = await repository.GetOwnedQuantitiesByPrintingAsync(requested);
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(1, result[101]);
+        }
+
+        [TestMethod]
         public async Task GetQuantitiesByPrintingAsync_EmptyCardIDs_ReturnsEmpty()
         {
             using var context = InMemoryDbContextFactory.Create();

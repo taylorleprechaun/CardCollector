@@ -77,6 +77,9 @@ namespace CardCollector.Repository
                 .ToDictionary(g => g.Key, g => (IReadOnlyList<PreferredVersion>)g.Select(x => x.Version).ToList());
         }
 
+        public async Task<PreferredVersion?> GetByIDAsync(int id) =>
+            await _context.PreferredVersions.FindAsync(id).ConfigureAwait(false);
+
         public async Task<IReadOnlySet<int>> GetPreferredCardIDsAsync()
         {
             var ids = await _context.PreferredVersions

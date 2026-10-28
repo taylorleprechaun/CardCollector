@@ -8,7 +8,7 @@
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(Model.ImageURLSmall, Model.CardName)' />
             <div class="min-width-0 flex-grow-1">
                 <div class="fw-semibold">@Model.CardName</div>
-                <div class="text-muted small">@Model.SetName &middot; <code>@Model.SetCode</code> &middot; @Model.RarityCode</div>
+                <partial name="_PrintingSubtitle" model="Model" />
                 <div class="d-flex flex-wrap gap-2 small text-muted mt-1">
                     <span>@(Model.Condition.HasValue ? Model.Condition.GetDisplayName() : "—")</span>
                     <span>
@@ -59,7 +59,8 @@
                     onclick="openMarkOwnedModal(this)">
                 Add to Collection
             </button>
-            <form method="post" asp-page-handler="Delete" class="d-inline"
+            @* Carries the request's search, filters, sort, and page so they survive a Delete; an AJAX edit's re-render posts to a URL carrying them too. *@
+            <form method="post" asp-page-handler="Delete" asp-all-route-data='Context.Request.Query.Where(kv => kv.Key != "handler").ToDictionary(kv => kv.Key, kv => kv.Value.ToString())' class="d-inline"
                   onsubmit="return confirm('Remove this order?')">
                 <input type="hidden" name="entryID" value="@Model.EntryID" />
                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>

@@ -108,9 +108,20 @@ namespace CardCollector.Pages
             if (_cardService.GetPrintingByID(printingID) is null)
                 return BadRequest();
 
-            await _cardService.AddToCartAsync(printingID, quantity, marketPrice).ConfigureAwait(false);
+            var (cartCount, cartTotal, _) = await _cardService.AddToCartAsync(printingID, quantity, marketPrice).ConfigureAwait(false);
 
-            return await RespondAfterMutationAsync(preferredVersionID).ConfigureAwait(false);
+            if (!Request.IsAjaxRequest())
+                return RedirectToPage(BuildFilterRedirect());
+
+            // Adding to the cart never changes which cards are on the wishlist, so this rebuilds only the touched row
+            // and sends no X-Total-Count; rebuilding the whole wishlist here made every add slow.
+            SetCartHeaders(cartCount, cartTotal);
+
+            var item = await _cardService.GetWishlistItemAsync(preferredVersionID).ConfigureAwait(false);
+            if (item is null)
+                return Content(string.Empty, "text/html");
+
+            return Content(await RenderRowAsync(item).ConfigureAwait(false), "text/html");
         }
 
         public async Task<IActionResult> OnPostOwnAsync()
@@ -170,21 +181,27 @@ namespace CardCollector.Pages
             Response.Headers["X-Total-Count"] = result.PagedItems.TotalCount.ToString();
 
             var (cartCount, cartTotal) = await _cardService.GetCartSummaryAsync().ConfigureAwait(false);
-            Response.Headers["X-Cart-Count"] = cartCount.ToString(CultureInfo.InvariantCulture);
-            Response.Headers["X-Cart-Total"] = cartTotal.ToString(CultureInfo.InvariantCulture);
+            SetCartHeaders(cartCount, cartTotal);
 
             var match = result.PagedItems.Items.FirstOrDefault(i => i.PreferredVersionID == preferredVersionID);
             if (match is null)
                 return Content(string.Empty, "text/html");
 
-            var html = await _razorPartialRenderer.RenderPartialAsync(this, "_WishlistRow", new WishlistRowViewModel
+            return Content(await RenderRowAsync(match).ConfigureAwait(false), "text/html");
+        }
+
+        private async Task<string> RenderRowAsync(WishlistItemViewModel item) =>
+            await _razorPartialRenderer.RenderPartialAsync(this, "_WishlistRow", new WishlistRowViewModel
             {
                 FilterParams = GetFilterParams(),
-                Item = match,
-                TCGDate = GetTCGDate(match.SetCode)
+                Item = item,
+                TCGDate = GetTCGDate(item.SetCode)
             }).ConfigureAwait(false);
 
-            return Content(html, "text/html");
+        private void SetCartHeaders(int cartCount, decimal cartTotal)
+        {
+            Response.Headers["X-Cart-Count"] = cartCount.ToString(CultureInfo.InvariantCulture);
+            Response.Headers["X-Cart-Total"] = cartTotal.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

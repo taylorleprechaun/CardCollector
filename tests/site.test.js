@@ -71,6 +71,28 @@ describe('site.js', () => {
       expect(marketPriceEl.value).toBe('9.50');
     });
 
+    it('calls onUpdated after a fetched price is written', async () => {
+      const { editionSelect, marketPriceEl } = setupElements();
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: 9.5 }) });
+      const onUpdated = vi.fn(() => expect(marketPriceEl.value).toBe('9.50'));
+
+      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: 101 }), onUpdated);
+      await refresh();
+
+      expect(onUpdated).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call onUpdated when there is no price', async () => {
+      const { editionSelect, marketPriceEl } = setupElements();
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ price: null }) });
+      const onUpdated = vi.fn();
+
+      const refresh = bindPriceRefresh(editionSelect, marketPriceEl, () => ({ printingID: 101 }), onUpdated);
+      await refresh();
+
+      expect(onUpdated).not.toHaveBeenCalled();
+    });
+
     function setupElements() {
       document.body.innerHTML = '<select id="edition"></select><input id="marketPrice" />';
       loadScript('site.js');
@@ -240,6 +262,18 @@ describe('site.js', () => {
 
       expect(document.getElementById('card-suggestions-dropdown').style.display).toBe('none');
       expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('formatCountLabel', () => {
+    it.each([
+      [0, '0 cards'],
+      [1, '1 card'],
+      [3, '3 cards']
+    ])('formats %i as "%s"', (count, expected) => {
+      loadScript('site.js');
+
+      expect(formatCountLabel(count, 'card')).toBe(expected);
     });
   });
 

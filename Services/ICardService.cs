@@ -101,13 +101,6 @@ namespace CardCollector.Services
         Task<DashboardStats> GetDashboardStatsAsync();
 
         /// <summary>
-        /// Returns all ordered entries enriched with card and set data, annotated with an
-        /// edition-audit category when the recorded Edition doesn't match (or can't be verified
-        /// against) the live API data for that printing.
-        /// </summary>
-        Task<IEnumerable<EditionAuditEntryViewModel>> GetEnrichedOrdersAsync();
-
-        /// <summary>
         /// Returns all owned entries enriched with card and set data.
         /// </summary>
         Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync();
@@ -126,6 +119,12 @@ namespace CardCollector.Services
         /// Returns all cards with a preferred version where a newer set printing exists and has not been dismissed.
         /// </summary>
         Task<IReadOnlyList<NewPrintingOpportunityViewModel>> GetNewPrintingOpportunitiesAsync();
+
+        /// <summary>
+        /// Returns up to <paramref name="maxResults"/> distinct names of cards with a pending order that contain
+        /// <paramref name="query"/>, sorted; empty for a blank query.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetOrderedCardNameSuggestionsAsync(string query, int maxResults = 10);
 
         /// <summary>
         /// Returns the distinct set codes and rarity names of the owned collection's printings, sorted, for filter lists.
@@ -195,6 +194,12 @@ namespace CardCollector.Services
         Task<IReadOnlyList<string>> GetWishlistDistinctSetNamesAsync();
 
         /// <summary>
+        /// Returns the wishlist row for one tracked printing, or null if there is no such tracked printing or the
+        /// collection already holds its target quantity. Looks up only that printing, unlike <see cref="GetWishlistAsync"/>.
+        /// </summary>
+        Task<WishlistItemViewModel?> GetWishlistItemAsync(int preferredVersionID);
+
+        /// <summary>
         /// Marks the given card as ignored, excluding it from Dashboard progress tracking. No-ops if already ignored.
         /// </summary>
         Task IgnoreCardAsync(int cardID);
@@ -240,6 +245,14 @@ namespace CardCollector.Services
         Task<PagedResult<CollectionGroupViewModel>> SearchGroupedOwnedAsync(CollectionSearchCriteria criteria);
 
         /// <summary>
+        /// Returns a filtered page of pending orders sorted by card name, then set code, then newest first, each annotated
+        /// with an edition-audit category when its recorded Edition doesn't match (or can't be verified against) the live
+        /// pricing data for its printing. The result also carries the card count and total cost across every match, and
+        /// the set and rarity names across every order for the filters.
+        /// </summary>
+        Task<OrderSearchResult> SearchOrdersAsync(OrderSearchCriteria criteria);
+
+        /// <summary>
         /// Returns a paginated, filtered, and sorted page of wishlist items.
         /// </summary>
         Task<WishlistSearchResult> SearchWishlistAsync(WishlistSearchCriteria criteria);
@@ -264,10 +277,10 @@ namespace CardCollector.Services
         Task UnignoreCardAsync(int cardID);
 
         /// <summary>
-        /// Updates the staged quantity for a single cart line, clamped to the valid cart quantity range.
-        /// Returns false if no such line exists.
+        /// Saves a cart line's condition, edition, market price, purchase date, purchase price, and quantity
+        /// (clamped to the valid cart quantity range). Returns false if no such line exists.
         /// </summary>
-        Task<bool> UpdateCartLineQuantityAsync(int pendingOrderLineID, int quantity);
+        Task<bool> UpdateCartLineAsync(CartLineOverride line);
 
         /// <summary>
         /// Moves the tracked printing with the given ID to a newer catalog printing of the same card, preserving its
