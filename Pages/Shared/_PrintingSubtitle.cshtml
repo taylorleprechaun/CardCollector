@@ -1,0 +1,2 @@
+@model CardCollector.ViewModels.CardPrinting
+<div class="text-muted small">@Model.SetName &middot; <code>@Model.SetCode</code> &middot; @Model.RarityName@(string.IsNullOrEmpty(Model.PrintVariant) ? string.Empty : $" ({Model.PrintVariant})")</div>

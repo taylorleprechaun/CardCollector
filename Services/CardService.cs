@@ -423,7 +423,11 @@ namespace CardCollector.Services
                 }
             }
 
-            return viewModels;
+            return viewModels
+                .OrderBy(o => o.CardName)
+                .ThenBy(o => o.SetCode)
+                .ThenByDescending(o => o.DateCreated)
+                .ToList();
         }
 
         public Task<IEnumerable<OrderEntryViewModel>> GetEnrichedOwnedAsync()
@@ -578,7 +582,12 @@ namespace CardCollector.Services
         public async Task<IReadOnlyList<PendingOrderLineViewModel>> GetPendingCartAsync()
         {
             var lines = await _pendingOrderRepository.GetAllAsync().ConfigureAwait(false);
-            return lines.Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line.CatalogPrintingID), line)).ToList();
+            return lines
+                .Select(line => PendingOrderLineViewModel.From(BuildCardPrinting(line.CatalogPrintingID), line))
+                .OrderBy(l => l.CardName)
+                .ThenBy(l => l.SetCode)
+                .ThenBy(l => l.PendingOrderLineID)
+                .ToList();
         }
 
         public async Task<IReadOnlyList<PriceHistoryCardViewModel>> GetPriceHistoryCardsAsync()

@@ -9,7 +9,7 @@
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(line.ImageURLSmall, line.CardName)' />
             <div class="min-width-0">
                 <div class="fw-semibold">@line.CardName</div>
-                <div class="text-muted small">@line.SetName &middot; <code>@line.SetCode</code> &middot; @line.RarityName</div>
+                <partial name="_PrintingSubtitle" model="line" />
             </div>
         </div>
         <div class="flex-grow-1 cc-cart-line-fields">

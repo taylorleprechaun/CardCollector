@@ -47,6 +47,26 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetEnrichedOrdersAsync_OrdersFromSeveralCards_SortsByCardNameThenSetCodeThenNewest()
+        {
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "SDK-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN005", PrintingID = 102, RarityName = "Ultra Rare" });
+            SetUpCard(2, "Blue-Eyes White Dragon", new Set { Code = "SDK-EN001", PrintingID = 201, RarityName = "Ultra Rare" });
+            _collectionRepositoryMock.Setup(r => r.GetByStatusAsync(CollectionStatus.Ordered)).ReturnsAsync(
+            [
+                new CollectionEntry { ID = 1, CatalogPrintingID = 101, DateCreated = new DateTime(2026, 10, 1) },
+                new CollectionEntry { ID = 2, CatalogPrintingID = 102, DateCreated = new DateTime(2026, 10, 1) },
+                new CollectionEntry { ID = 3, CatalogPrintingID = 201, DateCreated = new DateTime(2026, 10, 1) },
+                new CollectionEntry { ID = 4, CatalogPrintingID = 102, DateCreated = new DateTime(2026, 10, 20) }
+            ]);
+
+            var result = await _service.GetEnrichedOrdersAsync();
+
+            CollectionAssert.AreEqual(new[] { 3, 4, 2, 1 }, result.Select(o => o.EntryID).ToArray());
+        }
+
+        [TestMethod]
         public async Task GetEnrichedOrdersAsync_PrintingWithoutLinkedProduct_IsUnverifiable()
         {
             SetUpCard(1, "Synthetic Duelist",

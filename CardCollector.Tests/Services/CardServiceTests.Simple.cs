@@ -355,6 +355,25 @@ namespace CardCollector.Tests.Services
         }
 
         [TestMethod]
+        public async Task GetPendingCartAsync_LinesFromSeveralCards_SortsByCardNameThenSetCode()
+        {
+            SetUpCard(1, "Dark Magician",
+                new Set { Code = "SDK-EN001", PrintingID = 101, RarityName = "Ultra Rare" },
+                new Set { Code = "LOB-EN005", PrintingID = 102, RarityName = "Ultra Rare" });
+            SetUpCard(2, "Blue-Eyes White Dragon", new Set { Code = "SDK-EN001", PrintingID = 201, RarityName = "Ultra Rare" });
+            _pendingOrderRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(
+            [
+                new PendingOrderLine { ID = 1, CatalogPrintingID = 101 },
+                new PendingOrderLine { ID = 2, CatalogPrintingID = 201 },
+                new PendingOrderLine { ID = 3, CatalogPrintingID = 102 }
+            ]);
+
+            var result = await _service.GetPendingCartAsync();
+
+            CollectionAssert.AreEqual(new[] { 2, 3, 1 }, result.Select(l => l.PendingOrderLineID).ToArray());
+        }
+
+        [TestMethod]
         public async Task GetPriceHistoryCardsAsync_CardsWithHistory_ReturnsCurrentNamesSortedWithSmallImages()
         {
             _collectionEntryValueRepositoryMock.Setup(r => r.GetCatalogCardIDsAsync()).ReturnsAsync(new HashSet<int> { 1, 2 });

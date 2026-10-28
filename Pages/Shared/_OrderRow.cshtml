@@ -8,7 +8,7 @@
             <partial name="_CardThumbnail" model='new CardThumbnailViewModel(Model.ImageURLSmall, Model.CardName)' />
             <div class="min-width-0 flex-grow-1">
                 <div class="fw-semibold">@Model.CardName</div>
-                <div class="text-muted small">@Model.SetName &middot; <code>@Model.SetCode</code> &middot; @Model.RarityCode</div>
+                <partial name="_PrintingSubtitle" model="Model" />
                 <div class="d-flex flex-wrap gap-2 small text-muted mt-1">
                     <span>@(Model.Condition.HasValue ? Model.Condition.GetDisplayName() : "—")</span>
                     <span>
